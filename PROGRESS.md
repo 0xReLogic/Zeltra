@@ -6,11 +6,11 @@ Live status untuk sync antara Backend & Frontend.
 
 ## Current State
 
-|                    | Backend                 | Frontend                                 |
-| ------------------ | ----------------------- | ---------------------------------------- |
-| **Current Phase**  | 1                       | 1 (Done)                                 |
-| **Last Task Done** | Auth API implementation | Phase 6: Org & Team Management UI ✅     |
-| **Next Task**      | Integration tests       | Phase 7: Advanced Features (Ledger View) |
+|                    | Backend                 | Frontend                                           |
+| ------------------ | ----------------------- | -------------------------------------------------- |
+| **Current Phase**  | 1                       | 1 (Done)                                           |
+| **Last Task Done** | Auth API implementation | Phase 7: Advanced UI Features (Charts, Budgets) ✅ |
+| **Next Task**      | Integration tests       | Phase 8: Final Polish & Simulation UI              |
 
 **Last Updated:** 2026-01-08
 
@@ -27,17 +27,17 @@ Live status untuk sync antara Backend & Frontend.
 
 ## Phase Status
 
-| Phase            | Backend | Frontend | Notes                                   |
-| ---------------- | ------- | -------- | --------------------------------------- |
-| 0: Foundation    | ✅      | ⬜       | BE workspace setup done                 |
-| 1: Auth          | ✅      | ✅       | BE Auth API complete                    |
-| 2: Ledger        | ⬜      | -        |                                         |
-| 3: Workflow      | ⬜      | -        |                                         |
-| 4: Reports       | ⬜      | -        |                                         |
-| 5: Polish        | ⬜      | -        |                                         |
-| 6: FE Foundation | -       | ✅       | Auth & Org Management complete          |
-| 7: FE Features   | -       | 🟡       | Core done, working on Advanced Features |
-| 8: Launch        | ⬜      | ⬜       |                                         |
+| Phase            | Backend | Frontend | Notes                                          |
+| ---------------- | ------- | -------- | ---------------------------------------------- |
+| 0: Foundation    | ✅      | ⬜       | BE workspace setup done                        |
+| 1: Auth          | ✅      | ✅       | BE Auth API complete                           |
+| 2: Ledger        | ⬜      | -        |                                                |
+| 3: Workflow      | ⬜      | -        |                                                |
+| 4: Reports       | ⬜      | -        |                                                |
+| 5: Polish        | ⬜      | -        |                                                |
+| 6: FE Foundation | -       | ✅       | Auth & Org Management complete                 |
+| 7: FE Features   | -       | ✅       | Ledger, Reports, Budgets, & Dashboard complete |
+| 8: Launch        | ⬜      | ⬜       |                                                |
 
 ---
 
@@ -150,16 +150,16 @@ Frontend cek di sini untuk tau endpoint mana yang udah ready.
 
 ### Master Data
 
-| Endpoint                         | Status | Notes                          |
-| -------------------------------- | ------ | ------------------------------ |
-| GET /fiscal-years                | ✅     | Mocked                         |
-| POST /fiscal-years               | ✅     | Mocked (Auto-generate periods) |
-| GET /fiscal-periods              | ✅     | Mocked                         |
-| PATCH /fiscal-periods/:id/status | ✅     | Mocked                         |
-| GET /dimension-types             | ✅     | Mocked                         |
-| GET /dimension-values            | ✅     | Mocked                         |
-| GET /exchange-rates              | ✅     | Mocked                         |
-| POST /exchange-rates             | ✅     | Mocked                         |
+| Endpoint                         | Status | Notes                                  |
+| -------------------------------- | ------ | -------------------------------------- |
+| GET /fiscal-years                | ✅     | Mocked                                 |
+| POST /fiscal-years               | ✅     | Mocked (Auto-generate incl. Period 13) |
+| GET /fiscal-periods              | ✅     | Mocked                                 |
+| PATCH /fiscal-periods/:id/status | ✅     | Mocked                                 |
+| GET /dimension-types             | ✅     | Mocked                                 |
+| GET /dimension-values            | ✅     | Mocked                                 |
+| GET /exchange-rates              | ✅     | Mocked                                 |
+| POST /exchange-rates             | ✅     | Mocked                                 |
 
 ### Reports
 
@@ -183,10 +183,10 @@ Frontend cek di sini untuk tau endpoint mana yang udah ready.
 
 ### Dashboard
 
-| Endpoint                       | Status | Notes  |
-| ------------------------------ | ------ | ------ |
-| GET /dashboard/metrics         | ✅     | Mocked |
-| GET /dashboard/recent-activity | ⬜     |        |
+| Endpoint                       | Status | Notes                           |
+| ------------------------------ | ------ | ------------------------------- |
+| GET /dashboard/metrics         | ✅     | Mocked (Cash Flow, Utilization) |
+| GET /dashboard/recent-activity | ✅     | Mocked                          |
 
 ### Simulation
 
