@@ -77,12 +77,12 @@ Frontend cek di sini untuk tau endpoint mana yang udah ready.
 
 ### Auth
 
-| Endpoint            | Status | Notes |
-| ------------------- | ------ | ----- |
-| POST /auth/register | ⬜     |       |
-| POST /auth/login    | ⬜     |       |
-| POST /auth/refresh  | ⬜     |       |
-| POST /auth/logout   | ⬜     |       |
+| Endpoint            | Status | Notes  |
+| ------------------- | ------ | ------ |
+| POST /auth/register | ⬜     |        |
+| POST /auth/login    | ✅     | Mocked |
+| POST /auth/refresh  | ⬜     |        |
+| POST /auth/logout   | ⬜     |        |
 
 ### Organizations
 
@@ -109,8 +109,8 @@ Frontend cek di sini untuk tau endpoint mana yang udah ready.
 | POST /transactions             | ✅     | Mocked |
 | GET /transactions/:id          | ✅     | Mocked |
 | POST /transactions/:id/submit  | ⬜     |        |
-| POST /transactions/:id/approve | ⬜     |        |
-| POST /transactions/:id/reject  | ⬜     |        |
+| POST /transactions/:id/approve | ✅     | Mocked |
+| POST /transactions/:id/reject  | ✅     | Mocked |
 | POST /transactions/:id/post    | ⬜     |        |
 | POST /transactions/:id/void    | ⬜     |        |
 
