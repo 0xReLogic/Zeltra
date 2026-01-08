@@ -133,7 +133,7 @@ export default function BudgetsPage() {
                 />
                 <Tooltip 
                     cursor={{ fill: 'transparent' }}
-                    formatter={(value: number) => [`$${value.toLocaleString()}`, '']}
+                    formatter={(value) => [`$${Number(value).toLocaleString()}`, '']}
                 />
                 <Legend />
                 <Bar dataKey="Budget" fill="#0f172a" radius={[4, 4, 0, 0]} />

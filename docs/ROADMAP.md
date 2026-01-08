@@ -555,8 +555,8 @@ NOW we start frontend, because backend is solid.
 
 - [x] Login
 - [x] Register
-- [ ] Forgot password
-- [ ] Organization selector
+- [x] Forgot password
+- [x] Organization selector
 
 ### Core Layout
 
@@ -621,6 +621,13 @@ NOW we start frontend, because backend is solid.
 
 > **Provider Options:** Stripe, LemonSqueezy, Paddle, atau manual invoicing untuk enterprise.
 > Arsitektur harus agnostic - gampang switch provider.
+
+### Admin & Advanced Features (Deferred from Phase 7)
+
+- [ ] Fiscal Year Creation UI (`POST /fiscal-years`)
+- [ ] Dimensional Reports UI (`GET /reports/dimensional`)
+- [ ] Advanced User Management (Invite/Role)
+- [ ] Organization Settings (Currency/Timezone update)
 
 #### Payment Provider Abstraction
 
