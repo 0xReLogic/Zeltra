@@ -26,14 +26,14 @@ Rationale: Simpler deployment, easier debugging, can be split into microservices
 | Component | Choice | Rationale |
 |-----------|--------|-----------|
 | Framework | Axum 0.8.8 | Tokio ecosystem, ergonomic extractors, tower middleware, better DX than Actix |
-| Database | SeaORM 2.0 | Async ORM, entity generation, migrations, new entity format, nested ActiveModel |
+| Database | SeaORM 1.1 | Async ORM, entity generation, migrations, new entity format, nested ActiveModel |
 | Raw Queries | SQLx (optional) | For complex queries where ORM is overkill |
 | Decimal | rust_decimal | Arbitrary precision, no floating-point errors for money |
 | Serialization | Serde | Industry standard |
 | Async Runtime | Tokio | De facto standard for async Rust |
 | Error Handling | thiserror + anyhow | Type-safe errors for library, anyhow for application |
 
-Note: SeaORM 2.0 dipilih (released Sep 2025) karena:
+Note: SeaORM 1.1 dipilih (released Sep 2025) karena:
 - New concise entity format - easier to write by hand
 - Strongly-typed columns (bye-bye CamelCase)
 - Nested ActiveModel - persist nested objects in one operation
@@ -227,7 +227,7 @@ tokio = { version = "1.49", features = ["full"] }
 tokio-util = { version = "0.7", features = ["io"] }
 futures = "0.3"
 
-# === Database (SeaORM 2.0 - Released Sep 2025) ===
+# === Database (SeaORM 1.1 - Released Sep 2025) ===
 sea-orm = { version = "2.0", features = [
     "sqlx-postgres", 
     "runtime-tokio-rustls",

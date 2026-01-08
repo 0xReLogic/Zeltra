@@ -21,7 +21,7 @@ High-Performance B2B Expense & Budgeting Engine built with Rust + Next.js.
 
 | Layer | Technology |
 |-------|------------|
-| Backend | Rust 1.92+ (Axum 0.8.8, SeaORM 2.0, Tokio 1.49) |
+| Backend | Rust 1.92+ (Axum 0.8.8, SeaORM 1.1, Tokio 1.49) |
 | Frontend | Next.js 16 (App Router, RSC, Server Actions, Turbopack) |
 | Database | PostgreSQL 16 |
 | Styling | Tailwind CSS v4, Shadcn/UI |

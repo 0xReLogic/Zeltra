@@ -15,7 +15,7 @@ Start Date: January 2026
 | Topic                        | Search Query                                                     | Why                                       |
 | ---------------------------- | ---------------------------------------------------------------- | ----------------------------------------- |
 | **SeaORM CLI**               | `sea-orm-cli generate entity 2025 2026 tutorial`                 | Syntax berubah tiap version               |
-| **SeaORM 2.0 Entity Format** | `SeaORM 2.0 entity format derive macro`                          | Format baru di 2.0                        |
+| **SeaORM 1.1 Entity Format** | `SeaORM 1.1 entity format derive macro`                          | Format baru di 2.0                        |
 | **SeaORM Migration**         | `sea-orm-migration 2.0 create table example`                     | Migration API                             |
 | **Axum 0.8 Router**          | `Axum 0.8 router state extractor 2025`                           | Breaking changes dari 0.7                 |
 | **Axum Middleware**          | `Axum 0.8 tower middleware layer example`                        | Middleware pattern                        |
@@ -66,7 +66,7 @@ No frontend work until Phase 6. Backend must be battle-tested first.
 > **RESEARCH REQUIRED:**
 >
 > - SeaORM CLI: `sea-orm-cli generate entity latest tutorial`
-> - SeaORM 2.0 migration: `sea-orm-migration 2.0 example`
+> - SeaORM 1.1 migration: `sea-orm-migration 2.0 example`
 > - Docker Postgres 16: `docker compose postgres 16 volume setup`
 
 ### Infrastructure Setup
@@ -204,7 +204,7 @@ This is the MOST CRITICAL phase. Take your time. Get it right.
 
 > **RESEARCH REQUIRED (RUST):**
 >
-> - SeaORM transactions: `SeaORM 2.0 database transaction begin commit rollback`
+> - SeaORM transactions: `SeaORM 1.1 database transaction begin commit rollback`
 > - Decimal arithmetic: `rust_decimal checked_add checked_sub example`
 > - Concurrent access: `Rust PostgreSQL concurrent update optimistic locking`
 
@@ -566,8 +566,19 @@ NOW we start frontend, because backend is solid.
 
 ### Organization UI
 
-- [ ] Organization Settings (Currency/Timezone update)
-- [ ] User/Team Management (Invite/Role)
+> **DB Tables:** `organizations`, `organization_users`
+> **DB Fields:** `base_currency`, `timezone`, `role`, `approval_limit`
+
+- [ ] Organization Settings Page
+  - [ ] Update base currency (`organizations.base_currency`)
+  - [ ] Update timezone (`organizations.timezone`)
+  - [ ] View subscription tier & status
+- [ ] User/Team Management Page
+  - [ ] List organization users (`organization_users`)
+  - [ ] Invite new user (email + role)
+  - [ ] Update user role (`user_role` enum: viewer, accountant, approver, admin, owner)
+  - [ ] Set approval limit for approvers (`approval_limit` field)
+  - [ ] Remove user from organization
 
 **Deliverable:** Frontend skeleton with auth working.
 
@@ -584,35 +595,144 @@ NOW we start frontend, because backend is solid.
 
 ### Master Data UI
 
+> **DB Tables:** `chart_of_accounts`, `fiscal_years`, `fiscal_periods`, `dimension_types`, `dimension_values`, `exchange_rates`
+
 - [x] Chart of Accounts management
+  - [x] List accounts with hierarchy (parent_id)
+  - [x] Account type/subtype display
+  - [ ] Create new account (`POST /accounts`)
+  - [ ] Edit account (`PATCH /accounts/:id`)
+  - [ ] Toggle account active status
 - [x] Fiscal period management
+  - [x] List fiscal years with nested periods
+  - [x] Period status badges (OPEN/SOFT_CLOSE/CLOSED)
+  - [x] Change period status (`PATCH /fiscal-periods/:id/status`)
+  - [ ] Create fiscal year with auto-generated periods (`POST /fiscal-years`)
 - [x] Dimension management
+  - [x] List dimension types with nested values
+  - [x] Add dimension value (`POST /dimensions/:typeId/values`)
+  - [ ] Create dimension type (`POST /dimension-types`)
+  - [ ] Edit dimension value
+  - [ ] Toggle dimension active status
 - [x] Exchange rate management
+  - [x] List exchange rates
+  - [x] Add exchange rate (`POST /exchange-rates`)
+  - [ ] Bulk import exchange rates
 
 ### Transaction UI
 
+> **DB Tables:** `transactions`, `ledger_entries`, `entry_dimensions`
+
 - [x] Transaction list with filters
+  - [x] Filter by status (draft/pending/approved/posted/voided)
+  - [x] Filter by date range
+  - [x] Filter by transaction type
+  - [ ] Filter by dimension (department/project)
 - [x] Transaction entry form
+  - [x] Multi-line journal entry (debit/credit)
+  - [x] Account selector
+  - [ ] Dimension assignment per entry (`entry_dimensions`)
+  - [ ] Multi-currency support (source_currency, exchange_rate)
+  - [ ] Attachment upload
 - [x] Approval queue
+  - [x] List pending transactions
+  - [x] Approve/Reject actions
+  - [ ] Bulk approve
 - [x] Transaction detail
+  - [x] View entries with debit/credit
+  - [ ] View dimension assignments
+  - [ ] View attachments
+  - [ ] Audit trail (submitted_by, approved_by, posted_by timestamps)
 
 ### Dashboard
 
+> **Computed from:** `ledger_entries`, `budgets`, `budget_lines`
+
 - [x] Key metrics
+  - [x] Cash position (sum of cash accounts)
+  - [x] Burn rate (daily/monthly)
+  - [x] Runway days
+  - [x] Pending approvals count
 - [x] Budget vs actual
+  - [x] Department budget cards
+  - [x] Progress bars (actual/budget)
+  - [ ] Variance highlighting (favorable/unfavorable)
 - [x] Charts (Recharts)
+  - [x] Expense trend chart
+  - [ ] Cash flow chart
+  - [ ] Budget utilization by department
 
 ### Reports UI
 
+> **Computed from:** `ledger_entries`, `chart_of_accounts`, `entry_dimensions`
+
 - [x] Report viewer
+  - [x] Trial Balance
+  - [x] Balance Sheet
+  - [x] Income Statement (P&L)
 - [x] Export functionality
-- [ ] Dimensional Reports UI (`GET /reports/dimensional`)
-- [ ] Account Ledger View UI
+  - [x] CSV export
+  - [ ] PDF export
+- [ ] **Account Ledger View** (MISSING - DB Ready)
+  - [ ] Select account from dropdown
+  - [ ] Show all entries for account (`ledger_entries.account_id`)
+  - [ ] Running balance column (`account_current_balance`)
+  - [ ] Date range filter
+  - [ ] Mock: `GET /accounts/:id/ledger`
+- [ ] **Dimensional Reports UI** (MISSING - DB Ready)
+  - [ ] Filter by dimension type (Department/Project/Cost Center)
+  - [ ] Filter by dimension value
+  - [ ] Group expenses by dimension
+  - [ ] Compare across dimensions
+  - [ ] Mock: `GET /reports/dimensional`
 
 ### Advanced Features
 
-- [ ] Fiscal Year Creation UI (`POST /fiscal-years`)
-- [ ] Simulation/Forecasting UI
+> **DB Tables:** `budgets`, `budget_lines`, `budget_line_dimensions`
+
+- [ ] **Fiscal Year Creation UI** (MISSING - DB Ready)
+  - [ ] Form: name, start_date, end_date
+  - [ ] Auto-generate 12 monthly periods
+  - [ ] Option for adjustment period (period 13)
+  - [ ] Mock: `POST /fiscal-years`
+- [ ] **Budget Management UI** (MISSING - DB Ready)
+  - [ ] Create budget (`budgets` table)
+  - [ ] Add budget lines per account/period (`budget_lines`)
+  - [ ] Assign dimensions to budget lines (`budget_line_dimensions`)
+  - [ ] Lock/unlock budget
+  - [ ] Mock: `POST /budgets`, `POST /budgets/:id/lines`
+- [ ] Simulation/Forecasting UI (Phase 4 backend dependency)
+  - [ ] Historical data selection
+  - [ ] Adjustment parameters
+  - [ ] Projection results
+
+### Mock Handlers Needed
+
+Add these to `frontend/src/mocks/handlers.ts`:
+
+```typescript
+// Account Ledger
+GET /api/v1/accounts/:id/ledger → { entries: [...], running_balance }
+
+// Dimensional Report  
+GET /api/v1/reports/dimensional → { data: [...], grouped_by_dimension }
+
+// Fiscal Year Creation
+POST /api/v1/fiscal-years → { id, name, periods: [...] }
+
+// Organization Settings
+PATCH /api/v1/organizations/:id → { success: true }
+
+// Team Management
+GET /api/v1/organizations/:id/users → { users: [...] }
+POST /api/v1/organizations/:id/users → { user_id, role }
+PATCH /api/v1/organizations/:id/users/:userId → { role, approval_limit }
+DELETE /api/v1/organizations/:id/users/:userId → { success: true }
+
+// Budget Management
+POST /api/v1/budgets → { id, name, fiscal_year_id }
+POST /api/v1/budgets/:id/lines → { id, account_id, amount }
+```
 
 **Deliverable:** Complete frontend application.
 

@@ -27,17 +27,17 @@ Live status untuk sync antara Backend & Frontend.
 
 ## Phase Status
 
-| Phase            | Backend | Frontend | Notes                   |
-| ---------------- | ------- | -------- | ----------------------- |
-| 0: Foundation    | 🟡      | ⬜       | BE workspace setup done |
-| 1: Auth          | ⬜      | ✅       | FE mocked               |
-| 2: Ledger        | ⬜      | -        |                         |
-| 3: Workflow      | ⬜      | -        |                         |
-| 4: Reports       | ⬜      | -        |                         |
-| 5: Polish        | ⬜      | -        |                         |
-| 6: FE Foundation | -       | ⬜       |                         |
-| 7: FE Features   | -       | ✅       | Accounts, Reports, MD   |
-| 8: Launch        | ⬜      | ⬜       |                         |
+| Phase            | Backend | Frontend | Notes                                    |
+| ---------------- | ------- | -------- | ---------------------------------------- |
+| 0: Foundation    | 🟡      | ⬜       | BE workspace setup done                  |
+| 1: Auth          | ⬜      | ✅       | FE mocked                                |
+| 2: Ledger        | ⬜      | -        |                                          |
+| 3: Workflow      | ⬜      | -        |                                          |
+| 4: Reports       | ⬜      | -        |                                          |
+| 5: Polish        | ⬜      | -        |                                          |
+| 6: FE Foundation | -       | 🟡       | Auth done, Org Settings/Team Mgmt missing |
+| 7: FE Features   | -       | 🟡       | Core done, see missing features below    |
+| 8: Launch        | ⬜      | ⬜       |                                          |
 
 ---
 
@@ -166,3 +166,30 @@ Frontend cek di sini untuk tau endpoint mana yang udah ready.
 - Backend update status endpoint setelah implement
 - Frontend cek status, kalau ⬜ pake mock, kalau ✅ test real API
 - Gradually replace mock dengan real API pas Backend catch up
+
+---
+
+## Frontend-Backend Schema Sync Analysis
+
+**Last Verified:** 2026-01-08
+
+### Compatibility Status: ✅ COMPATIBLE
+
+Frontend mock structures align with database schema. Notes for API implementation:
+
+| Area | Status | Notes |
+|------|--------|-------|
+| Accounts | ⚠️ | `balance` is computed field (from ledger_entries), not in DB |
+| Transactions | ⚠️ | `entries[]` needs JOIN with `ledger_entries` table |
+| Fiscal Years | ⚠️ | `periods[]` needs JOIN with `fiscal_periods` table |
+| Dimensions | ⚠️ | `values[]` needs JOIN with `dimension_values` table |
+| Exchange Rates | ⚠️ | Field name: DB `effective_date` → API `date` |
+| Enums | ⚠️ | DB enums need lowercase string conversion for JSON |
+
+### API Response Mapping Required
+
+```
+DB account_type ENUM → lowercase string ("asset", "liability", "equity", "revenue", "expense")
+DB transaction_status ENUM → lowercase string ("draft", "pending", "approved", "posted", "voided")
+DB transaction_type ENUM → lowercase string ("journal", "expense", "revenue", "transfer")
+```
