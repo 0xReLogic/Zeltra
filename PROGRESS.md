@@ -67,16 +67,17 @@ Live status untuk sync antara Backend & Frontend.
 
 ## Phase 1 Tasks (Backend - Auth)
 
-| Task                    | Status | Notes                                    |
-| ----------------------- | ------ | ---------------------------------------- |
-| JWT Service             | ✅     | Access & refresh token generation        |
-| Password hashing        | ✅     | Argon2id with secure defaults            |
-| User repository         | ✅     | CRUD, find by email, get organizations   |
-| Organization repository | ✅     | CRUD, membership management, role checks |
-| Session repository      | ✅     | Create, revoke, cleanup sessions         |
-| Auth middleware         | ✅     | JWT validation, claims extraction        |
-| Auth routes             | ✅     | Login, register, refresh, logout         |
-| Organization routes     | ✅     | Create, get, list users, add user        |
+| Task                    | Status | Notes                                       |
+| ----------------------- | ------ | ------------------------------------------- |
+| JWT Service             | ✅     | Access & refresh token generation           |
+| Password hashing        | ✅     | Argon2id with secure defaults               |
+| User repository         | ✅     | CRUD, find by email, get organizations      |
+| Organization repository | ✅     | CRUD, membership management, role checks    |
+| Session repository      | ✅     | Create, revoke, cleanup sessions            |
+| Auth middleware         | ✅     | JWT validation, claims extraction           |
+| Auth routes             | ✅     | Login, register, refresh, logout            |
+| Organization routes     | ✅     | Create, get, list users, add user           |
+| RLS context per request | ✅     | `RlsConnection` wrapper, `SET LOCAL` helper |
 
 ---
 
@@ -151,7 +152,7 @@ Frontend cek di sini untuk tau endpoint mana yang udah ready.
 | GET /reports/trial-balance    | ✅     | Mocked |
 | GET /reports/balance-sheet    | ✅     | Mocked |
 | GET /reports/income-statement | ✅     | Mocked |
-| GET /reports/dimensional      | ⬜     |        |
+| GET /reports/dimensional      | ✅     | Mocked |
 | GET /budgets/:id/vs-actual    | ✅     | Mocked |
 
 ### Budgets

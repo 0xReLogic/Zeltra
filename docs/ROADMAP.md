@@ -137,7 +137,7 @@ No frontend work until Phase 6. Backend must be battle-tested first.
 - [x] Create organization (name, slug, base_currency, timezone)
 - [x] Add user to organization with role (`user_role` enum)
 - [x] Set `approval_limit` per user (for approver role)
-- [ ] Set RLS context per request (`app.current_organization_id`)
+- [x] Set RLS context per request (`app.current_organization_id`)
 - [ ] Test cross-tenant isolation
 
 ### Subscription & Tier Logic

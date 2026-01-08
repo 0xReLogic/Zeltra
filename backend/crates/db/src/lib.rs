@@ -4,12 +4,15 @@
 //! - `SeaORM` entity definitions
 //! - Repository abstractions for data access
 //! - Database migrations
+//! - RLS (Row-Level Security) context management
 
 pub mod entities;
 pub mod migration;
 pub mod repositories;
+pub mod rls;
 
 pub use repositories::{OrganizationRepository, SessionRepository, UserRepository};
+pub use rls::{RlsConnection, RlsExt, set_rls_context};
 
 use sea_orm::{Database, DatabaseConnection, DbErr};
 
