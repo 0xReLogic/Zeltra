@@ -689,12 +689,12 @@ NOW we start frontend, because backend is solid.
 
 > **DB Tables:** `budgets`, `budget_lines`, `budget_line_dimensions`
 
-- [ ] **Fiscal Year Creation UI** (MISSING - DB Ready)
-  - [ ] Form: name, start_date, end_date
-  - [ ] Auto-generate 12 monthly periods
+- [x] **Fiscal Year Creation UI** (Mocked - Auto-generate periods)
+  - [x] Form: name, start_date, end_date
+  - [x] Auto-generate 12 monthly periods
   - [ ] Option for adjustment period (period 13)
-  - [ ] Mock: `POST /fiscal-years`
-- [ ] **Budget Management UI** (MISSING - DB Ready)
+  - [x] Mock: `POST /fiscal-years`
+- [x] **Budget Management UI** (Mocked - Create, Detail, Lines)
   - [ ] Create budget (`budgets` table)
   - [ ] Add budget lines per account/period (`budget_lines`)
   - [ ] Assign dimensions to budget lines (`budget_line_dimensions`)

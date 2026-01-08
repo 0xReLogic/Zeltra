@@ -126,6 +126,39 @@ export const handlers = [
     })
   }),
 
+  http.post('/api/v1/budgets', async ({ request }) => {
+    const body = await request.json() as any
+    return HttpResponse.json({
+        id: `bdg_${Date.now()}`,
+        actual_spent: '0.0000',
+        ...body
+    })
+  }),
+
+  http.get('/api/v1/budgets/:id', ({ params }) => {
+     return HttpResponse.json({
+         id: params.id,
+         department: 'Engineering',
+         period: '2026-01',
+         budget_limit: '50000.0000',
+         actual_spent: '35000.0000',
+         lines: [
+             { id: 'bl_1', account_name: 'Server Cost', limit: '30000.0000', actual: '25000.0000' },
+             { id: 'bl_2', account_name: 'Software Licenses', limit: '20000.0000', actual: '10000.0000' },
+         ]
+     })
+  }),
+
+  http.post('/api/v1/budgets/:id/lines', async ({ request, params }) => {
+      const body = await request.json() as any
+      return HttpResponse.json({
+          id: `bl_${Date.now()}`,
+          budget_id: params.id,
+          actual: '0.0000',
+          ...body
+      })
+  }),
+
   // Reports
   http.get('/api/v1/reports/trial-balance', () => {
     return HttpResponse.json({

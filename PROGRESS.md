@@ -153,6 +153,15 @@ Frontend cek di sini untuk tau endpoint mana yang udah ready.
 | GET /reports/dimensional      | ⬜     |        |
 | GET /budgets/:id/vs-actual    | ✅     | Mocked |
 
+### Budgets
+
+| Endpoint                | Status | Notes                 |
+| ----------------------- | ------ | --------------------- |
+| GET /budgets            | ✅     | Mocked                |
+| POST /budgets           | ✅     | Mocked (Create)       |
+| GET /budgets/:id        | ✅     | Mocked (Detail+Lines) |
+| POST /budgets/:id/lines | ✅     | Mocked (Add Line)     |
+
 ### Dashboard
 
 | Endpoint                       | Status | Notes  |

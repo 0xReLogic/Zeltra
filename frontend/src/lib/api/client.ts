@@ -267,6 +267,30 @@ export async function apiClient<T>(
           else if (cleanEndpoint.match(/^\/transactions\/[^\/]+$/)) {
               mockResponse = MOCK_DATA['/transactions'].data[0]
           }
+          // Check for /budgets/:id
+          else if (cleanEndpoint.match(/^\/budgets\/[^\/]+$/)) {
+              // Return a detailed budget mock
+              mockResponse = {
+                  id: cleanEndpoint.split('/').pop(),
+                  department: 'Engineering',
+                  period: '2026-01',
+                  budget_limit: '50000.0000',
+                  actual_spent: '35000.0000',
+                  lines: [
+                      { id: 'bl_1', account_name: 'Server Cost', limit: '30000.0000', actual: '25000.0000' },
+                      { id: 'bl_2', account_name: 'Software Licenses', limit: '20000.0000', actual: '10000.0000' },
+                  ]
+              }
+          }
+          // Check for /budgets/:id/lines (POST)
+          else if (cleanEndpoint.match(/^\/budgets\/[^\/]+\/lines$/)) {
+              mockResponse = {
+                  id: `bl_${Date.now()}`,
+                  account_name: 'New Budget Line',
+                  limit: '1000.0000',
+                  actual: '0.0000'
+              }
+          }
       }
 
       if (mockResponse) {
