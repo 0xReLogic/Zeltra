@@ -6,11 +6,11 @@ Live status untuk sync antara Backend & Frontend.
 
 ## Current State
 
-|                    | Backend                 | Frontend                                  |
-| ------------------ | ----------------------- | ----------------------------------------- |
-| **Current Phase**  | 0                       | 1 (Done)                                  |
-| **Last Task Done** | Seeder CLI complete     | Phase 7: Master Data & Export Features ✅ |
-| **Next Task**      | Integration tests setup | Phase 8: Backend Development (Supabase)   |
+|                    | Backend                 | Frontend                                 |
+| ------------------ | ----------------------- | ---------------------------------------- |
+| **Current Phase**  | 0                       | 1 (Done)                                 |
+| **Last Task Done** | Seeder CLI complete     | Phase 6: Org & Team Management UI ✅     |
+| **Next Task**      | Integration tests setup | Phase 7: Advanced Features (Ledger View) |
 
 **Last Updated:** 2026-01-08
 
@@ -27,17 +27,17 @@ Live status untuk sync antara Backend & Frontend.
 
 ## Phase Status
 
-| Phase            | Backend | Frontend | Notes                                    |
-| ---------------- | ------- | -------- | ---------------------------------------- |
-| 0: Foundation    | 🟡      | ⬜       | BE workspace setup done                  |
-| 1: Auth          | ⬜      | ✅       | FE mocked                                |
-| 2: Ledger        | ⬜      | -        |                                          |
-| 3: Workflow      | ⬜      | -        |                                          |
-| 4: Reports       | ⬜      | -        |                                          |
-| 5: Polish        | ⬜      | -        |                                          |
-| 6: FE Foundation | -       | 🟡       | Auth done, Org Settings/Team Mgmt missing |
-| 7: FE Features   | -       | 🟡       | Core done, see missing features below    |
-| 8: Launch        | ⬜      | ⬜       |                                          |
+| Phase            | Backend | Frontend | Notes                                   |
+| ---------------- | ------- | -------- | --------------------------------------- |
+| 0: Foundation    | 🟡      | ⬜       | BE workspace setup done                 |
+| 1: Auth          | ⬜      | ✅       | FE mocked                               |
+| 2: Ledger        | ⬜      | -        |                                         |
+| 3: Workflow      | ⬜      | -        |                                         |
+| 4: Reports       | ⬜      | -        |                                         |
+| 5: Polish        | ⬜      | -        |                                         |
+| 6: FE Foundation | -       | ✅       | Auth & Org Management complete          |
+| 7: FE Features   | -       | 🟡       | Core done, working on Advanced Features |
+| 8: Launch        | ⬜      | ⬜       |                                         |
 
 ---
 
@@ -86,11 +86,13 @@ Frontend cek di sini untuk tau endpoint mana yang udah ready.
 
 ### Organizations
 
-| Endpoint                      | Status | Notes |
-| ----------------------------- | ------ | ----- |
-| GET /organizations            | ⬜     |       |
-| POST /organizations           | ⬜     |       |
-| POST /organizations/:id/users | ⬜     |       |
+| Endpoint                      | Status | Notes  |
+| ----------------------------- | ------ | ------ |
+| GET /organizations/:id        | ✅     | Mocked |
+| PATCH /organizations/:id      | ✅     | Mocked |
+| GET /organizations/:id/users  | ✅     | Mocked |
+| POST /organizations/:id/users | ✅     | Mocked |
+| POST /organizations           | ⬜     |        |
 
 ### Accounts
 
@@ -99,7 +101,7 @@ Frontend cek di sini untuk tau endpoint mana yang udah ready.
 | GET /accounts             | ✅     | Mocked |
 | POST /accounts            | ⬜     |        |
 | GET /accounts/:id/balance | ⬜     |        |
-| GET /accounts/:id/ledger  | ⬜     |        |
+| GET /accounts/:id/ledger  | ✅     | Mocked |
 
 ### Transactions
 
@@ -177,14 +179,14 @@ Frontend cek di sini untuk tau endpoint mana yang udah ready.
 
 Frontend mock structures align with database schema. Notes for API implementation:
 
-| Area | Status | Notes |
-|------|--------|-------|
-| Accounts | ⚠️ | `balance` is computed field (from ledger_entries), not in DB |
-| Transactions | ⚠️ | `entries[]` needs JOIN with `ledger_entries` table |
-| Fiscal Years | ⚠️ | `periods[]` needs JOIN with `fiscal_periods` table |
-| Dimensions | ⚠️ | `values[]` needs JOIN with `dimension_values` table |
-| Exchange Rates | ⚠️ | Field name: DB `effective_date` → API `date` |
-| Enums | ⚠️ | DB enums need lowercase string conversion for JSON |
+| Area           | Status | Notes                                                        |
+| -------------- | ------ | ------------------------------------------------------------ |
+| Accounts       | ⚠️     | `balance` is computed field (from ledger_entries), not in DB |
+| Transactions   | ⚠️     | `entries[]` needs JOIN with `ledger_entries` table           |
+| Fiscal Years   | ⚠️     | `periods[]` needs JOIN with `fiscal_periods` table           |
+| Dimensions     | ⚠️     | `values[]` needs JOIN with `dimension_values` table          |
+| Exchange Rates | ⚠️     | Field name: DB `effective_date` → API `date`                 |
+| Enums          | ⚠️     | DB enums need lowercase string conversion for JSON           |
 
 ### API Response Mapping Required
 

@@ -672,12 +672,12 @@ NOW we start frontend, because backend is solid.
 - [x] Export functionality
   - [x] CSV export
   - [ ] PDF export
-- [ ] **Account Ledger View** (MISSING - DB Ready)
-  - [ ] Select account from dropdown
-  - [ ] Show all entries for account (`ledger_entries.account_id`)
-  - [ ] Running balance column (`account_current_balance`)
-  - [ ] Date range filter
-  - [ ] Mock: `GET /accounts/:id/ledger`
+- [x] **Account Ledger View**
+  - [x] Select account from dropdown (via Account List)
+  - [x] Show all entries for account (`ledger_entries.account_id`)
+  - [x] Running balance column (`account_current_balance`)
+  - [x] Date range filter (Mocked)
+  - [x] Mock: `GET /accounts/:id/ledger`
 - [ ] **Dimensional Reports UI** (MISSING - DB Ready)
   - [ ] Filter by dimension type (Department/Project/Cost Center)
   - [ ] Filter by dimension value
