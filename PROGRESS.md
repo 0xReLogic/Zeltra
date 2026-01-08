@@ -91,22 +91,22 @@ Frontend cek di sini untuk tau endpoint mana yang udah ready.
 
 ### Auth
 
-| Endpoint                 | Status | Notes                        |
-| ------------------------ | ------ | ---------------------------- |
-| POST /api/v1/auth/register | ✅     | Creates user, returns info   |
-| POST /api/v1/auth/login    | ✅     | Returns tokens + user info   |
-| POST /api/v1/auth/refresh  | ✅     | Returns new access token     |
+| Endpoint                   | Status | Notes                          |
+| -------------------------- | ------ | ------------------------------ |
+| POST /api/v1/auth/register | ✅     | Creates user, returns info     |
+| POST /api/v1/auth/login    | ✅     | Returns tokens + user info     |
+| POST /api/v1/auth/refresh  | ✅     | Returns new access token       |
 | POST /api/v1/auth/logout   | ⬜     | Client-side token invalidation |
 
 ### Organizations
 
-| Endpoint                           | Status | Notes                      |
-| ---------------------------------- | ------ | -------------------------- |
-| POST /api/v1/organizations         | ✅     | Create org, user as owner  |
-| GET /api/v1/organizations/:id      | ✅     | Get org details            |
-| GET /api/v1/organizations/:id/users  | ✅     | List org members           |
-| POST /api/v1/organizations/:id/users | ✅     | Add user to org (admin+)   |
-| PATCH /api/v1/organizations/:id    | ⬜     | Update org settings        |
+| Endpoint                             | Status | Notes                     |
+| ------------------------------------ | ------ | ------------------------- |
+| POST /api/v1/organizations           | ✅     | Create org, user as owner |
+| GET /api/v1/organizations/:id        | ✅     | Get org details           |
+| GET /api/v1/organizations/:id/users  | ✅     | List org members          |
+| POST /api/v1/organizations/:id/users | ✅     | Add user to org (admin+)  |
+| PATCH /api/v1/organizations/:id      | ⬜     | Update org settings       |
 
 ### Accounts
 
@@ -132,16 +132,16 @@ Frontend cek di sini untuk tau endpoint mana yang udah ready.
 
 ### Master Data
 
-| Endpoint                         | Status | Notes  |
-| -------------------------------- | ------ | ------ |
-| GET /fiscal-years                | ✅     | Mocked |
-| POST /fiscal-years               | ⬜     |        |
-| GET /fiscal-periods              | ✅     | Mocked |
-| PATCH /fiscal-periods/:id/status | ✅     | Mocked |
-| GET /dimension-types             | ✅     | Mocked |
-| GET /dimension-values            | ✅     | Mocked |
-| GET /exchange-rates              | ✅     | Mocked |
-| POST /exchange-rates             | ✅     | Mocked |
+| Endpoint                         | Status | Notes                          |
+| -------------------------------- | ------ | ------------------------------ |
+| GET /fiscal-years                | ✅     | Mocked                         |
+| POST /fiscal-years               | ✅     | Mocked (Auto-generate periods) |
+| GET /fiscal-periods              | ✅     | Mocked                         |
+| PATCH /fiscal-periods/:id/status | ✅     | Mocked                         |
+| GET /dimension-types             | ✅     | Mocked                         |
+| GET /dimension-values            | ✅     | Mocked                         |
+| GET /exchange-rates              | ✅     | Mocked                         |
+| POST /exchange-rates             | ✅     | Mocked                         |
 
 ### Reports
 

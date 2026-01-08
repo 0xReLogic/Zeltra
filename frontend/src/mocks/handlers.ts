@@ -185,7 +185,10 @@ export const handlers = [
 
   // Fiscal
   http.get('/api/v1/fiscal-years', () => {
-      return HttpResponse.json([
+      // ... existing GET handler logic ...
+      return HttpResponse.json({
+        data: [
+          // ... existing mocks ...
           {
               id: 'fy_2026',
               name: 'FY 2026',
@@ -198,7 +201,7 @@ export const handlers = [
                   { id: 'fp_2026_03', name: 'March 2026', status: 'locked', start_date: '2026-03-01', end_date: '2026-03-31' },
               ]
           },
-             {
+          {
             id: 'fy_2025',
             name: 'FY 2025',
             status: 'closed',
@@ -206,7 +209,41 @@ export const handlers = [
             end_date: '2025-12-31',
             periods: [] 
           }
-      ])
+        ]
+      })
+  }),
+
+  http.post('/api/v1/fiscal-years', async ({ request }) => {
+    const body = await request.json() as any
+    const startDate = new Date(body.start_date)
+    const year = startDate.getFullYear()
+    
+    // Generate 12 monthly periods
+    const periods = Array.from({ length: 12 }, (_, i) => {
+        const monthStart = new Date(year, i, 1)
+        const monthEnd = new Date(year, i + 1, 0)
+        const monthName = monthStart.toLocaleString('default', { month: 'long' })
+        
+        // Format YYYY-MM-DD manually to avoid timezone issues/deps
+        const formatDate = (d: Date) => d.toISOString().split('T')[0]
+
+        return {
+            id: `fp_${year}_${(i + 1).toString().padStart(2, '0')}`,
+            name: `${monthName} ${year}`,
+            status: 'open',
+            start_date: formatDate(monthStart),
+            end_date: formatDate(monthEnd)
+        }
+    })
+
+    return HttpResponse.json({
+        id: `fy_${year}`,
+        name: body.name,
+        status: 'open',
+        start_date: body.start_date,
+        end_date: body.end_date,
+        periods: periods
+    })
   }),
 
   http.patch('/api/v1/fiscal-periods/:id/status', async ({ params, request }) => {

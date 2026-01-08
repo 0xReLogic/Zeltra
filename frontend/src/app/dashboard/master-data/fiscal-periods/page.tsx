@@ -18,13 +18,28 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu'
-import { ChevronDown, ChevronRight, MoreHorizontal, Lock, Unlock, Archive } from 'lucide-react'
-import { useFiscalYears, useUpdatePeriodStatus } from '@/lib/queries/fiscal'
+import { ChevronDown, ChevronRight, MoreHorizontal, Lock, Unlock, Archive, Plus, Loader2 } from 'lucide-react'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { useFiscalYears, useUpdatePeriodStatus, useCreateFiscalYear } from '@/lib/queries/fiscal'
+import { toast } from 'sonner'
+import { useState } from 'react'
 
 export default function FiscalPeriodsPage() {
   const { data, isLoading } = useFiscalYears()
   const updateStatus = useUpdatePeriodStatus()
+  const createYear = useCreateFiscalYear()
   const [expandedYear, setExpandedYear] = React.useState<string | null>('2026')
+  const [isCreateOpen, setIsCreateOpen] = useState(false)
 
   const toggleExpand = (yearId: string) => {
     setExpandedYear(expandedYear === yearId ? null : yearId)
@@ -32,6 +47,25 @@ export default function FiscalPeriodsPage() {
 
   const handleStatusChange = (id: string, status: 'open' | 'closed' | 'locked') => {
     updateStatus.mutate({ id, status })
+  }
+
+  const handleCreate = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const formData = new FormData(e.currentTarget)
+    const name = formData.get('name') as string
+    const start_date = formData.get('start_date') as string
+    
+    // Auto-calculate end date (Dec 31 of same year)
+    const year = new Date(start_date).getFullYear()
+    const end_date = `${year}-12-31`
+
+    createYear.mutate({ name, start_date, end_date }, {
+      onSuccess: () => {
+        toast.success(`Fiscal Year ${name} created`)
+        setIsCreateOpen(false)
+      },
+      onError: () => toast.error('Failed to create fiscal year')
+    })
   }
 
   if (isLoading) return <div>Loading...</div>
@@ -43,6 +77,44 @@ export default function FiscalPeriodsPage() {
            <h1 className="text-3xl font-bold tracking-tight">Fiscal Periods</h1>
            <p className="text-muted-foreground mt-2">Manage open/close periods for accounting.</p>
         </div>
+        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+            <DialogTrigger asChild>
+                <Button>
+                    <Plus className="mr-2 h-4 w-4" /> New Fiscal Year
+                </Button>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Create Fiscal Year</DialogTitle>
+                    <DialogDescription>
+                        Create a new fiscal year. Monthly periods will be generated automatically.
+                    </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleCreate} className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="name">Name</Label>
+                        <Input id="name" name="name" placeholder="e.g. FY 2027" required />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="start_date">Start Date</Label>
+                        <Input 
+                            id="start_date" 
+                            name="start_date" 
+                            type="date" 
+                            required 
+                            defaultValue="2027-01-01"
+                        />
+                        <p className="text-[0.8rem] text-muted-foreground">End date will be automatically set to Dec 31st.</p>
+                    </div>
+                    <DialogFooter>
+                        <Button type="submit" disabled={createYear.isPending}>
+                            {createYear.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Create Year
+                        </Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
       </div>
 
       <Card>
@@ -62,7 +134,7 @@ export default function FiscalPeriodsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data?.map((year) => (
+              {data?.data.map((year) => (
                 <React.Fragment key={year.id}>
                   <TableRow 
                     className="cursor-pointer hover:bg-muted/50"

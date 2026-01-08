@@ -23,7 +23,27 @@ export interface FiscalYear {
 export function useFiscalYears() {
   return useQuery({
     queryKey: ['fiscal-years'],
-    queryFn: () => apiClient<FiscalYear[]>('/fiscal-years'),
+    queryFn: () => apiClient<{ data: FiscalYear[] }>('/fiscal-years'),
+  })
+}
+
+export interface CreateFiscalYearRequest {
+  name: string
+  start_date: string
+  end_date: string
+}
+
+export function useCreateFiscalYear() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (data: CreateFiscalYearRequest) =>
+      apiClient<FiscalYear>('/fiscal-years', {
+        method: 'POST',
+        body: JSON.stringify(data)
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['fiscal-years'] })
+    }
   })
 }
 

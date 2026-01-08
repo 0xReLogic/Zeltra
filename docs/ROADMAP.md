@@ -606,7 +606,7 @@ NOW we start frontend, because backend is solid.
   - [x] List fiscal years with nested periods
   - [x] Period status badges (OPEN/SOFT_CLOSE/CLOSED)
   - [x] Change period status (`PATCH /fiscal-periods/:id/status`)
-  - [ ] Create fiscal year with auto-generated periods (`POST /fiscal-years`)
+  - [x] Create fiscal year with auto-generated periods (`POST /fiscal-years`) (Mocked)
 - [x] Dimension management
   - [x] List dimension types with nested values
   - [x] Add dimension value (`POST /dimensions/:typeId/values`)
