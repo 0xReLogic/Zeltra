@@ -6,6 +6,7 @@ pub use sea_orm_migration::prelude::*;
 
 mod m20260108_000001_initial;
 mod m20260108_000002_sessions;
+mod m20260108_000003_force_rls;
 
 /// Migrator for running database migrations.
 pub struct Migrator;
@@ -16,6 +17,7 @@ impl MigratorTrait for Migrator {
         vec![
             Box::new(m20260108_000001_initial::Migration),
             Box::new(m20260108_000002_sessions::Migration),
+            Box::new(m20260108_000003_force_rls::Migration),
         ]
     }
 }

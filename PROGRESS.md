@@ -78,6 +78,7 @@ Live status untuk sync antara Backend & Frontend.
 | Auth routes             | ✅     | Login, register, refresh, logout            |
 | Organization routes     | ✅     | Create, get, list users, add user           |
 | RLS context per request | ✅     | `RlsConnection` wrapper, `SET LOCAL` helper |
+| Test cross-tenant isolation | ✅ | 3 integration tests, non-superuser role |
 
 ---
 
@@ -115,8 +116,8 @@ Frontend cek di sini untuk tau endpoint mana yang udah ready.
 | Endpoint                  | Status | Notes  |
 | ------------------------- | ------ | ------ |
 | GET /accounts             | ✅     | Mocked |
-| POST /accounts            | ⬜     |        |
-| GET /accounts/:id/balance | ⬜     |        |
+| POST /accounts            | ✅     | Mocked |
+| GET /accounts/:id/balance | ✅     | Mocked |
 | GET /accounts/:id/ledger  | ✅     | Mocked |
 
 ### Transactions
