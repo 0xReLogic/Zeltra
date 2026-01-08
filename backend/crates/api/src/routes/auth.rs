@@ -1,14 +1,14 @@
 //! Authentication routes for login, register, token refresh, and logout.
 
-use axum::{extract::State, http::StatusCode, response::IntoResponse, routing::post, Json, Router};
+use axum::{Json, Router, extract::State, http::StatusCode, response::IntoResponse, routing::post};
 use serde_json::json;
 use tracing::{error, info, warn};
 
 use crate::AppState;
 use zeltra_core::auth::{hash_password, verify_password};
 use zeltra_db::{
-    entities::sea_orm_active_enums::UserRole, EmailVerificationRepository, SessionRepository,
-    UserRepository,
+    EmailVerificationRepository, SessionRepository, UserRepository,
+    entities::sea_orm_active_enums::UserRole,
 };
 use zeltra_shared::auth::{
     LoginRequest, LoginResponse, LogoutRequest, RefreshRequest, RegisterRequest,

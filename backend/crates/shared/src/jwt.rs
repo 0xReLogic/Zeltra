@@ -3,7 +3,7 @@
 //! Provides secure JWT handling with access and refresh tokens.
 
 use chrono::{Duration, Utc};
-use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
+use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation, decode, encode};
 use thiserror::Error;
 use uuid::Uuid;
 

@@ -7,7 +7,7 @@
 
 mod password;
 
-pub use password::{hash_password, verify_password, PasswordError};
+pub use password::{PasswordError, hash_password, verify_password};
 
 use serde::{Deserialize, Serialize};
 

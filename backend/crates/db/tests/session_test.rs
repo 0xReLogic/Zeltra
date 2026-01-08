@@ -4,8 +4,8 @@ use chrono::{Duration, Utc};
 use sea_orm::{ActiveModelTrait, Database, DatabaseConnection, Set};
 use uuid::Uuid;
 use zeltra_db::{
-    entities::{organizations, users},
     SessionRepository,
+    entities::{organizations, users},
 };
 
 /// Get database URL from environment or use default.

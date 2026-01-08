@@ -14,7 +14,7 @@ pub mod rls;
 pub use repositories::{
     EmailVerificationRepository, OrganizationRepository, SessionRepository, UserRepository,
 };
-pub use rls::{set_rls_context, RlsConnection, RlsExt};
+pub use rls::{RlsConnection, RlsExt, set_rls_context};
 
 use sea_orm::{Database, DatabaseConnection, DbErr};
 
