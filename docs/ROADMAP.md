@@ -564,6 +564,11 @@ NOW we start frontend, because backend is solid.
 - [x] Header with user menu
 - [x] Responsive design
 
+### Organization UI
+
+- [ ] Organization Settings (Currency/Timezone update)
+- [ ] User/Team Management (Invite/Role)
+
 **Deliverable:** Frontend skeleton with auth working.
 
 ---
@@ -601,6 +606,13 @@ NOW we start frontend, because backend is solid.
 
 - [x] Report viewer
 - [x] Export functionality
+- [ ] Dimensional Reports UI (`GET /reports/dimensional`)
+- [ ] Account Ledger View UI
+
+### Advanced Features
+
+- [ ] Fiscal Year Creation UI (`POST /fiscal-years`)
+- [ ] Simulation/Forecasting UI
 
 **Deliverable:** Complete frontend application.
 
@@ -621,13 +633,6 @@ NOW we start frontend, because backend is solid.
 
 > **Provider Options:** Stripe, LemonSqueezy, Paddle, atau manual invoicing untuk enterprise.
 > Arsitektur harus agnostic - gampang switch provider.
-
-### Admin & Advanced Features (Deferred from Phase 7)
-
-- [ ] Fiscal Year Creation UI (`POST /fiscal-years`)
-- [ ] Dimensional Reports UI (`GET /reports/dimensional`)
-- [ ] Advanced User Management (Invite/Role)
-- [ ] Organization Settings (Currency/Timezone update)
 
 #### Payment Provider Abstraction
 
