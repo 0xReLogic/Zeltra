@@ -139,6 +139,12 @@ impl JwtService {
     pub const fn access_token_expires_in(&self) -> i64 {
         self.config.access_token_expires_minutes * 60
     }
+
+    /// Returns the refresh token expiration in days.
+    #[must_use]
+    pub const fn refresh_token_expires_days(&self) -> i64 {
+        self.config.refresh_token_expires_days
+    }
 }
 
 #[cfg(test)]

@@ -73,8 +73,9 @@ Live status untuk sync antara Backend & Frontend.
 | Password hashing        | ✅     | Argon2id with secure defaults            |
 | User repository         | ✅     | CRUD, find by email, get organizations   |
 | Organization repository | ✅     | CRUD, membership management, role checks |
+| Session repository      | ✅     | Create, revoke, cleanup sessions         |
 | Auth middleware         | ✅     | JWT validation, claims extraction        |
-| Auth routes             | ✅     | Login, register, refresh                 |
+| Auth routes             | ✅     | Login, register, refresh, logout         |
 | Organization routes     | ✅     | Create, get, list users, add user        |
 
 ---
@@ -91,12 +92,12 @@ Frontend cek di sini untuk tau endpoint mana yang udah ready.
 
 ### Auth
 
-| Endpoint                   | Status | Notes                          |
-| -------------------------- | ------ | ------------------------------ |
-| POST /api/v1/auth/register | ✅     | Creates user, returns info     |
-| POST /api/v1/auth/login    | ✅     | Returns tokens + user info     |
-| POST /api/v1/auth/refresh  | ✅     | Returns new access token       |
-| POST /api/v1/auth/logout   | ⬜     | Client-side token invalidation |
+| Endpoint                   | Status | Notes                              |
+| -------------------------- | ------ | ---------------------------------- |
+| POST /api/v1/auth/register | ✅     | Creates user, returns info         |
+| POST /api/v1/auth/login    | ✅     | Returns tokens + user info         |
+| POST /api/v1/auth/refresh  | ✅     | Returns new access token           |
+| POST /api/v1/auth/logout   | ✅     | Revokes session, invalidates token |
 
 ### Organizations
 

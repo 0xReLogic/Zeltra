@@ -1,4 +1,4 @@
-//! Authentication routes for login, register, and token refresh.
+//! Authentication routes for login, register, token refresh, and logout.
 
 use axum::{Json, Router, extract::State, http::StatusCode, response::IntoResponse, routing::post};
 use serde_json::json;
@@ -6,9 +6,10 @@ use tracing::{error, info};
 
 use crate::AppState;
 use zeltra_core::auth::{hash_password, verify_password};
-use zeltra_db::{UserRepository, entities::sea_orm_active_enums::UserRole};
+use zeltra_db::{SessionRepository, UserRepository, entities::sea_orm_active_enums::UserRole};
 use zeltra_shared::auth::{
-    LoginRequest, LoginResponse, RefreshRequest, RegisterRequest, UserInfo, UserOrganization,
+    LoginRequest, LoginResponse, LogoutRequest, RefreshRequest, RegisterRequest, UserInfo,
+    UserOrganization,
 };
 
 /// Creates the auth router.
@@ -17,6 +18,7 @@ pub fn routes() -> Router<AppState> {
         .route("/auth/login", post(login))
         .route("/auth/register", post(register))
         .route("/auth/refresh", post(refresh))
+        .route("/auth/logout", post(logout))
 }
 
 /// POST /auth/login - Authenticate user and return tokens.
@@ -26,6 +28,7 @@ async fn login(
     Json(payload): Json<LoginRequest>,
 ) -> impl IntoResponse {
     let user_repo = UserRepository::new((*state.db).clone());
+    let session_repo = SessionRepository::new((*state.db).clone());
 
     // Find user by email
     let user = match user_repo.find_by_email(&payload.email).await {
@@ -166,6 +169,24 @@ async fn login(
             }
         };
 
+    // Store session in database
+    let expires_at =
+        chrono::Utc::now() + chrono::Duration::days(state.jwt_service.refresh_token_expires_days());
+    if let Err(e) = session_repo
+        .create(
+            user.id,
+            default_org.id,
+            &refresh_token,
+            expires_at,
+            None, // TODO: Extract user agent from request headers
+            None, // TODO: Extract IP from request
+        )
+        .await
+    {
+        error!(error = %e, "Failed to create session");
+        // Don't fail login if session creation fails - tokens are still valid
+    }
+
     info!(user_id = %user.id, "User logged in successfully");
 
     // Build response
@@ -282,7 +303,47 @@ async fn refresh(
     State(state): State<AppState>,
     Json(payload): Json<RefreshRequest>,
 ) -> impl IntoResponse {
-    // Validate refresh token
+    let session_repo = SessionRepository::new((*state.db).clone());
+
+    // Check if session exists and is valid
+    let session = match session_repo.find_by_token(&payload.refresh_token).await {
+        Ok(Some(s)) => s,
+        Ok(None) => {
+            return (
+                StatusCode::UNAUTHORIZED,
+                Json(json!({
+                    "error": "invalid_token",
+                    "message": "Invalid or revoked refresh token"
+                })),
+            )
+                .into_response();
+        }
+        Err(e) => {
+            error!(error = %e, "Database error checking session");
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": "internal_error",
+                    "message": "An error occurred during token refresh"
+                })),
+            )
+                .into_response();
+        }
+    };
+
+    // Check if session is expired
+    if session.expires_at < chrono::Utc::now() {
+        return (
+            StatusCode::UNAUTHORIZED,
+            Json(json!({
+                "error": "token_expired",
+                "message": "Refresh token has expired"
+            })),
+        )
+            .into_response();
+    }
+
+    // Validate refresh token JWT
     let claims = match state.jwt_service.validate_token(&payload.refresh_token) {
         Ok(c) => c,
         Err(e) => {
@@ -326,6 +387,49 @@ async fn refresh(
         })),
     )
         .into_response()
+}
+
+/// POST /auth/logout - Logout and invalidate refresh token.
+async fn logout(
+    State(state): State<AppState>,
+    Json(payload): Json<LogoutRequest>,
+) -> impl IntoResponse {
+    let session_repo = SessionRepository::new((*state.db).clone());
+
+    // Revoke the session
+    match session_repo.revoke_by_token(&payload.refresh_token).await {
+        Ok(true) => {
+            info!("Session revoked successfully");
+            (
+                StatusCode::OK,
+                Json(json!({
+                    "message": "Logged out successfully"
+                })),
+            )
+                .into_response()
+        }
+        Ok(false) => {
+            // Token not found or already revoked - still return success
+            (
+                StatusCode::OK,
+                Json(json!({
+                    "message": "Logged out successfully"
+                })),
+            )
+                .into_response()
+        }
+        Err(e) => {
+            error!(error = %e, "Failed to revoke session");
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": "internal_error",
+                    "message": "An error occurred during logout"
+                })),
+            )
+                .into_response()
+        }
+    }
 }
 
 /// Converts `UserRole` enum to string.

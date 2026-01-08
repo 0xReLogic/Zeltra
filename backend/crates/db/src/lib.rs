@@ -9,7 +9,7 @@ pub mod entities;
 pub mod migration;
 pub mod repositories;
 
-pub use repositories::{OrganizationRepository, UserRepository};
+pub use repositories::{OrganizationRepository, SessionRepository, UserRepository};
 
 use sea_orm::{Database, DatabaseConnection, DbErr};
 

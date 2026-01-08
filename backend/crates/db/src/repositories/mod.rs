@@ -4,7 +4,9 @@
 //! hiding the `SeaORM` implementation details from the rest of the application.
 
 pub mod organization;
+pub mod session;
 pub mod user;
 
 pub use organization::OrganizationRepository;
+pub use session::SessionRepository;
 pub use user::UserRepository;

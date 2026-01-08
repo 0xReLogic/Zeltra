@@ -135,6 +135,13 @@ pub struct RefreshRequest {
     pub refresh_token: String,
 }
 
+/// Logout request.
+#[derive(Debug, Clone, Deserialize)]
+pub struct LogoutRequest {
+    /// The refresh token to invalidate.
+    pub refresh_token: String,
+}
+
 /// Create organization request.
 #[derive(Debug, Clone, Deserialize)]
 pub struct CreateOrganizationRequest {

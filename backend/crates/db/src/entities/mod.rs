@@ -26,6 +26,7 @@ pub mod organization_usage;
 pub mod organization_users;
 pub mod organizations;
 pub mod sea_orm_active_enums;
+pub mod sessions;
 pub mod tier_limits;
 pub mod transactions;
 pub mod users;

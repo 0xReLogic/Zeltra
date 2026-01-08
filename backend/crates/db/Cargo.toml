@@ -12,6 +12,7 @@ sea-orm = { workspace = true }
 sea-orm-migration = { workspace = true }
 sqlx = { workspace = true }
 async-trait = "0.1"
+sha2 = "0.10"
 
 tokio = { workspace = true }
 chrono = { workspace = true }

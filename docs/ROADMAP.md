@@ -130,7 +130,7 @@ No frontend work until Phase 6. Backend must be battle-tested first.
 - [ ] Email verification flow (optional, bisa skip dulu)
 - [x] JWT generation and validation
 - [x] Refresh token flow
-- [ ] Session management
+- [x] Session management
 
 ### Organization & Multi-Tenancy
 
@@ -156,7 +156,7 @@ No frontend work until Phase 6. Backend must be battle-tested first.
 - [x] `POST /auth/register`
 - [x] `POST /auth/login`
 - [x] `POST /auth/refresh`
-- [ ] `POST /auth/logout`
+- [x] `POST /auth/logout`
 - [x] `POST /organizations`
 - [x] `GET /organizations/:id`
 - [x] `POST /organizations/:id/users`

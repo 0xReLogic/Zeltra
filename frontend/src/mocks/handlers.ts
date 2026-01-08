@@ -18,6 +18,10 @@ export const handlers = [
     })
   }),
 
+  http.post('/api/v1/auth/logout', () => {
+    return HttpResponse.json({ success: true })
+  }),
+
   // Accounts
   http.get('/api/v1/accounts', () => {
     return HttpResponse.json({
