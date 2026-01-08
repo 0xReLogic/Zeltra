@@ -192,6 +192,7 @@ export default function BudgetDetailPage() {
                         <TableHead>Project</TableHead>
                         <TableHead className="text-right">Budget Limit</TableHead>
                         <TableHead className="text-right">Actual Spent</TableHead>
+                        <TableHead className="text-right">Variance</TableHead>
                         <TableHead className="text-right">Utilization</TableHead>
                     </TableRow>
                 </TableHeader>
@@ -200,6 +201,8 @@ export default function BudgetDetailPage() {
                         const lineLimit = parseFloat(line.limit)
                         const lineActual = parseFloat(line.actual)
                         const linePercent = lineLimit > 0 ? (lineActual / lineLimit) * 100 : 0
+                        const variance = lineLimit - lineActual
+                        const isFavorable = variance >= 0
                         
                         return (
                             <TableRow key={line.id}>
@@ -210,9 +213,12 @@ export default function BudgetDetailPage() {
                                 </TableCell>
                                 <TableCell className="text-right">{formatCurrency(lineLimit)}</TableCell>
                                 <TableCell className="text-right">{formatCurrency(lineActual)}</TableCell>
+                                <TableCell className={`text-right font-medium ${isFavorable ? 'text-emerald-600' : 'text-red-600'}`}>
+                                    {isFavorable ? '+' : ''}{formatCurrency(variance)}
+                                </TableCell>
                                 <TableCell className="text-right w-[200px]">
                                     <div className="flex items-center justify-end gap-2">
-                                        <span className="text-xs text-muted-foreground w-[40px] text-right">{linePercent.toFixed(0)}%</span>
+                                        <span className={`text-xs w-[40px] text-right ${linePercent > 100 ? 'text-red-600 font-medium' : 'text-muted-foreground'}`}>{linePercent.toFixed(0)}%</span>
                                         <Progress value={Math.min(linePercent, 100)} className={`h-2 w-[100px] ${linePercent > 100 ? '[&>div]:bg-red-500' : ''}`} />
                                     </div>
                                 </TableCell>
@@ -221,7 +227,7 @@ export default function BudgetDetailPage() {
                     })}
                     {(!budget.lines || budget.lines.length === 0) && (
                         <TableRow>
-                            <TableCell colSpan={5} className="text-center text-muted-foreground h-24">
+                            <TableCell colSpan={6} className="text-center text-muted-foreground h-24">
                                 No budget lines added yet.
                             </TableCell>
                         </TableRow>

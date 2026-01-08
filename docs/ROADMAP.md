@@ -656,11 +656,11 @@ NOW we start frontend, because backend is solid.
 - [x] Budget vs actual
   - [x] Department budget cards
   - [x] Progress bars (actual/budget)
-  - [ ] Variance highlighting (favorable/unfavorable)
+  - [x] Variance highlighting (favorable/unfavorable)
 - [x] Charts (Recharts)
   - [x] Expense trend chart
-  - [ ] Cash flow chart
-  - [ ] Budget utilization by department
+  - [x] Cash flow chart
+  - [x] Budget utilization by department
 
 ### Reports UI
 
@@ -693,7 +693,7 @@ NOW we start frontend, because backend is solid.
 - [x] **Fiscal Year Creation UI** (Mocked - Auto-generate periods)
   - [x] Form: name, start_date, end_date
   - [x] Auto-generate 12 monthly periods
-  - [ ] Option for adjustment period (period 13)
+  - [x] Option for adjustment period (period 13)
   - [x] Mock: `POST /fiscal-years`
 - [x] **Budget Management UI** (Mocked - Create, Detail, Lines)
   - [x] Create budget (`budgets` table)

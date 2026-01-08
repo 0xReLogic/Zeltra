@@ -31,6 +31,7 @@ export interface CreateFiscalYearRequest {
   name: string
   start_date: string
   end_date: string
+  include_adjustment?: boolean
 }
 
 export function useCreateFiscalYear() {

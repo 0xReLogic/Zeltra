@@ -54,12 +54,13 @@ export default function FiscalPeriodsPage() {
     const formData = new FormData(e.currentTarget)
     const name = formData.get('name') as string
     const start_date = formData.get('start_date') as string
+    const include_adjustment = formData.get('include_adjustment') === 'on'
     
     // Auto-calculate end date (Dec 31 of same year)
     const year = new Date(start_date).getFullYear()
     const end_date = `${year}-12-31`
 
-    createYear.mutate({ name, start_date, end_date }, {
+    createYear.mutate({ name, start_date, end_date, include_adjustment }, {
       onSuccess: () => {
         toast.success(`Fiscal Year ${name} created`)
         setIsCreateOpen(false)
@@ -105,6 +106,17 @@ export default function FiscalPeriodsPage() {
                             defaultValue="2027-01-01"
                         />
                         <p className="text-[0.8rem] text-muted-foreground">End date will be automatically set to Dec 31st.</p>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <input 
+                            type="checkbox" 
+                            id="include_adjustment" 
+                            name="include_adjustment"
+                            className="h-4 w-4 rounded border-gray-300"
+                        />
+                        <Label htmlFor="include_adjustment" className="text-sm font-normal">
+                            Include Adjustment Period (Period 13)
+                        </Label>
                     </div>
                     <DialogFooter>
                         <Button type="submit" disabled={createYear.isPending}>

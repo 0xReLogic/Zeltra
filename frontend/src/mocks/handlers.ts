@@ -388,22 +388,32 @@ export const handlers = [
     const body = await request.json() as any
     const startDate = new Date(body.start_date)
     const year = startDate.getFullYear()
+    const numPeriods = body.include_adjustment ? 13 : 12
     
-    // Generate 12 monthly periods
-    const periods = Array.from({ length: 12 }, (_, i) => {
-        const monthStart = new Date(year, i, 1)
-        const monthEnd = new Date(year, i + 1, 0)
-        const monthName = monthStart.toLocaleString('default', { month: 'long' })
-        
-        // Format YYYY-MM-DD manually to avoid timezone issues/deps
+    // Generate monthly periods (+ optional adjustment period)
+    const periods = Array.from({ length: numPeriods }, (_, i) => {
         const formatDate = (d: Date) => d.toISOString().split('T')[0]
-
-        return {
-            id: `fp_${year}_${(i + 1).toString().padStart(2, '0')}`,
-            name: `${monthName} ${year}`,
-            status: 'open',
-            start_date: formatDate(monthStart),
-            end_date: formatDate(monthEnd)
+        
+        if (i < 12) {
+            const monthStart = new Date(year, i, 1)
+            const monthEnd = new Date(year, i + 1, 0)
+            const monthName = monthStart.toLocaleString('default', { month: 'long' })
+            return {
+                id: `fp_${year}_${(i + 1).toString().padStart(2, '0')}`,
+                name: `${monthName} ${year}`,
+                status: 'open',
+                start_date: formatDate(monthStart),
+                end_date: formatDate(monthEnd)
+            }
+        } else {
+            // Period 13: Adjustment period (same as Dec end date)
+            return {
+                id: `fp_${year}_13`,
+                name: `Adjustment ${year}`,
+                status: 'open',
+                start_date: `${year}-12-31`,
+                end_date: `${year}-12-31`
+            }
         }
     })
 
