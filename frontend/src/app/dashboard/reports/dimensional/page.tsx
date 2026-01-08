@@ -15,8 +15,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { 
   BarChart, 
@@ -45,7 +43,7 @@ export default function DimensionalReportPage() {
   const [startDate, setStartDate] = useState('2026-01-01')
   const [endDate, setEndDate] = useState('2026-12-31')
 
-  const { data: report, isLoading } = useDimensionalReport({
+  const { data: report } = useDimensionalReport({
       startDate,
       endDate,
       dimension

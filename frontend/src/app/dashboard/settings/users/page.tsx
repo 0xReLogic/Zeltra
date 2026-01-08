@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Loader2, Plus, MoreHorizontal, Shield, Trash, Mail, UserPlus } from 'lucide-react'
+import { Loader2, MoreHorizontal, Shield, Trash, UserPlus } from 'lucide-react'
 import { toast } from 'sonner' // Correct import for Sonner
 
 import { Button } from '@/components/ui/button'
@@ -225,7 +225,7 @@ export default function TeamManagementPage() {
                   </div>
                 </TableCell>
                 <TableCell>
-                  <Badge variant={getRoleBadgeColor(user.role) as any}>
+                  <Badge variant={getRoleBadgeColor(user.role) as 'default' | 'secondary' | 'outline' | 'destructive'}>
                     {user.role}
                   </Badge>
                 </TableCell>

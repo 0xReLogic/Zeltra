@@ -23,7 +23,7 @@ import {
 } from '@/components/ui/dialog'
 import { AccountForm } from '@/components/accounts/AccountForm'
 import { toast } from 'sonner'
-import { Account } from '@/types/accounts'
+import { Account, CreateAccountRequest } from '@/types/accounts'
 import { useUpdateAccount, useDeleteAccount } from '@/lib/queries/accounts'
 
 export default function AccountsPage() {
@@ -34,7 +34,7 @@ export default function AccountsPage() {
   const [open, setOpen] = React.useState(false)
   const [editingAccount, setEditingAccount] = React.useState<Account | null>(null)
 
-  const handleSubmit = (values: any) => {
+  const handleSubmit = (values: CreateAccountRequest) => {
     if (editingAccount) {
       updateAccount.mutate({ ...values, id: editingAccount.id }, {
         onSuccess: () => {

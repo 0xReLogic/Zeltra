@@ -34,7 +34,7 @@ import { toast } from 'sonner'
 import Link from 'next/link'
 
 export default function BudgetsPage() {
-  const { data, isLoading } = useBudgets()
+  const { data } = useBudgets()
   const createBudget = useCreateBudget()
   const [isOpen, setIsOpen] = useState(false)
 

@@ -95,7 +95,7 @@ export default function TransactionsPage() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={getStatusColor(txn.status) as any}>
+                      <Badge variant={getStatusColor(txn.status) as 'default' | 'secondary' | 'outline' | 'destructive'}>
                         {txn.status}
                       </Badge>
                     </TableCell>

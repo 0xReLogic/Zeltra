@@ -3,7 +3,6 @@
 import React, { useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { ArrowLeft, Calendar as CalendarIcon, Download, Loader2 } from 'lucide-react'
-import { format } from 'date-fns'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -18,7 +17,6 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { useAccount, useAccountLedger } from '@/lib/queries/accounts'
 import { formatCurrency } from '@/lib/utils/format'
-import { cn } from '@/lib/utils'
 
 export default function AccountDetailPage() {
   const params = useParams()
@@ -26,7 +24,7 @@ export default function AccountDetailPage() {
   const id = params.id as string
 
   // Query State
-  const [page, setPage] = useState(1)
+  const [page] = useState(1)
   
   const { data: account, isLoading: isLoadingAccount } = useAccount(id)
   const { data: ledger, isLoading: isLoadingLedger } = useAccountLedger(id, { page, limit: 50 })
@@ -50,9 +48,6 @@ export default function AccountDetailPage() {
     )
   }
 
-  // Calculate totals for simple visual check (mock data doesn't sum up perfectly usually)
-  const totalDebit = ledger?.data.reduce((sum, entry) => sum + parseFloat(entry.debit), 0) || 0
-  const totalCredit = ledger?.data.reduce((sum, entry) => sum + parseFloat(entry.credit), 0) || 0
 
   return (
     <div className="space-y-6">

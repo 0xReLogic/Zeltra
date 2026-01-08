@@ -92,7 +92,7 @@ export const handlers = [
   }),
 
   // Account Ledger
-  http.get('/api/v1/accounts/:id/ledger', ({ params, request }) => {
+  http.get('/api/v1/accounts/:id/ledger', () => {
     return HttpResponse.json({
         data: [
             { id: 'le_001', transaction_date: '2026-01-01', reference_number: 'TXN-001', description: 'Opening Balance', debit: '100000.0000', credit: '0.0000', running_balance: '100000.0000' },
@@ -169,7 +169,7 @@ export const handlers = [
   }),
 
   http.post('/api/v1/budgets', async ({ request }) => {
-    const body = await request.json() as any
+    const body = await request.json() as Record<string, unknown>
     return HttpResponse.json({
         id: `bdg_${Date.now()}`,
         actual_spent: '0.0000',
@@ -237,23 +237,23 @@ export const handlers = [
   }),
 
   http.post('/api/v1/budgets/:id/lines', async ({ request, params }) => {
-      const body = await request.json() as any
+      const body = await request.json() as Record<string, unknown>
       return HttpResponse.json({
           id: `bl_${Date.now()}`,
           budget_id: params.id,
           actual: '0.0000',
-          dimension_value_id: body.dimension_value_id || null, 
-          ...body
+          dimension_value_id: (body.dimension_value_id as string) || null, 
+          ...(body as Record<string, unknown>)
       })
   }),
 
   http.patch('/api/v1/budgets/:id/status', async ({ request, params }) => {
-      const body = await request.json() as any
+      const body = await request.json() as Record<string, unknown>
       const id = params.id as string
       
       // Update our memory store
       if (body.status === 'open' || body.status === 'locked') {
-        budgetStatuses[id] = body.status
+        budgetStatuses[id] = body.status as 'open' | 'locked'
       }
 
       return HttpResponse.json({
@@ -323,7 +323,7 @@ export const handlers = [
       const url = new URL(request.url)
       const dimension = url.searchParams.get('dimension') || 'DEPT'
       
-      let data: any[] = []
+      let data: Record<string, unknown>[] = []
       let summary = { global_revenue: '0', global_expense: '0', global_net: '0' }
 
       if (dimension === 'PROJ') {
@@ -424,7 +424,7 @@ export const handlers = [
   }),
 
   http.post('/api/v1/fiscal-years', async ({ request }) => {
-    const body = await request.json() as any
+    const body = await request.json() as { start_date: string, include_adjustment: boolean, name: string, end_date: string }
     const startDate = new Date(body.start_date)
     const year = startDate.getFullYear()
     const numPeriods = body.include_adjustment ? 13 : 12
@@ -466,8 +466,8 @@ export const handlers = [
     })
   }),
 
-  http.patch('/api/v1/fiscal-periods/:id/status', async ({ params, request }) => {
-     const body = await request.json() as any
+  http.patch('/api/v1/fiscal-periods/:id/status', async ({ request }) => {
+     const body = await request.json() as { status: string }
      return HttpResponse.json({ success: true, status: body.status })
   }),
 
@@ -497,7 +497,7 @@ export const handlers = [
   }),
 
   http.post('/api/v1/dimensions/:typeId/values', async ({ request }) => {
-     const body = await request.json() as any
+     const body = await request.json() as Record<string, unknown>
      return HttpResponse.json({ success: true, ...body })
   }),
 
@@ -513,7 +513,7 @@ export const handlers = [
   }),
 
   http.post('/api/v1/exchange-rates', async ({ request }) => {
-      const body = await request.json() as any
+      const body = await request.json() as Record<string, unknown>
       return HttpResponse.json({ 
           id: `er_${Date.now()}`,
           ...body
@@ -534,7 +534,7 @@ export const handlers = [
   }),
 
   http.patch('/api/v1/organizations/:id', async ({ request, params }) => {
-    const body = await request.json() as any
+    const body = await request.json() as Record<string, unknown>
     return HttpResponse.json({
         id: params.id,
         name: 'Acme Corp',
@@ -553,7 +553,7 @@ export const handlers = [
   }),
 
   http.post('/api/v1/organizations/:id/users', async ({ request }) => {
-      const body = await request.json() as any
+      const body = await request.json() as Record<string, unknown>
       return HttpResponse.json({
           id: `usr_${Date.now()}`,
           status: 'invited',
@@ -562,7 +562,7 @@ export const handlers = [
   }),
 
   http.patch('/api/v1/organizations/:id/users/:userId', async ({ request, params }) => {
-      const body = await request.json() as any
+      const body = await request.json() as Record<string, unknown>
       return HttpResponse.json({
           id: params.userId,
           status: 'active',
