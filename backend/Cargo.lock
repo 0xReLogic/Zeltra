@@ -4591,6 +4591,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "zeltra-seeder"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "dotenvy",
+ "rust_decimal",
+ "sea-orm",
+ "tokio",
+ "uuid",
+ "zeltra-db",
+]
+
+[[package]]
 name = "zeltra-server"
 version = "0.1.0"
 dependencies = [

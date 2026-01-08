@@ -6,11 +6,11 @@ Live status untuk sync antara Backend & Frontend.
 
 ## Current State
 
-|                    | Backend                 | Frontend                                   |
-| ------------------ | ----------------------- | ------------------------------------------ |
-| **Current Phase**  | 0                       | 1 (Done)                                   |
-| **Last Task Done** | Database migrations     | Phase 7: Accounts & Transactions (Mock) ✅ |
-| **Next Task**      | Integration tests setup | Account Details Page                       |
+|                    | Backend                 | Frontend                                |
+| ------------------ | ----------------------- | --------------------------------------- |
+| **Current Phase**  | 0                       | 1 (Done)                                |
+| **Last Task Done** | Database migrations     | Phase 7: Approval Queue & Txn Detail ✅ |
+| **Next Task**      | Integration tests setup | Report Viewer & Budget vs Actual        |
 
 **Last Updated:** 2026-01-08
 
@@ -36,30 +36,30 @@ Live status untuk sync antara Backend & Frontend.
 | 4: Reports       | ⬜      | -        |                         |
 | 5: Polish        | ⬜      | -        |                         |
 | 6: FE Foundation | -       | ⬜       |                         |
-| 7: FE Features   | -       | 🟡       | In Progress             |
+| 7: FE Features   | -       | ✅       | Accounts, Txns, Charts  |
 | 8: Launch        | ⬜      | ⬜       |                         |
 
 ---
 
 ## Phase 0 Tasks (Backend)
 
-| Task                      | Status | Notes                          |
-| ------------------------- | ------ | ------------------------------ |
-| Setup Rust workspace      | ✅     | Cargo workspace with 4 crates  |
-| Create crate structure    | ✅     | api, core, db, shared          |
-| Setup rust-toolchain.toml | ✅     | Rust 1.92                      |
-| Setup .cargo/config.toml  | ✅     | Float arithmetic denied        |
-| Core domain types         | ✅     | Money, IDs, Pagination         |
-| Ledger types              | ✅     | Entry, Transaction, Balance    |
-| Currency types            | ✅     | Exchange rate, conversion      |
-| Fiscal types              | ✅     | FiscalYear, FiscalPeriod       |
-| Budget types              | ✅     | Variance calculations          |
-| Simulation types          | ✅     | Scenario, Engine               |
-| Health endpoint           | ✅     | GET /api/v1/health             |
-| Docker compose            | ✅     | PostgreSQL 16                  |
-| Config files              | ✅     | default.toml, development.toml |
+| Task                      | Status | Notes                                       |
+| ------------------------- | ------ | ------------------------------------------- |
+| Setup Rust workspace      | ✅     | Cargo workspace with 4 crates               |
+| Create crate structure    | ✅     | api, core, db, shared                       |
+| Setup rust-toolchain.toml | ✅     | Rust 1.92                                   |
+| Setup .cargo/config.toml  | ✅     | Float arithmetic denied                     |
+| Core domain types         | ✅     | Money, IDs, Pagination                      |
+| Ledger types              | ✅     | Entry, Transaction, Balance                 |
+| Currency types            | ✅     | Exchange rate, conversion                   |
+| Fiscal types              | ✅     | FiscalYear, FiscalPeriod                    |
+| Budget types              | ✅     | Variance calculations                       |
+| Simulation types          | ✅     | Scenario, Engine                            |
+| Health endpoint           | ✅     | GET /api/v1/health                          |
+| Docker compose            | ✅     | PostgreSQL 16                               |
+| Config files              | ✅     | default.toml, development.toml              |
 | Database migrations       | ✅     | All tables, views, triggers, RLS, seed data |
-| Integration tests setup   | ⬜     |                                |
+| Integration tests setup   | ⬜     |                                             |
 
 ---
 

@@ -75,6 +75,18 @@ const MOCK_DATA: Record<string, any> = {
             { account_code: '1200', account_name: 'Bank BCA', debit: '5000.0000', credit: '0.0000' },
             { account_code: '4100', account_name: 'Service Revenue', debit: '0.0000', credit: '5000.0000' },
           ]
+        },
+        {
+          id: 'txn_003',
+          reference_number: 'TXN-2026-0003',
+          transaction_type: 'journal',
+          transaction_date: '2026-01-17',
+          description: 'Accrued Rent Expense',
+          status: 'pending',
+          entries: [
+            { account_code: '5300', account_name: 'Rent Expense', debit: '2500.0000', credit: '0.0000' },
+            { account_code: '2100', account_name: 'Accrued Expenses', debit: '0.0000', credit: '2500.0000' },
+          ]
         }
       ],
       pagination: { page: 1, limit: 50, total: 2 }
@@ -141,6 +153,10 @@ export async function apiClient<T>(
           // Check for /accounts/:id/ledger
            else if (cleanEndpoint.match(/^\/accounts\/[^/]+\/ledger$/)) {
               mockResponse = MOCK_DATA['/transactions'] // Reuse transactions mock for ledger
+          }
+          // Check for /transactions/:id
+          else if (cleanEndpoint.match(/^\/transactions\/[^\/]+$/)) {
+              mockResponse = MOCK_DATA['/transactions'].data[0]
           }
       }
 

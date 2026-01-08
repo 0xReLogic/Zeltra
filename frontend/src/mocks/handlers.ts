@@ -45,9 +45,48 @@ export const handlers = [
             { account_code: '5200', account_name: 'Office Supplies', debit: '150.0000', credit: '0.0000' },
             { account_code: '1100', account_name: 'Cash', debit: '0.0000', credit: '150.0000' },
           ]
+        },
+        {
+          id: 'txn_002',
+          reference_number: 'TXN-2026-0002',
+          transaction_type: 'revenue',
+          transaction_date: '2026-01-16',
+          description: 'Project Alpha Payment',
+          status: 'approved',
+          entries: [
+            { account_code: '1200', account_name: 'Bank BCA', debit: '5000.0000', credit: '0.0000' },
+            { account_code: '4100', account_name: 'Service Revenue', debit: '0.0000', credit: '5000.0000' },
+          ]
+        },
+        {
+          id: 'txn_003',
+          reference_number: 'TXN-2026-0003',
+          transaction_type: 'journal',
+          transaction_date: '2026-01-17',
+          description: 'Accrued Rent Expense',
+          status: 'pending',
+          entries: [
+            { account_code: '5300', account_name: 'Rent Expense', debit: '2500.0000', credit: '0.0000' },
+            { account_code: '2100', account_name: 'Accrued Expenses', debit: '0.0000', credit: '2500.0000' },
+          ]
         }
       ],
-      pagination: { page: 1, limit: 50, total: 1 }
+      pagination: { page: 1, limit: 50, total: 3 }
+    })
+  }),
+
+  // Transaction Actions
+  http.post('/api/v1/transactions/:id/approve', ({ params }) => {
+    return HttpResponse.json({
+       id: params.id,
+       status: 'posted'
+    })
+  }),
+
+  http.post('/api/v1/transactions/:id/reject', ({ params }) => {
+    return HttpResponse.json({
+       id: params.id,
+       status: 'voided'
     })
   }),
 

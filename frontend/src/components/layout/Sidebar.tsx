@@ -10,13 +10,15 @@ import {
   ArrowRightLeft, 
   Settings, 
   LifeBuoy,
-  Briefcase
+  Briefcase,
+  CheckSquare
 } from 'lucide-react'
 
 const navItems = [
   { label: 'Overview', href: '/dashboard', icon: LayoutDashboard },
   { label: 'Accounts', href: '/dashboard/accounts', icon: Wallet },
   { label: 'Transactions', href: '/dashboard/transactions', icon: ArrowRightLeft },
+  { label: 'Approvals', href: '/dashboard/approvals', icon: CheckSquare },
   { label: 'Master Data', href: '/dashboard/master-data', icon: Briefcase },
   { label: 'Settings', href: '/dashboard/settings', icon: Settings },
 ]

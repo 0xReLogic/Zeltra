@@ -5,6 +5,15 @@ import { useParams } from 'next/navigation'
 import { format } from 'date-fns'
 import { ArrowLeft, Loader2, ArrowUpRight, ArrowDownLeft } from 'lucide-react'
 import Link from 'next/link'
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts'
 
 import { useAccount } from '@/lib/queries/accounts'
 import { useLedger } from '@/lib/queries/ledger'
@@ -20,7 +29,14 @@ import {
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 
-
+// Mock chart data (since backend doesn't provide history yet)
+const MOCK_CHART_DATA = [
+  { date: 'Jan', balance: 120000 },
+  { date: 'Feb', balance: 135000 },
+  { date: 'Mar', balance: 125000 },
+  { date: 'Apr', balance: 140000 },
+  { date: 'May', balance: 150000 },
+]
 
 export default function AccountDetailsPage() {
   const params = useParams()
@@ -81,11 +97,43 @@ export default function AccountDetailsPage() {
              <CardTitle>Balance History</CardTitle>
              <CardDescription>6 Month trend</CardDescription>
         </CardHeader>
-        <CardContent className="h-[300px] flex items-center justify-center bg-muted/20">
-             <div className="text-center text-muted-foreground">
-                <p>Chart visualization pending</p>
-                <p className="text-xs">(Recharts library installation failed, fix pending)</p>
-             </div>
+        <CardContent className="h-[300px]">
+             <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={MOCK_CHART_DATA}>
+                    <defs>
+                        <linearGradient id="colorBalance" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#2563eb" stopOpacity={0.1}/>
+                        <stop offset="95%" stopColor="#2563eb" stopOpacity={0}/>
+                        </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis 
+                        dataKey="date" 
+                        tickLine={false} 
+                        axisLine={false} 
+                        tickMargin={8} 
+                        style={{ fontSize: 12 }}
+                    />
+                    <YAxis 
+                         tickLine={false} 
+                         axisLine={false} 
+                         tickFormatter={(value) => `$${value/1000}k`}
+                         style={{ fontSize: 12 }}
+                    />
+                    <Tooltip 
+                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                        formatter={(value) => [`$${(value as number)?.toLocaleString() ?? 0}`, 'Balance']}
+                    />
+                    <Area 
+                        type="monotone" 
+                        dataKey="balance" 
+                        stroke="#2563eb" 
+                        strokeWidth={2}
+                        fillOpacity={1} 
+                        fill="url(#colorBalance)" 
+                    />
+                </AreaChart>
+             </ResponsiveContainer>
         </CardContent>
       </Card>
 

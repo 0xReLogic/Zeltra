@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CreateTransactionDialog } from '@/components/transactions/CreateTransactionDialog'
 import { Loader2 } from 'lucide-react'
+import Link from 'next/link'
 
 export default function TransactionsPage() {
   const { data, isLoading, isError } = useTransactions()
@@ -79,7 +80,8 @@ export default function TransactionsPage() {
                 )
 
                 return (
-                  <TableRow key={txn.id} className="cursor-pointer hover:bg-muted/50">
+                  <Link href={`/dashboard/transactions/${txn.id}`} key={txn.id} className="contents">
+                  <TableRow className="cursor-pointer hover:bg-muted/50">
                     <TableCell className="font-medium">
                       {txn.transaction_date}
                     </TableCell>
@@ -104,6 +106,7 @@ export default function TransactionsPage() {
                         })}
                     </TableCell>
                   </TableRow>
+                  </Link>
                 )
               })}
             </TableBody>

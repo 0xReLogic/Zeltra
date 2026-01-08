@@ -82,7 +82,7 @@ No frontend work until Phase 6. Backend must be battle-tested first.
 - [x] Execute complete DDL schema
 - [x] Verify all constraints and triggers work correctly
 - [x] Test RLS policies manually
-- [ ] Setup SeaORM entity generation from schema
+- [x] Setup SeaORM entity generation from schema
 - [x] Create migration system (sea-orm-cli)
 
 ### Seeders (CRITICAL for Testing)
@@ -588,14 +588,14 @@ NOW we start frontend, because backend is solid.
 
 - [x] Transaction list with filters
 - [x] Transaction entry form
-- [ ] Approval queue
-- [ ] Transaction detail
+- [x] Approval queue
+- [x] Transaction detail
 
 ### Dashboard
 
 - [x] Key metrics
 - [ ] Budget vs actual
-- [ ] Charts (Recharts)
+- [x] Charts (Recharts)
 
 ### Reports UI
 
