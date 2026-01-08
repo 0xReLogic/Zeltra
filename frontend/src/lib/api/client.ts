@@ -15,6 +15,7 @@ export const queryClient = new QueryClient({
 import { useAuthStore } from '../stores/authStore'
 
 // Fallback Mock Data (in case MSW SW fails on non-secure context)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const MOCK_DATA: Record<string, any> = {
   '/auth/login': {
     user: { 

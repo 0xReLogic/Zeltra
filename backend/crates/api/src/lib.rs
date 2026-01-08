@@ -26,7 +26,6 @@ pub struct AppState {
 }
 
 /// Creates the main application router.
-#[must_use]
 pub fn create_router(state: AppState) -> Router {
     Router::new()
         .nest("/api/v1", routes::api_routes())

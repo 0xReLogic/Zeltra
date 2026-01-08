@@ -71,7 +71,7 @@ fn default_access_token_expiry() -> u64 {
 }
 
 fn default_refresh_token_expiry() -> u64 {
-    604800 // 7 days
+    604_800 // 7 days
 }
 
 impl AppConfig {

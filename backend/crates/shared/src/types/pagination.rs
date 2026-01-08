@@ -70,10 +70,15 @@ impl<T> PageResponse<T> {
     /// Creates a new paginated response.
     #[must_use]
     pub fn new(data: Vec<T>, page: u32, per_page: u32, total: u64) -> Self {
-        let total_pages = if total == 0 {
+        let total_pages = if total == 0 || per_page == 0 {
             1
         } else {
-            ((total as f64) / (per_page as f64)).ceil() as u32
+            let per_page_u64 = u64::from(per_page);
+            let pages = total.div_ceil(per_page_u64);
+            // Safe truncation: we clamp to u32::MAX first
+            #[allow(clippy::cast_possible_truncation)]
+            let result = pages.min(u64::from(u32::MAX)) as u32;
+            result
         };
 
         Self {

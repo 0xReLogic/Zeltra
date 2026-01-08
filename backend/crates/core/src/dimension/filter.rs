@@ -20,6 +20,7 @@ impl DimensionFilter {
     }
 
     /// Adds a dimension value to the filter.
+    #[must_use]
     pub fn with_value(mut self, value_id: DimensionValueId) -> Self {
         self.dimension_values.push(value_id);
         self
