@@ -1,24 +1,30 @@
 //! API route definitions.
 
-use axum::Router;
+use axum::{middleware, Router};
 
-use crate::AppState;
+use crate::{middleware::auth::auth_middleware, AppState};
 
+pub mod auth;
 pub mod health;
-
-// Route modules will be added as they are implemented
-// pub mod auth;
-// pub mod accounts;
-// pub mod transactions;
-// pub mod budgets;
-// pub mod reports;
-// pub mod simulation;
+pub mod organizations;
 
 /// Creates the API router with all routes.
 pub fn api_routes() -> Router<AppState> {
-    Router::new().merge(health::routes())
-    // Add more routes as they are implemented
-    // .merge(auth::routes())
-    // .merge(accounts::routes())
-    // .merge(transactions::routes())
+    Router::new()
+        .merge(health::routes())
+        .merge(auth::routes())
+}
+
+/// Creates the API router with protected routes that need state for middleware.
+pub fn api_routes_with_state(state: AppState) -> Router<AppState> {
+    // Protected routes that require authentication
+    let protected_routes = Router::new()
+        .merge(organizations::routes())
+        .layer(middleware::from_fn_with_state(state.clone(), auth_middleware));
+
+    // Combine public and protected routes
+    Router::new()
+        .merge(health::routes())
+        .merge(auth::routes())
+        .merge(protected_routes)
 }

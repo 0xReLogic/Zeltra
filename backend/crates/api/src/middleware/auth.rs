@@ -1,8 +1,8 @@
 //! Authentication middleware for protected routes.
 
 use axum::{
-    extract::{Request, State},
-    http::{header::AUTHORIZATION, StatusCode},
+    extract::{FromRequestParts, Request, State},
+    http::{header::AUTHORIZATION, request::Parts, StatusCode},
     middleware::Next,
     response::{IntoResponse, Response},
     Json,
@@ -113,17 +113,13 @@ impl AuthUser {
     }
 }
 
-#[axum::async_trait]
-impl<S> axum::extract::FromRequestParts<S> for AuthUser
+impl<S> FromRequestParts<S> for AuthUser
 where
     S: Send + Sync,
 {
     type Rejection = (StatusCode, Json<serde_json::Value>);
 
-    async fn from_request_parts(
-        parts: &mut axum::http::request::Parts,
-        _state: &S,
-    ) -> Result<Self, Self::Rejection> {
+    async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
         parts
             .extensions
             .get::<Claims>()

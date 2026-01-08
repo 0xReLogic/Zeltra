@@ -29,7 +29,7 @@ pub struct AppState {
 /// Creates the main application router.
 pub fn create_router(state: AppState) -> Router {
     Router::new()
-        .nest("/api/v1", routes::api_routes())
+        .nest("/api/v1", routes::api_routes_with_state(state.clone()))
         .layer(TraceLayer::new_for_http())
         .layer(
             CorsLayer::new()

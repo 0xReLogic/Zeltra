@@ -2,9 +2,10 @@
 
 use rust_decimal::Decimal;
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DatabaseConnection, DbErr, EntityTrait, QueryFilter, Set,
-    TransactionTrait,
+    ActiveModelTrait, ColumnTrait, DatabaseConnection, DbErr, EntityTrait, PaginatorTrait,
+    QueryFilter, Set, TransactionTrait,
 };
+use serde_json::json;
 use uuid::Uuid;
 
 use crate::entities::{
@@ -86,9 +87,9 @@ impl OrganizationRepository {
             slug: Set(slug.to_string()),
             base_currency: Set(base_currency.to_string()),
             timezone: Set(timezone.to_string()),
-            settings: Set(serde_json::json!({})),
+            settings: Set(json!({})),
             is_active: Set(true),
-            subscription_tier: Set(SubscriptionTier::Free),
+            subscription_tier: Set(SubscriptionTier::Starter),
             subscription_status: Set(SubscriptionStatus::Trialing),
             trial_ends_at: Set(Some((chrono::Utc::now() + chrono::Duration::days(14)).into())),
             subscription_ends_at: Set(None),
@@ -222,6 +223,7 @@ const fn role_level(role: &UserRole) -> u8 {
         UserRole::Admin => 80,
         UserRole::Approver => 60,
         UserRole::Accountant => 40,
+        UserRole::Submitter => 30,
         UserRole::Viewer => 20,
     }
 }

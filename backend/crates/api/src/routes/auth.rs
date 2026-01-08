@@ -11,7 +11,7 @@ use serde_json::json;
 use tracing::{error, info};
 
 use crate::AppState;
-use zeltra_core::auth::password;
+use zeltra_core::auth::{hash_password, verify_password};
 use zeltra_db::{entities::sea_orm_active_enums::UserRole, UserRepository};
 use zeltra_shared::auth::{
     LoginRequest, LoginResponse, RefreshRequest, RegisterRequest, UserInfo, UserOrganization,
@@ -72,16 +72,30 @@ async fn login(
     }
 
     // Verify password
-    if !password::verify(&payload.password, &user.password_hash) {
-        info!(user_id = %user.id, "Failed login attempt - invalid password");
-        return (
-            StatusCode::UNAUTHORIZED,
-            Json(json!({
-                "error": "invalid_credentials",
-                "message": "Invalid email or password"
-            })),
-        )
-            .into_response();
+    match verify_password(&payload.password, &user.password_hash) {
+        Ok(true) => {}
+        Ok(false) => {
+            info!(user_id = %user.id, "Failed login attempt - invalid password");
+            return (
+                StatusCode::UNAUTHORIZED,
+                Json(json!({
+                    "error": "invalid_credentials",
+                    "message": "Invalid email or password"
+                })),
+            )
+                .into_response();
+        }
+        Err(e) => {
+            error!(error = %e, "Password verification error");
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": "internal_error",
+                    "message": "An error occurred during login"
+                })),
+            )
+                .into_response();
+        }
     }
 
     // Get user's organizations
@@ -217,7 +231,7 @@ async fn register(
     }
 
     // Hash password
-    let password_hash = match password::hash(&payload.password) {
+    let password_hash = match hash_password(&payload.password) {
         Ok(h) => h,
         Err(e) => {
             error!(error = %e, "Failed to hash password");
@@ -327,5 +341,6 @@ fn role_to_string(role: &UserRole) -> String {
         UserRole::Approver => "approver".to_string(),
         UserRole::Accountant => "accountant".to_string(),
         UserRole::Viewer => "viewer".to_string(),
+        UserRole::Submitter => "submitter".to_string(),
     }
 }
