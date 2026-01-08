@@ -14,6 +14,9 @@ pub mod error;
 pub mod jwt;
 pub mod types;
 
+#[cfg(test)]
+mod jwt_tests;
+
 pub use auth::{Claims, TokenPair};
 pub use config::AppConfig;
 pub use error::{AppError, AppResult};
