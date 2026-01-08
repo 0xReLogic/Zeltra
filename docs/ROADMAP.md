@@ -73,7 +73,7 @@ No frontend work until Phase 6. Backend must be battle-tested first.
 
 - [x] Setup Rust workspace structure
 - [x] Docker Compose for local development (Postgres 16)
-- [ ] CI/CD pipeline (GitHub Actions) - Rust tests only
+- [x] CI/CD pipeline (GitHub Actions) - Rust tests only
 - [ ] Heroku Postgres database setup (dev)
 - [ ] Database backup strategy
 
