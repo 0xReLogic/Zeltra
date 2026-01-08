@@ -11,7 +11,7 @@ pub struct ExchangeRate {
     pub from_currency: String,
     /// Target currency code.
     pub to_currency: String,
-    /// Exchange rate (1 from_currency = rate to_currency).
+    /// Exchange rate (1 `from_currency` = rate `to_currency`).
     pub rate: Decimal,
     /// Date this rate is effective.
     pub effective_date: NaiveDate,

@@ -88,10 +88,10 @@ No frontend work until Phase 6. Backend must be battle-tested first.
 ### Seeders (CRITICAL for Testing)
 
 - [x] Seed `currencies` table (USD, EUR, GBP, JPY, IDR, SGD, etc.)
-- [ ] Seed `exchange_rates` with mock data (USD base rates for 30 days)
-- [ ] Seed `dimension_types` (DEPARTMENT, PROJECT, COST_CENTER)
-- [ ] Seed `dimension_values` (sample departments, projects)
-- [ ] Create seeder CLI command: `cargo run --bin seeder`
+- [x] Seed `exchange_rates` with mock data (USD base rates for 30 days)
+- [x] Seed `dimension_types` (DEPARTMENT, PROJECT, COST_CENTER)
+- [x] Seed `dimension_values` (sample departments, projects)
+- [x] Create seeder CLI command: `cargo run --bin seeder`
 
 ### Project Skeleton
 
@@ -594,12 +594,12 @@ NOW we start frontend, because backend is solid.
 ### Dashboard
 
 - [x] Key metrics
-- [ ] Budget vs actual
+- [x] Budget vs actual
 - [x] Charts (Recharts)
 
 ### Reports UI
 
-- [ ] Report viewer
+- [x] Report viewer
 - [ ] Export functionality
 
 **Deliverable:** Complete frontend application.

@@ -1,7 +1,7 @@
-//! Database layer with SeaORM entities and repositories.
+//! Database layer with `SeaORM` entities and repositories.
 //!
 //! This crate provides:
-//! - SeaORM entity definitions
+//! - `SeaORM` entity definitions
 //! - Repository abstractions for data access
 //! - Database migrations
 

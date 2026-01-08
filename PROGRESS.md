@@ -6,11 +6,11 @@ Live status untuk sync antara Backend & Frontend.
 
 ## Current State
 
-|                    | Backend                 | Frontend                                |
-| ------------------ | ----------------------- | --------------------------------------- |
-| **Current Phase**  | 0                       | 1 (Done)                                |
-| **Last Task Done** | Database migrations     | Phase 7: Approval Queue & Txn Detail ✅ |
-| **Next Task**      | Integration tests setup | Report Viewer & Budget vs Actual        |
+|                    | Backend                 | Frontend                                     |
+| ------------------ | ----------------------- | -------------------------------------------- |
+| **Current Phase**  | 0                       | 1 (Done)                                     |
+| **Last Task Done** | Seeder CLI complete     | Phase 7: Budget Dashboard, Approval, Txns ✅ |
+| **Next Task**      | Integration tests setup | Report Viewer (Trial Balance, P&L)           |
 
 **Last Updated:** 2026-01-08
 
@@ -59,6 +59,8 @@ Live status untuk sync antara Backend & Frontend.
 | Docker compose            | ✅     | PostgreSQL 16                               |
 | Config files              | ✅     | default.toml, development.toml              |
 | Database migrations       | ✅     | All tables, views, triggers, RLS, seed data |
+| SeaORM entity generation  | ✅     | 21 entities generated from schema           |
+| Seeder CLI                | ✅     | Exchange rates, dimensions seeded           |
 | Integration tests setup   | ⬜     |                                             |
 
 ---
@@ -127,13 +129,13 @@ Frontend cek di sini untuk tau endpoint mana yang udah ready.
 
 ### Reports
 
-| Endpoint                      | Status | Notes |
-| ----------------------------- | ------ | ----- |
-| GET /reports/trial-balance    | ⬜     |       |
-| GET /reports/balance-sheet    | ⬜     |       |
-| GET /reports/income-statement | ⬜     |       |
-| GET /reports/dimensional      | ⬜     |       |
-| GET /budgets/:id/vs-actual    | ⬜     |       |
+| Endpoint                      | Status | Notes  |
+| ----------------------------- | ------ | ------ |
+| GET /reports/trial-balance    | ⬜     |        |
+| GET /reports/balance-sheet    | ⬜     |        |
+| GET /reports/income-statement | ⬜     |        |
+| GET /reports/dimensional      | ⬜     |        |
+| GET /budgets/:id/vs-actual    | ✅     | Mocked |
 
 ### Dashboard
 

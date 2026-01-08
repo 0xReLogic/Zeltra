@@ -1,7 +1,7 @@
 //! Initial database migration.
 //!
 //! Creates all core tables, enums, triggers, functions, views, and RLS policies
-//! as defined in docs/DATABASE_SCHEMA.md.
+//! as defined in `docs/DATABASE_SCHEMA.md`.
 
 use sea_orm_migration::prelude::*;
 
@@ -113,7 +113,7 @@ impl MigrationTrait for Migration {
 // SQL CONSTANTS
 // ============================================================
 
-const ENUMS_SQL: &str = r#"
+const ENUMS_SQL: &str = r"
 -- User roles
 CREATE TYPE user_role AS ENUM (
     'owner',
@@ -242,9 +242,9 @@ CREATE TYPE subscription_status AS ENUM (
     'cancelled',
     'expired'
 );
-"#;
+";
 
-const USERS_SQL: &str = r#"
+const USERS_SQL: &str = r"
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     email VARCHAR(255) NOT NULL UNIQUE,
@@ -257,9 +257,9 @@ CREATE TABLE users (
 );
 
 CREATE INDEX idx_users_email ON users(email) WHERE is_active = true;
-"#;
+";
 
-const ORGANIZATIONS_SQL: &str = r#"
+const ORGANIZATIONS_SQL: &str = r"
 CREATE TABLE organizations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(255) NOT NULL,
@@ -290,9 +290,9 @@ CREATE INDEX idx_organizations_slug ON organizations(slug);
 CREATE INDEX idx_organizations_subscription_status ON organizations(subscription_status);
 CREATE INDEX idx_organizations_payment_customer ON organizations(payment_provider, payment_customer_id) 
     WHERE payment_customer_id IS NOT NULL;
-"#;
+";
 
-const ORGANIZATION_USERS_SQL: &str = r#"
+const ORGANIZATION_USERS_SQL: &str = r"
 CREATE TABLE organization_users (
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
@@ -304,9 +304,9 @@ CREATE TABLE organization_users (
 );
 
 CREATE INDEX idx_org_users_org ON organization_users(organization_id);
-"#;
+";
 
-const CURRENCIES_SQL: &str = r#"
+const CURRENCIES_SQL: &str = r"
 CREATE TABLE currencies (
     code CHAR(3) PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
@@ -316,9 +316,9 @@ CREATE TABLE currencies (
     CONSTRAINT chk_currency_code CHECK (code ~ '^[A-Z]{3}$'),
     CONSTRAINT chk_decimal_places CHECK (decimal_places BETWEEN 0 AND 4)
 );
-"#;
+";
 
-const EXCHANGE_RATES_SQL: &str = r#"
+const EXCHANGE_RATES_SQL: &str = r"
 CREATE TABLE exchange_rates (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
@@ -336,9 +336,9 @@ CREATE TABLE exchange_rates (
 );
 
 CREATE INDEX idx_exchange_rates_lookup ON exchange_rates(organization_id, from_currency, to_currency, effective_date DESC);
-"#;
+";
 
-const FISCAL_YEARS_SQL: &str = r#"
+const FISCAL_YEARS_SQL: &str = r"
 CREATE TABLE fiscal_years (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
@@ -356,9 +356,9 @@ CREATE TABLE fiscal_years (
 );
 
 CREATE INDEX idx_fiscal_years_org ON fiscal_years(organization_id, start_date);
-"#;
+";
 
-const FISCAL_PERIODS_SQL: &str = r#"
+const FISCAL_PERIODS_SQL: &str = r"
 CREATE TABLE fiscal_periods (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
@@ -381,9 +381,9 @@ CREATE TABLE fiscal_periods (
 
 CREATE INDEX idx_fiscal_periods_org_date ON fiscal_periods(organization_id, start_date, end_date);
 CREATE INDEX idx_fiscal_periods_status ON fiscal_periods(organization_id, status) WHERE status <> 'CLOSED';
-"#;
+";
 
-const DIMENSION_TYPES_SQL: &str = r#"
+const DIMENSION_TYPES_SQL: &str = r"
 CREATE TABLE dimension_types (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
@@ -399,9 +399,9 @@ CREATE TABLE dimension_types (
 );
 
 CREATE INDEX idx_dimension_types_org ON dimension_types(organization_id) WHERE is_active = true;
-"#;
+";
 
-const DIMENSION_VALUES_SQL: &str = r#"
+const DIMENSION_VALUES_SQL: &str = r"
 CREATE TABLE dimension_values (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
@@ -421,9 +421,9 @@ CREATE TABLE dimension_values (
 
 CREATE INDEX idx_dimension_values_type ON dimension_values(dimension_type_id) WHERE is_active = true;
 CREATE INDEX idx_dimension_values_parent ON dimension_values(parent_id) WHERE parent_id IS NOT NULL;
-"#;
+";
 
-const CHART_OF_ACCOUNTS_SQL: &str = r#"
+const CHART_OF_ACCOUNTS_SQL: &str = r"
 CREATE TABLE chart_of_accounts (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
@@ -447,9 +447,9 @@ CREATE TABLE chart_of_accounts (
 CREATE INDEX idx_coa_org ON chart_of_accounts(organization_id) WHERE is_active = true;
 CREATE INDEX idx_coa_type ON chart_of_accounts(organization_id, account_type);
 CREATE INDEX idx_coa_parent ON chart_of_accounts(parent_id) WHERE parent_id IS NOT NULL;
-"#;
+";
 
-const TRANSACTIONS_SQL: &str = r#"
+const TRANSACTIONS_SQL: &str = r"
 CREATE TABLE transactions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
@@ -483,9 +483,9 @@ CREATE INDEX idx_txn_org_status ON transactions(organization_id, status);
 CREATE INDEX idx_txn_fiscal_period ON transactions(fiscal_period_id);
 CREATE INDEX idx_txn_created_by ON transactions(created_by);
 CREATE INDEX idx_txn_pending_approval ON transactions(organization_id, created_at) WHERE status = 'pending';
-"#;
+";
 
-const LEDGER_ENTRIES_SQL: &str = r#"
+const LEDGER_ENTRIES_SQL: &str = r"
 CREATE TABLE ledger_entries (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     transaction_id UUID NOT NULL REFERENCES transactions(id) ON DELETE CASCADE,
@@ -516,9 +516,9 @@ CREATE INDEX idx_le_transaction ON ledger_entries(transaction_id);
 CREATE INDEX idx_le_account ON ledger_entries(account_id);
 CREATE INDEX idx_le_account_version ON ledger_entries(account_id, account_version);
 CREATE INDEX idx_le_event_at ON ledger_entries(account_id, event_at);
-"#;
+";
 
-const ENTRY_DIMENSIONS_SQL: &str = r#"
+const ENTRY_DIMENSIONS_SQL: &str = r"
 CREATE TABLE entry_dimensions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     ledger_entry_id UUID NOT NULL REFERENCES ledger_entries(id) ON DELETE CASCADE,
@@ -529,9 +529,9 @@ CREATE TABLE entry_dimensions (
 
 CREATE INDEX idx_entry_dimensions_entry ON entry_dimensions(ledger_entry_id);
 CREATE INDEX idx_entry_dimensions_value ON entry_dimensions(dimension_value_id);
-"#;
+";
 
-const BUDGETS_SQL: &str = r#"
+const BUDGETS_SQL: &str = r"
 CREATE TABLE budgets (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
@@ -549,9 +549,9 @@ CREATE TABLE budgets (
 );
 
 CREATE INDEX idx_budgets_org_year ON budgets(organization_id, fiscal_year_id);
-"#;
+";
 
-const BUDGET_LINES_SQL: &str = r#"
+const BUDGET_LINES_SQL: &str = r"
 CREATE TABLE budget_lines (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     budget_id UUID NOT NULL REFERENCES budgets(id) ON DELETE CASCADE,
@@ -567,9 +567,9 @@ CREATE TABLE budget_lines (
 CREATE INDEX idx_budget_lines_budget ON budget_lines(budget_id);
 CREATE INDEX idx_budget_lines_account ON budget_lines(account_id);
 CREATE INDEX idx_budget_lines_period ON budget_lines(fiscal_period_id);
-"#;
+";
 
-const BUDGET_LINE_DIMENSIONS_SQL: &str = r#"
+const BUDGET_LINE_DIMENSIONS_SQL: &str = r"
 CREATE TABLE budget_line_dimensions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     budget_line_id UUID NOT NULL REFERENCES budget_lines(id) ON DELETE CASCADE,
@@ -579,9 +579,9 @@ CREATE TABLE budget_line_dimensions (
 );
 
 CREATE INDEX idx_budget_line_dims_line ON budget_line_dimensions(budget_line_id);
-"#;
+";
 
-const ATTACHMENTS_SQL: &str = r#"
+const ATTACHMENTS_SQL: &str = r"
 CREATE TABLE attachments (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
@@ -604,9 +604,9 @@ CREATE TABLE attachments (
 
 CREATE INDEX idx_attachments_transaction ON attachments(transaction_id) WHERE transaction_id IS NOT NULL;
 CREATE INDEX idx_attachments_org ON attachments(organization_id);
-"#;
+";
 
-const APPROVAL_RULES_SQL: &str = r#"
+const APPROVAL_RULES_SQL: &str = r"
 CREATE TABLE approval_rules (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
@@ -624,9 +624,9 @@ CREATE TABLE approval_rules (
 );
 
 CREATE INDEX idx_approval_rules_org ON approval_rules(organization_id) WHERE is_active = true;
-"#;
+";
 
-const TIER_LIMITS_SQL: &str = r#"
+const TIER_LIMITS_SQL: &str = r"
 CREATE TABLE tier_limits (
     tier subscription_tier PRIMARY KEY,
     max_users INTEGER,
@@ -651,9 +651,9 @@ CREATE TABLE tier_limits (
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-"#;
+";
 
-const ORGANIZATION_USAGE_SQL: &str = r#"
+const ORGANIZATION_USAGE_SQL: &str = r"
 CREATE TABLE organization_usage (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
@@ -670,9 +670,9 @@ CREATE TABLE organization_usage (
 );
 
 CREATE INDEX idx_org_usage_org_month ON organization_usage(organization_id, year_month DESC);
-"#;
+";
 
-const TRIGGERS_SQL: &str = r#"
+const TRIGGERS_SQL: &str = r"
 -- ============================================================
 -- FUNCTION: check_transaction_balance
 -- Ensures double-entry balance (debit = credit) for posted transactions
@@ -990,9 +990,9 @@ BEGIN
     RETURN COALESCE(result, false);
 END;
 $$ LANGUAGE plpgsql STABLE;
-"#;
+";
 
-const VIEWS_SQL: &str = r#"
+const VIEWS_SQL: &str = r"
 -- ============================================================
 -- VIEW: account_balances_view
 -- Current balance for each account
@@ -1116,9 +1116,9 @@ LEFT JOIN entry_dimensions ed ON ed.ledger_entry_id = le.id
 LEFT JOIN dimension_values dv ON dv.id = ed.dimension_value_id
 LEFT JOIN dimension_types dt ON dt.id = dv.dimension_type_id
 WHERE t.status = 'posted';
-"#;
+";
 
-const RLS_SQL: &str = r#"
+const RLS_SQL: &str = r"
 -- ============================================================
 -- ROW-LEVEL SECURITY POLICIES
 -- Enable RLS on all tenant tables
@@ -1211,9 +1211,9 @@ CREATE POLICY tenant_isolation ON entry_dimensions
         JOIN transactions t ON t.id = le.transaction_id
         WHERE t.organization_id = current_setting('app.current_organization_id', true)::UUID
     ));
-"#;
+";
 
-const SEED_CURRENCIES_SQL: &str = r#"
+const SEED_CURRENCIES_SQL: &str = r"
 -- ============================================================
 -- SEED: Common currencies
 -- ============================================================
@@ -1249,7 +1249,7 @@ INSERT INTO currencies (code, name, symbol, decimal_places) VALUES
 ('NOK', 'Norwegian Krone', 'kr', 2),
 ('DKK', 'Danish Krone', 'kr', 2)
 ON CONFLICT (code) DO NOTHING;
-"#;
+";
 
 const SEED_TIER_LIMITS_SQL: &str = r#"
 -- ============================================================
@@ -1301,7 +1301,7 @@ INSERT INTO tier_limits (
 ON CONFLICT (tier) DO NOTHING;
 "#;
 
-const DROP_ALL_SQL: &str = r#"
+const DROP_ALL_SQL: &str = r"
 -- ============================================================
 -- DROP ALL: Rollback migration
 -- Order matters due to foreign key constraints
@@ -1367,4 +1367,4 @@ DROP TYPE IF EXISTS fiscal_period_status CASCADE;
 DROP TYPE IF EXISTS fiscal_year_status CASCADE;
 DROP TYPE IF EXISTS rate_source CASCADE;
 DROP TYPE IF EXISTS user_role CASCADE;
-"#;
+";

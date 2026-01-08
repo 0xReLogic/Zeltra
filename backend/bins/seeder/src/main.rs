@@ -11,8 +11,9 @@ use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, Set};
 use std::str::FromStr;
 use uuid::Uuid;
 use zeltra_db::entities::{
-    dimension_types, dimension_values, exchange_rates, organizations, users,
+    dimension_types, dimension_values, exchange_rates, organizations,
     sea_orm_active_enums::{RateSource, SubscriptionStatus, SubscriptionTier},
+    users,
 };
 
 /// Test organization ID (consistent for all seeds)
@@ -81,11 +82,10 @@ async fn seed_test_user(db: &DatabaseConnection) {
         email_verified_at: Set(Some(Utc::now().into())),
         created_at: Set(Utc::now().into()),
         updated_at: Set(Utc::now().into()),
-        ..Default::default()
     };
 
     if let Err(e) = user.insert(db).await {
-        eprintln!("Failed to insert test user: {}", e);
+        eprintln!("Failed to insert test user: {e}");
     } else {
         println!("  Created test user: test@zeltra.dev");
     }
@@ -111,22 +111,25 @@ async fn seed_test_organization(db: &DatabaseConnection) {
         slug: Set("test-org".to_string()),
         base_currency: Set("USD".to_string()),
         timezone: Set("UTC".to_string()),
+        settings: Set(serde_json::json!({})),
         subscription_tier: Set(SubscriptionTier::Enterprise),
         subscription_status: Set(SubscriptionStatus::Active),
         trial_ends_at: Set(None),
+        subscription_ends_at: Set(None),
+        payment_provider: Set(None),
+        payment_customer_id: Set(None),
+        payment_subscription_id: Set(None),
         is_active: Set(true),
         created_at: Set(Utc::now().into()),
         updated_at: Set(Utc::now().into()),
-        ..Default::default()
     };
 
     if let Err(e) = org.insert(db).await {
-        eprintln!("Failed to insert test organization: {}", e);
+        eprintln!("Failed to insert test organization: {e}");
     } else {
         println!("  Created test organization: Test Organization");
     }
 }
-
 
 /// Seeds 30 days of exchange rates with USD as base currency.
 async fn seed_exchange_rates(db: &DatabaseConnection) {
@@ -165,12 +168,14 @@ async fn seed_exchange_rates(db: &DatabaseConnection) {
 
         for (to_currency, base_rate) in &rates {
             // Add small daily variation (0.1% to simulate market movement)
-            let variation = 1.0
-                + (day_offset as f64
-                    * 0.001
-                    * if day_offset % 2 == 0 { 1.0 } else { -1.0 });
-            let rate_value = Decimal::from_str(base_rate).unwrap()
-                * Decimal::from_str(&format!("{variation:.6}")).unwrap();
+            // Using Decimal for all calculations to avoid float arithmetic
+            let variation_pct = if day_offset % 2 == 0 {
+                Decimal::from(day_offset) * Decimal::from_str("0.001").unwrap()
+            } else {
+                Decimal::from(day_offset) * Decimal::from_str("-0.001").unwrap()
+            };
+            let variation = Decimal::ONE + variation_pct;
+            let rate_value = Decimal::from_str(base_rate).unwrap() * variation;
 
             let exchange_rate = exchange_rates::ActiveModel {
                 id: Set(Uuid::new_v4()),
@@ -204,11 +209,31 @@ async fn seed_dimension_types(db: &DatabaseConnection) {
     let org_id = test_org_id();
 
     let dimension_types_data = [
-        ("DEPARTMENT", "Department", "Organizational departments for cost allocation", 1),
-        ("PROJECT", "Project", "Projects for tracking project-specific expenses", 2),
-        ("COST_CENTER", "Cost Center", "Cost centers for budget management", 3),
+        (
+            "DEPARTMENT",
+            "Department",
+            "Organizational departments for cost allocation",
+            1,
+        ),
+        (
+            "PROJECT",
+            "Project",
+            "Projects for tracking project-specific expenses",
+            2,
+        ),
+        (
+            "COST_CENTER",
+            "Cost Center",
+            "Cost centers for budget management",
+            3,
+        ),
         ("LOCATION", "Location", "Geographic locations or offices", 4),
-        ("PRODUCT", "Product", "Product lines for revenue/expense tracking", 5),
+        (
+            "PRODUCT",
+            "Product",
+            "Product lines for revenue/expense tracking",
+            5,
+        ),
     ];
 
     let mut inserted = 0;
@@ -239,6 +264,7 @@ async fn seed_dimension_types(db: &DatabaseConnection) {
 }
 
 /// Seeds sample dimension values for testing.
+#[allow(clippy::too_many_lines)]
 async fn seed_dimension_values(db: &DatabaseConnection) {
     use sea_orm::{ColumnTrait, QueryFilter};
 

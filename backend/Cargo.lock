@@ -4598,6 +4598,7 @@ dependencies = [
  "dotenvy",
  "rust_decimal",
  "sea-orm",
+ "serde_json",
  "tokio",
  "uuid",
  "zeltra-db",
