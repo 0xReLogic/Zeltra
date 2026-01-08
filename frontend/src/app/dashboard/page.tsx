@@ -98,7 +98,7 @@ export default function DashboardPage() {
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis dataKey="month" className="text-xs" />
                 <YAxis className="text-xs" tickFormatter={(value) => `$${value/1000}k`} />
-                <Tooltip formatter={(value: number | string) => `$${Number(value).toLocaleString()}`} />
+                <Tooltip formatter={(value: number | string | undefined) => `$${Number(value || 0).toLocaleString()}`} />
                 <Area type="monotone" dataKey="inflow" stackId="1" stroke="#34d399" fill="#34d399" fillOpacity={0.6} name="Inflow" />
                 <Area type="monotone" dataKey="outflow" stackId="2" stroke="#f87171" fill="#f87171" fillOpacity={0.6} name="Outflow" />
               </AreaChart>
@@ -116,7 +116,7 @@ export default function DashboardPage() {
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis type="number" domain={[0, 120]} tickFormatter={(value) => `${value}%`} className="text-xs" />
                 <YAxis type="category" dataKey="department" className="text-xs" width={80} />
-                <Tooltip formatter={(value: number | string) => `${value}%`} />
+                <Tooltip formatter={(value: number | string | undefined) => `${value || 0}%`} />
                 <Bar dataKey="utilization" name="Utilization">
                   {budgetUtilizationData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.utilization > 100 ? '#f87171' : '#34d399'} />
