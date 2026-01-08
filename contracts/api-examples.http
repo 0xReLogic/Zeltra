@@ -39,6 +39,22 @@ Content-Type: application/json
 POST {{baseUrl}}/auth/logout
 Authorization: Bearer {{accessToken}}
 
+### Verify Email
+POST {{baseUrl}}/auth/verify-email
+Content-Type: application/json
+
+{
+  "token": "verification-token-from-email"
+}
+
+### Resend Verification Email
+POST {{baseUrl}}/auth/resend-verification
+Content-Type: application/json
+
+{
+  "email": "test@example.com"
+}
+
 ### ============ ORGANIZATIONS ============
 
 ### List Organizations
@@ -183,5 +199,20 @@ X-Organization-ID: {{orgId}}
 
 ### Dashboard Metrics
 GET {{baseUrl}}/dashboard/metrics?period_id=period-uuid
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+
+### Recent Activity (All)
+GET {{baseUrl}}/dashboard/recent-activity?limit=10&type=all
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+
+### Recent Activity (Transactions Only)
+GET {{baseUrl}}/dashboard/recent-activity?limit=20&type=transaction
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+
+### Recent Activity (Budget Only)
+GET {{baseUrl}}/dashboard/recent-activity?limit=10&type=budget
 Authorization: Bearer {{accessToken}}
 X-Organization-ID: {{orgId}}
