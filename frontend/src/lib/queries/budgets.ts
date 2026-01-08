@@ -6,6 +6,7 @@ export interface BudgetLine {
   account_name: string
   limit: string
   actual: string
+  dimension_value_id?: string | null
 }
 
 export interface Budget {
@@ -14,6 +15,7 @@ export interface Budget {
   budget_limit: string
   actual_spent: string
   period: string
+  status?: 'open' | 'locked'
   lines?: BudgetLine[]
 }
 
@@ -30,6 +32,7 @@ export interface CreateBudgetRequest {
 export interface AddBudgetLineRequest {
   account_name: string
   limit: string
+  dimension_value_id?: string
 }
 
 export function useBudgets() {
@@ -71,6 +74,20 @@ export function useAddBudgetLine() {
       }),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['budgets', variables.budgetId] })
+    }
+  })
+}
+
+export function useUpdateBudgetStatus() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ budgetId, status }: { budgetId: string, status: 'locked' | 'open' }) => 
+      apiClient<{ id: string, status: string }>(`/budgets/${budgetId}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status })
+      }),
+    onSuccess: (_, variables) => {
+       queryClient.invalidateQueries({ queryKey: ['budgets', variables.budgetId] })
     }
   })
 }

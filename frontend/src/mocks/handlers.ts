@@ -51,6 +51,11 @@ const MOCK_TRANSACTIONS = [
   }
 ]
 
+// Keep track of statuses in memory for testing
+const budgetStatuses: Record<string, 'open' | 'locked'> = {
+    'bdg_002': 'locked' 
+}
+
 export const handlers = [
   // Auth
   http.post('/api/v1/auth/login', () => {
@@ -172,16 +177,22 @@ export const handlers = [
     })
   }),
 
+// Keep track of statuses in memory for testing
   http.get('/api/v1/budgets/:id', ({ params }) => {
+     const id = params.id as string
+     // Default to 'open' if not set in our memory store
+     const currentStatus = budgetStatuses[id] || 'open'
+     
      return HttpResponse.json({
-         id: params.id,
+         id: id,
          department: 'Engineering',
          period: '2026-01',
          budget_limit: '50000.0000',
          actual_spent: '35000.0000',
+         status: currentStatus,
          lines: [
-             { id: 'bl_1', account_name: 'Server Cost', limit: '30000.0000', actual: '25000.0000' },
-             { id: 'bl_2', account_name: 'Software Licenses', limit: '20000.0000', actual: '10000.0000' },
+             { id: 'bl_1', account_name: 'Server Cost', limit: '30000.0000', actual: '25000.0000', dimension_value_id: null },
+             { id: 'bl_2', account_name: 'Software Licenses', limit: '20000.0000', actual: '10000.0000', dimension_value_id: 'val_p1' }, 
          ]
      })
   }),
@@ -192,7 +203,23 @@ export const handlers = [
           id: `bl_${Date.now()}`,
           budget_id: params.id,
           actual: '0.0000',
+          dimension_value_id: body.dimension_value_id || null, 
           ...body
+      })
+  }),
+
+  http.patch('/api/v1/budgets/:id/status', async ({ request, params }) => {
+      const body = await request.json() as any
+      const id = params.id as string
+      
+      // Update our memory store
+      if (body.status === 'open' || body.status === 'locked') {
+        budgetStatuses[id] = body.status
+      }
+
+      return HttpResponse.json({
+          id: id,
+          status: body.status
       })
   }),
 

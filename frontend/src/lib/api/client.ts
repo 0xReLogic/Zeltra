@@ -182,29 +182,27 @@ const MOCK_DATA: Record<string, any> = {
           }
       ]
   },
-  '/dimensions': {
-      data: [
-          {
-              id: 'dim_dept',
-              code: 'DEPT',
-              name: 'Department',
-              values: [
-                  { id: 'val_eng', code: 'ENG', name: 'Engineering', description: 'Product and Tech team' },
-                  { id: 'val_mkt', code: 'MKT', name: 'Marketing', description: 'Growth and Brand' },
-                  { id: 'val_ops', code: 'OPS', name: 'Operations', description: 'General operations' },
-              ]
-          },
-          {
-              id: 'dim_proj',
-              code: 'PROJ',
-              name: 'Project',
-              values: [
-                  { id: 'val_p1', code: 'P001', name: 'Website Redesign' },
-                  { id: 'val_p2', code: 'P002', name: 'Q1 Campaign' },
-              ]
-          }
-      ]
-  },
+  '/dimensions': [
+      {
+          id: 'dim_dept',
+          code: 'DEPT',
+          name: 'Department',
+          values: [
+              { id: 'val_eng', code: 'ENG', name: 'Engineering', description: 'Product and Tech team' },
+              { id: 'val_mkt', code: 'MKT', name: 'Marketing', description: 'Growth and Brand' },
+              { id: 'val_ops', code: 'OPS', name: 'Operations', description: 'General operations' },
+          ]
+      },
+      {
+          id: 'dim_proj',
+          code: 'PROJ',
+          name: 'Project',
+          values: [
+              { id: 'val_p1', code: 'P001', name: 'Website Redesign' },
+              { id: 'val_p2', code: 'P002', name: 'Q1 Campaign' },
+          ]
+      }
+  ],
   '/exchange-rates': {
       data: [
           { id: 'er_1', from_currency: 'USD', to_currency: 'IDR', rate: '15500.00', date: '2026-01-01' },
