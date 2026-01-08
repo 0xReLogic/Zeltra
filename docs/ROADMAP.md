@@ -679,12 +679,12 @@ NOW we start frontend, because backend is solid.
   - [x] Running balance column (`account_current_balance`)
   - [x] Date range filter (Mocked)
   - [x] Mock: `GET /accounts/:id/ledger`
-- [ ] **Dimensional Reports UI** (MISSING - DB Ready)
-  - [ ] Filter by dimension type (Department/Project/Cost Center)
-  - [ ] Filter by dimension value
-  - [ ] Group expenses by dimension
-  - [ ] Compare across dimensions
-  - [ ] Mock: `GET /reports/dimensional`
+- [x] **Dimensional Reports UI** (MISSING - DB Ready)
+  - [x] Filter by dimension type (Department/Project/Cost Center)
+  - [x] Filter by dimension value (Department/Project/Cost Center)
+  - [x] Group expenses by dimension (Chart & Table)
+  - [x] Compare across dimensions
+  - [x] Mock: `GET /reports/dimensional`
 
 ### Advanced Features
 

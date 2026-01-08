@@ -220,6 +220,80 @@ export const handlers = [
       })
   }),
 
+   http.get('/api/v1/reports/dimensional', ({ request }) => {
+      const url = new URL(request.url)
+      const dimension = url.searchParams.get('dimension') || 'DEPT'
+      
+      let data: any[] = []
+      let summary = { global_revenue: '0', global_expense: '0', global_net: '0' }
+
+      if (dimension === 'PROJ') {
+         data = [
+             {
+                  id: 'val_p1',
+                  name: 'Website Redesign',
+                  revenue: '0.0000',
+                  expense: '25000.0000',
+                  net_profit: '-25000.0000',
+                  breakdown: [{ account: 'Dev Agency', amount: '20000.0000' }, { account: 'Assets', amount: '5000.0000' }]
+             },
+             {
+                  id: 'val_p2',
+                  name: 'Q1 Campaign',
+                  revenue: '80000.0000',
+                  expense: '30000.0000',
+                  net_profit: '50000.0000',
+                  breakdown: [{ account: 'Ads', amount: '25000.0000' }, { account: 'Creative', amount: '5000.0000' }]
+             }
+         ]
+         summary = { global_revenue: '80000.0000', global_expense: '55000.0000', global_net: '25000.0000' }
+      } else {
+         // Default DEPT
+         data = [
+              {
+                  id: 'val_eng',
+                  name: 'Engineering',
+                  revenue: '0.0000',
+                  expense: '45000.0000',
+                  net_profit: '-45000.0000',
+                  breakdown: [
+                     { account: 'Salaries', amount: '30000.0000' },
+                     { account: 'Server Costs', amount: '15000.0000' }
+                  ]
+              },
+              {
+                  id: 'val_mkt',
+                  name: 'Marketing',
+                  revenue: '0.0000',
+                  expense: '15000.0000',
+                  net_profit: '-15000.0000',
+                  breakdown: [
+                     { account: 'Ads', amount: '12000.0000' },
+                     { account: 'Events', amount: '3000.0000' }
+                  ]
+              },
+              {
+                  id: 'val_sales',
+                  name: 'Sales',
+                  revenue: '120000.0000',
+                  expense: '10000.0000',
+                  net_profit: '110000.0000',
+                   breakdown: [
+                     { account: 'Commissions', amount: '8000.0000' },
+                     { account: 'Travel', amount: '2000.0000' }
+                  ]
+              }
+         ]
+         summary = { global_revenue: '120000.0000', global_expense: '70000.0000', global_net: '50000.0000' }
+      }
+
+      return HttpResponse.json({
+          dimension: dimension,
+          data: data,
+          summary: summary
+      })
+  }),
+
   // Fiscal
   http.get('/api/v1/fiscal-years', () => {
       // ... existing GET handler logic ...

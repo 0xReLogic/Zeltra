@@ -12,6 +12,7 @@ export function ReportsNav() {
     { name: "Trial Balance", href: "/dashboard/reports/trial-balance" },
     { name: "Income Statement", href: "/dashboard/reports/income-statement" },
     { name: "Balance Sheet", href: "/dashboard/reports/balance-sheet" },
+    { name: "Dimensional", href: "/dashboard/reports/dimensional" },
   ]
 
   return (

@@ -16,11 +16,55 @@ export interface TrialBalanceResponse {
   total_credit: string
 }
 
+export interface ReportData {
+  data: any
+  summary?: any
+}
+
+export interface DimensionalReportData {
+  dimension: string
+  data: Array<{
+      id: string
+      name: string
+      revenue: string
+      expense: string
+      net_profit: string
+      breakdown: Array<{ account: string, amount: string }>
+  }>
+  summary: {
+      global_revenue: string
+      global_expense: string
+      global_net: string
+  }
+}
+
+export interface DimensionalReportParams {
+  startDate: string
+  endDate: string
+  dimension: string
+  values?: string[]
+}
+
 export function useTrialBalance() {
   return useQuery({
     queryKey: ['reports', 'trial-balance'],
     queryFn: () => apiClient<TrialBalanceResponse>('/reports/trial-balance'),
   })
+}
+
+export function useDimensionalReport(params: DimensionalReportParams) {
+    return useQuery({
+        queryKey: ['reports', 'dimensional', params],
+        queryFn: () => {
+            const searchParams = new URLSearchParams({
+                start_date: params.startDate,
+                end_date: params.endDate,
+                dimension: params.dimension
+            })
+            // Handle array of values logic if needed, for mock simplistic passing
+            return apiClient<DimensionalReportData>(`/reports/dimensional?${searchParams.toString()}`)
+        }
+    })
 }
 
 export interface IncomeStatementItem {
