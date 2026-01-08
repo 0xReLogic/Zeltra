@@ -11,7 +11,9 @@ import {
   Settings, 
   LifeBuoy,
   Briefcase,
-  CheckSquare
+  CheckSquare,
+  PieChart,
+  FileText
 } from 'lucide-react'
 
 const navItems = [
@@ -19,6 +21,8 @@ const navItems = [
   { label: 'Accounts', href: '/dashboard/accounts', icon: Wallet },
   { label: 'Transactions', href: '/dashboard/transactions', icon: ArrowRightLeft },
   { label: 'Approvals', href: '/dashboard/approvals', icon: CheckSquare },
+  { label: 'Budgeting', href: '/dashboard/budgets', icon: PieChart },
+  { label: 'Reports', href: '/dashboard/reports/trial-balance', icon: FileText },
   { label: 'Master Data', href: '/dashboard/master-data', icon: Briefcase },
   { label: 'Settings', href: '/dashboard/settings', icon: Settings },
 ]

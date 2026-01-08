@@ -6,11 +6,11 @@ Live status untuk sync antara Backend & Frontend.
 
 ## Current State
 
-|                    | Backend                 | Frontend                                     |
-| ------------------ | ----------------------- | -------------------------------------------- |
-| **Current Phase**  | 0                       | 1 (Done)                                     |
-| **Last Task Done** | Seeder CLI complete     | Phase 7: Budget Dashboard, Approval, Txns ✅ |
-| **Next Task**      | Integration tests setup | Report Viewer (Trial Balance, P&L)           |
+|                    | Backend                 | Frontend                                  |
+| ------------------ | ----------------------- | ----------------------------------------- |
+| **Current Phase**  | 0                       | 1 (Done)                                  |
+| **Last Task Done** | Seeder CLI complete     | Phase 7: Master Data & Export Features ✅ |
+| **Next Task**      | Integration tests setup | Phase 8: Backend Development (Supabase)   |
 
 **Last Updated:** 2026-01-08
 
@@ -36,7 +36,7 @@ Live status untuk sync antara Backend & Frontend.
 | 4: Reports       | ⬜      | -        |                         |
 | 5: Polish        | ⬜      | -        |                         |
 | 6: FE Foundation | -       | ⬜       |                         |
-| 7: FE Features   | -       | ✅       | Accounts, Txns, Charts  |
+| 7: FE Features   | -       | ✅       | Accounts, Reports, MD   |
 | 8: Launch        | ⬜      | ⬜       |                         |
 
 ---
@@ -107,7 +107,7 @@ Frontend cek di sini untuk tau endpoint mana yang udah ready.
 | ------------------------------ | ------ | ------ |
 | GET /transactions              | ✅     | Mocked |
 | POST /transactions             | ✅     | Mocked |
-| GET /transactions/:id          | ⬜     |        |
+| GET /transactions/:id          | ✅     | Mocked |
 | POST /transactions/:id/submit  | ⬜     |        |
 | POST /transactions/:id/approve | ⬜     |        |
 | POST /transactions/:id/reject  | ⬜     |        |
@@ -116,24 +116,24 @@ Frontend cek di sini untuk tau endpoint mana yang udah ready.
 
 ### Master Data
 
-| Endpoint                         | Status | Notes |
-| -------------------------------- | ------ | ----- |
-| GET /fiscal-years                | ⬜     |       |
-| POST /fiscal-years               | ⬜     |       |
-| GET /fiscal-periods              | ⬜     |       |
-| PATCH /fiscal-periods/:id/status | ⬜     |       |
-| GET /dimension-types             | ⬜     |       |
-| GET /dimension-values            | ⬜     |       |
-| GET /exchange-rates              | ⬜     |       |
-| POST /exchange-rates             | ⬜     |       |
+| Endpoint                         | Status | Notes  |
+| -------------------------------- | ------ | ------ |
+| GET /fiscal-years                | ✅     | Mocked |
+| POST /fiscal-years               | ⬜     |        |
+| GET /fiscal-periods              | ✅     | Mocked |
+| PATCH /fiscal-periods/:id/status | ✅     | Mocked |
+| GET /dimension-types             | ✅     | Mocked |
+| GET /dimension-values            | ✅     | Mocked |
+| GET /exchange-rates              | ✅     | Mocked |
+| POST /exchange-rates             | ✅     | Mocked |
 
 ### Reports
 
 | Endpoint                      | Status | Notes  |
 | ----------------------------- | ------ | ------ |
-| GET /reports/trial-balance    | ⬜     |        |
-| GET /reports/balance-sheet    | ⬜     |        |
-| GET /reports/income-statement | ⬜     |        |
+| GET /reports/trial-balance    | ✅     | Mocked |
+| GET /reports/balance-sheet    | ✅     | Mocked |
+| GET /reports/income-statement | ✅     | Mocked |
 | GET /reports/dimensional      | ⬜     |        |
 | GET /budgets/:id/vs-actual    | ✅     | Mocked |
 

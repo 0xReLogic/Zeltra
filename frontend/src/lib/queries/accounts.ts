@@ -33,3 +33,34 @@ export function useAccount(id: string) {
     enabled: !!id,
   })
 }
+
+export type UpdateAccountRequest = Partial<CreateAccountRequest> & { id: string }
+
+export function useUpdateAccount() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, ...data }: UpdateAccountRequest) =>
+      apiClient<Account>(`/accounts/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['accounts'] })
+    },
+  })
+}
+
+export function useDeleteAccount() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiClient<{ success: boolean }>(`/accounts/${id}`, {
+        method: 'DELETE',
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['accounts'] })
+    },
+  })
+}

@@ -579,10 +579,10 @@ NOW we start frontend, because backend is solid.
 
 ### Master Data UI
 
-- [ ] Chart of Accounts management
-- [ ] Fiscal period management
-- [ ] Dimension management
-- [ ] Exchange rate management
+- [x] Chart of Accounts management
+- [x] Fiscal period management
+- [x] Dimension management
+- [x] Exchange rate management
 
 ### Transaction UI
 
@@ -600,7 +600,7 @@ NOW we start frontend, because backend is solid.
 ### Reports UI
 
 - [x] Report viewer
-- [ ] Export functionality
+- [x] Export functionality
 
 **Deliverable:** Complete frontend application.
 

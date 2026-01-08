@@ -89,7 +89,116 @@ const MOCK_DATA: Record<string, any> = {
           ]
         }
       ],
-      pagination: { page: 1, limit: 50, total: 2 }
+      pagination: { page: 1, limit: 50, total: 3 }
+  },
+  '/budgets': {
+      data: [
+          { id: 'bdg_001', department: 'Engineering', budget_limit: '50000.0000', actual_spent: '35000.0000', period: '2026-01' },
+          { id: 'bdg_002', department: 'Marketing', budget_limit: '25000.0000', actual_spent: '28000.0000', period: '2026-01' },
+          { id: 'bdg_003', department: 'Operations', budget_limit: '15000.0000', actual_spent: '12000.0000', period: '2026-01' },
+          { id: 'bdg_004', department: 'HR', budget_limit: '10000.0000', actual_spent: '5000.0000', period: '2026-01' },
+      ]
+  },
+  '/reports/trial-balance': {
+      data: [
+          { code: '1100', name: 'Cash', debit: '150000.0000', credit: '0.0000', net_balance: '150000.0000', type: 'asset' },
+          { code: '1200', name: 'Bank BCA', debit: '500000.0000', credit: '0.0000', net_balance: '500000.0000', type: 'asset' },
+          { code: '2100', name: 'Accounts Payable', debit: '0.0000', credit: '25000.0000', net_balance: '-25000.0000', type: 'liability' },
+          { code: '3100', name: 'Capital Stock', debit: '0.0000', credit: '600000.0000', net_balance: '-600000.0000', type: 'equity' },
+          { code: '4100', name: 'Service Revenue', debit: '0.0000', credit: '50000.0000', net_balance: '-50000.0000', type: 'revenue' },
+          { code: '5100', name: 'Marketing Expense', debit: '15000.0000', credit: '0.0000', net_balance: '15000.0000', type: 'expense' },
+          { code: '5200', name: 'Office Supplies', debit: '5000.0000', credit: '0.0000', net_balance: '5000.0000', type: 'expense' },
+          { code: '5300', name: 'Rent Expense', debit: '5000.0000', credit: '0.0000', net_balance: '5000.0000', type: 'expense' },
+      ],
+      total_debit: '675000.0000',
+      total_credit: '675000.0000'
+  },
+  '/reports/income-statement': {
+      data: {
+          revenues: [
+              { code: '4100', name: 'Service Revenue', amount: '50000.0000' }
+          ],
+          expenses: [
+              { code: '5100', name: 'Marketing Expense', amount: '15000.0000' },
+              { code: '5200', name: 'Office Supplies', amount: '5000.0000' },
+              { code: '5300', name: 'Rent Expense', amount: '5000.0000' }
+          ],
+          total_revenue: '50000.0000',
+          total_expenses: '25000.0000',
+          net_income: '25000.0000'
+      }
+  },
+  '/reports/balance-sheet': {
+      data: {
+          assets: [
+              { code: '1100', name: 'Cash', amount: '150000.0000' },
+              { code: '1200', name: 'Bank BCA', amount: '500000.0000' }
+          ],
+          liabilities: [
+              { code: '2100', name: 'Accounts Payable', amount: '25000.0000' }
+          ],
+          equity: [
+              { code: '3100', name: 'Capital Stock', amount: '600000.0000' },
+              { code: '3200', name: 'Retained Earnings', amount: '25000.0000' }
+          ],
+          total_assets: '650000.0000',
+          total_liabilities: '25000.0000',
+          total_equity: '625000.0000'
+      }
+  },
+  '/fiscal-years': {
+      data: [
+          {
+              id: 'fy_2026',
+              name: 'FY 2026',
+              status: 'open',
+              start_date: '2026-01-01',
+              end_date: '2026-12-31',
+              periods: [
+                  { id: 'fp_2026_01', name: 'January 2026', status: 'open', start_date: '2026-01-01', end_date: '2026-01-31' },
+                  { id: 'fp_2026_02', name: 'February 2026', status: 'closed', start_date: '2026-02-01', end_date: '2026-02-28' },
+                  { id: 'fp_2026_03', name: 'March 2026', status: 'locked', start_date: '2026-03-01', end_date: '2026-03-31' },
+              ]
+          },
+          {
+            id: 'fy_2025',
+            name: 'FY 2025',
+            status: 'closed',
+            start_date: '2025-01-01',
+            end_date: '2025-12-31',
+            periods: [] 
+          }
+      ]
+  },
+  '/dimensions': {
+      data: [
+          {
+              id: 'dim_dept',
+              code: 'DEPT',
+              name: 'Department',
+              values: [
+                  { id: 'val_eng', code: 'ENG', name: 'Engineering', description: 'Product and Tech team' },
+                  { id: 'val_mkt', code: 'MKT', name: 'Marketing', description: 'Growth and Brand' },
+                  { id: 'val_ops', code: 'OPS', name: 'Operations', description: 'General operations' },
+              ]
+          },
+          {
+              id: 'dim_proj',
+              code: 'PROJ',
+              name: 'Project',
+              values: [
+                  { id: 'val_p1', code: 'P001', name: 'Website Redesign' },
+                  { id: 'val_p2', code: 'P002', name: 'Q1 Campaign' },
+              ]
+          }
+      ]
+  },
+  '/exchange-rates': {
+      data: [
+          { id: 'er_1', from_currency: 'USD', to_currency: 'IDR', rate: '15500.00', date: '2026-01-01' },
+          { id: 'er_2', from_currency: 'SGD', to_currency: 'IDR', rate: '11500.00', date: '2026-01-01' },
+          { id: 'er_3', from_currency: 'USD', to_currency: 'IDR', rate: '15550.00', date: '2026-01-02' },
+      ]
   }
 }
 
