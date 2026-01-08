@@ -183,17 +183,56 @@ export const handlers = [
      // Default to 'open' if not set in our memory store
      const currentStatus = budgetStatuses[id] || 'open'
      
-     return HttpResponse.json({
-         id: id,
+     // Different data per budget
+     const budgetData: Record<string, { department: string, budget_limit: string, actual_spent: string, lines: Array<{ id: string, account_name: string, limit: string, actual: string, dimension_value_id: string | null }> }> = {
+       'bdg_001': {
          department: 'Engineering',
-         period: '2026-01',
          budget_limit: '50000.0000',
          actual_spent: '35000.0000',
-         status: currentStatus,
          lines: [
-             { id: 'bl_1', account_name: 'Server Cost', limit: '30000.0000', actual: '25000.0000', dimension_value_id: null },
-             { id: 'bl_2', account_name: 'Software Licenses', limit: '20000.0000', actual: '10000.0000', dimension_value_id: 'val_p1' }, 
+           { id: 'bl_1', account_name: 'Server Cost', limit: '30000.0000', actual: '25000.0000', dimension_value_id: null },
+           { id: 'bl_2', account_name: 'Software Licenses', limit: '20000.0000', actual: '10000.0000', dimension_value_id: 'val_p1' },
          ]
+       },
+       'bdg_002': {
+         department: 'Marketing',
+         budget_limit: '25000.0000',
+         actual_spent: '28000.0000',
+         lines: [
+           { id: 'bl_3', account_name: 'Advertising', limit: '15000.0000', actual: '18000.0000', dimension_value_id: null },
+           { id: 'bl_4', account_name: 'Events', limit: '10000.0000', actual: '10000.0000', dimension_value_id: 'val_p2' },
+         ]
+       },
+       'bdg_003': {
+         department: 'Operations',
+         budget_limit: '15000.0000',
+         actual_spent: '12000.0000',
+         lines: [
+           { id: 'bl_5', account_name: 'Office Supplies', limit: '5000.0000', actual: '3000.0000', dimension_value_id: null },
+           { id: 'bl_6', account_name: 'Utilities', limit: '10000.0000', actual: '9000.0000', dimension_value_id: null },
+         ]
+       },
+       'bdg_004': {
+         department: 'HR',
+         budget_limit: '10000.0000',
+         actual_spent: '5000.0000',
+         lines: [
+           { id: 'bl_7', account_name: 'Training', limit: '5000.0000', actual: '2500.0000', dimension_value_id: null },
+           { id: 'bl_8', account_name: 'Recruitment', limit: '5000.0000', actual: '2500.0000', dimension_value_id: null },
+         ]
+       }
+     }
+     
+     const budget = budgetData[id] || budgetData['bdg_001']
+     
+     return HttpResponse.json({
+         id: id,
+         department: budget.department,
+         period: '2026-01',
+         budget_limit: budget.budget_limit,
+         actual_spent: budget.actual_spent,
+         status: currentStatus,
+         lines: budget.lines
      })
   }),
 

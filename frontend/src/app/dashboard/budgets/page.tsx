@@ -204,8 +204,8 @@ export default function BudgetsPage() {
                     formatter={(value) => [`$${Number(value).toLocaleString()}`, '']}
                 />
                 <Legend />
-                <Bar dataKey="Budget" fill="#0f172a" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="Actual" fill="#adfa1d" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="Budget" fill="#34d399" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="Actual" fill="#f87171" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>

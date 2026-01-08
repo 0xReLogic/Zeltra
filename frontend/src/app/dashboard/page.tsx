@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { DollarSign, TrendingDown, Clock, Activity } from 'lucide-react'
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell, Legend } from 'recharts'
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts'
 
 const cashFlowData = [
   { month: 'Jan', inflow: 45000, outflow: 32000 },
@@ -98,9 +98,9 @@ export default function DashboardPage() {
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis dataKey="month" className="text-xs" />
                 <YAxis className="text-xs" tickFormatter={(value) => `$${value/1000}k`} />
-                <Tooltip formatter={(value: number) => `$${value.toLocaleString()}`} />
-                <Area type="monotone" dataKey="inflow" stackId="1" stroke="#10b981" fill="#10b981" fillOpacity={0.6} name="Inflow" />
-                <Area type="monotone" dataKey="outflow" stackId="2" stroke="#ef4444" fill="#ef4444" fillOpacity={0.6} name="Outflow" />
+                <Tooltip formatter={(value: number | string) => `$${Number(value).toLocaleString()}`} />
+                <Area type="monotone" dataKey="inflow" stackId="1" stroke="#34d399" fill="#34d399" fillOpacity={0.6} name="Inflow" />
+                <Area type="monotone" dataKey="outflow" stackId="2" stroke="#f87171" fill="#f87171" fillOpacity={0.6} name="Outflow" />
               </AreaChart>
             </ResponsiveContainer>
           </CardContent>
@@ -116,10 +116,10 @@ export default function DashboardPage() {
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis type="number" domain={[0, 120]} tickFormatter={(value) => `${value}%`} className="text-xs" />
                 <YAxis type="category" dataKey="department" className="text-xs" width={80} />
-                <Tooltip formatter={(value: number) => `${value}%`} />
+                <Tooltip formatter={(value: number | string) => `${value}%`} />
                 <Bar dataKey="utilization" name="Utilization">
                   {budgetUtilizationData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.utilization > 100 ? '#ef4444' : '#10b981'} />
+                    <Cell key={`cell-${index}`} fill={entry.utilization > 100 ? '#f87171' : '#34d399'} />
                   ))}
                 </Bar>
               </BarChart>
