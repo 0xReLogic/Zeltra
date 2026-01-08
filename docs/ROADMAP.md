@@ -682,7 +682,12 @@ NOW we start frontend, because backend is solid.
   - [x] Expense trend chart
   - [x] Cash flow chart
   - [x] Budget utilization by department
-- [ ] Recent Activity Widget: Feed-style list of latest transaction & budget actions
+- [ ] Recent Activity Widget
+  - [ ] Feed-style list of latest transaction & budget actions
+  - [ ] Uses `GET /api/v1/dashboard/recent-activity` endpoint
+  - [ ] Activity type icons (created, approved, posted, voided, etc.)
+  - [ ] Relative timestamps ("2 hours ago")
+  - [ ] Click to navigate to transaction/budget detail
 
 ### Reports UI
 
