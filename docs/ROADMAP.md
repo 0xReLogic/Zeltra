@@ -504,6 +504,12 @@ tests/
 - [ ] Fallback ke last known rate kalau API down
 - [ ] API endpoint: `POST /exchange-rates/fetch` (manual trigger)
 
+### Dashboard Analytics
+
+- [ ] Dashboard API: Aggregated monthly inflow/outflow from `ledger_entries`
+- [ ] Activity Log API: Recent transaction actions (create/approve/void)
+- [ ] Frontend Integration: Replace mock data with real-time API responses
+
 ### API Polish
 
 - [ ] OpenAPI/Swagger spec generation (utoipa)
@@ -661,6 +667,7 @@ NOW we start frontend, because backend is solid.
   - [x] Expense trend chart
   - [x] Cash flow chart
   - [x] Budget utilization by department
+- [ ] Recent Activity Widget: Feed-style list of latest transaction & budget actions
 
 ### Reports UI
 
