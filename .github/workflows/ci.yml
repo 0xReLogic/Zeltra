@@ -92,6 +92,14 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-v2-
 
+      - name: Build migrator
+        run: cargo build -p zeltra-migrator
+
+      - name: Run migrations
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/zeltra_test
+        run: ./target/debug/migrator up
+
       - name: Run tests
         env:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/zeltra_test
