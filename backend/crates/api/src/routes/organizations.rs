@@ -5,20 +5,21 @@ use axum::{
     extract::{Path, State},
     http::StatusCode,
     response::IntoResponse,
-    routing::{get, post},
+    routing::{get, patch, post},
 };
 use serde_json::json;
 use tracing::{error, info};
 
 use crate::{AppState, middleware::AuthUser};
 use zeltra_db::{OrganizationRepository, UserRepository, entities::sea_orm_active_enums::UserRole};
-use zeltra_shared::auth::{AddUserRequest, CreateOrganizationRequest};
+use zeltra_shared::auth::{AddUserRequest, CreateOrganizationRequest, UpdateOrganizationRequest};
 
 /// Creates the organizations router (requires auth middleware to be applied externally).
 pub fn routes() -> Router<AppState> {
     Router::new()
         .route("/organizations", post(create_organization))
         .route("/organizations/{org_id}", get(get_organization))
+        .route("/organizations/{org_id}", patch(update_organization))
         .route("/organizations/{org_id}/users", get(list_users))
         .route("/organizations/{org_id}/users", post(add_user))
 }
@@ -176,6 +177,96 @@ async fn get_organization(
             "subscription_tier": format!("{:?}", org.subscription_tier).to_lowercase(),
             "subscription_status": format!("{:?}", org.subscription_status).to_lowercase(),
             "created_at": org.created_at
+        })),
+    )
+        .into_response()
+}
+
+/// PATCH `/organizations/{org_id}` - Update organization settings.
+async fn update_organization(
+    State(state): State<AppState>,
+    auth: AuthUser,
+    Path(org_id): Path<uuid::Uuid>,
+    Json(payload): Json<UpdateOrganizationRequest>,
+) -> impl IntoResponse {
+    let org_repo = OrganizationRepository::new((*state.db).clone());
+
+    // Check if user has admin or owner role
+    match org_repo
+        .has_role(org_id, auth.user_id(), UserRole::Admin)
+        .await
+    {
+        Ok(false) => {
+            return (
+                StatusCode::FORBIDDEN,
+                Json(json!({
+                    "error": "forbidden",
+                    "message": "You need admin or owner role to update organization settings"
+                })),
+            )
+                .into_response();
+        }
+        Err(e) => {
+            error!(error = %e, "Database error checking role");
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": "internal_error",
+                    "message": "An error occurred"
+                })),
+            )
+                .into_response();
+        }
+        Ok(true) => {}
+    }
+
+    // Update organization
+    let org = match org_repo
+        .update(
+            org_id,
+            payload.name.as_deref(),
+            payload.base_currency.as_deref(),
+            payload.timezone.as_deref(),
+        )
+        .await
+    {
+        Ok(Some(o)) => o,
+        Ok(None) => {
+            return (
+                StatusCode::NOT_FOUND,
+                Json(json!({
+                    "error": "not_found",
+                    "message": "Organization not found"
+                })),
+            )
+                .into_response();
+        }
+        Err(e) => {
+            error!(error = %e, "Failed to update organization");
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": "internal_error",
+                    "message": "An error occurred updating the organization"
+                })),
+            )
+                .into_response();
+        }
+    };
+
+    info!(org_id = %org_id, "Organization updated");
+
+    (
+        StatusCode::OK,
+        Json(json!({
+            "id": org.id,
+            "name": org.name,
+            "slug": org.slug,
+            "base_currency": org.base_currency,
+            "timezone": org.timezone,
+            "subscription_tier": format!("{:?}", org.subscription_tier).to_lowercase(),
+            "subscription_status": format!("{:?}", org.subscription_status).to_lowercase(),
+            "updated_at": org.updated_at
         })),
     )
         .into_response()

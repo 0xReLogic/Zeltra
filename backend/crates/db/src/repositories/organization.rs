@@ -216,6 +216,43 @@ impl OrganizationRepository {
 
         Ok(membership.is_some_and(|m| role_level(&m.role) >= role_level(&required_role)))
     }
+
+    /// Updates an organization's settings.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the database update fails.
+    pub async fn update(
+        &self,
+        org_id: Uuid,
+        name: Option<&str>,
+        base_currency: Option<&str>,
+        timezone: Option<&str>,
+    ) -> Result<Option<organizations::Model>, DbErr> {
+        let org = organizations::Entity::find_by_id(org_id)
+            .one(&self.db)
+            .await?;
+
+        let Some(org) = org else {
+            return Ok(None);
+        };
+
+        let mut active: organizations::ActiveModel = org.into();
+
+        if let Some(name) = name {
+            active.name = Set(name.to_string());
+        }
+        if let Some(base_currency) = base_currency {
+            active.base_currency = Set(base_currency.to_string());
+        }
+        if let Some(timezone) = timezone {
+            active.timezone = Set(timezone.to_string());
+        }
+        active.updated_at = Set(chrono::Utc::now().into());
+
+        let updated = active.update(&self.db).await?;
+        Ok(Some(updated))
+    }
 }
 
 /// Returns the privilege level of a role (higher = more privileges).

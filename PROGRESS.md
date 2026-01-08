@@ -84,16 +84,16 @@ Live status untuk sync antara Backend & Frontend.
 
 ## Phase 1 Tasks (Backend - Subscription & Tier)
 
-| Task                        | Status | Notes                                    |
-| --------------------------- | ------ | ---------------------------------------- |
-| Seed tier_limits table      | ✅     | Already seeded in initial migration      |
-| Set default subscription    | ✅     | starter tier, trialing status            |
-| check_tier_limit() function | ✅     | SubscriptionRepository::check_limit()    |
-| has_feature() function      | ✅     | SubscriptionRepository::has_feature()    |
-| organization_usage tracking | ✅     | get_or_create, increment counters        |
-| Trial expiry check          | ✅     | is_trial_expired()                       |
-| Tier upgrade function       | ✅     | upgrade_tier()                           |
-| Test cross-tenant isolation | ✅     | 3 integration tests, non-superuser role     |
+| Task                        | Status | Notes                                   |
+| --------------------------- | ------ | --------------------------------------- |
+| Seed tier_limits table      | ✅     | Already seeded in initial migration     |
+| Set default subscription    | ✅     | starter tier, trialing status           |
+| check_tier_limit() function | ✅     | SubscriptionRepository::check_limit()   |
+| has_feature() function      | ✅     | SubscriptionRepository::has_feature()   |
+| organization_usage tracking | ✅     | get_or_create, increment counters       |
+| Trial expiry check          | ✅     | is_trial_expired()                      |
+| Tier upgrade function       | ✅     | upgrade_tier()                          |
+| Test cross-tenant isolation | ✅     | 3 integration tests, non-superuser role |
 
 ---
 
@@ -124,7 +124,7 @@ Frontend cek di sini untuk tau endpoint mana yang udah ready.
 | GET /api/v1/organizations/:id        | ✅     | Get org details           |
 | GET /api/v1/organizations/:id/users  | ✅     | List org members          |
 | POST /api/v1/organizations/:id/users | ✅     | Add user to org (admin+)  |
-| PATCH /api/v1/organizations/:id      | ⬜     | Update org settings       |
+| PATCH /api/v1/organizations/:id      | ✅     | Update org settings       |
 
 ### Accounts
 
@@ -173,12 +173,13 @@ Frontend cek di sini untuk tau endpoint mana yang udah ready.
 
 ### Budgets
 
-| Endpoint                | Status | Notes                 |
-| ----------------------- | ------ | --------------------- |
-| GET /budgets            | ✅     | Mocked                |
-| POST /budgets           | ✅     | Mocked (Create)       |
-| GET /budgets/:id        | ✅     | Mocked (Detail+Lines) |
-| POST /budgets/:id/lines | ✅     | Mocked (Add Line)     |
+| Endpoint                  | Status | Notes                 |
+| ------------------------- | ------ | --------------------- |
+| GET /budgets              | ✅     | Mocked                |
+| POST /budgets             | ✅     | Mocked (Create)       |
+| GET /budgets/:id          | ✅     | Mocked (Detail+Lines) |
+| POST /budgets/:id/lines   | ✅     | Mocked (Add Line)     |
+| PATCH /budgets/:id/status | ✅     | Mocked (Lock/Unlock)  |
 
 ### Dashboard
 

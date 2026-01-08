@@ -170,3 +170,14 @@ pub struct AddUserRequest {
     /// Approval limit (for approver role).
     pub approval_limit: Option<String>,
 }
+
+/// Update organization request.
+#[derive(Debug, Clone, Deserialize)]
+pub struct UpdateOrganizationRequest {
+    /// Organization name (optional).
+    pub name: Option<String>,
+    /// Base currency (optional, ISO 4217 code).
+    pub base_currency: Option<String>,
+    /// Timezone (optional, IANA format).
+    pub timezone: Option<String>,
+}

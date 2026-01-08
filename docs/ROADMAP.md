@@ -672,7 +672,7 @@ NOW we start frontend, because backend is solid.
   - [x] Income Statement (P&L)
 - [x] Export functionality
   - [x] CSV export
-  - [ ] PDF export
+  - [x] PDF export
 - [x] **Account Ledger View**
   - [x] Select account from dropdown (via Account List)
   - [x] Show all entries for account (`ledger_entries.account_id`)
