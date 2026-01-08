@@ -26,7 +26,21 @@ export const handlers = [
         { id: 'acc_002', code: '1200', name: 'Bank BCA', account_type: 'asset', balance: '500000.0000' },
         { id: 'acc_003', code: '5100', name: 'Marketing Expense', account_type: 'expense', balance: '25000.0000' },
         { id: 'acc_004', code: '5200', name: 'Office Supplies', account_type: 'expense', balance: '8000.0000' },
+        { id: 'acc_005', code: '2100', name: 'Accounts Payable', account_type: 'liability', balance: '-25000.0000' },
       ]
+    })
+  }),
+
+  // Account Ledger
+  http.get('/api/v1/accounts/:id/ledger', ({ params, request }) => {
+    return HttpResponse.json({
+        data: [
+            { id: 'le_001', transaction_date: '2026-01-01', reference_number: 'TXN-001', description: 'Opening Balance', debit: '100000.0000', credit: '0.0000', running_balance: '100000.0000' },
+            { id: 'le_002', transaction_date: '2026-01-05', reference_number: 'TXN-005', description: 'Office Supplies', debit: '0.0000', credit: '500.0000', running_balance: '99500.0000' },
+            { id: 'le_003', transaction_date: '2026-01-10', reference_number: 'TXN-012', description: 'Client Payment', debit: '50000.0000', credit: '0.0000', running_balance: '149500.0000' },
+            { id: 'le_004', transaction_date: '2026-01-15', reference_number: 'TXN-015', description: 'Server Cost', debit: '0.0000', credit: '200.0000', running_balance: '149300.0000' },
+        ],
+        pagination: { page: 1, limit: 50, total: 4 }
     })
   }),
 

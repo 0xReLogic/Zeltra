@@ -1,22 +1,10 @@
 'use client'
 
-import React from 'react'
-import { useParams } from 'next/navigation'
+import React, { useState } from 'react'
+import { useParams, useRouter } from 'next/navigation'
+import { ArrowLeft, Calendar as CalendarIcon, Download, Loader2 } from 'lucide-react'
 import { format } from 'date-fns'
-import { ArrowLeft, Loader2, ArrowUpRight, ArrowDownLeft } from 'lucide-react'
-import Link from 'next/link'
-import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts'
 
-import { useAccount } from '@/lib/queries/accounts'
-import { useLedger } from '@/lib/queries/ledger'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import {
@@ -28,26 +16,24 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
+import { useAccount, useAccountLedger } from '@/lib/queries/accounts'
+import { formatCurrency } from '@/lib/utils/format'
+import { cn } from '@/lib/utils'
 
-// Mock chart data (since backend doesn't provide history yet)
-const MOCK_CHART_DATA = [
-  { date: 'Jan', balance: 120000 },
-  { date: 'Feb', balance: 135000 },
-  { date: 'Mar', balance: 125000 },
-  { date: 'Apr', balance: 140000 },
-  { date: 'May', balance: 150000 },
-]
-
-export default function AccountDetailsPage() {
+export default function AccountDetailPage() {
   const params = useParams()
-  const accountId = params.id as string
+  const router = useRouter()
+  const id = params.id as string
 
-  const { data: account, isLoading: isLoadingAccount } = useAccount(accountId)
-  const { data: ledger, isLoading: isLoadingLedger } = useLedger(accountId)
+  // Query State
+  const [page, setPage] = useState(1)
+  
+  const { data: account, isLoading: isLoadingAccount } = useAccount(id)
+  const { data: ledger, isLoading: isLoadingLedger } = useAccountLedger(id, { page, limit: 50 })
 
   if (isLoadingAccount || isLoadingLedger) {
     return (
-      <div className="flex h-64 items-center justify-center">
+      <div className="flex h-96 items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     )
@@ -55,144 +41,108 @@ export default function AccountDetailsPage() {
 
   if (!account) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 space-y-4">
-        <h2 className="text-xl font-semibold">Account not found</h2>
-        <Button asChild variant="outline">
-          <Link href="/dashboard/accounts">Back to Accounts</Link>
-        </Button>
-      </div>
+       <div className="flex flex-col items-center justify-center h-96 space-y-4">
+          <h2 className="text-xl font-semibold">Account not found</h2>
+          <Button variant="outline" onClick={() => router.back()}>
+             <ArrowLeft className="mr-2 h-4 w-4" /> Go Back
+          </Button>
+       </div>
     )
   }
 
-  const balance = parseFloat(account.balance)
+  // Calculate totals for simple visual check (mock data doesn't sum up perfectly usually)
+  const totalDebit = ledger?.data.reduce((sum, entry) => sum + parseFloat(entry.debit), 0) || 0
+  const totalCredit = ledger?.data.reduce((sum, entry) => sum + parseFloat(entry.credit), 0) || 0
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center space-x-4">
-        <Button variant="ghost" size="icon" asChild>
-          <Link href="/dashboard/accounts">
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">{account.name}</h1>
-          <div className="flex items-center space-x-2 text-muted-foreground">
-            <Badge variant="outline">{account.code}</Badge>
-            <span>•</span>
-            <span className="capitalize">{account.account_type}</span>
-          </div>
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex items-center gap-4">
+           <Button variant="outline" size="icon" onClick={() => router.back()}>
+              <ArrowLeft className="h-4 w-4" />
+           </Button>
+           <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-2xl font-bold tracking-tight">{account.code} - {account.name}</h2>
+                <Badge variant="outline">{account.account_type.toUpperCase()}</Badge>
+              </div>
+              <p className="text-muted-foreground">General Ledger</p>
+           </div>
         </div>
-        <div className="ml-auto text-right">
-             <div className="text-sm text-muted-foreground">Current Balance</div>
-             <div className="text-3xl font-bold font-mono">
-                {balance.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
-             </div>
+        <div className="flex items-center gap-2">
+           <Button variant="outline">
+              <CalendarIcon className="mr-2 h-4 w-4" /> Jan 2026
+           </Button>
+           <Button variant="outline">
+              <Download className="mr-2 h-4 w-4" /> Export CSV
+           </Button>
         </div>
       </div>
 
-      {/* Analytics Chart */}
-      <Card>
-        <CardHeader>
-             <CardTitle>Balance History</CardTitle>
-             <CardDescription>6 Month trend</CardDescription>
-        </CardHeader>
-        <CardContent className="h-[300px]">
-             <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={MOCK_CHART_DATA}>
-                    <defs>
-                        <linearGradient id="colorBalance" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#2563eb" stopOpacity={0.1}/>
-                        <stop offset="95%" stopColor="#2563eb" stopOpacity={0}/>
-                        </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis 
-                        dataKey="date" 
-                        tickLine={false} 
-                        axisLine={false} 
-                        tickMargin={8} 
-                        style={{ fontSize: 12 }}
-                    />
-                    <YAxis 
-                         tickLine={false} 
-                         axisLine={false} 
-                         tickFormatter={(value) => `$${value/1000}k`}
-                         style={{ fontSize: 12 }}
-                    />
-                    <Tooltip 
-                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                        formatter={(value) => [`$${(value as number)?.toLocaleString() ?? 0}`, 'Balance']}
-                    />
-                    <Area 
-                        type="monotone" 
-                        dataKey="balance" 
-                        stroke="#2563eb" 
-                        strokeWidth={2}
-                        fillOpacity={1} 
-                        fill="url(#colorBalance)" 
-                    />
-                </AreaChart>
-             </ResponsiveContainer>
-        </CardContent>
-      </Card>
+      {/* Summary Cards */}
+      <div className="grid gap-4 md:grid-cols-3">
+         <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+               <CardTitle className="text-sm font-medium">Current Balance</CardTitle>
+            </CardHeader>
+            <CardContent>
+               <div className="text-2xl font-bold">{formatCurrency(parseFloat(account.balance), 'USD')}</div>
+            </CardContent>
+         </Card>
+      </div>
 
       {/* Ledger Table */}
       <Card>
-        <CardHeader>
-          <CardTitle>Ledger Entries</CardTitle>
-          <CardDescription>Recent debit and credit mutations</CardDescription>
-        </CardHeader>
-        <CardContent>
-            <Table>
-                <TableHeader>
-                    <TableRow>
+         <CardHeader>
+            <CardTitle>Transactions</CardTitle>
+            <CardDescription>
+               Detailed movements in this account for the selected period.
+            </CardDescription>
+         </CardHeader>
+         <CardContent>
+            <div className="rounded-md border">
+               <Table>
+                  <TableHeader>
+                     <TableRow>
                         <TableHead>Date</TableHead>
                         <TableHead>Reference</TableHead>
-                        <TableHead>Description</TableHead>
-                        <TableHead className="text-right">Debit</TableHead>
-                        <TableHead className="text-right">Credit</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {ledger?.data.map((txn) => {
-                        // Find entry for THIS account
-                        const entry = txn.entries.find(e => e.account_code === account.code || e.account_name === account.name)
-                        // Note: matching by code is safer but mock data might vary. The Fallback logic in client.ts
-                        // returns the WHOLE transaction list, so we filter visually here.
-                        
-                        // If no entry found clearly (mock limitation), just show the first one or skip
-                        // For demo: show all transactions but highlight relevant amounts
-                        
-                        const relevantDebit = entry?.debit || '0'
-                        const relevantCredit = entry?.credit || '0'
-
-                        // Improved Mock Logic: for the `accounts/acc_001/ledger` fallback, 
-                        // we receive /transactions mock. We map it to look like ledger.
-                        return (
-                            <TableRow key={txn.id}>
-                                <TableCell>{txn.transaction_date}</TableCell>
-                                <TableCell>{txn.reference_number}</TableCell>
-                                <TableCell>{txn.description}</TableCell>
-                                <TableCell className="text-right font-mono text-emerald-600">
-                                    {parseFloat(relevantDebit) > 0 ? `+${parseFloat(relevantDebit).toLocaleString('en-US', {style:'currency', currency:'USD'})}` : '-'}
-                                </TableCell>
-                                <TableCell className="text-right font-mono text-red-600">
-                                    {parseFloat(relevantCredit) > 0 ? `-${parseFloat(relevantCredit).toLocaleString('en-US', {style:'currency', currency:'USD'})}` : '-'}
-                                </TableCell>
-                            </TableRow>
-                        )
-                    })}
-                    {(!ledger?.data || ledger.data.length === 0) && (
-                         <TableRow>
-                            <TableCell colSpan={5} className="h-24 text-center">
-                                No transactions found.
-                            </TableCell>
+                        <TableHead className="w-[40%]">Description</TableHead>
+                        <TableHead className="text-right text-red-600">Debit</TableHead>
+                        <TableHead className="text-right text-green-600">Credit</TableHead>
+                        <TableHead className="text-right">Balance</TableHead>
+                     </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                     {ledger?.data.map((entry) => (
+                        <TableRow key={entry.id}>
+                           <TableCell>{entry.transaction_date}</TableCell>
+                           <TableCell className="font-mono text-xs">{entry.reference_number}</TableCell>
+                           <TableCell>
+                              <div className="font-medium text-sm">{entry.description}</div>
+                           </TableCell>
+                           <TableCell className="text-right text-red-600 font-mono">
+                              {parseFloat(entry.debit) > 0 ? formatCurrency(parseFloat(entry.debit), 'USD') : '-'}
+                           </TableCell>
+                           <TableCell className="text-right text-green-600 font-mono">
+                              {parseFloat(entry.credit) > 0 ? formatCurrency(parseFloat(entry.credit), 'USD') : '-'}
+                           </TableCell>
+                           <TableCell className="text-right font-mono font-medium">
+                              {formatCurrency(parseFloat(entry.running_balance), 'USD')}
+                           </TableCell>
                         </TableRow>
-                    )}
-                </TableBody>
-            </Table>
-        </CardContent>
+                     ))}
+                     {ledger?.data.length === 0 && (
+                        <TableRow>
+                           <TableCell colSpan={6} className="h-24 text-center">
+                              No transactions found for this period.
+                           </TableCell>
+                        </TableRow>
+                     )}
+                  </TableBody>
+               </Table>
+            </div>
+         </CardContent>
       </Card>
     </div>
   )

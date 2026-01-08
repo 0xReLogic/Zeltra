@@ -51,6 +51,42 @@ export function useUpdateAccount() {
   })
 }
 
+// ...existing code...
+export interface LedgerEntry {
+  id: string
+  transaction_date: string
+  reference_number: string
+  description: string
+  debit: string
+  credit: string
+  running_balance: string
+}
+
+export interface GetLedgerResponse {
+  data: LedgerEntry[]
+  pagination: {
+    page: number
+    limit: number
+    total: number
+  }
+}
+
+export function useAccountLedger(id: string, params?: { page?: number; limit?: number; from?: string; to?: string }) {
+  return useQuery({
+    queryKey: ['account-ledger', id, params],
+    queryFn: () => {
+      const queryParams = new URLSearchParams()
+      if (params?.page) queryParams.set('page', params.page.toString())
+      if (params?.limit) queryParams.set('limit', params.limit.toString())
+      if (params?.from) queryParams.set('from', params.from)
+      if (params?.to) queryParams.set('to', params.to)
+      
+      return apiClient<GetLedgerResponse>(`/accounts/${id}/ledger?${queryParams.toString()}`)
+    },
+    enabled: !!id,
+  })
+}
+
 export function useDeleteAccount() {
   const queryClient = useQueryClient()
 
