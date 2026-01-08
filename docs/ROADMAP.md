@@ -508,8 +508,19 @@ tests/
 
 ### Dashboard Analytics
 
-- [ ] Dashboard API: Aggregated monthly inflow/outflow from `ledger_entries`
-- [ ] Activity Log API: Recent transaction actions (create/approve/void)
+- [ ] Dashboard API: `GET /api/v1/dashboard/metrics`
+  - Cash position, burn rate, runway days
+  - Pending approvals count & amount
+  - Budget status & utilization
+  - Top expenses by department
+  - Currency exposure
+  - Cash flow chart data (weekly inflow/outflow)
+  - Utilization chart data (budgeted vs actual by department)
+- [ ] Activity Log API: `GET /api/v1/dashboard/recent-activity`
+  - Transaction events (created, submitted, approved, rejected, posted, voided)
+  - Budget events (created, updated, locked)
+  - User events (invited, role changed)
+  - Pagination with cursor
 - [ ] Frontend Integration: Replace mock data with real-time API responses
 
 ### API Polish
