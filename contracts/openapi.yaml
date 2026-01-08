@@ -1,0 +1,912 @@
+openapi: 3.1.0
+info:
+  title: Zeltra API
+  description: B2B Expense & Budgeting Engine API
+  version: 0.1.0
+  
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Local development
+  - url: https://api.zeltra.io/api/v1
+    description: Production
+
+tags:
+  - name: Auth
+    description: Authentication & session management
+  - name: Organizations
+    description: Organization & user management
+  - name: Accounts
+    description: Chart of accounts
+  - name: Transactions
+    description: Ledger transactions
+  - name: Budgets
+    description: Budget management
+  - name: Reports
+    description: Financial reports
+  - name: Simulation
+    description: Budget simulation engine
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      
+  schemas:
+    # ============ Common ============
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              example: VALIDATION_ERROR
+            message:
+              type: string
+              example: Invalid request body
+            details:
+              type: object
+            request_id:
+              type: string
+              format: uuid
+              
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 50
+        total:
+          type: integer
+          example: 150
+        total_pages:
+          type: integer
+          example: 3
+          
+    Money:
+      type: string
+      pattern: '^-?\d+\.\d{4}$'
+      description: Decimal string with 4 decimal places
+      example: "1000.0000"
+      
+    # ============ Auth ============
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+          
+    LoginResponse:
+      type: object
+      required: [user, access_token, refresh_token, expires_in]
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+        expires_in:
+          type: integer
+          description: Seconds until access_token expires
+          example: 3600
+          
+    RegisterRequest:
+      type: object
+      required: [email, password, full_name]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+        full_name:
+          type: string
+          minLength: 2
+          
+    RefreshRequest:
+      type: object
+      required: [refresh_token]
+      properties:
+        refresh_token:
+          type: string
+          
+    # ============ User ============
+    User:
+      type: object
+      required: [id, email, full_name, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        full_name:
+          type: string
+        organizations:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserOrganization'
+        created_at:
+          type: string
+          format: date-time
+          
+    UserOrganization:
+      type: object
+      required: [id, name, slug, role]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        role:
+          $ref: '#/components/schemas/UserRole'
+          
+    UserRole:
+      type: string
+      enum: [owner, admin, accountant, approver, viewer, submitter]
+      
+    # ============ Organization ============
+    Organization:
+      type: object
+      required: [id, name, slug, base_currency, timezone, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        base_currency:
+          type: string
+          pattern: '^[A-Z]{3}$'
+          example: USD
+        timezone:
+          type: string
+          example: Asia/Jakarta
+        subscription_tier:
+          type: string
+          enum: [starter, growth, enterprise]
+        subscription_status:
+          type: string
+          enum: [trialing, active, past_due, cancelled, expired]
+        created_at:
+          type: string
+          format: date-time
+          
+    CreateOrganizationRequest:
+      type: object
+      required: [name, slug, base_currency]
+      properties:
+        name:
+          type: string
+        slug:
+          type: string
+          pattern: '^[a-z0-9-]+$'
+        base_currency:
+          type: string
+          pattern: '^[A-Z]{3}$'
+        timezone:
+          type: string
+          default: UTC
+          
+    # ============ Account ============
+    Account:
+      type: object
+      required: [id, code, name, account_type, currency, is_active]
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+          example: "5100"
+        name:
+          type: string
+          example: Marketing Expense
+        account_type:
+          $ref: '#/components/schemas/AccountType'
+        account_subtype:
+          $ref: '#/components/schemas/AccountSubtype'
+        currency:
+          type: string
+        parent_id:
+          type: string
+          format: uuid
+          nullable: true
+        is_active:
+          type: boolean
+        allow_direct_posting:
+          type: boolean
+        balance:
+          $ref: '#/components/schemas/Money'
+          
+    AccountType:
+      type: string
+      enum: [asset, liability, equity, revenue, expense]
+      
+    AccountSubtype:
+      type: string
+      enum:
+        - cash
+        - bank
+        - accounts_receivable
+        - inventory
+        - prepaid
+        - fixed_asset
+        - accumulated_depreciation
+        - other_asset
+        - accounts_payable
+        - credit_card
+        - accrued_liability
+        - short_term_debt
+        - long_term_debt
+        - other_liability
+        - owner_equity
+        - retained_earnings
+        - common_stock
+        - other_equity
+        - operating_revenue
+        - other_revenue
+        - cost_of_goods_sold
+        - operating_expense
+        - payroll_expense
+        - depreciation_expense
+        - interest_expense
+        - tax_expense
+        - other_expense
+        
+    # ============ Transaction ============
+    Transaction:
+      type: object
+      required: [id, transaction_type, transaction_date, description, status, entries, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        reference_number:
+          type: string
+          nullable: true
+        transaction_type:
+          $ref: '#/components/schemas/TransactionType'
+        transaction_date:
+          type: string
+          format: date
+        description:
+          type: string
+        memo:
+          type: string
+          nullable: true
+        status:
+          $ref: '#/components/schemas/TransactionStatus'
+        fiscal_period:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            name:
+              type: string
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/LedgerEntry'
+        created_by:
+          $ref: '#/components/schemas/UserSummary'
+        approved_by:
+          $ref: '#/components/schemas/UserSummary'
+          nullable: true
+        posted_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          
+    TransactionType:
+      type: string
+      enum: [journal, expense, invoice, bill, payment, transfer, adjustment, opening_balance, reversal]
+      
+    TransactionStatus:
+      type: string
+      enum: [draft, pending, approved, posted, voided]
+      
+    LedgerEntry:
+      type: object
+      required: [id, account_id, source_currency, source_amount, functional_amount, debit, credit]
+      properties:
+        id:
+          type: string
+          format: uuid
+        account_id:
+          type: string
+          format: uuid
+        account_code:
+          type: string
+        account_name:
+          type: string
+        source_currency:
+          type: string
+        source_amount:
+          $ref: '#/components/schemas/Money'
+        exchange_rate:
+          type: string
+          example: "1.0850000000"
+        functional_currency:
+          type: string
+        functional_amount:
+          $ref: '#/components/schemas/Money'
+        debit:
+          $ref: '#/components/schemas/Money'
+        credit:
+          $ref: '#/components/schemas/Money'
+        memo:
+          type: string
+          nullable: true
+        dimensions:
+          type: array
+          items:
+            $ref: '#/components/schemas/DimensionValue'
+            
+    CreateTransactionRequest:
+      type: object
+      required: [transaction_type, transaction_date, description, entries]
+      properties:
+        transaction_type:
+          $ref: '#/components/schemas/TransactionType'
+        transaction_date:
+          type: string
+          format: date
+        description:
+          type: string
+        reference_number:
+          type: string
+        memo:
+          type: string
+        entries:
+          type: array
+          minItems: 2
+          items:
+            $ref: '#/components/schemas/CreateEntryRequest'
+            
+    CreateEntryRequest:
+      type: object
+      required: [account_id, source_currency, source_amount, entry_type]
+      properties:
+        account_id:
+          type: string
+          format: uuid
+        source_currency:
+          type: string
+          pattern: '^[A-Z]{3}$'
+        source_amount:
+          type: string
+          description: Decimal string
+          example: "1000.00"
+        entry_type:
+          type: string
+          enum: [debit, credit]
+        memo:
+          type: string
+        dimensions:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: Array of dimension_value_ids
+          
+    UserSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        full_name:
+          type: string
+          
+    # ============ Dimensions ============
+    DimensionType:
+      type: object
+      required: [id, code, name, is_required, is_active]
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+          example: DEPARTMENT
+        name:
+          type: string
+          example: Department
+        is_required:
+          type: boolean
+        is_active:
+          type: boolean
+        sort_order:
+          type: integer
+          
+    DimensionValue:
+      type: object
+      required: [id, code, name]
+      properties:
+        id:
+          type: string
+          format: uuid
+        dimension_type:
+          type: string
+        code:
+          type: string
+          example: ENG
+        name:
+          type: string
+          example: Engineering
+        parent_id:
+          type: string
+          format: uuid
+          nullable: true
+        is_active:
+          type: boolean
+          
+    # ============ Fiscal Period ============
+    FiscalYear:
+      type: object
+      required: [id, name, start_date, end_date, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: FY 2026
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        status:
+          type: string
+          enum: [OPEN, CLOSED]
+        periods:
+          type: array
+          items:
+            $ref: '#/components/schemas/FiscalPeriod'
+            
+    FiscalPeriod:
+      type: object
+      required: [id, name, period_number, start_date, end_date, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: January 2026
+        period_number:
+          type: integer
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        status:
+          type: string
+          enum: [OPEN, SOFT_CLOSE, CLOSED]
+        is_adjustment_period:
+          type: boolean
+          
+    # ============ Reports ============
+    TrialBalance:
+      type: object
+      required: [report_type, as_of, currency, accounts, totals]
+      properties:
+        report_type:
+          type: string
+          example: trial_balance
+        as_of:
+          type: string
+          format: date
+        currency:
+          type: string
+        accounts:
+          type: array
+          items:
+            type: object
+            properties:
+              account_id:
+                type: string
+                format: uuid
+              code:
+                type: string
+              name:
+                type: string
+              account_type:
+                $ref: '#/components/schemas/AccountType'
+              debit:
+                $ref: '#/components/schemas/Money'
+              credit:
+                $ref: '#/components/schemas/Money'
+              balance:
+                $ref: '#/components/schemas/Money'
+        totals:
+          type: object
+          properties:
+            total_debit:
+              $ref: '#/components/schemas/Money'
+            total_credit:
+              $ref: '#/components/schemas/Money'
+            is_balanced:
+              type: boolean
+              
+    # ============ Dashboard ============
+    DashboardMetrics:
+      type: object
+      properties:
+        period:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            name:
+              type: string
+        cash_position:
+          type: object
+          properties:
+            balance:
+              $ref: '#/components/schemas/Money'
+            currency:
+              type: string
+            change_from_last_period:
+              $ref: '#/components/schemas/Money'
+            change_percent:
+              type: number
+        burn_rate:
+          type: object
+          properties:
+            daily:
+              $ref: '#/components/schemas/Money'
+            monthly:
+              $ref: '#/components/schemas/Money'
+        runway_days:
+          type: integer
+        pending_approvals:
+          type: object
+          properties:
+            count:
+              type: integer
+            total_amount:
+              $ref: '#/components/schemas/Money'
+
+security:
+  - bearerAuth: []
+
+paths:
+  # ============ Auth ============
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register new user
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+                
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+                
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Refresh access token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '200':
+          description: Token refreshed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+                
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Logout
+      responses:
+        '204':
+          description: Logged out
+          
+  # ============ Organizations ============
+  /organizations:
+    get:
+      tags: [Organizations]
+      summary: List user's organizations
+      responses:
+        '200':
+          description: List of organizations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Organization'
+    post:
+      tags: [Organizations]
+      summary: Create organization
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrganizationRequest'
+      responses:
+        '201':
+          description: Organization created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+                
+  # ============ Accounts ============
+  /accounts:
+    get:
+      tags: [Accounts]
+      summary: List accounts
+      parameters:
+        - name: type
+          in: query
+          schema:
+            $ref: '#/components/schemas/AccountType'
+        - name: active
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: List of accounts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Account'
+                      
+  # ============ Transactions ============
+  /transactions:
+    get:
+      tags: [Transactions]
+      summary: List transactions
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/TransactionStatus'
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        '200':
+          description: List of transactions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Transaction'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+    post:
+      tags: [Transactions]
+      summary: Create transaction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTransactionRequest'
+      responses:
+        '201':
+          description: Transaction created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+        '400':
+          description: Validation error (unbalanced, period closed, etc)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+                
+  /transactions/{id}:
+    get:
+      tags: [Transactions]
+      summary: Get transaction detail
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Transaction detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+                
+  /transactions/{id}/submit:
+    post:
+      tags: [Transactions]
+      summary: Submit for approval
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Submitted
+          
+  /transactions/{id}/approve:
+    post:
+      tags: [Transactions]
+      summary: Approve transaction
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Approved
+          
+  /transactions/{id}/post:
+    post:
+      tags: [Transactions]
+      summary: Post to ledger
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Posted
+          
+  # ============ Reports ============
+  /reports/trial-balance:
+    get:
+      tags: [Reports]
+      summary: Trial balance report
+      parameters:
+        - name: as_of
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Trial balance
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrialBalance'
+                
+  # ============ Dashboard ============
+  /dashboard/metrics:
+    get:
+      tags: [Reports]
+      summary: Dashboard metrics
+      parameters:
+        - name: period_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Dashboard metrics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardMetrics'

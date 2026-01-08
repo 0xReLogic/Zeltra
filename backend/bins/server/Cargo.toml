@@ -1,0 +1,25 @@
+[package]
+name = "zeltra-server"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+description = "Main server binary for Zeltra"
+
+[[bin]]
+name = "zeltra"
+path = "src/main.rs"
+
+[dependencies]
+zeltra-api = { path = "../../crates/api" }
+zeltra-db = { path = "../../crates/db" }
+zeltra-shared = { path = "../../crates/shared" }
+
+tokio = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+dotenvy = { workspace = true }
+anyhow = { workspace = true }
+axum = { workspace = true }
+
+[lints]
+workspace = true

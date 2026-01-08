@@ -1,0 +1,19 @@
+[package]
+name = "zeltra-shared"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+description = "Shared types, errors, and configuration for Zeltra"
+
+[dependencies]
+rust_decimal = { workspace = true }
+chrono = { workspace = true }
+thiserror = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+uuid = { workspace = true }
+config = { workspace = true }
+dotenvy = { workspace = true }
+
+[lints]
+workspace = true

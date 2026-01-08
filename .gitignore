@@ -1,0 +1,29 @@
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+
+# IDE
+.vscode
+.idea
+*.iml
+
+# Backend (Rust)
+backend/target/
+backend/**/.env
+backend/**/*.sqlite
+backend/**/*.db
+
+# Frontend (Next.js) - Redundant if frontend/.gitignore exists but good for safety
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend/.env*
+frontend/*.tsbuildinfo
+
+# General
+.env
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*

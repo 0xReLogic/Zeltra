@@ -1,0 +1,22 @@
+[package]
+name = "zeltra-core"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+description = "Core business logic for Zeltra - ZERO web/db dependencies"
+
+[dependencies]
+zeltra-shared = { path = "../shared" }
+
+rust_decimal = { workspace = true }
+chrono = { workspace = true }
+thiserror = { workspace = true }
+serde = { workspace = true }
+
+# NO database deps, NO web deps - pure business logic
+
+[dev-dependencies]
+rust_decimal_macros = { workspace = true }
+
+[lints]
+workspace = true

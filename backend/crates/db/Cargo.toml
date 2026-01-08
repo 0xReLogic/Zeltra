@@ -1,0 +1,29 @@
+[package]
+name = "zeltra-db"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+description = "Database layer with SeaORM entities and repositories"
+
+[dependencies]
+zeltra-shared = { path = "../shared" }
+
+sea-orm = { workspace = true }
+sea-orm-migration = { workspace = true }
+sqlx = { workspace = true }
+async-trait = "0.1"
+
+tokio = { workspace = true }
+chrono = { workspace = true }
+uuid = { workspace = true }
+rust_decimal = { workspace = true }
+serde = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+testcontainers = { workspace = true }
+testcontainers-modules = { workspace = true }
+
+[lints]
+workspace = true

@@ -1,0 +1,42 @@
+[package]
+name = "zeltra-api"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+description = "HTTP API layer with Axum routes and middleware"
+
+[dependencies]
+# Internal crates
+zeltra-core = { path = "../core" }
+zeltra-db = { path = "../db" }
+zeltra-shared = { path = "../shared" }
+
+# Web
+axum = { workspace = true }
+axum-extra = { workspace = true }
+tower = { workspace = true }
+tower-http = { workspace = true }
+tokio = { workspace = true }
+
+# Database
+sea-orm = { workspace = true }
+
+# Serialization
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+# Auth
+jsonwebtoken = { workspace = true }
+argon2 = { workspace = true }
+
+# Utils
+tracing = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
+
+[dev-dependencies]
+rstest = { workspace = true }
+fake = { workspace = true }
+
+[lints]
+workspace = true

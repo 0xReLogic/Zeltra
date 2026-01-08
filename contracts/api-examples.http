@@ -1,0 +1,187 @@
+# Zeltra API Examples
+# Use with REST Client extension (VS Code) or similar
+
+@baseUrl = http://localhost:8080/api/v1
+@accessToken = {{login.response.body.access_token}}
+
+### ============ AUTH ============
+
+### Register
+# @name register
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "SecureP@ss123",
+  "full_name": "Test User"
+}
+
+### Login
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "SecureP@ss123"
+}
+
+### Refresh Token
+POST {{baseUrl}}/auth/refresh
+Content-Type: application/json
+
+{
+  "refresh_token": "{{login.response.body.refresh_token}}"
+}
+
+### Logout
+POST {{baseUrl}}/auth/logout
+Authorization: Bearer {{accessToken}}
+
+### ============ ORGANIZATIONS ============
+
+### List Organizations
+GET {{baseUrl}}/organizations
+Authorization: Bearer {{accessToken}}
+
+### Create Organization
+# @name createOrg
+POST {{baseUrl}}/organizations
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Acme Corp",
+  "slug": "acme-corp",
+  "base_currency": "USD",
+  "timezone": "Asia/Jakarta"
+}
+
+@orgId = {{createOrg.response.body.id}}
+
+### ============ ACCOUNTS ============
+
+### List Accounts
+GET {{baseUrl}}/accounts
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+
+### List Expense Accounts
+GET {{baseUrl}}/accounts?type=expense&active=true
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+
+### ============ TRANSACTIONS ============
+
+### List Transactions
+GET {{baseUrl}}/transactions?status=posted&page=1&limit=20
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+
+### Create Transaction (Single Currency)
+# @name createTxn
+POST {{baseUrl}}/transactions
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+Content-Type: application/json
+
+{
+  "transaction_type": "expense",
+  "transaction_date": "2026-01-15",
+  "description": "Office supplies purchase",
+  "entries": [
+    {
+      "account_id": "expense-account-uuid",
+      "source_currency": "USD",
+      "source_amount": "150.00",
+      "entry_type": "debit",
+      "memo": "Printer paper and ink",
+      "dimensions": ["department-uuid"]
+    },
+    {
+      "account_id": "cash-account-uuid",
+      "source_currency": "USD",
+      "source_amount": "150.00",
+      "entry_type": "credit"
+    }
+  ]
+}
+
+@txnId = {{createTxn.response.body.id}}
+
+### Create Transaction (Multi-Currency)
+POST {{baseUrl}}/transactions
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+Content-Type: application/json
+
+{
+  "transaction_type": "expense",
+  "transaction_date": "2026-01-15",
+  "description": "International software subscription",
+  "entries": [
+    {
+      "account_id": "expense-account-uuid",
+      "source_currency": "EUR",
+      "source_amount": "1000.00",
+      "entry_type": "debit",
+      "dimensions": ["department-uuid", "project-uuid"]
+    },
+    {
+      "account_id": "bank-account-uuid",
+      "source_currency": "EUR",
+      "source_amount": "1000.00",
+      "entry_type": "credit"
+    }
+  ]
+}
+
+### Get Transaction Detail
+GET {{baseUrl}}/transactions/{{txnId}}
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+
+### Submit for Approval
+POST {{baseUrl}}/transactions/{{txnId}}/submit
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+
+### Approve Transaction
+POST {{baseUrl}}/transactions/{{txnId}}/approve
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+Content-Type: application/json
+
+{
+  "notes": "Approved - within budget"
+}
+
+### Post Transaction
+POST {{baseUrl}}/transactions/{{txnId}}/post
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+
+### ============ REPORTS ============
+
+### Trial Balance
+GET {{baseUrl}}/reports/trial-balance?as_of=2026-01-31
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+
+### Balance Sheet
+GET {{baseUrl}}/reports/balance-sheet?as_of=2026-01-31
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+
+### Income Statement
+GET {{baseUrl}}/reports/income-statement?from=2026-01-01&to=2026-01-31
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+
+### ============ DASHBOARD ============
+
+### Dashboard Metrics
+GET {{baseUrl}}/dashboard/metrics?period_id=period-uuid
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}

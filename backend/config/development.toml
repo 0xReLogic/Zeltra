@@ -1,0 +1,15 @@
+# Development configuration for Zeltra
+
+[server]
+host = "127.0.0.1"
+port = 8080
+
+[database]
+url = "postgres://postgres:postgres@localhost:5432/zeltra_dev"
+max_connections = 5
+min_connections = 1
+
+[jwt]
+secret = "dev-secret-not-for-production"
+access_token_expiry_secs = 3600     # 1 hour (longer for dev)
+refresh_token_expiry_secs = 604800  # 7 days
