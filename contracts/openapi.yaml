@@ -599,6 +599,44 @@ components:
             total_amount:
               $ref: '#/components/schemas/Money'
 
+    ActivityItem:
+      type: object
+      required: [id, type, action, entity_type, entity_id, timestamp]
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [transaction_created, transaction_submitted, transaction_approved, transaction_rejected, transaction_posted, transaction_voided, budget_created, budget_updated, budget_locked, user_invited, user_role_changed]
+        action:
+          type: string
+        entity_type:
+          type: string
+          enum: [transaction, budget, user]
+        entity_id:
+          type: string
+          format: uuid
+        description:
+          type: string
+        amount:
+          $ref: '#/components/schemas/Money'
+        currency:
+          type: string
+        user:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            full_name:
+              type: string
+        metadata:
+          type: object
+        timestamp:
+          type: string
+          format: date-time
+
 security:
   - bearerAuth: []
 
@@ -978,3 +1016,42 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DashboardMetrics'
+
+  /dashboard/recent-activity:
+    get:
+      tags: [Reports]
+      summary: Recent activity log
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+            maximum: 50
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [all, transaction, budget, approval]
+            default: all
+      responses:
+        '200':
+          description: Recent activity list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  activities:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ActivityItem'
+                  pagination:
+                    type: object
+                    properties:
+                      limit:
+                        type: integer
+                      has_more:
+                        type: boolean
+                      next_cursor:
+                        type: string

@@ -122,6 +122,55 @@ Content-Type: application/json
 
 Response: `204 No Content`
 
+### POST /auth/verify-email (Public)
+
+Verify user's email address using token from verification email.
+
+```json
+// Request
+{
+  "token": "abc123xyz..."
+}
+
+// Response 200
+{
+  "message": "Email verified successfully",
+  "verified": true
+}
+
+// Response 400 - Invalid/Expired Token
+{
+  "error": {
+    "code": "INVALID_TOKEN",
+    "message": "Invalid or expired verification token"
+  }
+}
+```
+
+### POST /auth/resend-verification (Public)
+
+Resend verification email. Returns success even if email doesn't exist (security).
+
+```json
+// Request
+{
+  "email": "user@example.com"
+}
+
+// Response 200
+{
+  "message": "If an account exists with this email, a verification link has been sent."
+}
+
+// Response 400 - Already Verified
+{
+  "error": {
+    "code": "ALREADY_VERIFIED",
+    "message": "Email is already verified"
+  }
+}
+```
+
 ---
 
 ## Organizations
@@ -1292,34 +1341,143 @@ Query: `?period_id=uuid`
     { "currency": "USD", "balance": "150000.0000", "percent": 85.0 },
     { "currency": "EUR", "balance": "15000.0000", "functional_value": "16275.0000", "percent": 9.2 },
     { "currency": "IDR", "balance": "150000000", "functional_value": "9464.0000", "percent": 5.8 }
-  ]
+  ],
+  "cash_flow_chart": {
+    "labels": ["Week 1", "Week 2", "Week 3", "Week 4"],
+    "inflow": ["25000.0000", "30000.0000", "28000.0000", "35000.0000"],
+    "outflow": ["20000.0000", "22000.0000", "25000.0000", "18000.0000"]
+  },
+  "utilization_chart": {
+    "labels": ["Engineering", "Marketing", "Operations", "HR"],
+    "budgeted": ["50000.0000", "30000.0000", "15000.0000", "5000.0000"],
+    "actual": ["35000.0000", "25000.0000", "12000.0000", "3000.0000"]
+  }
 }
 ```
 
 ### GET /dashboard/recent-activity
 
-Query: `?limit=10`
+Query: `?limit=10&type=all|transaction|budget|approval`
+
+Returns recent activity log for the organization.
 
 ```json
 // Response 200
 {
   "activities": [
     {
+      "id": "uuid",
       "type": "transaction_posted",
-      "transaction_id": "uuid",
+      "action": "posted",
+      "entity_type": "transaction",
+      "entity_id": "uuid",
       "description": "Office supplies purchase",
       "amount": "150.0000",
-      "user": "John Doe",
+      "currency": "USD",
+      "user": {
+        "id": "uuid",
+        "full_name": "John Doe"
+      },
+      "metadata": {
+        "reference_number": "TXN-2026-0001",
+        "account_code": "5200"
+      },
       "timestamp": "2026-01-15T14:05:00Z"
     },
     {
+      "id": "uuid",
       "type": "transaction_approved",
-      "transaction_id": "uuid",
+      "action": "approved",
+      "entity_type": "transaction",
+      "entity_id": "uuid",
       "description": "Software subscription",
       "amount": "1085.0000",
-      "user": "Jane Smith",
+      "currency": "USD",
+      "user": {
+        "id": "uuid",
+        "full_name": "Jane Smith"
+      },
+      "metadata": {
+        "reference_number": "TXN-2026-0002",
+        "approval_notes": "Within budget"
+      },
       "timestamp": "2026-01-15T14:00:00Z"
+    },
+    {
+      "id": "uuid",
+      "type": "transaction_created",
+      "action": "created",
+      "entity_type": "transaction",
+      "entity_id": "uuid",
+      "description": "Marketing campaign expense",
+      "amount": "5000.0000",
+      "currency": "USD",
+      "user": {
+        "id": "uuid",
+        "full_name": "Bob Wilson"
+      },
+      "metadata": {
+        "reference_number": "TXN-2026-0003",
+        "status": "draft"
+      },
+      "timestamp": "2026-01-15T13:30:00Z"
+    },
+    {
+      "id": "uuid",
+      "type": "budget_updated",
+      "action": "updated",
+      "entity_type": "budget",
+      "entity_id": "uuid",
+      "description": "Q1 Marketing Budget adjusted",
+      "amount": "75000.0000",
+      "currency": "USD",
+      "user": {
+        "id": "uuid",
+        "full_name": "Jane Smith"
+      },
+      "metadata": {
+        "budget_name": "FY 2026 Operating Budget",
+        "previous_amount": "50000.0000"
+      },
+      "timestamp": "2026-01-15T11:00:00Z"
+    },
+    {
+      "id": "uuid",
+      "type": "transaction_voided",
+      "action": "voided",
+      "entity_type": "transaction",
+      "entity_id": "uuid",
+      "description": "Duplicate entry voided",
+      "amount": "250.0000",
+      "currency": "USD",
+      "user": {
+        "id": "uuid",
+        "full_name": "John Doe"
+      },
+      "metadata": {
+        "reference_number": "TXN-2026-0000",
+        "void_reason": "Duplicate entry"
+      },
+      "timestamp": "2026-01-15T10:00:00Z"
     }
-  ]
+  ],
+  "pagination": {
+    "limit": 10,
+    "has_more": true,
+    "next_cursor": "2026-01-15T10:00:00Z"
+  }
 }
 ```
+
+Activity Types:
+- `transaction_created` - New transaction draft created
+- `transaction_submitted` - Transaction submitted for approval
+- `transaction_approved` - Transaction approved
+- `transaction_rejected` - Transaction rejected
+- `transaction_posted` - Transaction posted to ledger
+- `transaction_voided` - Transaction voided
+- `budget_created` - New budget created
+- `budget_updated` - Budget line updated
+- `budget_locked` - Budget locked
+- `user_invited` - User invited to organization
+- `user_role_changed` - User role updated
