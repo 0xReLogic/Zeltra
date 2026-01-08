@@ -557,6 +557,7 @@ NOW we start frontend, because backend is solid.
 - [x] Register
 - [x] Forgot password
 - [x] Organization selector
+- [x] Logout (UI ready, mock API connected - needs real backend integration)
 
 ### Core Layout
 

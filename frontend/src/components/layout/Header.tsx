@@ -35,7 +35,7 @@ export function Header() {
   }
 
   return (
-    <header className="fixed top-0 z-30 flex h-16 w-full items-center justify-between border-b bg-background px-6 md:pl-72 transition-all">
+    <header className="fixed top-0 right-0 z-30 flex h-16 items-center justify-between border-b bg-background px-6 left-0 md:left-64 transition-all">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" className="md:hidden">
           <Menu className="h-5 w-5" />
@@ -84,14 +84,14 @@ export function Header() {
       <div className="flex items-center gap-4">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-8 w-auto gap-2 rounded-full pl-2 pr-4">
-              <Avatar className="h-8 w-8 border">
-                <AvatarImage src="" alt={user?.full_name} />
-                <AvatarFallback>{initials}</AvatarFallback>
+            <Button variant="outline" className="relative h-10 w-auto gap-2 rounded-full px-3">
+              <Avatar className="h-7 w-7 border bg-primary/10">
+                <AvatarImage src="" alt={user?.full_name || 'User'} />
+                <AvatarFallback className="bg-primary text-primary-foreground text-xs font-bold">{initials}</AvatarFallback>
               </Avatar>
               <div className="hidden flex-col items-start gap-0.5 text-xs sm:flex">
-                <span className="font-semibold">{user?.full_name}</span>
-                <span className="text-muted-foreground text-[10px]">{user?.email}</span>
+                <span className="font-semibold">{user?.full_name || 'Guest User'}</span>
+                <span className="text-muted-foreground text-[10px]">{user?.email || 'Not logged in'}</span>
               </div>
               <ChevronDown className="h-4 w-4 text-muted-foreground" />
             </Button>
