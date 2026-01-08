@@ -17,8 +17,8 @@ export interface TrialBalanceResponse {
 }
 
 export interface ReportData {
-  data: any
-  summary?: any
+  data: unknown
+  summary?: unknown
 }
 
 export interface DimensionalReportData {

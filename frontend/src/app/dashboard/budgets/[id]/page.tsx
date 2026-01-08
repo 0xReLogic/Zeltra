@@ -13,7 +13,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
-import { Plus, ArrowLeft, TrendingUp, AlertCircle } from 'lucide-react'
+import { Plus, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { useBudget, useAddBudgetLine, useUpdateBudgetStatus } from '@/lib/queries/budgets'
 import { formatCurrency } from '@/lib/utils/format'
