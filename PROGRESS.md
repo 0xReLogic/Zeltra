@@ -82,6 +82,21 @@ Live status untuk sync antara Backend & Frontend.
 
 ---
 
+## Phase 1 Tasks (Backend - Subscription & Tier)
+
+| Task                        | Status | Notes                                    |
+| --------------------------- | ------ | ---------------------------------------- |
+| Seed tier_limits table      | ✅     | Already seeded in initial migration      |
+| Set default subscription    | ✅     | starter tier, trialing status            |
+| check_tier_limit() function | ✅     | SubscriptionRepository::check_limit()    |
+| has_feature() function      | ✅     | SubscriptionRepository::has_feature()    |
+| organization_usage tracking | ✅     | get_or_create, increment counters        |
+| Trial expiry check          | ✅     | is_trial_expired()                       |
+| Tier upgrade function       | ✅     | upgrade_tier()                           |
+| Test cross-tenant isolation | ✅     | 3 integration tests, non-superuser role     |
+
+---
+
 ## API Endpoints Status
 
 Frontend cek di sini untuk tau endpoint mana yang udah ready.

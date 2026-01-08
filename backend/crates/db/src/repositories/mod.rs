@@ -5,8 +5,10 @@
 
 pub mod organization;
 pub mod session;
+pub mod subscription;
 pub mod user;
 
 pub use organization::OrganizationRepository;
 pub use session::SessionRepository;
+pub use subscription::{Feature, LimitCheckResult, ResourceLimit, SubscriptionRepository};
 pub use user::UserRepository;

@@ -142,14 +142,14 @@ No frontend work until Phase 6. Backend must be battle-tested first.
 
 ### Subscription & Tier Logic
 
-- [ ] Seed `tier_limits` table with Starter/Growth/Enterprise
-- [ ] Set default `subscription_tier = 'starter'` dan `subscription_status = 'trialing'`
-- [ ] Set `trial_ends_at` (14 days from org creation)
-- [ ] Implement `check_tier_limit()` function (users, transactions, dimensions)
-- [ ] Implement `has_feature()` function (simulation, multi_currency, sso, etc.)
-- [ ] Create `organization_usage` tracking (monthly counters)
-- [ ] Test tier limit enforcement
-- [ ] Test feature flag checks
+- [x] Seed `tier_limits` table with Starter/Growth/Enterprise
+- [x] Set default `subscription_tier = 'starter'` dan `subscription_status = 'trialing'`
+- [x] Set `trial_ends_at` (14 days from org creation)
+- [x] Implement `check_tier_limit()` function (users, transactions, dimensions)
+- [x] Implement `has_feature()` function (simulation, multi_currency, sso, etc.)
+- [x] Create `organization_usage` tracking (monthly counters)
+- [x] Test tier limit enforcement
+- [x] Test feature flag checks
 
 ### API Endpoints (Vertical Slice)
 
@@ -696,11 +696,11 @@ NOW we start frontend, because backend is solid.
   - [ ] Option for adjustment period (period 13)
   - [x] Mock: `POST /fiscal-years`
 - [x] **Budget Management UI** (Mocked - Create, Detail, Lines)
-  - [ ] Create budget (`budgets` table)
-  - [ ] Add budget lines per account/period (`budget_lines`)
-  - [ ] Assign dimensions to budget lines (`budget_line_dimensions`)
-  - [ ] Lock/unlock budget
-  - [ ] Mock: `POST /budgets`, `POST /budgets/:id/lines`
+  - [x] Create budget (`budgets` table)
+  - [x] Add budget lines per account/period (`budget_lines`)
+  - [x] Assign dimensions to budget lines (`budget_line_dimensions`)
+  - [x] Lock/unlock budget
+  - [x] Mock: `POST /budgets`, `POST /budgets/:id/lines`
 - [ ] Simulation/Forecasting UI (Phase 4 backend dependency)
   - [ ] Historical data selection
   - [ ] Adjustment parameters
