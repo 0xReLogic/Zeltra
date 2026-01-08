@@ -1,11 +1,11 @@
 //! Authentication middleware for protected routes.
 
 use axum::{
-    Json,
     extract::{FromRequestParts, Request, State},
-    http::{StatusCode, header::AUTHORIZATION, request::Parts},
+    http::{header::AUTHORIZATION, request::Parts, StatusCode},
     middleware::Next,
     response::{IntoResponse, Response},
+    Json,
 };
 use serde_json::json;
 

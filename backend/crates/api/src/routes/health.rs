@@ -1,6 +1,6 @@
 //! Health check endpoints.
 
-use axum::{Json, Router, routing::get};
+use axum::{routing::get, Json, Router};
 use serde::Serialize;
 
 use crate::AppState;

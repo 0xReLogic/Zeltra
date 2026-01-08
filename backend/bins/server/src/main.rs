@@ -8,7 +8,7 @@ use tokio::net::TcpListener;
 use tracing::info;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-use zeltra_api::{AppState, create_router};
+use zeltra_api::{create_router, AppState};
 use zeltra_db::connect;
 use zeltra_shared::{AppConfig, EmailService, JwtConfig, JwtService};
 

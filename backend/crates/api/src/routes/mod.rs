@@ -1,8 +1,8 @@
 //! API route definitions.
 
-use axum::{Router, middleware};
+use axum::{middleware, Router};
 
-use crate::{AppState, middleware::auth::auth_middleware};
+use crate::{middleware::auth::auth_middleware, AppState};
 
 pub mod auth;
 pub mod health;

@@ -5,8 +5,8 @@
 use sea_orm::{ActiveModelTrait, Database, DatabaseConnection, EntityTrait, Set};
 use uuid::Uuid;
 use zeltra_db::{
-    OrganizationRepository,
     entities::{organizations, users},
+    OrganizationRepository,
 };
 
 /// Get database URL from environment or use default.

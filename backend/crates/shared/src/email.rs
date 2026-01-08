@@ -3,8 +3,8 @@
 //! Uses `lettre` for SMTP transport.
 
 use lettre::{
-    AsyncSmtpTransport, AsyncTransport, Message, Tokio1Executor, message::header::ContentType,
-    transport::smtp::authentication::Credentials,
+    message::header::ContentType, transport::smtp::authentication::Credentials, AsyncSmtpTransport,
+    AsyncTransport, Message, Tokio1Executor,
 };
 use thiserror::Error;
 

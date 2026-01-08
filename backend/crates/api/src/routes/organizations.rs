@@ -1,17 +1,17 @@
 //! Organization management routes.
 
 use axum::{
-    Json, Router,
     extract::{Path, State},
     http::StatusCode,
     response::IntoResponse,
     routing::{get, patch, post},
+    Json, Router,
 };
 use serde_json::json;
 use tracing::{error, info};
 
-use crate::{AppState, middleware::AuthUser};
-use zeltra_db::{OrganizationRepository, UserRepository, entities::sea_orm_active_enums::UserRole};
+use crate::{middleware::AuthUser, AppState};
+use zeltra_db::{entities::sea_orm_active_enums::UserRole, OrganizationRepository, UserRepository};
 use zeltra_shared::auth::{AddUserRequest, CreateOrganizationRequest, UpdateOrganizationRequest};
 
 /// Creates the organizations router (requires auth middleware to be applied externally).
