@@ -186,7 +186,7 @@ Frontend cek di sini untuk tau endpoint mana yang udah ready.
 | Endpoint                       | Status | Notes                           |
 | ------------------------------ | ------ | ------------------------------- |
 | GET /dashboard/metrics         | ✅     | Mocked (Cash Flow, Utilization) |
-| GET /dashboard/recent-activity | ✅     | Mocked                          |
+| GET /dashboard/recent-activity | ⬜     |                                 |
 
 ### Simulation
 
