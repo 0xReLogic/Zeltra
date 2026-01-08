@@ -8,9 +8,9 @@ Live status untuk sync antara Backend & Frontend.
 
 |                    | Backend                 | Frontend                                 |
 | ------------------ | ----------------------- | ---------------------------------------- |
-| **Current Phase**  | 0                       | 1 (Done)                                 |
-| **Last Task Done** | Seeder CLI complete     | Phase 6: Org & Team Management UI ✅     |
-| **Next Task**      | Integration tests setup | Phase 7: Advanced Features (Ledger View) |
+| **Current Phase**  | 1                       | 1 (Done)                                 |
+| **Last Task Done** | Auth API implementation | Phase 6: Org & Team Management UI ✅     |
+| **Next Task**      | Integration tests       | Phase 7: Advanced Features (Ledger View) |
 
 **Last Updated:** 2026-01-08
 
@@ -29,8 +29,8 @@ Live status untuk sync antara Backend & Frontend.
 
 | Phase            | Backend | Frontend | Notes                                   |
 | ---------------- | ------- | -------- | --------------------------------------- |
-| 0: Foundation    | 🟡      | ⬜       | BE workspace setup done                 |
-| 1: Auth          | ⬜      | ✅       | FE mocked                               |
+| 0: Foundation    | ✅      | ⬜       | BE workspace setup done                 |
+| 1: Auth          | ✅      | ✅       | BE Auth API complete                    |
 | 2: Ledger        | ⬜      | -        |                                         |
 | 3: Workflow      | ⬜      | -        |                                         |
 | 4: Reports       | ⬜      | -        |                                         |
@@ -65,6 +65,20 @@ Live status untuk sync antara Backend & Frontend.
 
 ---
 
+## Phase 1 Tasks (Backend - Auth)
+
+| Task                    | Status | Notes                                    |
+| ----------------------- | ------ | ---------------------------------------- |
+| JWT Service             | ✅     | Access & refresh token generation        |
+| Password hashing        | ✅     | Argon2id with secure defaults            |
+| User repository         | ✅     | CRUD, find by email, get organizations   |
+| Organization repository | ✅     | CRUD, membership management, role checks |
+| Auth middleware         | ✅     | JWT validation, claims extraction        |
+| Auth routes             | ✅     | Login, register, refresh                 |
+| Organization routes     | ✅     | Create, get, list users, add user        |
+
+---
+
 ## API Endpoints Status
 
 Frontend cek di sini untuk tau endpoint mana yang udah ready.
@@ -77,22 +91,22 @@ Frontend cek di sini untuk tau endpoint mana yang udah ready.
 
 ### Auth
 
-| Endpoint            | Status | Notes  |
-| ------------------- | ------ | ------ |
-| POST /auth/register | ⬜     |        |
-| POST /auth/login    | ✅     | Mocked |
-| POST /auth/refresh  | ⬜     |        |
-| POST /auth/logout   | ⬜     |        |
+| Endpoint                 | Status | Notes                        |
+| ------------------------ | ------ | ---------------------------- |
+| POST /api/v1/auth/register | ✅     | Creates user, returns info   |
+| POST /api/v1/auth/login    | ✅     | Returns tokens + user info   |
+| POST /api/v1/auth/refresh  | ✅     | Returns new access token     |
+| POST /api/v1/auth/logout   | ⬜     | Client-side token invalidation |
 
 ### Organizations
 
-| Endpoint                      | Status | Notes  |
-| ----------------------------- | ------ | ------ |
-| GET /organizations/:id        | ✅     | Mocked |
-| PATCH /organizations/:id      | ✅     | Mocked |
-| GET /organizations/:id/users  | ✅     | Mocked |
-| POST /organizations/:id/users | ✅     | Mocked |
-| POST /organizations           | ⬜     |        |
+| Endpoint                           | Status | Notes                      |
+| ---------------------------------- | ------ | -------------------------- |
+| POST /api/v1/organizations         | ✅     | Create org, user as owner  |
+| GET /api/v1/organizations/:id      | ✅     | Get org details            |
+| GET /api/v1/organizations/:id/users  | ✅     | List org members           |
+| POST /api/v1/organizations/:id/users | ✅     | Add user to org (admin+)   |
+| PATCH /api/v1/organizations/:id    | ⬜     | Update org settings        |
 
 ### Accounts
 

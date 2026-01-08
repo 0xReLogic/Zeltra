@@ -125,18 +125,18 @@ No frontend work until Phase 6. Backend must be battle-tested first.
 
 ### Authentication
 
-- [ ] User registration (email, password, full_name)
-- [ ] Password hashing (Argon2id)
+- [x] User registration (email, password, full_name)
+- [x] Password hashing (Argon2id)
 - [ ] Email verification flow (optional, bisa skip dulu)
-- [ ] JWT generation and validation
-- [ ] Refresh token flow
+- [x] JWT generation and validation
+- [x] Refresh token flow
 - [ ] Session management
 
 ### Organization & Multi-Tenancy
 
-- [ ] Create organization (name, slug, base_currency, timezone)
-- [ ] Add user to organization with role (`user_role` enum)
-- [ ] Set `approval_limit` per user (for approver role)
+- [x] Create organization (name, slug, base_currency, timezone)
+- [x] Add user to organization with role (`user_role` enum)
+- [x] Set `approval_limit` per user (for approver role)
 - [ ] Set RLS context per request (`app.current_organization_id`)
 - [ ] Test cross-tenant isolation
 
@@ -153,14 +153,14 @@ No frontend work until Phase 6. Backend must be battle-tested first.
 
 ### API Endpoints (Vertical Slice)
 
-- [ ] `POST /auth/register`
-- [ ] `POST /auth/login`
-- [ ] `POST /auth/refresh`
+- [x] `POST /auth/register`
+- [x] `POST /auth/login`
+- [x] `POST /auth/refresh`
 - [ ] `POST /auth/logout`
-- [ ] `POST /organizations`
-- [ ] `GET /organizations/:id`
-- [ ] `POST /organizations/:id/users`
-- [ ] `GET /organizations/:id/users`
+- [x] `POST /organizations`
+- [x] `GET /organizations/:id`
+- [x] `POST /organizations/:id/users`
+- [x] `GET /organizations/:id/users`
 
 ### Tests
 
