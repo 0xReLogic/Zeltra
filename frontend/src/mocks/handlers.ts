@@ -247,5 +247,59 @@ export const handlers = [
           id: `er_${Date.now()}`,
           ...body
       })
+  }),
+
+  // Organization Settings & Team
+  http.get('/api/v1/organizations/:id', ({ params }) => {
+    return HttpResponse.json({
+        id: params.id,
+        name: 'Acme Corp',
+        slug: 'acme',
+        base_currency: 'USD',
+        timezone: 'Asia/Jakarta',
+        created_at: '2026-01-01T00:00:00Z',
+        subscription_tier: 'enterprise'
+    })
+  }),
+
+  http.patch('/api/v1/organizations/:id', async ({ request, params }) => {
+    const body = await request.json() as any
+    return HttpResponse.json({
+        id: params.id,
+        name: 'Acme Corp',
+        ...body
+    })
+  }),
+
+  http.get('/api/v1/organizations/:id/users', () => {
+    return HttpResponse.json({
+        data: [
+            { id: 'usr_001', full_name: 'Demo User', email: 'demo@zeltra.io', role: 'owner', status: 'active', joined_at: '2026-01-01' },
+            { id: 'usr_002', full_name: 'Alice Finance', email: 'alice@zeltra.io', role: 'accountant', status: 'active', joined_at: '2026-01-02' },
+            { id: 'usr_003', full_name: 'Bob Auditor', email: 'bob@zeltra.io', role: 'viewer', status: 'invited', joined_at: null },
+        ]
+    })
+  }),
+
+  http.post('/api/v1/organizations/:id/users', async ({ request }) => {
+      const body = await request.json() as any
+      return HttpResponse.json({
+          id: `usr_${Date.now()}`,
+          status: 'invited',
+          ...body
+      })
+  }),
+
+  http.patch('/api/v1/organizations/:id/users/:userId', async ({ request, params }) => {
+      const body = await request.json() as any
+      return HttpResponse.json({
+          id: params.userId,
+          status: 'active',
+          ...body
+      })
+  }),
+
+  http.delete('/api/v1/organizations/:id/users/:userId', () => {
+      return HttpResponse.json({ success: true })
   })
 ]

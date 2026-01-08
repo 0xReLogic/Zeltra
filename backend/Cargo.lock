@@ -4552,11 +4552,14 @@ dependencies = [
 name = "zeltra-core"
 version = "0.1.0"
 dependencies = [
+ "argon2",
  "chrono",
+ "rand_core 0.6.4",
  "rust_decimal",
  "rust_decimal_macros",
  "serde",
  "thiserror",
+ "uuid",
  "zeltra-shared",
 ]
 
@@ -4626,6 +4629,7 @@ dependencies = [
  "chrono",
  "config",
  "dotenvy",
+ "jsonwebtoken",
  "rust_decimal",
  "serde",
  "serde_json",

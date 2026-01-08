@@ -9,6 +9,8 @@ pub mod entities;
 pub mod migration;
 pub mod repositories;
 
+pub use repositories::{OrganizationRepository, UserRepository};
+
 use sea_orm::{Database, DatabaseConnection, DbErr};
 
 /// Establishes a connection to the database.

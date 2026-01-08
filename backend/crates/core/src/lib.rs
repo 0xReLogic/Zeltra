@@ -5,6 +5,7 @@
 //!
 //! # Modules
 //!
+//! - `auth` - Authentication and password hashing
 //! - `ledger` - Double-entry bookkeeping logic
 //! - `currency` - Multi-currency handling and exchange rates
 //! - `fiscal` - Fiscal year and period management
@@ -12,6 +13,7 @@
 //! - `simulation` - What-if scenario projections
 //! - `dimension` - Dimensional reporting and filtering
 
+pub mod auth;
 pub mod budget;
 pub mod currency;
 pub mod dimension;

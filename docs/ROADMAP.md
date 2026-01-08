@@ -566,19 +566,18 @@ NOW we start frontend, because backend is solid.
 
 ### Organization UI
 
-> **DB Tables:** `organizations`, `organization_users`
-> **DB Fields:** `base_currency`, `timezone`, `role`, `approval_limit`
+> **DB Tables:** `organizations`, `organization_users` > **DB Fields:** `base_currency`, `timezone`, `role`, `approval_limit`
 
-- [ ] Organization Settings Page
-  - [ ] Update base currency (`organizations.base_currency`)
-  - [ ] Update timezone (`organizations.timezone`)
-  - [ ] View subscription tier & status
-- [ ] User/Team Management Page
-  - [ ] List organization users (`organization_users`)
-  - [ ] Invite new user (email + role)
-  - [ ] Update user role (`user_role` enum: viewer, accountant, approver, admin, owner)
-  - [ ] Set approval limit for approvers (`approval_limit` field)
-  - [ ] Remove user from organization
+- [x] Organization Settings Page
+  - [x] Update base currency (`organizations.base_currency`)
+  - [x] Update timezone (`organizations.timezone`)
+  - [x] View subscription tier & status
+- [x] User/Team Management Page
+  - [x] List organization users (`organization_users`)
+  - [x] Invite new user (email + role)
+  - [x] Update user role (`user_role` enum: viewer, accountant, approver, admin, owner)
+  - [x] Set approval limit for approvers (`approval_limit` field)
+  - [x] Remove user from organization
 
 **Deliverable:** Frontend skeleton with auth working.
 
@@ -714,7 +713,7 @@ Add these to `frontend/src/mocks/handlers.ts`:
 // Account Ledger
 GET /api/v1/accounts/:id/ledger → { entries: [...], running_balance }
 
-// Dimensional Report  
+// Dimensional Report
 GET /api/v1/reports/dimensional → { data: [...], grouped_by_dimension }
 
 // Fiscal Year Creation
