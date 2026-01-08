@@ -1,18 +1,12 @@
 //! Authentication routes for login, register, and token refresh.
 
-use axum::{
-    extract::State,
-    http::StatusCode,
-    response::IntoResponse,
-    routing::post,
-    Json, Router,
-};
+use axum::{Json, Router, extract::State, http::StatusCode, response::IntoResponse, routing::post};
 use serde_json::json;
 use tracing::{error, info};
 
 use crate::AppState;
 use zeltra_core::auth::{hash_password, verify_password};
-use zeltra_db::{entities::sea_orm_active_enums::UserRole, UserRepository};
+use zeltra_db::{UserRepository, entities::sea_orm_active_enums::UserRole};
 use zeltra_shared::auth::{
     LoginRequest, LoginResponse, RefreshRequest, RegisterRequest, UserInfo, UserOrganization,
 };
@@ -26,6 +20,7 @@ pub fn routes() -> Router<AppState> {
 }
 
 /// POST /auth/login - Authenticate user and return tokens.
+#[allow(clippy::too_many_lines)]
 async fn login(
     State(state): State<AppState>,
     Json(payload): Json<LoginRequest>,
@@ -133,43 +128,43 @@ async fn login(
 
     // Generate tokens
     let role_str = role_to_string(&default_membership.role);
-    let access_token = match state.jwt_service.generate_access_token(
-        user.id,
-        default_org.id,
-        &role_str,
-    ) {
-        Ok(t) => t,
-        Err(e) => {
-            error!(error = %e, "Failed to generate access token");
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({
-                    "error": "internal_error",
-                    "message": "An error occurred during login"
-                })),
-            )
-                .into_response();
-        }
-    };
+    let access_token =
+        match state
+            .jwt_service
+            .generate_access_token(user.id, default_org.id, &role_str)
+        {
+            Ok(t) => t,
+            Err(e) => {
+                error!(error = %e, "Failed to generate access token");
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(json!({
+                        "error": "internal_error",
+                        "message": "An error occurred during login"
+                    })),
+                )
+                    .into_response();
+            }
+        };
 
-    let refresh_token = match state.jwt_service.generate_refresh_token(
-        user.id,
-        default_org.id,
-        &role_str,
-    ) {
-        Ok(t) => t,
-        Err(e) => {
-            error!(error = %e, "Failed to generate refresh token");
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({
-                    "error": "internal_error",
-                    "message": "An error occurred during login"
-                })),
-            )
-                .into_response();
-        }
-    };
+    let refresh_token =
+        match state
+            .jwt_service
+            .generate_refresh_token(user.id, default_org.id, &role_str)
+        {
+            Ok(t) => t,
+            Err(e) => {
+                error!(error = %e, "Failed to generate refresh token");
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(json!({
+                        "error": "internal_error",
+                        "message": "An error occurred during login"
+                    })),
+                )
+                    .into_response();
+            }
+        };
 
     info!(user_id = %user.id, "User logged in successfully");
 
@@ -333,7 +328,7 @@ async fn refresh(
         .into_response()
 }
 
-/// Converts UserRole enum to string.
+/// Converts `UserRole` enum to string.
 fn role_to_string(role: &UserRole) -> String {
     match role {
         UserRole::Owner => "owner".to_string(),

@@ -91,7 +91,9 @@ impl OrganizationRepository {
             is_active: Set(true),
             subscription_tier: Set(SubscriptionTier::Starter),
             subscription_status: Set(SubscriptionStatus::Trialing),
-            trial_ends_at: Set(Some((chrono::Utc::now() + chrono::Duration::days(14)).into())),
+            trial_ends_at: Set(Some(
+                (chrono::Utc::now() + chrono::Duration::days(14)).into(),
+            )),
             subscription_ends_at: Set(None),
             payment_provider: Set(None),
             payment_customer_id: Set(None),
@@ -212,7 +214,7 @@ impl OrganizationRepository {
     ) -> Result<bool, DbErr> {
         let membership = self.get_user_membership(org_id, user_id).await?;
 
-        Ok(membership.map_or(false, |m| role_level(&m.role) >= role_level(&required_role)))
+        Ok(membership.is_some_and(|m| role_level(&m.role) >= role_level(&required_role)))
     }
 }
 

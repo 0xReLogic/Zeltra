@@ -1,19 +1,17 @@
 //! Organization management routes.
 
 use axum::{
+    Json, Router,
     extract::{Path, State},
     http::StatusCode,
     response::IntoResponse,
     routing::{get, post},
-    Json, Router,
 };
 use serde_json::json;
 use tracing::{error, info};
 
-use crate::{middleware::AuthUser, AppState};
-use zeltra_db::{
-    entities::sea_orm_active_enums::UserRole, OrganizationRepository, UserRepository,
-};
+use crate::{AppState, middleware::AuthUser};
+use zeltra_db::{OrganizationRepository, UserRepository, entities::sea_orm_active_enums::UserRole};
 use zeltra_shared::auth::{AddUserRequest, CreateOrganizationRequest};
 
 /// Creates the organizations router (requires auth middleware to be applied externally).
@@ -107,7 +105,7 @@ async fn create_organization(
         .into_response()
 }
 
-/// GET /organizations/:org_id - Get organization details.
+/// GET `/organizations/{org_id}` - Get organization details.
 async fn get_organization(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -183,7 +181,7 @@ async fn get_organization(
         .into_response()
 }
 
-/// GET /organizations/:org_id/users - List organization users.
+/// GET `/organizations/{org_id}/users` - List organization users.
 async fn list_users(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -250,7 +248,8 @@ async fn list_users(
     (StatusCode::OK, Json(json!({ "users": users_json }))).into_response()
 }
 
-/// POST /organizations/:org_id/users - Add user to organization.
+/// POST `/organizations/{org_id}/users` - Add user to organization.
+#[allow(clippy::too_many_lines)]
 async fn add_user(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -261,7 +260,10 @@ async fn add_user(
     let user_repo = UserRepository::new((*state.db).clone());
 
     // Check if current user has admin or owner role
-    match org_repo.has_role(org_id, auth.user_id(), UserRole::Admin).await {
+    match org_repo
+        .has_role(org_id, auth.user_id(), UserRole::Admin)
+        .await
+    {
         Ok(false) => {
             return (
                 StatusCode::FORBIDDEN,
@@ -339,28 +341,25 @@ async fn add_user(
     }
 
     // Parse role
-    let role = match string_to_role(&payload.role) {
-        Some(r) => r,
-        None => {
-            return (
-                StatusCode::BAD_REQUEST,
-                Json(json!({
-                    "error": "invalid_role",
-                    "message": "Invalid role. Must be one of: owner, admin, approver, accountant, viewer"
-                })),
-            )
-                .into_response();
-        }
+    let Some(role) = string_to_role(&payload.role) else {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({
+                "error": "invalid_role",
+                "message": "Invalid role. Must be one of: owner, admin, approver, accountant, viewer"
+            })),
+        )
+            .into_response();
     };
 
     // Parse approval limit
-    let approval_limit = payload
-        .approval_limit
-        .as_ref()
-        .and_then(|s| s.parse().ok());
+    let approval_limit = payload.approval_limit.as_ref().and_then(|s| s.parse().ok());
 
     // Add user to organization
-    let membership = match org_repo.add_user(org_id, user.id, role, approval_limit).await {
+    let membership = match org_repo
+        .add_user(org_id, user.id, role, approval_limit)
+        .await
+    {
         Ok(m) => m,
         Err(e) => {
             error!(error = %e, "Failed to add user to organization");
@@ -395,7 +394,7 @@ async fn add_user(
         .into_response()
 }
 
-/// Converts UserRole enum to string.
+/// Converts `UserRole` enum to string.
 fn role_to_string(role: &UserRole) -> String {
     match role {
         UserRole::Owner => "owner".to_string(),
@@ -407,7 +406,7 @@ fn role_to_string(role: &UserRole) -> String {
     }
 }
 
-/// Converts string to UserRole enum.
+/// Converts string to `UserRole` enum.
 fn string_to_role(s: &str) -> Option<UserRole> {
     match s.to_lowercase().as_str() {
         "owner" => Some(UserRole::Owner),

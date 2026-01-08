@@ -36,7 +36,9 @@ async fn main() -> anyhow::Result<()> {
     // Create JWT service
     let jwt_config = JwtConfig {
         secret: config.jwt.secret.clone(),
+        #[allow(clippy::cast_possible_wrap)]
         access_token_expires_minutes: (config.jwt.access_token_expiry_secs / 60) as i64,
+        #[allow(clippy::cast_possible_wrap)]
         refresh_token_expires_days: (config.jwt.refresh_token_expiry_secs / 86400) as i64,
     };
     let jwt_service = JwtService::new(jwt_config);

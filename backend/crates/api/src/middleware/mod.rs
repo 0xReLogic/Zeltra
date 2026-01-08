@@ -2,4 +2,4 @@
 
 pub mod auth;
 
-pub use auth::{auth_middleware, AuthUser};
+pub use auth::{AuthUser, auth_middleware};

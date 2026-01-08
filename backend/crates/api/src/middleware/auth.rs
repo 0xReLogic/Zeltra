@@ -1,11 +1,11 @@
 //! Authentication middleware for protected routes.
 
 use axum::{
+    Json,
     extract::{FromRequestParts, Request, State},
-    http::{header::AUTHORIZATION, request::Parts, StatusCode},
+    http::{StatusCode, header::AUTHORIZATION, request::Parts},
     middleware::Next,
     response::{IntoResponse, Response},
-    Json,
 };
 use serde_json::json;
 
@@ -14,7 +14,9 @@ use zeltra_shared::Claims;
 
 /// Extracts the bearer token from the Authorization header.
 fn extract_bearer_token(header: &str) -> Option<&str> {
-    header.strip_prefix("Bearer ").or_else(|| header.strip_prefix("bearer "))
+    header
+        .strip_prefix("Bearer ")
+        .or_else(|| header.strip_prefix("bearer "))
 }
 
 /// Authentication middleware that validates JWT tokens.
@@ -34,18 +36,15 @@ pub async fn auth_middleware(
         .get(AUTHORIZATION)
         .and_then(|h| h.to_str().ok());
 
-    let token = match auth_header.and_then(extract_bearer_token) {
-        Some(t) => t,
-        None => {
-            return (
-                StatusCode::UNAUTHORIZED,
-                Json(json!({
-                    "error": "missing_token",
-                    "message": "Authorization header with Bearer token is required"
-                })),
-            )
-                .into_response();
-        }
+    let Some(token) = auth_header.and_then(extract_bearer_token) else {
+        return (
+            StatusCode::UNAUTHORIZED,
+            Json(json!({
+                "error": "missing_token",
+                "message": "Authorization header with Bearer token is required"
+            })),
+        )
+            .into_response();
     };
 
     // Validate token

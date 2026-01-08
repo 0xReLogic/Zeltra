@@ -3,7 +3,7 @@
 //! Provides secure JWT handling with access and refresh tokens.
 
 use chrono::{Duration, Utc};
-use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
+use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation, decode, encode};
 use thiserror::Error;
 use uuid::Uuid;
 
@@ -92,8 +92,7 @@ impl JwtService {
         org_id: Uuid,
         role: &str,
     ) -> Result<String, JwtError> {
-        let expires_at = Utc::now()
-            + Duration::minutes(self.config.access_token_expires_minutes);
+        let expires_at = Utc::now() + Duration::minutes(self.config.access_token_expires_minutes);
         let claims = Claims::new(user_id, org_id, role, expires_at);
 
         encode(&Header::default(), &claims, &self.encoding_key)
@@ -111,8 +110,7 @@ impl JwtService {
         org_id: Uuid,
         role: &str,
     ) -> Result<String, JwtError> {
-        let expires_at = Utc::now()
-            + Duration::days(self.config.refresh_token_expires_days);
+        let expires_at = Utc::now() + Duration::days(self.config.refresh_token_expires_days);
         let claims = Claims::new(user_id, org_id, role, expires_at);
 
         encode(&Header::default(), &claims, &self.encoding_key)
@@ -161,7 +159,9 @@ mod tests {
         let user_id = Uuid::new_v4();
         let org_id = Uuid::new_v4();
 
-        let token = service.generate_access_token(user_id, org_id, "admin").unwrap();
+        let token = service
+            .generate_access_token(user_id, org_id, "admin")
+            .unwrap();
         assert!(!token.is_empty());
     }
 
@@ -171,7 +171,9 @@ mod tests {
         let user_id = Uuid::new_v4();
         let org_id = Uuid::new_v4();
 
-        let token = service.generate_access_token(user_id, org_id, "admin").unwrap();
+        let token = service
+            .generate_access_token(user_id, org_id, "admin")
+            .unwrap();
         let claims = service.validate_token(&token).unwrap();
 
         assert_eq!(claims.user_id(), user_id);
