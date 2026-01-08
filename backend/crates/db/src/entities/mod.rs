@@ -17,6 +17,7 @@ pub mod chart_of_accounts;
 pub mod currencies;
 pub mod dimension_types;
 pub mod dimension_values;
+pub mod email_verification_tokens;
 pub mod entry_dimensions;
 pub mod exchange_rates;
 pub mod fiscal_periods;

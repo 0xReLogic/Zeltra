@@ -680,6 +680,74 @@ paths:
       responses:
         '204':
           description: Logged out
+
+  /auth/verify-email:
+    post:
+      tags: [Auth]
+      summary: Verify email address
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token:
+                  type: string
+                  description: Verification token from email
+      responses:
+        '200':
+          description: Email verified successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  verified:
+                    type: boolean
+        '400':
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/resend-verification:
+    post:
+      tags: [Auth]
+      summary: Resend verification email
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        '200':
+          description: Verification email sent (if account exists)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '400':
+          description: Email already verified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
           
   # ============ Organizations ============
   /organizations:

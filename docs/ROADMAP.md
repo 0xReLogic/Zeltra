@@ -127,7 +127,7 @@ No frontend work until Phase 6. Backend must be battle-tested first.
 
 - [x] User registration (email, password, full_name)
 - [x] Password hashing (Argon2id)
-- [ ] Email verification flow (optional, bisa skip dulu)
+- [x] Email verification flow
 - [x] JWT generation and validation
 - [x] Refresh token flow
 - [x] Session management
@@ -157,6 +157,8 @@ No frontend work until Phase 6. Backend must be battle-tested first.
 - [x] `POST /auth/login`
 - [x] `POST /auth/refresh`
 - [x] `POST /auth/logout`
+- [x] `POST /auth/verify-email`
+- [x] `POST /auth/resend-verification`
 - [x] `POST /organizations`
 - [x] `GET /organizations/:id`
 - [x] `POST /organizations/:id/users`

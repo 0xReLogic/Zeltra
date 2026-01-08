@@ -181,3 +181,26 @@ pub struct UpdateOrganizationRequest {
     /// Timezone (optional, IANA format).
     pub timezone: Option<String>,
 }
+
+/// Email verification request.
+#[derive(Debug, Clone, Deserialize)]
+pub struct VerifyEmailRequest {
+    /// The verification token from the email link.
+    pub token: String,
+}
+
+/// Resend verification email request.
+#[derive(Debug, Clone, Deserialize)]
+pub struct ResendVerificationRequest {
+    /// User email to resend verification to.
+    pub email: String,
+}
+
+/// Email verification response.
+#[derive(Debug, Clone, Serialize)]
+pub struct VerifyEmailResponse {
+    /// Success message.
+    pub message: String,
+    /// Whether email is now verified.
+    pub verified: bool,
+}

@@ -15,7 +15,7 @@ use sea_orm::DatabaseConnection;
 use std::sync::Arc;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
-use zeltra_shared::JwtService;
+use zeltra_shared::{EmailService, JwtService};
 
 /// Application state shared across handlers.
 #[derive(Clone)]
@@ -24,6 +24,8 @@ pub struct AppState {
     pub db: Arc<DatabaseConnection>,
     /// JWT service for token operations.
     pub jwt_service: Arc<JwtService>,
+    /// Email service for sending emails.
+    pub email_service: Arc<EmailService>,
 }
 
 /// Creates the main application router.

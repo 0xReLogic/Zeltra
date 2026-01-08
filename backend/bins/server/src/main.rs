@@ -10,7 +10,7 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 use zeltra_api::{AppState, create_router};
 use zeltra_db::connect;
-use zeltra_shared::{AppConfig, JwtConfig, JwtService};
+use zeltra_shared::{AppConfig, EmailService, JwtConfig, JwtService};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -43,10 +43,19 @@ async fn main() -> anyhow::Result<()> {
     };
     let jwt_service = JwtService::new(jwt_config);
 
+    // Create email service
+    let email_service = EmailService::new(config.email.clone());
+    info!(
+        smtp_host = %config.email.smtp_host,
+        smtp_port = %config.email.smtp_port,
+        "Email service configured"
+    );
+
     // Create application state
     let state = AppState {
         db: Arc::new(db),
         jwt_service: Arc::new(jwt_service),
+        email_service: Arc::new(email_service),
     };
 
     // Create router

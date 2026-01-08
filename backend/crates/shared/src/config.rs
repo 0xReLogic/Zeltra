@@ -11,6 +11,9 @@ pub struct AppConfig {
     pub database: DatabaseConfig,
     /// JWT configuration.
     pub jwt: JwtConfig,
+    /// Email configuration.
+    #[serde(default)]
+    pub email: EmailConfig,
 }
 
 /// Server configuration.
@@ -72,6 +75,66 @@ fn default_access_token_expiry() -> u64 {
 
 fn default_refresh_token_expiry() -> u64 {
     604_800 // 7 days
+}
+
+/// Email configuration.
+#[derive(Debug, Clone, Deserialize)]
+pub struct EmailConfig {
+    /// SMTP host.
+    #[serde(default = "default_smtp_host")]
+    pub smtp_host: String,
+    /// SMTP port.
+    #[serde(default = "default_smtp_port")]
+    pub smtp_port: u16,
+    /// SMTP username.
+    #[serde(default)]
+    pub smtp_username: String,
+    /// SMTP password.
+    #[serde(default)]
+    pub smtp_password: String,
+    /// From email address.
+    #[serde(default = "default_from_email")]
+    pub from_email: String,
+    /// From name.
+    #[serde(default = "default_from_name")]
+    pub from_name: String,
+    /// Frontend URL for verification links.
+    #[serde(default = "default_frontend_url")]
+    pub frontend_url: String,
+}
+
+fn default_smtp_host() -> String {
+    "localhost".to_string()
+}
+
+fn default_smtp_port() -> u16 {
+    1025
+}
+
+fn default_from_email() -> String {
+    "noreply@zeltra.app".to_string()
+}
+
+fn default_from_name() -> String {
+    "Zeltra".to_string()
+}
+
+fn default_frontend_url() -> String {
+    "http://localhost:3000".to_string()
+}
+
+impl Default for EmailConfig {
+    fn default() -> Self {
+        Self {
+            smtp_host: default_smtp_host(),
+            smtp_port: default_smtp_port(),
+            smtp_username: String::new(),
+            smtp_password: String::new(),
+            from_email: default_from_email(),
+            from_name: default_from_name(),
+            frontend_url: default_frontend_url(),
+        }
+    }
 }
 
 impl AppConfig {

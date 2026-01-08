@@ -2,14 +2,17 @@
 
 use axum::{Json, Router, extract::State, http::StatusCode, response::IntoResponse, routing::post};
 use serde_json::json;
-use tracing::{error, info};
+use tracing::{error, info, warn};
 
 use crate::AppState;
 use zeltra_core::auth::{hash_password, verify_password};
-use zeltra_db::{SessionRepository, UserRepository, entities::sea_orm_active_enums::UserRole};
+use zeltra_db::{
+    EmailVerificationRepository, SessionRepository, UserRepository,
+    entities::sea_orm_active_enums::UserRole,
+};
 use zeltra_shared::auth::{
-    LoginRequest, LoginResponse, LogoutRequest, RefreshRequest, RegisterRequest, UserInfo,
-    UserOrganization,
+    LoginRequest, LoginResponse, LogoutRequest, RefreshRequest, RegisterRequest,
+    ResendVerificationRequest, UserInfo, UserOrganization, VerifyEmailRequest, VerifyEmailResponse,
 };
 
 /// Creates the auth router.
@@ -19,6 +22,8 @@ pub fn routes() -> Router<AppState> {
         .route("/auth/register", post(register))
         .route("/auth/refresh", post(refresh))
         .route("/auth/logout", post(logout))
+        .route("/auth/verify-email", post(verify_email))
+        .route("/auth/resend-verification", post(resend_verification))
 }
 
 /// POST /auth/login - Authenticate user and return tokens.
@@ -219,6 +224,7 @@ async fn register(
     Json(payload): Json<RegisterRequest>,
 ) -> impl IntoResponse {
     let user_repo = UserRepository::new((*state.db).clone());
+    let email_verification_repo = EmailVerificationRepository::new((*state.db).clone());
 
     // Check if email already exists
     match user_repo.email_exists(&payload.email).await {
@@ -283,16 +289,36 @@ async fn register(
 
     info!(user_id = %user.id, email = %user.email, "New user registered");
 
-    // Return user info (without tokens - they need to create/join an org first)
+    // Create verification token and send email
+    match email_verification_repo.create_token(user.id).await {
+        Ok(token) => {
+            // Send verification email (don't fail registration if email fails)
+            if let Err(e) = state
+                .email_service
+                .send_verification_email(&user.email, &user.full_name, &token)
+                .await
+            {
+                warn!(error = %e, user_id = %user.id, "Failed to send verification email");
+            } else {
+                info!(user_id = %user.id, "Verification email sent");
+            }
+        }
+        Err(e) => {
+            warn!(error = %e, user_id = %user.id, "Failed to create verification token");
+        }
+    }
+
+    // Return user info (without tokens - they need to verify email and create/join an org first)
     (
         StatusCode::CREATED,
         Json(json!({
             "user": {
                 "id": user.id,
                 "email": user.email,
-                "full_name": user.full_name
+                "full_name": user.full_name,
+                "email_verified": false
             },
-            "message": "Registration successful. Please create or join an organization."
+            "message": "Registration successful. Please check your email to verify your account."
         })),
     )
         .into_response()
@@ -442,4 +468,139 @@ fn role_to_string(role: &UserRole) -> String {
         UserRole::Viewer => "viewer".to_string(),
         UserRole::Submitter => "submitter".to_string(),
     }
+}
+
+/// POST /auth/verify-email - Verify user's email with token.
+async fn verify_email(
+    State(state): State<AppState>,
+    Json(payload): Json<VerifyEmailRequest>,
+) -> impl IntoResponse {
+    let email_verification_repo = EmailVerificationRepository::new((*state.db).clone());
+
+    match email_verification_repo.verify_token(&payload.token).await {
+        Ok(user) => {
+            info!(user_id = %user.id, "Email verified successfully");
+            (
+                StatusCode::OK,
+                Json(VerifyEmailResponse {
+                    message: "Email verified successfully".to_string(),
+                    verified: true,
+                }),
+            )
+                .into_response()
+        }
+        Err(e) => {
+            let error_msg = e.to_string();
+            if error_msg.contains("Invalid or expired") {
+                (
+                    StatusCode::BAD_REQUEST,
+                    Json(json!({
+                        "error": "invalid_token",
+                        "message": "Invalid or expired verification token"
+                    })),
+                )
+                    .into_response()
+            } else {
+                error!(error = %e, "Failed to verify email");
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(json!({
+                        "error": "internal_error",
+                        "message": "An error occurred during email verification"
+                    })),
+                )
+                    .into_response()
+            }
+        }
+    }
+}
+
+/// POST /auth/resend-verification - Resend verification email.
+async fn resend_verification(
+    State(state): State<AppState>,
+    Json(payload): Json<ResendVerificationRequest>,
+) -> impl IntoResponse {
+    let user_repo = UserRepository::new((*state.db).clone());
+    let email_verification_repo = EmailVerificationRepository::new((*state.db).clone());
+
+    // Find user by email
+    let user = match user_repo.find_by_email(&payload.email).await {
+        Ok(Some(u)) => u,
+        Ok(None) => {
+            // Don't reveal if email exists or not for security
+            return (
+                StatusCode::OK,
+                Json(json!({
+                    "message": "If an account exists with this email, a verification link has been sent."
+                })),
+            )
+                .into_response();
+        }
+        Err(e) => {
+            error!(error = %e, "Database error finding user");
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": "internal_error",
+                    "message": "An error occurred"
+                })),
+            )
+                .into_response();
+        }
+    };
+
+    // Check if already verified
+    if user.email_verified_at.is_some() {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({
+                "error": "already_verified",
+                "message": "Email is already verified"
+            })),
+        )
+            .into_response();
+    }
+
+    // Create new verification token
+    let token = match email_verification_repo.create_token(user.id).await {
+        Ok(t) => t,
+        Err(e) => {
+            error!(error = %e, "Failed to create verification token");
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": "internal_error",
+                    "message": "An error occurred"
+                })),
+            )
+                .into_response();
+        }
+    };
+
+    // Send verification email
+    if let Err(e) = state
+        .email_service
+        .send_verification_email(&user.email, &user.full_name, &token)
+        .await
+    {
+        error!(error = %e, user_id = %user.id, "Failed to send verification email");
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({
+                "error": "email_error",
+                "message": "Failed to send verification email"
+            })),
+        )
+            .into_response();
+    }
+
+    info!(user_id = %user.id, "Verification email resent");
+
+    (
+        StatusCode::OK,
+        Json(json!({
+            "message": "If an account exists with this email, a verification link has been sent."
+        })),
+    )
+        .into_response()
 }

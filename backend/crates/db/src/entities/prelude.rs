@@ -9,6 +9,7 @@ pub use super::chart_of_accounts::Entity as ChartOfAccounts;
 pub use super::currencies::Entity as Currencies;
 pub use super::dimension_types::Entity as DimensionTypes;
 pub use super::dimension_values::Entity as DimensionValues;
+pub use super::email_verification_tokens::Entity as EmailVerificationTokens;
 pub use super::entry_dimensions::Entity as EntryDimensions;
 pub use super::exchange_rates::Entity as ExchangeRates;
 pub use super::fiscal_periods::Entity as FiscalPeriods;

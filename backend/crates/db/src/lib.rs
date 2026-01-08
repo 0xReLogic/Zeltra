@@ -11,7 +11,9 @@ pub mod migration;
 pub mod repositories;
 pub mod rls;
 
-pub use repositories::{OrganizationRepository, SessionRepository, UserRepository};
+pub use repositories::{
+    EmailVerificationRepository, OrganizationRepository, SessionRepository, UserRepository,
+};
 pub use rls::{RlsConnection, RlsExt, set_rls_context};
 
 use sea_orm::{Database, DatabaseConnection, DbErr};

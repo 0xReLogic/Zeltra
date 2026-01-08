@@ -13,3 +13,12 @@ min_connections = 1
 secret = "dev-secret-not-for-production"
 access_token_expiry_secs = 3600     # 1 hour (longer for dev)
 refresh_token_expiry_secs = 604800  # 7 days
+
+[email]
+smtp_host = "localhost"
+smtp_port = 1025                    # MailHog default port
+smtp_username = ""
+smtp_password = ""
+from_email = "noreply@zeltra.app"
+from_name = "Zeltra"
+frontend_url = "http://localhost:3000"

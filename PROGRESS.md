@@ -74,8 +74,11 @@ Live status untuk sync antara Backend & Frontend.
 | User repository             | ✅     | CRUD, find by email, get organizations      |
 | Organization repository     | ✅     | CRUD, membership management, role checks    |
 | Session repository          | ✅     | Create, revoke, cleanup sessions            |
+| Email verification repo     | ✅     | Create/verify tokens, invalidate, cleanup   |
+| Email service               | ✅     | SMTP via lettre, verification emails        |
 | Auth middleware             | ✅     | JWT validation, claims extraction           |
 | Auth routes                 | ✅     | Login, register, refresh, logout            |
+| Email verification routes   | ✅     | verify-email, resend-verification           |
 | Organization routes         | ✅     | Create, get, list users, add user           |
 | RLS context per request     | ✅     | `RlsConnection` wrapper, `SET LOCAL` helper |
 | Test cross-tenant isolation | ✅     | 3 integration tests, non-superuser role     |
@@ -109,12 +112,14 @@ Frontend cek di sini untuk tau endpoint mana yang udah ready.
 
 ### Auth
 
-| Endpoint                   | Status | Notes                              |
-| -------------------------- | ------ | ---------------------------------- |
-| POST /api/v1/auth/register | ✅     | Creates user, returns info         |
-| POST /api/v1/auth/login    | ✅     | Returns tokens + user info         |
-| POST /api/v1/auth/refresh  | ✅     | Returns new access token           |
-| POST /api/v1/auth/logout   | ✅     | Revokes session, invalidates token |
+| Endpoint                              | Status | Notes                              |
+| ------------------------------------- | ------ | ---------------------------------- |
+| POST /api/v1/auth/register            | ✅     | Creates user, sends verification   |
+| POST /api/v1/auth/login               | ✅     | Returns tokens + user info         |
+| POST /api/v1/auth/refresh             | ✅     | Returns new access token           |
+| POST /api/v1/auth/logout              | ✅     | Revokes session, invalidates token |
+| POST /api/v1/auth/verify-email        | ✅     | Verify email with token            |
+| POST /api/v1/auth/resend-verification | ✅     | Resend verification email          |
 
 ### Organizations
 

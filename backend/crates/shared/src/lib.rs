@@ -7,9 +7,11 @@
 //! - Application-wide error types
 //! - Configuration management
 //! - JWT claims and auth types
+//! - Email service for transactional emails
 
 pub mod auth;
 pub mod config;
+pub mod email;
 pub mod error;
 pub mod jwt;
 pub mod types;
@@ -18,6 +20,7 @@ pub mod types;
 mod jwt_tests;
 
 pub use auth::{Claims, TokenPair};
-pub use config::AppConfig;
+pub use config::{AppConfig, EmailConfig};
+pub use email::{EmailError, EmailService};
 pub use error::{AppError, AppResult};
 pub use jwt::{JwtConfig, JwtError, JwtService};
