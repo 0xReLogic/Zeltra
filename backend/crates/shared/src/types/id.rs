@@ -57,7 +57,10 @@ macro_rules! typed_id {
 
 typed_id!(UserId, "Unique identifier for a user.");
 typed_id!(OrganizationId, "Unique identifier for an organization.");
-typed_id!(AccountId, "Unique identifier for a chart of accounts entry.");
+typed_id!(
+    AccountId,
+    "Unique identifier for a chart of accounts entry."
+);
 typed_id!(TransactionId, "Unique identifier for a transaction.");
 typed_id!(LedgerEntryId, "Unique identifier for a ledger entry.");
 typed_id!(BudgetId, "Unique identifier for a budget.");

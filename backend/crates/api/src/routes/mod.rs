@@ -16,8 +16,7 @@ pub mod health;
 
 /// Creates the API router with all routes.
 pub fn api_routes() -> Router<AppState> {
-    Router::new()
-        .merge(health::routes())
+    Router::new().merge(health::routes())
     // Add more routes as they are implemented
     // .merge(auth::routes())
     // .merge(accounts::routes())

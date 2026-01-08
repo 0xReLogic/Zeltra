@@ -61,13 +61,19 @@ impl Transaction {
     /// Returns true if the transaction can be edited.
     #[must_use]
     pub fn is_editable(&self) -> bool {
-        matches!(self.status, TransactionStatus::Draft | TransactionStatus::Rejected)
+        matches!(
+            self.status,
+            TransactionStatus::Draft | TransactionStatus::Rejected
+        )
     }
 
     /// Returns true if the transaction can be submitted for approval.
     #[must_use]
     pub fn can_submit(&self) -> bool {
-        matches!(self.status, TransactionStatus::Draft | TransactionStatus::Rejected)
+        matches!(
+            self.status,
+            TransactionStatus::Draft | TransactionStatus::Rejected
+        )
     }
 
     /// Returns true if the transaction can be approved.

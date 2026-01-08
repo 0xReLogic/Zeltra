@@ -109,7 +109,6 @@ impl MigrationTrait for Migration {
     }
 }
 
-
 // ============================================================
 // SQL CONSTANTS
 // ============================================================
@@ -339,7 +338,6 @@ CREATE TABLE exchange_rates (
 CREATE INDEX idx_exchange_rates_lookup ON exchange_rates(organization_id, from_currency, to_currency, effective_date DESC);
 "#;
 
-
 const FISCAL_YEARS_SQL: &str = r#"
 CREATE TABLE fiscal_years (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -533,7 +531,6 @@ CREATE INDEX idx_entry_dimensions_entry ON entry_dimensions(ledger_entry_id);
 CREATE INDEX idx_entry_dimensions_value ON entry_dimensions(dimension_value_id);
 "#;
 
-
 const BUDGETS_SQL: &str = r#"
 CREATE TABLE budgets (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -674,7 +671,6 @@ CREATE TABLE organization_usage (
 
 CREATE INDEX idx_org_usage_org_month ON organization_usage(organization_id, year_month DESC);
 "#;
-
 
 const TRIGGERS_SQL: &str = r#"
 -- ============================================================
@@ -995,7 +991,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql STABLE;
 "#;
-
 
 const VIEWS_SQL: &str = r#"
 -- ============================================================
