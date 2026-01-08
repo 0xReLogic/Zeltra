@@ -71,8 +71,8 @@ No frontend work until Phase 6. Backend must be battle-tested first.
 
 ### Infrastructure Setup
 
-- [ ] Setup Rust workspace structure
-- [ ] Docker Compose for local development (Postgres 16)
+- [x] Setup Rust workspace structure
+- [x] Docker Compose for local development (Postgres 16)
 - [ ] CI/CD pipeline (GitHub Actions) - Rust tests only
 - [ ] Heroku Postgres database setup (dev)
 - [ ] Database backup strategy
@@ -95,10 +95,10 @@ No frontend work until Phase 6. Backend must be battle-tested first.
 
 ### Project Skeleton
 
-- [ ] Rust workspace: `api`, `core`, `db`, `shared` crates
-- [ ] Core crate: zero external dependencies (pure business logic)
-- [ ] Shared crate: types, errors
-- [ ] Basic Axum server that connects to DB
+- [x] Rust workspace: `api`, `core`, `db`, `shared` crates
+- [x] Core crate: zero external dependencies (pure business logic)
+- [x] Shared crate: types, errors
+- [x] Basic Axum server that connects to DB
 
 **Deliverable:** Database running with seeded data. Rust project compiles.
 
