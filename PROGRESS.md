@@ -67,18 +67,18 @@ Live status untuk sync antara Backend & Frontend.
 
 ## Phase 1 Tasks (Backend - Auth)
 
-| Task                    | Status | Notes                                       |
-| ----------------------- | ------ | ------------------------------------------- |
-| JWT Service             | ✅     | Access & refresh token generation           |
-| Password hashing        | ✅     | Argon2id with secure defaults               |
-| User repository         | ✅     | CRUD, find by email, get organizations      |
-| Organization repository | ✅     | CRUD, membership management, role checks    |
-| Session repository      | ✅     | Create, revoke, cleanup sessions            |
-| Auth middleware         | ✅     | JWT validation, claims extraction           |
-| Auth routes             | ✅     | Login, register, refresh, logout            |
-| Organization routes     | ✅     | Create, get, list users, add user           |
-| RLS context per request | ✅     | `RlsConnection` wrapper, `SET LOCAL` helper |
-| Test cross-tenant isolation | ✅ | 3 integration tests, non-superuser role |
+| Task                        | Status | Notes                                       |
+| --------------------------- | ------ | ------------------------------------------- |
+| JWT Service                 | ✅     | Access & refresh token generation           |
+| Password hashing            | ✅     | Argon2id with secure defaults               |
+| User repository             | ✅     | CRUD, find by email, get organizations      |
+| Organization repository     | ✅     | CRUD, membership management, role checks    |
+| Session repository          | ✅     | Create, revoke, cleanup sessions            |
+| Auth middleware             | ✅     | JWT validation, claims extraction           |
+| Auth routes                 | ✅     | Login, register, refresh, logout            |
+| Organization routes         | ✅     | Create, get, list users, add user           |
+| RLS context per request     | ✅     | `RlsConnection` wrapper, `SET LOCAL` helper |
+| Test cross-tenant isolation | ✅     | 3 integration tests, non-superuser role     |
 
 ---
 
@@ -127,11 +127,11 @@ Frontend cek di sini untuk tau endpoint mana yang udah ready.
 | GET /transactions              | ✅     | Mocked |
 | POST /transactions             | ✅     | Mocked |
 | GET /transactions/:id          | ✅     | Mocked |
-| POST /transactions/:id/submit  | ⬜     |        |
+| POST /transactions/:id/submit  | ✅     | Mocked |
 | POST /transactions/:id/approve | ✅     | Mocked |
 | POST /transactions/:id/reject  | ✅     | Mocked |
-| POST /transactions/:id/post    | ⬜     |        |
-| POST /transactions/:id/void    | ⬜     |        |
+| POST /transactions/:id/post    | ✅     | Mocked |
+| POST /transactions/:id/void    | ✅     | Mocked |
 
 ### Master Data
 

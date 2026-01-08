@@ -1,5 +1,56 @@
 import { http, HttpResponse } from 'msw'
 
+const MOCK_TRANSACTIONS = [
+  {
+    id: 'txn_001',
+    reference_number: 'TXN-2026-0001',
+    transaction_type: 'expense',
+    transaction_date: '2026-01-15',
+    description: 'Office supplies purchase',
+    status: 'posted',
+    entries: [
+      { account_code: '5200', account_name: 'Office Supplies', debit: '150.0000', credit: '0.0000' },
+      { account_code: '1100', account_name: 'Cash', debit: '0.0000', credit: '150.0000' },
+    ]
+  },
+  {
+    id: 'txn_002',
+    reference_number: 'TXN-2026-0002',
+    transaction_type: 'revenue',
+    transaction_date: '2026-01-16',
+    description: 'Project Alpha Payment',
+    status: 'approved',
+    entries: [
+      { account_code: '1200', account_name: 'Bank BCA', debit: '5000.0000', credit: '0.0000' },
+      { account_code: '4100', account_name: 'Service Revenue', debit: '0.0000', credit: '5000.0000' },
+    ]
+  },
+  {
+    id: 'txn_003',
+    reference_number: 'TXN-2026-0003',
+    transaction_type: 'journal',
+    transaction_date: '2026-01-17',
+    description: 'Accrued Rent Expense',
+    status: 'pending',
+    entries: [
+      { account_code: '5300', account_name: 'Rent Expense', debit: '2500.0000', credit: '0.0000' },
+      { account_code: '2100', account_name: 'Accrued Expenses', debit: '0.0000', credit: '2500.0000' },
+    ]
+  },
+  {
+    id: 'txn_004_test',
+    reference_number: 'TXN-TEST-PENDING',
+    transaction_type: 'expense',
+    transaction_date: '2026-01-20',
+    description: 'Test Pending for Approval',
+    status: 'pending',
+    entries: [
+      { account_code: '5200', account_name: 'Office Supplies', debit: '500.0000', credit: '0.0000' },
+      { account_code: '1100', account_name: 'Cash', debit: '0.0000', credit: '500.0000' },
+    ]
+  }
+]
+
 export const handlers = [
   // Auth
   http.post('/api/v1/auth/login', () => {
@@ -51,45 +102,27 @@ export const handlers = [
   // Transactions
   http.get('/api/v1/transactions', () => {
     return HttpResponse.json({
-      data: [
-        {
-          id: 'txn_001',
-          reference_number: 'TXN-2026-0001',
-          transaction_type: 'expense',
-          transaction_date: '2026-01-15',
-          description: 'Office supplies purchase',
-          status: 'posted',
-          entries: [
-            { account_code: '5200', account_name: 'Office Supplies', debit: '150.0000', credit: '0.0000' },
-            { account_code: '1100', account_name: 'Cash', debit: '0.0000', credit: '150.0000' },
-          ]
-        },
-        {
-          id: 'txn_002',
-          reference_number: 'TXN-2026-0002',
-          transaction_type: 'revenue',
-          transaction_date: '2026-01-16',
-          description: 'Project Alpha Payment',
-          status: 'approved',
-          entries: [
-            { account_code: '1200', account_name: 'Bank BCA', debit: '5000.0000', credit: '0.0000' },
-            { account_code: '4100', account_name: 'Service Revenue', debit: '0.0000', credit: '5000.0000' },
-          ]
-        },
-        {
-          id: 'txn_003',
-          reference_number: 'TXN-2026-0003',
-          transaction_type: 'journal',
-          transaction_date: '2026-01-17',
-          description: 'Accrued Rent Expense',
-          status: 'pending',
-          entries: [
-            { account_code: '5300', account_name: 'Rent Expense', debit: '2500.0000', credit: '0.0000' },
-            { account_code: '2100', account_name: 'Accrued Expenses', debit: '0.0000', credit: '2500.0000' },
-          ]
-        }
-      ],
-      pagination: { page: 1, limit: 50, total: 3 }
+      data: MOCK_TRANSACTIONS,
+      pagination: { page: 1, limit: 50, total: MOCK_TRANSACTIONS.length }
+    })
+  }),
+
+  http.get('/api/v1/transactions/:id', ({ params }) => {
+    const txn = MOCK_TRANSACTIONS.find(t => t.id === params.id)
+    
+    if (txn) {
+        return HttpResponse.json(txn)
+    }
+
+    // Fallback if not found in list
+    return HttpResponse.json({
+        id: params.id,
+        reference_number: 'TXN-UNKNOWN',
+        transaction_type: 'journal',
+        transaction_date: '2026-01-01',
+        description: 'Transaction not found in mock list',
+        status: 'draft',
+        entries: []
     })
   }),
 

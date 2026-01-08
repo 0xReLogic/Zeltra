@@ -5,9 +5,10 @@ import { useParams } from 'next/navigation'
 import { ArrowLeft, Loader2, CheckCircle, XCircle, Clock, FileText, Send } from 'lucide-react'
 import Link from 'next/link'
 
-import { useTransaction } from '@/lib/queries/transactions'
+import { useTransaction, useApproveTransaction, useRejectTransaction } from '@/lib/queries/transactions'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { toast } from 'sonner'
 import {
   Table,
   TableBody,
@@ -39,6 +40,8 @@ export default function TransactionDetailPage() {
   const transactionId = params.id as string
 
   const { data: transaction, isLoading, isError } = useTransaction(transactionId)
+  const approve = useApproveTransaction()
+  const reject = useRejectTransaction()
 
   if (isLoading) {
     return (
@@ -185,12 +188,26 @@ export default function TransactionDetailPage() {
             )}
             {transaction.status === 'pending' && (
               <>
-                <Button variant="default">
-                  <CheckCircle className="h-4 w-4 mr-2" />
+                <Button 
+                  variant="outline"
+                  className="text-emerald-600 border-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 dark:hover:bg-emerald-950 dark:border-emerald-500 dark:text-emerald-500"
+                  onClick={() => approve.mutate(transaction.id, {
+                      onSuccess: () => toast.success("Transaction Approved!")
+                  })}
+                  disabled={approve.isPending}
+                >
+                  {approve.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin"/> : <CheckCircle className="h-4 w-4 mr-2" />}
                   Approve
                 </Button>
-                <Button variant="destructive">
-                  <XCircle className="h-4 w-4 mr-2" />
+                <Button 
+                  variant="outline"
+                  className="text-red-600 border-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950 dark:border-red-500 dark:text-red-500"
+                  onClick={() => reject.mutate(transaction.id, {
+                      onSuccess: () => toast.success("Transaction Rejected")
+                  })}
+                  disabled={reject.isPending}
+                >
+                  {reject.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin"/> : <XCircle className="h-4 w-4 mr-2" />}
                   Reject
                 </Button>
               </>

@@ -87,6 +87,18 @@ const MOCK_DATA: Record<string, any> = {
             { account_code: '5300', account_name: 'Rent Expense', debit: '2500.0000', credit: '0.0000' },
             { account_code: '2100', account_name: 'Accrued Expenses', debit: '0.0000', credit: '2500.0000' },
           ]
+        },
+        {
+          id: 'txn_004_test',
+          reference_number: 'TXN-TEST-PENDING',
+          transaction_type: 'expense',
+          transaction_date: '2026-01-20',
+          description: 'Test Pending for Approval',
+          status: 'pending',
+          entries: [
+            { account_code: '5200', account_name: 'Office Supplies', debit: '500.0000', credit: '0.0000' },
+            { account_code: '1100', account_name: 'Cash', debit: '0.0000', credit: '500.0000' },
+          ]
         }
       ],
       pagination: { page: 1, limit: 50, total: 3 }
