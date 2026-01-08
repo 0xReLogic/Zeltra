@@ -17,6 +17,7 @@ import { useAuthStore } from '../stores/authStore'
 // Fallback Mock Data (in case MSW SW fails on non-secure context)
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const MOCK_DATA: Record<string, any> = {
+
   '/auth/login': {
     user: { 
       id: 'usr_001', 
@@ -40,6 +41,43 @@ const MOCK_DATA: Record<string, any> = {
     access_token: 'mock_access_token_yyy',
     refresh_token: 'mock_refresh_token_yyy',
     expires_in: 3600
+  },
+  '/accounts': {
+     data: [
+        { id: 'acc_001', code: '1100', name: 'Cash', account_type: 'asset', balance: '150000.0000' },
+        { id: 'acc_002', code: '1200', name: 'Bank BCA', account_type: 'asset', balance: '500000.0000' },
+        { id: 'acc_003', code: '5100', name: 'Marketing Expense', account_type: 'expense', balance: '25000.0000' },
+        { id: 'acc_004', code: '5200', name: 'Office Supplies', account_type: 'expense', balance: '8000.0000' },
+     ]
+  },
+  '/transactions': {
+      data: [
+        {
+          id: 'txn_001',
+          reference_number: 'TXN-2026-0001',
+          transaction_type: 'expense',
+          transaction_date: '2026-01-15',
+          description: 'Office supplies purchase',
+          status: 'posted',
+          entries: [
+            { account_code: '5200', account_name: 'Office Supplies', debit: '150.0000', credit: '0.0000' },
+            { account_code: '1100', account_name: 'Cash', debit: '0.0000', credit: '150.0000' },
+          ]
+        },
+        {
+          id: 'txn_002',
+          reference_number: 'TXN-2026-0002',
+          transaction_type: 'revenue',
+          transaction_date: '2026-01-16',
+          description: 'Project Alpha Payment',
+          status: 'approved',
+          entries: [
+            { account_code: '1200', account_name: 'Bank BCA', debit: '5000.0000', credit: '0.0000' },
+            { account_code: '4100', account_name: 'Service Revenue', debit: '0.0000', credit: '5000.0000' },
+          ]
+        }
+      ],
+      pagination: { page: 1, limit: 50, total: 2 }
   }
 }
 
@@ -70,9 +108,15 @@ export async function apiClient<T>(
         ...(orgId && { 'X-Organization-ID': orgId }),
         ...options?.headers,
       },
+      // Short timeout for fast fallback
+       signal: AbortSignal.timeout(3000) 
     })
     
     if (!res.ok) {
+       // If 404, it might be that the BE is down or not found, try mock fallback
+       if (res.status === 404 && process.env.NEXT_PUBLIC_API_MOCK === 'true') {
+           throw new Error('Fallback to mock')
+       }
       const error = await res.json().catch(() => ({}))
       throw new Error(error.error?.message || `API Error: ${res.status} ${res.statusText}`)
     }
@@ -80,11 +124,29 @@ export async function apiClient<T>(
   } catch (error) {
     // Fallback Mock Logic
     if (process.env.NEXT_PUBLIC_API_MOCK === 'true') {
-      console.warn(`[Mock Fallback] API request failed, using internal mock for: ${endpoint}`)
-      const mockResponse = MOCK_DATA[endpoint]
+      // Clean endpoint for matching (remove query params)
+      const cleanEndpoint = endpoint.split('?')[0]
+      console.warn(`[Mock Fallback] API request failed (${error}), using internal mock for: ${cleanEndpoint}`)
+      
+      // 1. Try exact match
+      let mockResponse = MOCK_DATA[cleanEndpoint]
+
+      // 2. Try matching dynamic routes (simple heiristic)
+      if (!mockResponse) {
+          // Check for /accounts/:id
+          if (cleanEndpoint.match(/^\/accounts\/[^/]+$/)) {
+              // Return a single account mock
+              mockResponse = MOCK_DATA['/accounts'].data[0]
+          }
+          // Check for /accounts/:id/ledger
+           else if (cleanEndpoint.match(/^\/accounts\/[^/]+\/ledger$/)) {
+              mockResponse = MOCK_DATA['/transactions'] // Reuse transactions mock for ledger
+          }
+      }
+
       if (mockResponse) {
         // Simulate network delay
-        await new Promise(resolve => setTimeout(resolve, 500))
+        await new Promise(resolve => setTimeout(resolve, 300))
         return mockResponse as T
       }
     }

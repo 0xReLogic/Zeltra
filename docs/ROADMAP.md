@@ -79,15 +79,15 @@ No frontend work until Phase 6. Backend must be battle-tested first.
 
 ### Database Foundation
 
-- [ ] Execute complete DDL schema
-- [ ] Verify all constraints and triggers work correctly
-- [ ] Test RLS policies manually
+- [x] Execute complete DDL schema
+- [x] Verify all constraints and triggers work correctly
+- [x] Test RLS policies manually
 - [ ] Setup SeaORM entity generation from schema
-- [ ] Create migration system (sea-orm-cli)
+- [x] Create migration system (sea-orm-cli)
 
 ### Seeders (CRITICAL for Testing)
 
-- [ ] Seed `currencies` table (USD, EUR, GBP, JPY, IDR, SGD, etc.)
+- [x] Seed `currencies` table (USD, EUR, GBP, JPY, IDR, SGD, etc.)
 - [ ] Seed `exchange_rates` with mock data (USD base rates for 30 days)
 - [ ] Seed `dimension_types` (DEPARTMENT, PROJECT, COST_CENTER)
 - [ ] Seed `dimension_values` (sample departments, projects)
@@ -560,9 +560,9 @@ NOW we start frontend, because backend is solid.
 
 ### Core Layout
 
-- [ ] Sidebar navigation
-- [ ] Header with user menu
-- [ ] Responsive design
+- [x] Sidebar navigation
+- [x] Header with user menu
+- [x] Responsive design
 
 **Deliverable:** Frontend skeleton with auth working.
 
@@ -586,14 +586,14 @@ NOW we start frontend, because backend is solid.
 
 ### Transaction UI
 
-- [ ] Transaction list with filters
-- [ ] Transaction entry form
+- [x] Transaction list with filters
+- [x] Transaction entry form
 - [ ] Approval queue
 - [ ] Transaction detail
 
 ### Dashboard
 
-- [ ] Key metrics
+- [x] Key metrics
 - [ ] Budget vs actual
 - [ ] Charts (Recharts)
 

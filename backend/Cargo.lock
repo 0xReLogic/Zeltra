@@ -4581,6 +4581,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "zeltra-migrator"
+version = "0.1.0"
+dependencies = [
+ "dotenvy",
+ "sea-orm-migration",
+ "tokio",
+ "zeltra-db",
+]
+
+[[package]]
 name = "zeltra-server"
 version = "0.1.0"
 dependencies = [

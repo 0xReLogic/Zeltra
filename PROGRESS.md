@@ -6,11 +6,11 @@ Live status untuk sync antara Backend & Frontend.
 
 ## Current State
 
-|                    | Backend                  | Frontend                     |
-| ------------------ | ------------------------ | ---------------------------- |
-| **Current Phase**  | 0                        | 1 (Done)                     |
-| **Last Task Done** | Setup Rust workspace     | Phase 1: Auth ✅ (FE Mocked) |
-| **Next Task**      | Database migrations      | Phase 6/7 Foundations        |
+|                    | Backend                 | Frontend                                   |
+| ------------------ | ----------------------- | ------------------------------------------ |
+| **Current Phase**  | 0                       | 1 (Done)                                   |
+| **Last Task Done** | Database migrations     | Phase 7: Accounts & Transactions (Mock) ✅ |
+| **Next Task**      | Integration tests setup | Account Details Page                       |
 
 **Last Updated:** 2026-01-08
 
@@ -27,39 +27,39 @@ Live status untuk sync antara Backend & Frontend.
 
 ## Phase Status
 
-| Phase | Backend | Frontend | Notes |
-|-------|---------|----------|-------|
-| 0: Foundation | 🟡 | ⬜ | BE workspace setup done |
-| 1: Auth | ⬜ | ✅ | FE mocked |
-| 2: Ledger | ⬜ | - | |
-| 3: Workflow | ⬜ | - | |
-| 4: Reports | ⬜ | - | |
-| 5: Polish | ⬜ | - | |
-| 6: FE Foundation | - | ⬜ | |
-| 7: FE Features | - | ⬜ | |
-| 8: Launch | ⬜ | ⬜ | |
+| Phase            | Backend | Frontend | Notes                   |
+| ---------------- | ------- | -------- | ----------------------- |
+| 0: Foundation    | 🟡      | ⬜       | BE workspace setup done |
+| 1: Auth          | ⬜      | ✅       | FE mocked               |
+| 2: Ledger        | ⬜      | -        |                         |
+| 3: Workflow      | ⬜      | -        |                         |
+| 4: Reports       | ⬜      | -        |                         |
+| 5: Polish        | ⬜      | -        |                         |
+| 6: FE Foundation | -       | ⬜       |                         |
+| 7: FE Features   | -       | 🟡       | In Progress             |
+| 8: Launch        | ⬜      | ⬜       |                         |
 
 ---
 
 ## Phase 0 Tasks (Backend)
 
-| Task | Status | Notes |
-|------|--------|-------|
-| Setup Rust workspace | ✅ | Cargo workspace with 4 crates |
-| Create crate structure | ✅ | api, core, db, shared |
-| Setup rust-toolchain.toml | ✅ | Rust 1.92 |
-| Setup .cargo/config.toml | ✅ | Float arithmetic denied |
-| Core domain types | ✅ | Money, IDs, Pagination |
-| Ledger types | ✅ | Entry, Transaction, Balance |
-| Currency types | ✅ | Exchange rate, conversion |
-| Fiscal types | ✅ | FiscalYear, FiscalPeriod |
-| Budget types | ✅ | Variance calculations |
-| Simulation types | ✅ | Scenario, Engine |
-| Health endpoint | ✅ | GET /api/v1/health |
-| Docker compose | ✅ | PostgreSQL 16 |
-| Config files | ✅ | default.toml, development.toml |
-| Database migrations | ⬜ | Next task |
-| Integration tests setup | ⬜ | |
+| Task                      | Status | Notes                          |
+| ------------------------- | ------ | ------------------------------ |
+| Setup Rust workspace      | ✅     | Cargo workspace with 4 crates  |
+| Create crate structure    | ✅     | api, core, db, shared          |
+| Setup rust-toolchain.toml | ✅     | Rust 1.92                      |
+| Setup .cargo/config.toml  | ✅     | Float arithmetic denied        |
+| Core domain types         | ✅     | Money, IDs, Pagination         |
+| Ledger types              | ✅     | Entry, Transaction, Balance    |
+| Currency types            | ✅     | Exchange rate, conversion      |
+| Fiscal types              | ✅     | FiscalYear, FiscalPeriod       |
+| Budget types              | ✅     | Variance calculations          |
+| Simulation types          | ✅     | Scenario, Engine               |
+| Health endpoint           | ✅     | GET /api/v1/health             |
+| Docker compose            | ✅     | PostgreSQL 16                  |
+| Config files              | ✅     | default.toml, development.toml |
+| Database migrations       | ✅     | All tables, views, triggers, RLS, seed data |
+| Integration tests setup   | ⬜     |                                |
 
 ---
 
@@ -69,9 +69,9 @@ Frontend cek di sini untuk tau endpoint mana yang udah ready.
 
 ### Health
 
-| Endpoint | Status | Notes |
-|----------|--------|-------|
-| GET /api/v1/health | ✅ | Returns status & version |
+| Endpoint           | Status | Notes                    |
+| ------------------ | ------ | ------------------------ |
+| GET /api/v1/health | ✅     | Returns status & version |
 
 ### Auth
 
@@ -92,25 +92,25 @@ Frontend cek di sini untuk tau endpoint mana yang udah ready.
 
 ### Accounts
 
-| Endpoint                  | Status | Notes |
-| ------------------------- | ------ | ----- |
-| GET /accounts             | ⬜     |       |
-| POST /accounts            | ⬜     |       |
-| GET /accounts/:id/balance | ⬜     |       |
-| GET /accounts/:id/ledger  | ⬜     |       |
+| Endpoint                  | Status | Notes  |
+| ------------------------- | ------ | ------ |
+| GET /accounts             | ✅     | Mocked |
+| POST /accounts            | ⬜     |        |
+| GET /accounts/:id/balance | ⬜     |        |
+| GET /accounts/:id/ledger  | ⬜     |        |
 
 ### Transactions
 
-| Endpoint                       | Status | Notes |
-| ------------------------------ | ------ | ----- |
-| GET /transactions              | ⬜     |       |
-| POST /transactions             | ⬜     |       |
-| GET /transactions/:id          | ⬜     |       |
-| POST /transactions/:id/submit  | ⬜     |       |
-| POST /transactions/:id/approve | ⬜     |       |
-| POST /transactions/:id/reject  | ⬜     |       |
-| POST /transactions/:id/post    | ⬜     |       |
-| POST /transactions/:id/void    | ⬜     |       |
+| Endpoint                       | Status | Notes  |
+| ------------------------------ | ------ | ------ |
+| GET /transactions              | ✅     | Mocked |
+| POST /transactions             | ✅     | Mocked |
+| GET /transactions/:id          | ⬜     |        |
+| POST /transactions/:id/submit  | ⬜     |        |
+| POST /transactions/:id/approve | ⬜     |        |
+| POST /transactions/:id/reject  | ⬜     |        |
+| POST /transactions/:id/post    | ⬜     |        |
+| POST /transactions/:id/void    | ⬜     |        |
 
 ### Master Data
 
@@ -137,10 +137,10 @@ Frontend cek di sini untuk tau endpoint mana yang udah ready.
 
 ### Dashboard
 
-| Endpoint                       | Status | Notes |
-| ------------------------------ | ------ | ----- |
-| GET /dashboard/metrics         | ⬜     |       |
-| GET /dashboard/recent-activity | ⬜     |       |
+| Endpoint                       | Status | Notes  |
+| ------------------------------ | ------ | ------ |
+| GET /dashboard/metrics         | ✅     | Mocked |
+| GET /dashboard/recent-activity | ⬜     |        |
 
 ### Simulation
 

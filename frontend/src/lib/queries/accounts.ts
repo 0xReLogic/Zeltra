@@ -25,3 +25,11 @@ export function useCreateAccount() {
     },
   })
 }
+
+export function useAccount(id: string) {
+  return useQuery({
+    queryKey: ['accounts', id],
+    queryFn: () => apiClient<Account>(`/accounts/${id}`),
+    enabled: !!id,
+  })
+}
