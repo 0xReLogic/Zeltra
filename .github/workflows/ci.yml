@@ -90,9 +90,21 @@ jobs:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/zeltra_test
         run: ./target/debug/migrator up
 
+      - name: Setup app user for RLS tests
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d zeltra_test -c "CREATE USER zeltra_app WITH PASSWORD 'zeltra_app_password';"
+          psql -h localhost -U postgres -d zeltra_test -c "GRANT CONNECT ON DATABASE zeltra_test TO zeltra_app;"
+          psql -h localhost -U postgres -d zeltra_test -c "GRANT USAGE ON SCHEMA public TO zeltra_app;"
+          psql -h localhost -U postgres -d zeltra_test -c "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO zeltra_app;"
+          psql -h localhost -U postgres -d zeltra_test -c "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO zeltra_app;"
+          psql -h localhost -U postgres -d zeltra_test -c "GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO zeltra_app;"
+
       - name: Run tests
         env:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/zeltra_test
+          APP_DATABASE_URL: postgres://zeltra_app:zeltra_app_password@localhost:5432/zeltra_test
         run: cargo test --all-features --workspace
 
   backend-build:
