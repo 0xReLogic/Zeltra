@@ -207,7 +207,12 @@ async fn test_find_direct_rate() {
 
     // Find rate on same date
     let lookup = repo
-        .find_rate(org_id, "EUR", "USD", NaiveDate::from_ymd_opt(2025, 1, 10).unwrap())
+        .find_rate(
+            org_id,
+            "EUR",
+            "USD",
+            NaiveDate::from_ymd_opt(2025, 1, 10).unwrap(),
+        )
         .await
         .unwrap();
 
@@ -216,11 +221,15 @@ async fn test_find_direct_rate() {
 
     // Find rate on later date (should use most recent)
     let lookup2 = repo
-        .find_rate(org_id, "EUR", "USD", NaiveDate::from_ymd_opt(2025, 1, 20).unwrap())
+        .find_rate(
+            org_id,
+            "EUR",
+            "USD",
+            NaiveDate::from_ymd_opt(2025, 1, 20).unwrap(),
+        )
         .await
         .unwrap();
 
     assert_eq!(lookup2.rate, dec!(1.12));
     assert_eq!(lookup2.lookup_method, RateLookupMethod::Direct);
 }
-

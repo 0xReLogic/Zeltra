@@ -5,6 +5,11 @@
 //! These tests verify that PostgreSQL triggers enforce data integrity
 //! at the database level, even if application logic fails.
 
+// Allow common test patterns that trigger clippy warnings
+#![allow(clippy::uninlined_format_args)]
+#![allow(clippy::struct_field_names)]
+#![allow(clippy::too_many_lines)]
+
 use chrono::NaiveDate;
 use rust_decimal::Decimal;
 use sea_orm::{
@@ -15,12 +20,13 @@ use std::env;
 use uuid::Uuid;
 
 use zeltra_db::entities::{
-    chart_of_accounts, fiscal_periods, fiscal_years, ledger_entries, organizations,
-    organization_users, transactions, users,
+    chart_of_accounts, fiscal_periods, fiscal_years, ledger_entries, organization_users,
+    organizations,
     sea_orm_active_enums::{
         AccountSubtype, AccountType, FiscalPeriodStatus, TransactionStatus, TransactionType,
         UserRole,
     },
+    transactions, users,
 };
 
 fn get_database_url() -> String {
@@ -39,7 +45,6 @@ struct TestData {
     asset_account_id: Uuid,
     expense_account_id: Uuid,
 }
-
 
 async fn setup_test_data(db: &DatabaseConnection) -> Result<TestData, sea_orm::DbErr> {
     let org_id = Uuid::new_v4();
@@ -108,10 +113,11 @@ async fn setup_test_data(db: &DatabaseConnection) -> Result<TestData, sea_orm::D
     .await?;
 
     // Create asset account
+    let uuid_str = Uuid::new_v4().to_string();
     chart_of_accounts::ActiveModel {
         id: Set(asset_account_id),
         organization_id: Set(org_id),
-        code: Set(format!("1000-{}", Uuid::new_v4().to_string()[..8].to_string())),
+        code: Set(format!("1000-{}", &uuid_str[..8])),
         name: Set("Cash".to_string()),
         account_type: Set(AccountType::Asset),
         account_subtype: Set(Some(AccountSubtype::Cash)),
@@ -122,10 +128,11 @@ async fn setup_test_data(db: &DatabaseConnection) -> Result<TestData, sea_orm::D
     .await?;
 
     // Create expense account
+    let uuid_str = Uuid::new_v4().to_string();
     chart_of_accounts::ActiveModel {
         id: Set(expense_account_id),
         organization_id: Set(org_id),
-        code: Set(format!("5000-{}", Uuid::new_v4().to_string()[..8].to_string())),
+        code: Set(format!("5000-{}", &uuid_str[..8])),
         name: Set("Office Supplies".to_string()),
         account_type: Set(AccountType::Expense),
         account_subtype: Set(Some(AccountSubtype::OperatingExpense)),
@@ -147,20 +154,23 @@ async fn setup_test_data(db: &DatabaseConnection) -> Result<TestData, sea_orm::D
 async fn cleanup_test_data(db: &DatabaseConnection, data: &TestData) -> Result<(), sea_orm::DbErr> {
     // Delete in reverse order of dependencies
     ledger_entries::Entity::delete_many()
-        .filter(ledger_entries::Column::AccountId.is_in([data.asset_account_id, data.expense_account_id]))
+        .filter(
+            ledger_entries::Column::AccountId
+                .is_in([data.asset_account_id, data.expense_account_id]),
+        )
         .exec(db)
         .await?;
-    
+
     transactions::Entity::delete_many()
         .filter(transactions::Column::OrganizationId.eq(data.org_id))
         .exec(db)
         .await?;
-    
+
     chart_of_accounts::Entity::delete_many()
         .filter(chart_of_accounts::Column::OrganizationId.eq(data.org_id))
         .exec(db)
         .await?;
-    
+
     fiscal_periods::Entity::delete_many()
         .filter(fiscal_periods::Column::Id.eq(data.fiscal_period_id))
         .exec(db)
@@ -170,15 +180,17 @@ async fn cleanup_test_data(db: &DatabaseConnection, data: &TestData) -> Result<(
         .filter(fiscal_years::Column::OrganizationId.eq(data.org_id))
         .exec(db)
         .await?;
-    
+
     organization_users::Entity::delete_many()
         .filter(organization_users::Column::OrganizationId.eq(data.org_id))
         .exec(db)
         .await?;
-    
-    organizations::Entity::delete_by_id(data.org_id).exec(db).await?;
+
+    organizations::Entity::delete_by_id(data.org_id)
+        .exec(db)
+        .await?;
     users::Entity::delete_by_id(data.user_id).exec(db).await?;
-    
+
     Ok(())
 }
 
@@ -234,7 +246,10 @@ async fn test_trigger_update_account_balance_sets_version_and_balances() {
         // Note: account_version, previous_balance, current_balance should be set by trigger
         ..Default::default()
     };
-    debit_entry.insert(&db).await.expect("Failed to create debit entry");
+    debit_entry
+        .insert(&db)
+        .await
+        .expect("Failed to create debit entry");
 
     // Insert credit entry
     let credit_entry_id = Uuid::new_v4();
@@ -251,35 +266,59 @@ async fn test_trigger_update_account_balance_sets_version_and_balances() {
         credit: Set(Decimal::new(10000, 2)),
         ..Default::default()
     };
-    credit_entry.insert(&db).await.expect("Failed to create credit entry");
+    credit_entry
+        .insert(&db)
+        .await
+        .expect("Failed to create credit entry");
 
     // Verify the trigger set account_version
     let debit_result = ledger_entries::Entity::find_by_id(debit_entry_id)
         .one(&db)
         .await
         .expect("Failed to query debit entry");
-    
+
     let debit = debit_result.expect("Debit entry not found");
-    assert_eq!(debit.account_version, 1, "First entry should have version 1");
-    assert_eq!(debit.account_previous_balance, Decimal::ZERO, "Previous balance should be 0");
+    assert_eq!(
+        debit.account_version, 1,
+        "First entry should have version 1"
+    );
+    assert_eq!(
+        debit.account_previous_balance,
+        Decimal::ZERO,
+        "Previous balance should be 0"
+    );
     // Expense account: balance = debit - credit = 100 - 0 = 100
-    assert_eq!(debit.account_current_balance, Decimal::new(10000, 2), "Current balance should be 100.00");
+    assert_eq!(
+        debit.account_current_balance,
+        Decimal::new(10000, 2),
+        "Current balance should be 100.00"
+    );
 
     let credit_result = ledger_entries::Entity::find_by_id(credit_entry_id)
         .one(&db)
         .await
         .expect("Failed to query credit entry");
-    
+
     let credit = credit_result.expect("Credit entry not found");
-    assert_eq!(credit.account_version, 1, "First entry on asset account should have version 1");
-    assert_eq!(credit.account_previous_balance, Decimal::ZERO, "Previous balance should be 0");
+    assert_eq!(
+        credit.account_version, 1,
+        "First entry on asset account should have version 1"
+    );
+    assert_eq!(
+        credit.account_previous_balance,
+        Decimal::ZERO,
+        "Previous balance should be 0"
+    );
     // Asset account: balance = debit - credit = 0 - 100 = -100
-    assert_eq!(credit.account_current_balance, Decimal::new(-10000, 2), "Current balance should be -100.00");
+    assert_eq!(
+        credit.account_current_balance,
+        Decimal::new(-10000, 2),
+        "Current balance should be -100.00"
+    );
 
     // Cleanup
     cleanup_test_data(&db, &data).await.expect("Cleanup failed");
 }
-
 
 // ============================================================================
 // Test: trg_update_account_balance increments version for multiple entries
@@ -416,7 +455,7 @@ async fn test_trigger_account_version_increments() {
         .await
         .expect("Query failed")
         .expect("Entry 1 not found");
-    
+
     let e2 = ledger_entries::Entity::find_by_id(entry2_id)
         .one(&db)
         .await
@@ -425,15 +464,26 @@ async fn test_trigger_account_version_increments() {
 
     assert_eq!(e1.account_version, 1, "First entry should have version 1");
     assert_eq!(e2.account_version, 2, "Second entry should have version 2");
-    
+
     // Verify running balance
-    assert_eq!(e1.account_current_balance, Decimal::new(5000, 2), "First balance should be 50.00");
-    assert_eq!(e2.account_previous_balance, Decimal::new(5000, 2), "Previous should be 50.00");
-    assert_eq!(e2.account_current_balance, Decimal::new(8000, 2), "Current should be 80.00 (50+30)");
+    assert_eq!(
+        e1.account_current_balance,
+        Decimal::new(5000, 2),
+        "First balance should be 50.00"
+    );
+    assert_eq!(
+        e2.account_previous_balance,
+        Decimal::new(5000, 2),
+        "Previous should be 50.00"
+    );
+    assert_eq!(
+        e2.account_current_balance,
+        Decimal::new(8000, 2),
+        "Current should be 80.00 (50+30)"
+    );
 
     cleanup_test_data(&db, &data).await.expect("Cleanup failed");
 }
-
 
 // ============================================================================
 // Test: trg_prevent_posted_mod rejects updates to posted transactions (Req 13.4)
@@ -477,7 +527,10 @@ async fn test_trigger_prevent_posted_modification() {
 
     // Try to update the posted transaction (should fail due to trigger)
     let update_result = transactions::Entity::update_many()
-        .col_expr(transactions::Column::Description, sea_orm::sea_query::Expr::value("Modified"))
+        .col_expr(
+            transactions::Column::Description,
+            sea_orm::sea_query::Expr::value("Modified"),
+        )
         .filter(transactions::Column::Id.eq(tx_id))
         .exec(&db)
         .await;
@@ -502,10 +555,9 @@ async fn test_trigger_prevent_posted_modification() {
         .exec(&db)
         .await
         .expect("Cleanup failed");
-    
+
     cleanup_test_data(&db, &data).await.expect("Cleanup failed");
 }
-
 
 // ============================================================================
 // Test: trg_prevent_posted_mod rejects updates to voided transactions (Req 13.5)
@@ -547,7 +599,10 @@ async fn test_trigger_prevent_voided_modification() {
 
     // Try to update the voided transaction (should fail due to trigger)
     let update_result = transactions::Entity::update_many()
-        .col_expr(transactions::Column::Description, sea_orm::sea_query::Expr::value("Modified"))
+        .col_expr(
+            transactions::Column::Description,
+            sea_orm::sea_query::Expr::value("Modified"),
+        )
         .filter(transactions::Column::Id.eq(tx_id))
         .exec(&db)
         .await;
@@ -572,10 +627,9 @@ async fn test_trigger_prevent_voided_modification() {
         .exec(&db)
         .await
         .expect("Cleanup failed");
-    
+
     cleanup_test_data(&db, &data).await.expect("Cleanup failed");
 }
-
 
 // ============================================================================
 // Test: trg_prevent_posted_mod allows voiding a posted transaction
@@ -619,7 +673,10 @@ async fn test_trigger_allows_voiding_posted_transaction() {
 
     // Void the posted transaction (should succeed)
     let void_result = transactions::Entity::update_many()
-        .col_expr(transactions::Column::Status, sea_orm::sea_query::Expr::value(TransactionStatus::Voided))
+        .col_expr(
+            transactions::Column::Status,
+            sea_orm::sea_query::Expr::value(TransactionStatus::Voided),
+        )
         .filter(transactions::Column::Id.eq(tx_id))
         .exec(&db)
         .await;
@@ -636,18 +693,21 @@ async fn test_trigger_allows_voiding_posted_transaction() {
         .await
         .expect("Query failed")
         .expect("Transaction not found");
-    
-    assert_eq!(tx.status, TransactionStatus::Voided, "Transaction should be voided");
+
+    assert_eq!(
+        tx.status,
+        TransactionStatus::Voided,
+        "Transaction should be voided"
+    );
 
     // Cleanup
     transactions::Entity::delete_by_id(tx_id)
         .exec(&db)
         .await
         .expect("Cleanup failed");
-    
+
     cleanup_test_data(&db, &data).await.expect("Cleanup failed");
 }
-
 
 // ============================================================================
 // Test: trg_validate_fiscal_period rejects posting to closed period (Req 13.6)
@@ -672,7 +732,10 @@ async fn test_trigger_validate_fiscal_period_closed() {
 
     // Close the fiscal period
     fiscal_periods::Entity::update_many()
-        .col_expr(fiscal_periods::Column::Status, sea_orm::sea_query::Expr::value(FiscalPeriodStatus::Closed))
+        .col_expr(
+            fiscal_periods::Column::Status,
+            sea_orm::sea_query::Expr::value(FiscalPeriodStatus::Closed),
+        )
         .filter(fiscal_periods::Column::Id.eq(data.fiscal_period_id))
         .exec(&db)
         .await
@@ -697,9 +760,18 @@ async fn test_trigger_validate_fiscal_period_closed() {
 
     // Try to post to closed period (should fail due to trigger)
     let post_result = transactions::Entity::update_many()
-        .col_expr(transactions::Column::Status, sea_orm::sea_query::Expr::value(TransactionStatus::Posted))
-        .col_expr(transactions::Column::PostedBy, sea_orm::sea_query::Expr::value(data.user_id))
-        .col_expr(transactions::Column::PostedAt, sea_orm::sea_query::Expr::value(chrono::Utc::now()))
+        .col_expr(
+            transactions::Column::Status,
+            sea_orm::sea_query::Expr::value(TransactionStatus::Posted),
+        )
+        .col_expr(
+            transactions::Column::PostedBy,
+            sea_orm::sea_query::Expr::value(data.user_id),
+        )
+        .col_expr(
+            transactions::Column::PostedAt,
+            sea_orm::sea_query::Expr::value(chrono::Utc::now()),
+        )
         .filter(transactions::Column::Id.eq(tx_id))
         .exec(&db)
         .await;
@@ -724,10 +796,9 @@ async fn test_trigger_validate_fiscal_period_closed() {
         .exec(&db)
         .await
         .expect("Cleanup failed");
-    
+
     cleanup_test_data(&db, &data).await.expect("Cleanup failed");
 }
-
 
 // ============================================================================
 // Test: trg_check_balance rejects unbalanced transactions (Req 13.1, 13.2)
@@ -800,7 +871,9 @@ async fn test_trigger_check_balance_rejects_unbalanced() {
     if let Err(e) = commit_result {
         let err_msg = e.to_string().to_lowercase();
         assert!(
-            err_msg.contains("not balanced") || err_msg.contains("debit") || err_msg.contains("credit"),
+            err_msg.contains("not balanced")
+                || err_msg.contains("debit")
+                || err_msg.contains("credit"),
             "Error should mention balance issue: {}",
             e
         );
@@ -808,7 +881,6 @@ async fn test_trigger_check_balance_rejects_unbalanced() {
 
     cleanup_test_data(&db, &data).await.expect("Cleanup failed");
 }
-
 
 // ============================================================================
 // Test: trg_check_balance accepts balanced transactions

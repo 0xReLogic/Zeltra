@@ -254,18 +254,18 @@ impl DimensionRepository {
             .ok_or(DimensionError::TypeNotFound(id))?;
 
         // If changing code, validate uniqueness
-        if let Some(new_code) = &input.code {
-            if *new_code != dim_type.code {
-                let existing = dimension_types::Entity::find()
-                    .filter(dimension_types::Column::OrganizationId.eq(dim_type.organization_id))
-                    .filter(dimension_types::Column::Code.eq(new_code))
-                    .filter(dimension_types::Column::Id.ne(id))
-                    .one(&self.db)
-                    .await?;
+        if let Some(new_code) = &input.code
+            && *new_code != dim_type.code
+        {
+            let existing = dimension_types::Entity::find()
+                .filter(dimension_types::Column::OrganizationId.eq(dim_type.organization_id))
+                .filter(dimension_types::Column::Code.eq(new_code))
+                .filter(dimension_types::Column::Id.ne(id))
+                .one(&self.db)
+                .await?;
 
-                if existing.is_some() {
-                    return Err(DimensionError::DuplicateTypeCode(new_code.clone()));
-                }
+            if existing.is_some() {
+                return Err(DimensionError::DuplicateTypeCode(new_code.clone()));
             }
         }
 
@@ -295,7 +295,6 @@ impl DimensionRepository {
         let updated = active.update(&self.db).await?;
         Ok(updated)
     }
-
 
     // ========================================================================
     // Dimension Value Operations
@@ -445,35 +444,35 @@ impl DimensionRepository {
             .ok_or(DimensionError::ValueNotFound(id))?;
 
         // If changing code, validate uniqueness within type
-        if let Some(new_code) = &input.code {
-            if *new_code != dim_value.code {
-                let existing = dimension_values::Entity::find()
-                    .filter(dimension_values::Column::DimensionTypeId.eq(dim_value.dimension_type_id))
-                    .filter(dimension_values::Column::Code.eq(new_code))
-                    .filter(dimension_values::Column::Id.ne(id))
-                    .one(&self.db)
-                    .await?;
+        if let Some(new_code) = &input.code
+            && *new_code != dim_value.code
+        {
+            let existing = dimension_values::Entity::find()
+                .filter(dimension_values::Column::DimensionTypeId.eq(dim_value.dimension_type_id))
+                .filter(dimension_values::Column::Code.eq(new_code))
+                .filter(dimension_values::Column::Id.ne(id))
+                .one(&self.db)
+                .await?;
 
-                if existing.is_some() {
-                    return Err(DimensionError::DuplicateValueCode(new_code.clone()));
-                }
+            if existing.is_some() {
+                return Err(DimensionError::DuplicateValueCode(new_code.clone()));
             }
         }
 
         // If changing parent, validate
-        if let Some(new_parent) = &input.parent_id {
-            if let Some(parent_id) = new_parent {
-                let parent = dimension_values::Entity::find_by_id(*parent_id)
-                    .one(&self.db)
-                    .await?;
+        if let Some(new_parent) = &input.parent_id
+            && let Some(parent_id) = new_parent
+        {
+            let parent = dimension_values::Entity::find_by_id(*parent_id)
+                .one(&self.db)
+                .await?;
 
-                match parent {
-                    None => return Err(DimensionError::ParentNotFound(*parent_id)),
-                    Some(p) if p.dimension_type_id != dim_value.dimension_type_id => {
-                        return Err(DimensionError::ParentWrongType);
-                    }
-                    _ => {}
+            match parent {
+                None => return Err(DimensionError::ParentNotFound(*parent_id)),
+                Some(p) if p.dimension_type_id != dim_value.dimension_type_id => {
+                    return Err(DimensionError::ParentWrongType);
                 }
+                _ => {}
             }
         }
 
@@ -546,7 +545,6 @@ impl DimensionRepository {
     }
 }
 
-
 // ============================================================================
 // Pure validation functions for property testing
 // ============================================================================
@@ -573,8 +571,8 @@ pub struct DimensionValueCodeEntry {
 ///
 /// This is a pure function that can be tested without database access.
 #[must_use]
-pub fn is_type_code_unique(
-    existing_codes: &std::collections::HashSet<DimensionTypeCodeEntry>,
+pub fn is_type_code_unique<S: std::hash::BuildHasher>(
+    existing_codes: &std::collections::HashSet<DimensionTypeCodeEntry, S>,
     org_id: Uuid,
     code: &str,
 ) -> bool {
@@ -589,8 +587,8 @@ pub fn is_type_code_unique(
 ///
 /// This is a pure function that can be tested without database access.
 #[must_use]
-pub fn is_value_code_unique(
-    existing_codes: &std::collections::HashSet<DimensionValueCodeEntry>,
+pub fn is_value_code_unique<S: std::hash::BuildHasher>(
+    existing_codes: &std::collections::HashSet<DimensionValueCodeEntry, S>,
     dimension_type_id: Uuid,
     code: &str,
 ) -> bool {
@@ -614,7 +612,7 @@ mod tests {
 
     /// Strategy for generating valid dimension codes (alphanumeric, 1-20 chars)
     fn dimension_code_strategy() -> impl Strategy<Value = String> {
-        "[A-Z0-9_]{1,10}".prop_map(|s| s.to_string())
+        "[A-Z0-9_]{1,10}"
     }
 
     // ------------------------------------------------------------------------

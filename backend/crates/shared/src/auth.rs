@@ -204,3 +204,12 @@ pub struct VerifyEmailResponse {
     /// Whether email is now verified.
     pub verified: bool,
 }
+
+/// Update organization member request.
+#[derive(Debug, Clone, Deserialize)]
+pub struct UpdateMemberRequest {
+    /// New role (optional).
+    pub role: Option<String>,
+    /// New approval limit (optional, null to clear).
+    pub approval_limit: Option<Option<String>>,
+}

@@ -4,8 +4,8 @@
 
 use chrono::{Datelike, NaiveDate};
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DatabaseConnection, DbErr, EntityTrait, QueryFilter,
-    QueryOrder, Set, TransactionTrait,
+    ActiveModelTrait, ColumnTrait, DatabaseConnection, DbErr, EntityTrait, QueryFilter, QueryOrder,
+    Set, TransactionTrait,
 };
 use uuid::Uuid;
 
@@ -363,16 +363,14 @@ fn validate_status_transition(
     to: &FiscalPeriodStatus,
 ) -> Result<(), FiscalError> {
     let valid = match (from, to) {
-        // Can go from Open to SoftClose or Closed
-        (FiscalPeriodStatus::Open, FiscalPeriodStatus::SoftClose) => true,
-        (FiscalPeriodStatus::Open, FiscalPeriodStatus::Closed) => true,
-        // Can go from SoftClose to Closed or back to Open
-        (FiscalPeriodStatus::SoftClose, FiscalPeriodStatus::Closed) => true,
-        (FiscalPeriodStatus::SoftClose, FiscalPeriodStatus::Open) => true,
-        // Cannot change from Closed (immutable)
-        (FiscalPeriodStatus::Closed, _) => false,
-        // Same status is a no-op
+        // Same status is a no-op - always valid
         _ if from == to => true,
+        // Can go from Open to SoftClose or Closed, or from SoftClose to Closed or back to Open
+        (FiscalPeriodStatus::Open, FiscalPeriodStatus::SoftClose | FiscalPeriodStatus::Closed)
+        | (FiscalPeriodStatus::SoftClose, FiscalPeriodStatus::Closed | FiscalPeriodStatus::Open) => {
+            true
+        }
+        // Cannot change from Closed (immutable) and all other transitions are invalid
         _ => false,
     };
 
@@ -492,13 +490,25 @@ mod tests {
         assert_eq!(periods.len(), 12);
         assert_eq!(periods[0].name, "January 2026");
         assert_eq!(periods[0].period_number, 1);
-        assert_eq!(periods[0].start_date, NaiveDate::from_ymd_opt(2026, 1, 1).unwrap());
-        assert_eq!(periods[0].end_date, NaiveDate::from_ymd_opt(2026, 1, 31).unwrap());
+        assert_eq!(
+            periods[0].start_date,
+            NaiveDate::from_ymd_opt(2026, 1, 1).unwrap()
+        );
+        assert_eq!(
+            periods[0].end_date,
+            NaiveDate::from_ymd_opt(2026, 1, 31).unwrap()
+        );
 
         assert_eq!(periods[11].name, "December 2026");
         assert_eq!(periods[11].period_number, 12);
-        assert_eq!(periods[11].start_date, NaiveDate::from_ymd_opt(2026, 12, 1).unwrap());
-        assert_eq!(periods[11].end_date, NaiveDate::from_ymd_opt(2026, 12, 31).unwrap());
+        assert_eq!(
+            periods[11].start_date,
+            NaiveDate::from_ymd_opt(2026, 12, 1).unwrap()
+        );
+        assert_eq!(
+            periods[11].end_date,
+            NaiveDate::from_ymd_opt(2026, 12, 31).unwrap()
+        );
     }
 
     #[test]
@@ -517,25 +527,58 @@ mod tests {
 
     #[test]
     fn test_last_day_of_month() {
-        assert_eq!(last_day_of_month(2026, 1), NaiveDate::from_ymd_opt(2026, 1, 31).unwrap());
-        assert_eq!(last_day_of_month(2026, 2), NaiveDate::from_ymd_opt(2026, 2, 28).unwrap());
-        assert_eq!(last_day_of_month(2024, 2), NaiveDate::from_ymd_opt(2024, 2, 29).unwrap()); // Leap year
-        assert_eq!(last_day_of_month(2026, 4), NaiveDate::from_ymd_opt(2026, 4, 30).unwrap());
-        assert_eq!(last_day_of_month(2026, 12), NaiveDate::from_ymd_opt(2026, 12, 31).unwrap());
+        assert_eq!(
+            last_day_of_month(2026, 1),
+            NaiveDate::from_ymd_opt(2026, 1, 31).unwrap()
+        );
+        assert_eq!(
+            last_day_of_month(2026, 2),
+            NaiveDate::from_ymd_opt(2026, 2, 28).unwrap()
+        );
+        assert_eq!(
+            last_day_of_month(2024, 2),
+            NaiveDate::from_ymd_opt(2024, 2, 29).unwrap()
+        ); // Leap year
+        assert_eq!(
+            last_day_of_month(2026, 4),
+            NaiveDate::from_ymd_opt(2026, 4, 30).unwrap()
+        );
+        assert_eq!(
+            last_day_of_month(2026, 12),
+            NaiveDate::from_ymd_opt(2026, 12, 31).unwrap()
+        );
     }
 
     #[test]
     fn test_validate_status_transition_valid() {
-        assert!(validate_status_transition(&FiscalPeriodStatus::Open, &FiscalPeriodStatus::SoftClose).is_ok());
-        assert!(validate_status_transition(&FiscalPeriodStatus::Open, &FiscalPeriodStatus::Closed).is_ok());
-        assert!(validate_status_transition(&FiscalPeriodStatus::SoftClose, &FiscalPeriodStatus::Closed).is_ok());
-        assert!(validate_status_transition(&FiscalPeriodStatus::SoftClose, &FiscalPeriodStatus::Open).is_ok());
+        assert!(
+            validate_status_transition(&FiscalPeriodStatus::Open, &FiscalPeriodStatus::SoftClose)
+                .is_ok()
+        );
+        assert!(
+            validate_status_transition(&FiscalPeriodStatus::Open, &FiscalPeriodStatus::Closed)
+                .is_ok()
+        );
+        assert!(
+            validate_status_transition(&FiscalPeriodStatus::SoftClose, &FiscalPeriodStatus::Closed)
+                .is_ok()
+        );
+        assert!(
+            validate_status_transition(&FiscalPeriodStatus::SoftClose, &FiscalPeriodStatus::Open)
+                .is_ok()
+        );
     }
 
     #[test]
     fn test_validate_status_transition_invalid() {
-        assert!(validate_status_transition(&FiscalPeriodStatus::Closed, &FiscalPeriodStatus::Open).is_err());
-        assert!(validate_status_transition(&FiscalPeriodStatus::Closed, &FiscalPeriodStatus::SoftClose).is_err());
+        assert!(
+            validate_status_transition(&FiscalPeriodStatus::Closed, &FiscalPeriodStatus::Open)
+                .is_err()
+        );
+        assert!(
+            validate_status_transition(&FiscalPeriodStatus::Closed, &FiscalPeriodStatus::SoftClose)
+                .is_err()
+        );
     }
 }
 
@@ -552,9 +595,8 @@ mod props {
     /// Strategy to generate valid dates within a reasonable range.
     fn date_strategy() -> impl Strategy<Value = NaiveDate> {
         // Generate dates from 2020-01-01 to 2030-12-31
-        (2020i32..=2030, 1u32..=12, 1u32..=28).prop_map(|(year, month, day)| {
-            NaiveDate::from_ymd_opt(year, month, day).unwrap()
-        })
+        (2020i32..=2030, 1u32..=12, 1u32..=28)
+            .prop_map(|(year, month, day)| NaiveDate::from_ymd_opt(year, month, day).unwrap())
     }
 
     /// Strategy to generate a valid fiscal year (start < end).
@@ -623,7 +665,7 @@ mod props {
             let b_start = a_start + chrono::Duration::days(offset);
             if b_start <= a_end {
                 let b_end = b_start + chrono::Duration::days(30);
-                
+
                 let overlaps = date_ranges_overlap(a_start, a_end, b_start, b_end);
                 prop_assert!(overlaps, "Overlapping ranges should be detected");
             }
@@ -641,7 +683,7 @@ mod props {
             // Create a second range that starts after the first ends
             let b_start = a_end + chrono::Duration::days(gap);
             let b_end = b_start + chrono::Duration::days(30);
-            
+
             let overlaps = date_ranges_overlap(a_start, a_end, b_start, b_end);
             prop_assert!(!overlaps, "Non-overlapping ranges should not be flagged");
         }
@@ -668,7 +710,7 @@ mod props {
             // B starts the day after A ends
             let b_start = a_end + chrono::Duration::days(1);
             let b_end = b_start + chrono::Duration::days(30);
-            
+
             let overlaps = date_ranges_overlap(a_start, a_end, b_start, b_end);
             prop_assert!(!overlaps, "Adjacent ranges should not overlap");
         }
@@ -716,11 +758,11 @@ mod props {
             // FY 2026: Jan 1 - Dec 31
             let a_start = NaiveDate::from_ymd_opt(2026, 1, 1).unwrap();
             let a_end = NaiveDate::from_ymd_opt(2026, 12, 31).unwrap();
-            
+
             // FY 2026-2027: Jul 1 - Jun 30 (overlaps)
             let b_start = NaiveDate::from_ymd_opt(2026, 7, 1).unwrap();
             let b_end = NaiveDate::from_ymd_opt(2027, 6, 30).unwrap();
-            
+
             assert!(date_ranges_overlap(a_start, a_end, b_start, b_end));
         }
 
@@ -729,11 +771,11 @@ mod props {
             // FY 2025: Jan 1 - Dec 31
             let a_start = NaiveDate::from_ymd_opt(2025, 1, 1).unwrap();
             let a_end = NaiveDate::from_ymd_opt(2025, 12, 31).unwrap();
-            
+
             // FY 2026: Jan 1 - Dec 31 (adjacent, not overlapping)
             let b_start = NaiveDate::from_ymd_opt(2026, 1, 1).unwrap();
             let b_end = NaiveDate::from_ymd_opt(2026, 12, 31).unwrap();
-            
+
             assert!(!date_ranges_overlap(a_start, a_end, b_start, b_end));
         }
     }

@@ -11,8 +11,9 @@ use sea_orm::{
 use uuid::Uuid;
 
 use crate::entities::{
-    chart_of_accounts, currencies, ledger_entries, transactions,
+    chart_of_accounts, currencies, ledger_entries,
     sea_orm_active_enums::{AccountSubtype, AccountType, TransactionStatus},
+    transactions,
 };
 
 /// Error types for account operations.
@@ -327,45 +328,45 @@ impl AccountRepository {
             .ok_or(AccountError::AccountNotFound(id))?;
 
         // If changing account_type, check for ledger entries (Requirement 2.6)
-        if let Some(new_type) = &input.account_type {
-            if *new_type != account.account_type {
-                let entry_count = self.count_ledger_entries(id).await?;
-                if entry_count > 0 {
-                    return Err(AccountError::HasLedgerEntries(entry_count));
-                }
+        if let Some(new_type) = &input.account_type
+            && *new_type != account.account_type
+        {
+            let entry_count = self.count_ledger_entries(id).await?;
+            if entry_count > 0 {
+                return Err(AccountError::HasLedgerEntries(entry_count));
             }
         }
 
         // If changing code, validate uniqueness
-        if let Some(new_code) = &input.code {
-            if *new_code != account.code {
-                let existing = chart_of_accounts::Entity::find()
-                    .filter(chart_of_accounts::Column::OrganizationId.eq(account.organization_id))
-                    .filter(chart_of_accounts::Column::Code.eq(new_code))
-                    .filter(chart_of_accounts::Column::Id.ne(id))
-                    .one(&self.db)
-                    .await?;
+        if let Some(new_code) = &input.code
+            && *new_code != account.code
+        {
+            let existing = chart_of_accounts::Entity::find()
+                .filter(chart_of_accounts::Column::OrganizationId.eq(account.organization_id))
+                .filter(chart_of_accounts::Column::Code.eq(new_code))
+                .filter(chart_of_accounts::Column::Id.ne(id))
+                .one(&self.db)
+                .await?;
 
-                if existing.is_some() {
-                    return Err(AccountError::DuplicateCode(new_code.clone()));
-                }
+            if existing.is_some() {
+                return Err(AccountError::DuplicateCode(new_code.clone()));
             }
         }
 
         // If changing parent, validate
-        if let Some(new_parent) = &input.parent_id {
-            if let Some(parent_id) = new_parent {
-                let parent = chart_of_accounts::Entity::find_by_id(*parent_id)
-                    .one(&self.db)
-                    .await?;
+        if let Some(new_parent) = &input.parent_id
+            && let Some(parent_id) = new_parent
+        {
+            let parent = chart_of_accounts::Entity::find_by_id(*parent_id)
+                .one(&self.db)
+                .await?;
 
-                match parent {
-                    None => return Err(AccountError::ParentNotFound(*parent_id)),
-                    Some(p) if p.organization_id != account.organization_id => {
-                        return Err(AccountError::ParentWrongOrganization);
-                    }
-                    _ => {}
+            match parent {
+                None => return Err(AccountError::ParentNotFound(*parent_id)),
+                Some(p) if p.organization_id != account.organization_id => {
+                    return Err(AccountError::ParentWrongOrganization);
                 }
+                _ => {}
             }
         }
 
@@ -466,9 +467,7 @@ impl AccountRepository {
             .one(&self.db)
             .await?;
 
-        Ok(latest_entry
-            .map(|e| e.account_current_balance)
-            .unwrap_or(Decimal::ZERO))
+        Ok(latest_entry.map_or(Decimal::ZERO, |e| e.account_current_balance))
     }
 
     /// Counts ledger entries for an account.
@@ -512,9 +511,7 @@ impl AccountRepository {
             .one(&self.db)
             .await?;
 
-        Ok(latest_entry
-            .map(|e| e.account_current_balance)
-            .unwrap_or(Decimal::ZERO))
+        Ok(latest_entry.map_or(Decimal::ZERO, |e| e.account_current_balance))
     }
 
     /// Gets ledger entries for an account with pagination.
@@ -541,34 +538,7 @@ impl AccountRepository {
     ) -> Result<PaginatedLedgerEntries, AccountError> {
         use sea_orm::FromQueryResult;
 
-        // Build base query
-        let mut query = ledger_entries::Entity::find()
-            .filter(ledger_entries::Column::AccountId.eq(account_id))
-            .join(
-                JoinType::InnerJoin,
-                ledger_entries::Relation::Transactions.def(),
-            );
-
-        // Apply date filters
-        if let Some(from_date) = from {
-            query = query.filter(transactions::Column::TransactionDate.gte(from_date));
-        }
-        if let Some(to_date) = to {
-            query = query.filter(transactions::Column::TransactionDate.lte(to_date));
-        }
-
-        // Get total count first
-        let total = query.clone().count(&self.db).await?;
-
-        // Calculate pagination
-        let total_pages = if total == 0 {
-            1
-        } else {
-            (total + limit - 1) / limit
-        };
-        let offset = (page.saturating_sub(1)) * limit;
-
-        // Select specific columns including transaction fields
+        // Helper struct for query result - defined before any statements
         #[derive(Debug, FromQueryResult)]
         struct LedgerEntryRow {
             // Ledger entry fields
@@ -595,6 +565,30 @@ impl AccountRepository {
             txn_status: TransactionStatus,
         }
 
+        // Build base query for counting
+        let mut count_query = ledger_entries::Entity::find()
+            .filter(ledger_entries::Column::AccountId.eq(account_id))
+            .join(
+                JoinType::InnerJoin,
+                ledger_entries::Relation::Transactions.def(),
+            );
+
+        // Apply date filters to count query
+        if let Some(from_date) = from {
+            count_query = count_query.filter(transactions::Column::TransactionDate.gte(from_date));
+        }
+        if let Some(to_date) = to {
+            count_query = count_query.filter(transactions::Column::TransactionDate.lte(to_date));
+        }
+
+        // Get total count first
+        let total = count_query.count(&self.db).await?;
+
+        // Calculate pagination
+        let total_pages = if total == 0 { 1 } else { total.div_ceil(limit) };
+        let offset = (page.saturating_sub(1)) * limit;
+
+        // Build data query with column aliases
         let mut query = ledger_entries::Entity::find()
             .filter(ledger_entries::Column::AccountId.eq(account_id))
             .join(
@@ -661,7 +655,6 @@ impl AccountRepository {
     }
 }
 
-
 // ============================================================================
 // Pure validation functions for property testing
 // ============================================================================
@@ -688,8 +681,8 @@ pub struct AccountCodeEntry {
 /// * `true` if the code is unique within the organization
 /// * `false` if the code already exists in the organization
 #[must_use]
-pub fn is_code_unique(
-    existing_codes: &std::collections::HashSet<AccountCodeEntry>,
+pub fn is_code_unique<S: std::hash::BuildHasher>(
+    existing_codes: &std::collections::HashSet<AccountCodeEntry, S>,
     new_org_id: Uuid,
     new_code: &str,
 ) -> bool {
@@ -713,8 +706,8 @@ pub fn is_code_unique(
 /// * `true` if the update is valid (no conflict)
 /// * `false` if the new code conflicts with another account
 #[must_use]
-pub fn is_code_update_valid(
-    existing_codes: &std::collections::HashSet<AccountCodeEntry>,
+pub fn is_code_update_valid<S: std::hash::BuildHasher>(
+    existing_codes: &std::collections::HashSet<AccountCodeEntry, S>,
     current_org_id: Uuid,
     current_code: &str,
     new_code: &str,
@@ -746,7 +739,7 @@ mod tests {
 
     /// Strategy for generating valid account codes (alphanumeric, 1-20 chars)
     fn account_code_strategy() -> impl Strategy<Value = String> {
-        "[A-Z0-9]{1,10}".prop_map(|s| s.to_string())
+        "[A-Z0-9]{1,10}"
     }
 
     /// Strategy for generating a set of existing account codes

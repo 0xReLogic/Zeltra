@@ -245,7 +245,10 @@ mod tests {
 
     #[test]
     fn test_error_codes() {
-        assert_eq!(LedgerError::InsufficientEntries.error_code(), "INSUFFICIENT_ENTRIES");
+        assert_eq!(
+            LedgerError::InsufficientEntries.error_code(),
+            "INSUFFICIENT_ENTRIES"
+        );
         assert_eq!(
             LedgerError::UnbalancedTransaction {
                 debit: Decimal::new(100, 2),
@@ -276,12 +279,14 @@ mod tests {
     #[test]
     fn test_retryable_errors() {
         assert!(LedgerError::ConcurrentModification.is_retryable());
-        assert!(LedgerError::AccountVersionMismatch {
-            account_id: Uuid::nil(),
-            expected: 1,
-            actual: 2,
-        }
-        .is_retryable());
+        assert!(
+            LedgerError::AccountVersionMismatch {
+                account_id: Uuid::nil(),
+                expected: 1,
+                actual: 2,
+            }
+            .is_retryable()
+        );
         assert!(!LedgerError::InsufficientEntries.is_retryable());
         assert!(!LedgerError::ZeroAmount.is_retryable());
     }

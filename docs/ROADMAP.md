@@ -161,11 +161,11 @@ No frontend work until Phase 6. Backend must be battle-tested first.
 - [x] `POST /auth/resend-verification`
 - [x] `POST /organizations`
 - [x] `GET /organizations/:id`
-- [ ] `PATCH /organizations/:id` (update settings: name, base_currency, timezone)
+- [x] `PATCH /organizations/:id` (update settings: name, base_currency, timezone)
 - [x] `POST /organizations/:id/users`
 - [x] `GET /organizations/:id/users`
-- [ ] `PATCH /organizations/:id/users/:userId` (update role, approval_limit)
-- [ ] `DELETE /organizations/:id/users/:userId` (remove user)
+- [x] `PATCH /organizations/:id/users/:userId` (update role, approval_limit)
+- [x] `DELETE /organizations/:id/users/:userId` (remove user)
 
 ### Tests
 

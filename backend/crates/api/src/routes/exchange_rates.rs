@@ -18,14 +18,22 @@ use crate::{AppState, middleware::AuthUser};
 use zeltra_db::{
     OrganizationRepository,
     entities::sea_orm_active_enums::{RateSource, UserRole},
-    repositories::exchange_rate::{CreateExchangeRateInput, ExchangeRateRepository, RateLookupMethod},
+    repositories::exchange_rate::{
+        CreateExchangeRateInput, ExchangeRateRepository, RateLookupMethod,
+    },
 };
 
 /// Creates the exchange rate routes (requires auth middleware to be applied externally).
 pub fn routes() -> Router<AppState> {
     Router::new()
-        .route("/organizations/{org_id}/exchange-rates", get(get_exchange_rate))
-        .route("/organizations/{org_id}/exchange-rates", post(create_exchange_rate))
+        .route(
+            "/organizations/{org_id}/exchange-rates",
+            get(get_exchange_rate),
+        )
+        .route(
+            "/organizations/{org_id}/exchange-rates",
+            post(create_exchange_rate),
+        )
 }
 
 /// Query parameters for getting an exchange rate.
@@ -87,16 +95,21 @@ async fn get_exchange_rate(
 
     let rate_repo = ExchangeRateRepository::new((*state.db).clone());
 
-    let date = query.date.unwrap_or_else(|| chrono::Utc::now().date_naive());
+    let date = query
+        .date
+        .unwrap_or_else(|| chrono::Utc::now().date_naive());
 
-    match rate_repo.find_rate(org_id, &query.from, &query.to, date).await {
+    match rate_repo
+        .find_rate(org_id, &query.from, &query.to, date)
+        .await
+    {
         Ok(lookup) => {
             let response = ExchangeRateResponse {
                 from_currency: query.from,
                 to_currency: query.to,
                 rate: lookup.rate.to_string(),
                 effective_date: lookup.effective_date,
-                lookup_method: lookup_method_to_string(&lookup.lookup_method),
+                lookup_method: lookup_method_to_string(lookup.lookup_method),
             };
 
             (StatusCode::OK, Json(json!(response))).into_response()
@@ -202,7 +215,9 @@ async fn create_exchange_rate(
                     })),
                 )
                     .into_response(),
-                zeltra_db::repositories::exchange_rate::ExchangeRateError::CurrencyNotFound(currency) => (
+                zeltra_db::repositories::exchange_rate::ExchangeRateError::CurrencyNotFound(
+                    currency,
+                ) => (
                     StatusCode::BAD_REQUEST,
                     Json(json!({
                         "error": "currency_not_found",
@@ -283,7 +298,7 @@ async fn check_admin_role(
     }
 }
 
-fn lookup_method_to_string(method: &RateLookupMethod) -> String {
+fn lookup_method_to_string(method: RateLookupMethod) -> String {
     match method {
         RateLookupMethod::Direct => "direct".to_string(),
         RateLookupMethod::Inverse => "inverse".to_string(),

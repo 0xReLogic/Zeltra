@@ -9,8 +9,8 @@
 //! 3. Calculate the remainder (total - sum of rounded)
 //! 4. Distribute remainder units to items with largest fractional parts
 
-use rust_decimal::prelude::*;
 use rust_decimal::Decimal;
+use rust_decimal::prelude::*;
 
 /// Allocation utility for distributing amounts.
 ///
@@ -51,23 +51,24 @@ impl AllocationUtil {
             return vec![];
         }
         if count == 1 {
-            return vec![total.round_dp_with_strategy(decimal_places, RoundingStrategy::MidpointNearestEven)];
+            return vec![
+                total.round_dp_with_strategy(decimal_places, RoundingStrategy::MidpointNearestEven),
+            ];
         }
 
         let count_dec = Decimal::from(count as u64);
         let unit = Decimal::new(1, decimal_places);
 
         // Round total to target precision first
-        let total_rounded = total.round_dp_with_strategy(decimal_places, RoundingStrategy::MidpointNearestEven);
+        let total_rounded =
+            total.round_dp_with_strategy(decimal_places, RoundingStrategy::MidpointNearestEven);
 
         // Calculate exact allocation per recipient
         let exact_per_recipient = total_rounded / count_dec;
 
         // Round down to get base allocation
-        let base = exact_per_recipient.round_dp_with_strategy(
-            decimal_places,
-            RoundingStrategy::ToZero,
-        );
+        let base =
+            exact_per_recipient.round_dp_with_strategy(decimal_places, RoundingStrategy::ToZero);
 
         // Calculate how much we've allocated so far
         let allocated = base * count_dec;
@@ -79,7 +80,8 @@ impl AllocationUtil {
         let extra_count = (remainder / unit)
             .round_dp_with_strategy(0, RoundingStrategy::ToZero)
             .to_u64()
-            .unwrap_or(0) as usize;
+            .unwrap_or(0);
+        let extra_count = usize::try_from(extra_count).unwrap_or(0);
 
         // Distribute: first N items get extra unit
         (0..count)
@@ -126,7 +128,8 @@ impl AllocationUtil {
         let unit = Decimal::new(1, decimal_places);
 
         // Round total to target precision first
-        let total_rounded = total.round_dp_with_strategy(decimal_places, RoundingStrategy::MidpointNearestEven);
+        let total_rounded =
+            total.round_dp_with_strategy(decimal_places, RoundingStrategy::MidpointNearestEven);
 
         // Calculate exact allocations
         let exact: Vec<Decimal> = percentages
@@ -148,7 +151,8 @@ impl AllocationUtil {
         let units_to_distribute = (remainder / unit)
             .round_dp_with_strategy(0, RoundingStrategy::ToZero)
             .to_u64()
-            .unwrap_or(0) as usize;
+            .unwrap_or(0);
+        let units_to_distribute = usize::try_from(units_to_distribute).unwrap_or(0);
 
         if units_to_distribute == 0 {
             return rounded;
@@ -231,9 +235,7 @@ mod tests {
             assert_eq!(
                 result.iter().sum::<Decimal>(),
                 total,
-                "Sum invariant failed for total={}, count={}",
-                total,
-                count
+                "Sum invariant failed for total={total}, count={count}"
             );
         }
     }
@@ -294,9 +296,7 @@ mod tests {
             assert_eq!(
                 result.iter().sum::<Decimal>(),
                 total,
-                "Sum invariant failed for total={}, percentages={:?}",
-                total,
-                percentages
+                "Sum invariant failed for total={total}, percentages={percentages:?}"
             );
         }
     }

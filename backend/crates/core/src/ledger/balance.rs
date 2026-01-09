@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use zeltra_shared::types::AccountId;
 
 /// Account types for balance calculation rules.
-/// 
+///
 /// Requirements 8.4, 8.5:
 /// - Asset/Expense: balance += debit - credit (debit-normal)
 /// - Liability/Equity/Revenue: balance += credit - debit (credit-normal)
@@ -24,14 +24,14 @@ impl AccountTypeForBalance {
     #[must_use]
     pub fn from_account_type(account_type: &str) -> Self {
         match account_type.to_lowercase().as_str() {
-            "asset" | "expense" => Self::DebitNormal,
             "liability" | "equity" | "revenue" => Self::CreditNormal,
-            _ => Self::DebitNormal, // Default to debit-normal
+            // Default to debit-normal for asset, expense, and unknown types
+            _ => Self::DebitNormal,
         }
     }
 
     /// Calculates the balance change for an entry.
-    /// 
+    ///
     /// Requirement 8.4: Asset/Expense → balance += debit - credit
     /// Requirement 8.5: Liability/Equity/Revenue → balance += credit - debit
     #[must_use]
@@ -85,7 +85,7 @@ impl AccountBalance {
 }
 
 /// Running balance information for a ledger entry.
-/// 
+///
 /// Requirements 8.1-8.3:
 /// - account_version: monotonically increasing counter
 /// - previous_balance: balance before this entry
@@ -112,7 +112,7 @@ impl RunningBalance {
     }
 
     /// Creates a new running balance based on the previous entry.
-    /// 
+    ///
     /// Property 3: Running Balance Consistency
     /// - current_balance[N] = previous_balance[N] + balance_change
     /// - previous_balance[N] = current_balance[N-1]
@@ -161,7 +161,7 @@ mod tests {
             balance_change in balance_change_strategy(),
         ) {
             let rb = RunningBalance::first_entry(balance_change);
-            
+
             // For first entry: current = 0 + change
             prop_assert_eq!(
                 rb.current_balance,
@@ -183,7 +183,7 @@ mod tests {
         ) {
             let rb1 = RunningBalance::first_entry(change1);
             let rb2 = RunningBalance::next_entry(&rb1, change2);
-            
+
             prop_assert_eq!(
                 rb2.previous_balance,
                 rb1.current_balance,
@@ -252,6 +252,7 @@ mod tests {
         ///
         /// **Validates: Requirements 8.1**
         #[test]
+        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
         fn prop_version_equals_entry_count(
             changes in balance_changes_strategy(20),
         ) {
@@ -351,6 +352,7 @@ mod tests {
         ///
         /// **Validates: Requirements 8.1**
         #[test]
+        #[allow(clippy::cast_possible_wrap)]
         fn prop_version_sequence_contiguous(
             changes in balance_changes_strategy(20),
         ) {
@@ -402,48 +404,87 @@ mod tests {
     #[test]
     fn test_debit_normal_balance_change() {
         let account_type = AccountTypeForBalance::DebitNormal;
-        
+
         // Debit increases balance
-        assert_eq!(account_type.calculate_balance_change(dec!(100), dec!(0)), dec!(100));
-        
+        assert_eq!(
+            account_type.calculate_balance_change(dec!(100), dec!(0)),
+            dec!(100)
+        );
+
         // Credit decreases balance
-        assert_eq!(account_type.calculate_balance_change(dec!(0), dec!(50)), dec!(-50));
-        
+        assert_eq!(
+            account_type.calculate_balance_change(dec!(0), dec!(50)),
+            dec!(-50)
+        );
+
         // Net effect
-        assert_eq!(account_type.calculate_balance_change(dec!(100), dec!(30)), dec!(70));
+        assert_eq!(
+            account_type.calculate_balance_change(dec!(100), dec!(30)),
+            dec!(70)
+        );
     }
 
     #[test]
     fn test_credit_normal_balance_change() {
         let account_type = AccountTypeForBalance::CreditNormal;
-        
+
         // Credit increases balance
-        assert_eq!(account_type.calculate_balance_change(dec!(0), dec!(100)), dec!(100));
-        
+        assert_eq!(
+            account_type.calculate_balance_change(dec!(0), dec!(100)),
+            dec!(100)
+        );
+
         // Debit decreases balance
-        assert_eq!(account_type.calculate_balance_change(dec!(50), dec!(0)), dec!(-50));
-        
+        assert_eq!(
+            account_type.calculate_balance_change(dec!(50), dec!(0)),
+            dec!(-50)
+        );
+
         // Net effect
-        assert_eq!(account_type.calculate_balance_change(dec!(30), dec!(100)), dec!(70));
+        assert_eq!(
+            account_type.calculate_balance_change(dec!(30), dec!(100)),
+            dec!(70)
+        );
     }
 
     #[test]
     fn test_account_type_from_string() {
-        assert_eq!(AccountTypeForBalance::from_account_type("asset"), AccountTypeForBalance::DebitNormal);
-        assert_eq!(AccountTypeForBalance::from_account_type("expense"), AccountTypeForBalance::DebitNormal);
-        assert_eq!(AccountTypeForBalance::from_account_type("liability"), AccountTypeForBalance::CreditNormal);
-        assert_eq!(AccountTypeForBalance::from_account_type("equity"), AccountTypeForBalance::CreditNormal);
-        assert_eq!(AccountTypeForBalance::from_account_type("revenue"), AccountTypeForBalance::CreditNormal);
-        
+        assert_eq!(
+            AccountTypeForBalance::from_account_type("asset"),
+            AccountTypeForBalance::DebitNormal
+        );
+        assert_eq!(
+            AccountTypeForBalance::from_account_type("expense"),
+            AccountTypeForBalance::DebitNormal
+        );
+        assert_eq!(
+            AccountTypeForBalance::from_account_type("liability"),
+            AccountTypeForBalance::CreditNormal
+        );
+        assert_eq!(
+            AccountTypeForBalance::from_account_type("equity"),
+            AccountTypeForBalance::CreditNormal
+        );
+        assert_eq!(
+            AccountTypeForBalance::from_account_type("revenue"),
+            AccountTypeForBalance::CreditNormal
+        );
+
         // Case insensitive
-        assert_eq!(AccountTypeForBalance::from_account_type("ASSET"), AccountTypeForBalance::DebitNormal);
-        assert_eq!(AccountTypeForBalance::from_account_type("Revenue"), AccountTypeForBalance::CreditNormal);
+        assert_eq!(
+            AccountTypeForBalance::from_account_type("ASSET"),
+            AccountTypeForBalance::DebitNormal
+        );
+        assert_eq!(
+            AccountTypeForBalance::from_account_type("Revenue"),
+            AccountTypeForBalance::CreditNormal
+        );
     }
 
     #[test]
     fn test_running_balance_first_entry() {
         let rb = RunningBalance::first_entry(dec!(100));
-        
+
         assert_eq!(rb.account_version, 1);
         assert_eq!(rb.previous_balance, dec!(0));
         assert_eq!(rb.current_balance, dec!(100));
@@ -454,13 +495,13 @@ mod tests {
         // First entry: +100
         let rb1 = RunningBalance::first_entry(dec!(100));
         assert_eq!(rb1.current_balance, dec!(100));
-        
+
         // Second entry: +50
         let rb2 = RunningBalance::next_entry(&rb1, dec!(50));
         assert_eq!(rb2.account_version, 2);
         assert_eq!(rb2.previous_balance, dec!(100)); // = rb1.current_balance
         assert_eq!(rb2.current_balance, dec!(150));
-        
+
         // Third entry: -30
         let rb3 = RunningBalance::next_entry(&rb2, dec!(-30));
         assert_eq!(rb3.account_version, 3);

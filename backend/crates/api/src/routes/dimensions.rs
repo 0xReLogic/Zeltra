@@ -26,10 +26,22 @@ use zeltra_db::{
 /// Creates the dimension routes (requires auth middleware to be applied externally).
 pub fn routes() -> Router<AppState> {
     Router::new()
-        .route("/organizations/{org_id}/dimension-types", get(list_dimension_types))
-        .route("/organizations/{org_id}/dimension-types", post(create_dimension_type))
-        .route("/organizations/{org_id}/dimension-values", get(list_dimension_values))
-        .route("/organizations/{org_id}/dimension-values", post(create_dimension_value))
+        .route(
+            "/organizations/{org_id}/dimension-types",
+            get(list_dimension_types),
+        )
+        .route(
+            "/organizations/{org_id}/dimension-types",
+            post(create_dimension_type),
+        )
+        .route(
+            "/organizations/{org_id}/dimension-values",
+            get(list_dimension_values),
+        )
+        .route(
+            "/organizations/{org_id}/dimension-values",
+            post(create_dimension_value),
+        )
 }
 
 /// Query parameters for listing dimension types.
@@ -128,7 +140,6 @@ pub struct DimensionValueResponse {
     /// Effective to date.
     pub effective_to: Option<NaiveDate>,
 }
-
 
 /// GET `/organizations/{org_id}/dimension-types` - List dimension types.
 async fn list_dimension_types(
@@ -294,7 +305,11 @@ async fn list_dimension_values(
                 })
                 .collect();
 
-            (StatusCode::OK, Json(json!({ "dimension_values": response }))).into_response()
+            (
+                StatusCode::OK,
+                Json(json!({ "dimension_values": response })),
+            )
+                .into_response()
         }
         Err(e) => {
             error!(error = %e, "Failed to list dimension values");

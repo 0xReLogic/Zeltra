@@ -150,13 +150,15 @@ Frontend cek di sini untuk tau endpoint mana yang udah ready.
 
 ### Organizations
 
-| Endpoint                             | Status | Notes                     |
-| ------------------------------------ | ------ | ------------------------- |
-| POST /api/v1/organizations           | ✅     | Create org, user as owner |
-| GET /api/v1/organizations/:id        | ✅     | Get org details           |
-| GET /api/v1/organizations/:id/users  | ✅     | List org members          |
-| POST /api/v1/organizations/:id/users | ✅     | Add user to org (admin+)  |
-| PATCH /api/v1/organizations/:id      | ✅     | Update org settings       |
+| Endpoint                                    | Status | Notes                                    |
+| ------------------------------------------- | ------ | ---------------------------------------- |
+| POST /api/v1/organizations                  | ✅     | Create org, user as owner                |
+| GET /api/v1/organizations/:id               | ✅     | Get org details                          |
+| GET /api/v1/organizations/:id/users         | ✅     | List org members                         |
+| POST /api/v1/organizations/:id/users        | ✅     | Add user to org (admin+)                 |
+| PATCH /api/v1/organizations/:id             | ✅     | Update org settings (name/currency/tz)   |
+| PATCH /api/v1/organizations/:id/users/:id   | ✅     | Update user role/approval_limit (admin+) |
+| DELETE /api/v1/organizations/:id/users/:id  | ✅     | Remove user from org (admin+, hierarchy) |
 
 ### Accounts
 

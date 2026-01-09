@@ -223,4 +223,36 @@ impl SessionRepository {
 
         Ok(result.rows_affected)
     }
+
+    /// Revokes all sessions for a user in a specific organization.
+    ///
+    /// This is used when removing a user from an organization.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the database update fails.
+    pub async fn revoke_user_org_sessions(
+        &self,
+        user_id: Uuid,
+        org_id: Uuid,
+    ) -> Result<u64, DbErr> {
+        let now = chrono::Utc::now();
+
+        let result = sessions::Entity::update_many()
+            .col_expr(
+                sessions::Column::RevokedAt,
+                sea_orm::sea_query::Expr::value(now),
+            )
+            .col_expr(
+                sessions::Column::UpdatedAt,
+                sea_orm::sea_query::Expr::value(now),
+            )
+            .filter(sessions::Column::UserId.eq(user_id))
+            .filter(sessions::Column::OrganizationId.eq(org_id))
+            .filter(sessions::Column::RevokedAt.is_null())
+            .exec(&self.db)
+            .await?;
+
+        Ok(result.rows_affected)
+    }
 }

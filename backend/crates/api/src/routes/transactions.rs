@@ -29,11 +29,26 @@ use zeltra_db::{
 /// Creates the transaction routes.
 pub fn routes() -> Router<AppState> {
     Router::new()
-        .route("/organizations/{org_id}/transactions", get(list_transactions))
-        .route("/organizations/{org_id}/transactions", post(create_transaction))
-        .route("/organizations/{org_id}/transactions/{transaction_id}", get(get_transaction))
-        .route("/organizations/{org_id}/transactions/{transaction_id}", patch(update_transaction))
-        .route("/organizations/{org_id}/transactions/{transaction_id}", delete(delete_transaction))
+        .route(
+            "/organizations/{org_id}/transactions",
+            get(list_transactions),
+        )
+        .route(
+            "/organizations/{org_id}/transactions",
+            post(create_transaction),
+        )
+        .route(
+            "/organizations/{org_id}/transactions/{transaction_id}",
+            get(get_transaction),
+        )
+        .route(
+            "/organizations/{org_id}/transactions/{transaction_id}",
+            patch(update_transaction),
+        )
+        .route(
+            "/organizations/{org_id}/transactions/{transaction_id}",
+            delete(delete_transaction),
+        )
 }
 
 // ============================================================================
@@ -95,7 +110,6 @@ pub struct CreateEntryRequest {
     #[serde(default)]
     pub dimensions: Vec<Uuid>,
 }
-
 
 /// Request body for updating a transaction.
 #[derive(Debug, Deserialize)]
@@ -189,7 +203,6 @@ pub struct TransactionListItem {
     pub created_at: String,
 }
 
-
 // ============================================================================
 // Route Handlers
 // ============================================================================
@@ -215,7 +228,10 @@ async fn list_transactions(
     // Build filter
     let filter = TransactionFilter {
         status: query.status.as_ref().and_then(|s| string_to_status(s)),
-        transaction_type: query.transaction_type.as_ref().and_then(|t| string_to_tx_type(t)),
+        transaction_type: query
+            .transaction_type
+            .as_ref()
+            .and_then(|t| string_to_tx_type(t)),
         date_from: query.from,
         date_to: query.to,
         dimension_value_id: query.dimension,
@@ -255,6 +271,7 @@ async fn list_transactions(
 /// POST `/organizations/{org_id}/transactions` - Create a new transaction.
 ///
 /// Requirements: 10.1
+#[allow(clippy::too_many_lines)]
 async fn create_transaction(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -513,7 +530,6 @@ async fn create_transaction(
     }
 }
 
-
 /// GET `/organizations/{org_id}/transactions/{transaction_id}` - Get transaction with entries.
 ///
 /// Requirements: 10.3
@@ -746,7 +762,6 @@ async fn delete_transaction(
         }
     }
 }
-
 
 // ============================================================================
 // Helper Functions

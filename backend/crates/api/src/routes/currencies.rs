@@ -1,12 +1,6 @@
 //! Currency listing routes.
 
-use axum::{
-    Json, Router,
-    extract::State,
-    http::StatusCode,
-    response::IntoResponse,
-    routing::get,
-};
+use axum::{Json, Router, extract::State, http::StatusCode, response::IntoResponse, routing::get};
 use sea_orm::EntityTrait;
 use serde::Serialize;
 use serde_json::json;
@@ -34,10 +28,7 @@ pub struct CurrencyResponse {
 }
 
 /// GET `/currencies` - List all currencies.
-async fn list_currencies(
-    State(state): State<AppState>,
-    _auth: AuthUser,
-) -> impl IntoResponse {
+async fn list_currencies(State(state): State<AppState>, _auth: AuthUser) -> impl IntoResponse {
     match currencies::Entity::find().all(&*state.db).await {
         Ok(currencies) => {
             let response: Vec<CurrencyResponse> = currencies

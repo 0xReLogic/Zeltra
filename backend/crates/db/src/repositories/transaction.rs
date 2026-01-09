@@ -11,8 +11,9 @@ use sea_orm::{
 use uuid::Uuid;
 
 use crate::entities::{
-    chart_of_accounts, entry_dimensions, fiscal_periods, ledger_entries, transactions,
+    chart_of_accounts, entry_dimensions, fiscal_periods, ledger_entries,
     sea_orm_active_enums::{AccountType, TransactionStatus, TransactionType},
+    transactions,
 };
 
 /// Error types for transaction operations.
@@ -269,8 +270,11 @@ impl TransactionRepository {
                 .ok_or(TransactionError::AccountNotFound(entry_input.account_id))?;
 
             // Calculate balance change based on account type
-            let balance_change =
-                calculate_balance_change(&account.account_type, entry_input.debit, entry_input.credit);
+            let balance_change = calculate_balance_change(
+                &account.account_type,
+                entry_input.debit,
+                entry_input.credit,
+            );
 
             // Get or fetch the current balance for this account
             let (account_version, previous_balance) =
@@ -433,10 +437,7 @@ impl TransactionRepository {
                 .map(|d| d.dimension_value_id)
                 .collect();
 
-            entries_with_dims.push(LedgerEntryWithDimensions {
-                entry,
-                dimensions,
-            });
+            entries_with_dims.push(LedgerEntryWithDimensions { entry, dimensions });
         }
 
         Ok(TransactionWithEntries {
@@ -479,7 +480,7 @@ impl TransactionRepository {
 
         // Update transaction
         let mut active: transactions::ActiveModel = transaction.into();
-        
+
         if let Some(desc) = description {
             active.description = Set(desc);
         }
@@ -531,7 +532,6 @@ impl TransactionRepository {
     }
 }
 
-
 // ============================================================================
 // Balance Calculation Helpers
 // ============================================================================
@@ -542,7 +542,11 @@ impl TransactionRepository {
 /// - Asset/Expense (debit-normal): balance += debit - credit
 /// - Liability/Equity/Revenue (credit-normal): balance += credit - debit
 #[must_use]
-pub fn calculate_balance_change(account_type: &AccountType, debit: Decimal, credit: Decimal) -> Decimal {
+pub fn calculate_balance_change(
+    account_type: &AccountType,
+    debit: Decimal,
+    credit: Decimal,
+) -> Decimal {
     match account_type {
         // Debit-normal accounts (Requirement 8.4)
         AccountType::Asset | AccountType::Expense => debit - credit,
@@ -568,7 +572,6 @@ pub fn is_debit_normal(account_type: &AccountType) -> bool {
 /// - Voided transactions reject all modifications
 ///
 /// Requirements 13.4, 13.5
-#[must_use]
 pub fn can_modify_transaction(status: &TransactionStatus) -> Result<(), TransactionError> {
     match status {
         TransactionStatus::Posted => Err(TransactionError::CannotModifyPosted),
@@ -583,7 +586,6 @@ pub fn can_modify_transaction(status: &TransactionStatus) -> Result<(), Transact
 /// - Only draft transactions can be deleted
 ///
 /// Requirements 10.7
-#[must_use]
 pub fn can_delete_transaction(status: &TransactionStatus) -> Result<(), TransactionError> {
     match status {
         TransactionStatus::Draft => Ok(()),
@@ -764,38 +766,74 @@ mod tests {
     #[test]
     fn test_asset_balance_change() {
         // Asset is debit-normal: balance += debit - credit
-        assert_eq!(calculate_balance_change(&AccountType::Asset, dec!(100), dec!(0)), dec!(100));
-        assert_eq!(calculate_balance_change(&AccountType::Asset, dec!(0), dec!(50)), dec!(-50));
-        assert_eq!(calculate_balance_change(&AccountType::Asset, dec!(100), dec!(30)), dec!(70));
+        assert_eq!(
+            calculate_balance_change(&AccountType::Asset, dec!(100), dec!(0)),
+            dec!(100)
+        );
+        assert_eq!(
+            calculate_balance_change(&AccountType::Asset, dec!(0), dec!(50)),
+            dec!(-50)
+        );
+        assert_eq!(
+            calculate_balance_change(&AccountType::Asset, dec!(100), dec!(30)),
+            dec!(70)
+        );
     }
 
     #[test]
     fn test_expense_balance_change() {
         // Expense is debit-normal: balance += debit - credit
-        assert_eq!(calculate_balance_change(&AccountType::Expense, dec!(200), dec!(0)), dec!(200));
-        assert_eq!(calculate_balance_change(&AccountType::Expense, dec!(0), dec!(100)), dec!(-100));
+        assert_eq!(
+            calculate_balance_change(&AccountType::Expense, dec!(200), dec!(0)),
+            dec!(200)
+        );
+        assert_eq!(
+            calculate_balance_change(&AccountType::Expense, dec!(0), dec!(100)),
+            dec!(-100)
+        );
     }
 
     #[test]
     fn test_liability_balance_change() {
         // Liability is credit-normal: balance += credit - debit
-        assert_eq!(calculate_balance_change(&AccountType::Liability, dec!(0), dec!(100)), dec!(100));
-        assert_eq!(calculate_balance_change(&AccountType::Liability, dec!(50), dec!(0)), dec!(-50));
-        assert_eq!(calculate_balance_change(&AccountType::Liability, dec!(30), dec!(100)), dec!(70));
+        assert_eq!(
+            calculate_balance_change(&AccountType::Liability, dec!(0), dec!(100)),
+            dec!(100)
+        );
+        assert_eq!(
+            calculate_balance_change(&AccountType::Liability, dec!(50), dec!(0)),
+            dec!(-50)
+        );
+        assert_eq!(
+            calculate_balance_change(&AccountType::Liability, dec!(30), dec!(100)),
+            dec!(70)
+        );
     }
 
     #[test]
     fn test_equity_balance_change() {
         // Equity is credit-normal: balance += credit - debit
-        assert_eq!(calculate_balance_change(&AccountType::Equity, dec!(0), dec!(500)), dec!(500));
-        assert_eq!(calculate_balance_change(&AccountType::Equity, dec!(200), dec!(0)), dec!(-200));
+        assert_eq!(
+            calculate_balance_change(&AccountType::Equity, dec!(0), dec!(500)),
+            dec!(500)
+        );
+        assert_eq!(
+            calculate_balance_change(&AccountType::Equity, dec!(200), dec!(0)),
+            dec!(-200)
+        );
     }
 
     #[test]
     fn test_revenue_balance_change() {
         // Revenue is credit-normal: balance += credit - debit
-        assert_eq!(calculate_balance_change(&AccountType::Revenue, dec!(0), dec!(1000)), dec!(1000));
-        assert_eq!(calculate_balance_change(&AccountType::Revenue, dec!(100), dec!(0)), dec!(-100));
+        assert_eq!(
+            calculate_balance_change(&AccountType::Revenue, dec!(0), dec!(1000)),
+            dec!(1000)
+        );
+        assert_eq!(
+            calculate_balance_change(&AccountType::Revenue, dec!(100), dec!(0)),
+            dec!(-100)
+        );
     }
 
     #[test]
@@ -862,7 +900,7 @@ mod tests {
         fn prop_posted_rejects_modification(_dummy in 0..100i32) {
             let result = can_modify_transaction(&TransactionStatus::Posted);
             prop_assert!(result.is_err(), "Posted transactions should reject modifications");
-            
+
             match result {
                 Err(TransactionError::CannotModifyPosted) => {},
                 _ => prop_assert!(false, "Should return CannotModifyPosted error"),
@@ -878,7 +916,7 @@ mod tests {
         fn prop_voided_rejects_modification(_dummy in 0..100i32) {
             let result = can_modify_transaction(&TransactionStatus::Voided);
             prop_assert!(result.is_err(), "Voided transactions should reject modifications");
-            
+
             match result {
                 Err(TransactionError::CannotModifyVoided) => {},
                 _ => prop_assert!(false, "Should return CannotModifyVoided error"),
@@ -933,7 +971,7 @@ mod tests {
         ) {
             let result = can_delete_transaction(&status);
             prop_assert!(result.is_err(), "Non-draft transactions should reject deletion");
-            
+
             match result {
                 Err(TransactionError::CanOnlyDeleteDraft) => {},
                 _ => prop_assert!(false, "Should return CanOnlyDeleteDraft error"),

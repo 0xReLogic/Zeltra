@@ -23,9 +23,18 @@ use zeltra_db::{
 /// Creates the fiscal routes (requires auth middleware to be applied externally).
 pub fn routes() -> Router<AppState> {
     Router::new()
-        .route("/organizations/{org_id}/fiscal-years", get(list_fiscal_years))
-        .route("/organizations/{org_id}/fiscal-years", post(create_fiscal_year))
-        .route("/organizations/{org_id}/fiscal-periods/{period_id}/status", patch(update_period_status))
+        .route(
+            "/organizations/{org_id}/fiscal-years",
+            get(list_fiscal_years),
+        )
+        .route(
+            "/organizations/{org_id}/fiscal-years",
+            post(create_fiscal_year),
+        )
+        .route(
+            "/organizations/{org_id}/fiscal-periods/{period_id}/status",
+            patch(update_period_status),
+        )
 }
 
 /// Request body for creating a fiscal year.
@@ -226,6 +235,7 @@ async fn create_fiscal_year(
 }
 
 /// PATCH `/organizations/{org_id}/fiscal-periods/{period_id}/status` - Update period status.
+#[allow(clippy::too_many_lines)]
 async fn update_period_status(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -275,7 +285,7 @@ async fn update_period_status(
             )
                 .into_response();
         }
-    };
+    }
 
     // Parse status
     let Some(new_status) = string_to_period_status(&payload.status) else {
@@ -290,13 +300,19 @@ async fn update_period_status(
     };
 
     // Determine closed_by
-    let closed_by = if matches!(new_status, FiscalPeriodStatus::SoftClose | FiscalPeriodStatus::Closed) {
+    let closed_by = if matches!(
+        new_status,
+        FiscalPeriodStatus::SoftClose | FiscalPeriodStatus::Closed
+    ) {
         Some(auth.user_id())
     } else {
         None
     };
 
-    match fiscal_repo.update_period_status(period_id, new_status, closed_by).await {
+    match fiscal_repo
+        .update_period_status(period_id, new_status, closed_by)
+        .await
+    {
         Ok(updated) => {
             info!(
                 org_id = %org_id,
@@ -332,7 +348,10 @@ async fn update_period_status(
                     })),
                 )
                     .into_response(),
-                zeltra_db::repositories::fiscal::FiscalError::InvalidStatusTransition { from, to } => (
+                zeltra_db::repositories::fiscal::FiscalError::InvalidStatusTransition {
+                    from,
+                    to,
+                } => (
                     StatusCode::BAD_REQUEST,
                     Json(json!({
                         "error": "invalid_status_transition",
@@ -413,7 +432,9 @@ async fn check_admin_role(
     }
 }
 
-fn fiscal_year_status_to_string(status: &zeltra_db::entities::sea_orm_active_enums::FiscalYearStatus) -> String {
+fn fiscal_year_status_to_string(
+    status: &zeltra_db::entities::sea_orm_active_enums::FiscalYearStatus,
+) -> String {
     match status {
         zeltra_db::entities::sea_orm_active_enums::FiscalYearStatus::Open => "open".to_string(),
         zeltra_db::entities::sea_orm_active_enums::FiscalYearStatus::Closed => "closed".to_string(),

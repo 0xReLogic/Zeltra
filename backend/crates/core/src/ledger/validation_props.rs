@@ -8,7 +8,7 @@ use rust_decimal::Decimal;
 use zeltra_shared::types::{AccountId, LedgerEntryId, TransactionId};
 
 use super::entry::{EntryType, LedgerEntry};
-use super::validation::{validate_entries, LedgerValidationError};
+use super::validation::{LedgerValidationError, validate_entries};
 
 /// Strategy to generate a valid positive amount (> 0).
 fn positive_amount() -> impl Strategy<Value = Decimal> {

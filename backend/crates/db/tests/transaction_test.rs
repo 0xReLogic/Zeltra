@@ -72,16 +72,15 @@ async fn test_create_transaction_valid_entries() {
     // 1. A valid organization with fiscal periods set up
     // 2. Valid account IDs
     // For now, we just verify the repository compiles and can be instantiated
-    
+
     // In a real test, you would:
     // 1. Create test organization
     // 2. Create fiscal year and periods
     // 3. Create accounts
     // 4. Create transaction
     // 5. Verify transaction was created with draft status
-    
-    // Placeholder assertion
-    assert!(true, "Repository instantiated successfully");
+
+    // Verify repository was instantiated (the test passes if we reach this point)
 }
 
 // ============================================================================
@@ -97,15 +96,18 @@ async fn test_list_transactions_with_filters() {
 
     // Test with empty filter - should not error
     let filter = TransactionFilter::default();
-    
+
     // Use a random org_id that likely doesn't exist
     let org_id = Uuid::new_v4();
-    
+
     let result = repo.list_transactions(org_id, filter).await;
-    
+
     // Should return empty list, not error
     assert!(result.is_ok(), "List should succeed even with no results");
-    assert!(result.unwrap().is_empty(), "Should return empty list for non-existent org");
+    assert!(
+        result.unwrap().is_empty(),
+        "Should return empty list for non-existent org"
+    );
 }
 
 // ============================================================================
@@ -124,8 +126,11 @@ async fn test_get_transaction_not_found() {
 
     let result = repo.get_transaction(org_id, transaction_id).await;
 
-    assert!(result.is_err(), "Should return error for non-existent transaction");
-    
+    assert!(
+        result.is_err(),
+        "Should return error for non-existent transaction"
+    );
+
     match result {
         Err(zeltra_db::repositories::transaction::TransactionError::NotFound(id)) => {
             assert_eq!(id, transaction_id);
@@ -150,8 +155,11 @@ async fn test_delete_transaction_not_found() {
 
     let result = repo.delete_transaction(org_id, transaction_id).await;
 
-    assert!(result.is_err(), "Should return error for non-existent transaction");
-    
+    assert!(
+        result.is_err(),
+        "Should return error for non-existent transaction"
+    );
+
     match result {
         Err(zeltra_db::repositories::transaction::TransactionError::NotFound(id)) => {
             assert_eq!(id, transaction_id);
@@ -184,8 +192,11 @@ async fn test_update_transaction_not_found() {
         )
         .await;
 
-    assert!(result.is_err(), "Should return error for non-existent transaction");
-    
+    assert!(
+        result.is_err(),
+        "Should return error for non-existent transaction"
+    );
+
     match result {
         Err(zeltra_db::repositories::transaction::TransactionError::NotFound(id)) => {
             assert_eq!(id, transaction_id);

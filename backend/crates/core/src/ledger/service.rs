@@ -189,9 +189,7 @@ impl LedgerService {
     /// # Errors
     ///
     /// Returns error if transaction is posted or voided.
-    pub fn validate_can_modify(
-        status: super::types::TransactionStatus,
-    ) -> Result<(), LedgerError> {
+    pub fn validate_can_modify(status: super::types::TransactionStatus) -> Result<(), LedgerError> {
         use super::types::TransactionStatus;
 
         match status {
@@ -208,9 +206,7 @@ impl LedgerService {
     /// # Errors
     ///
     /// Returns error if transaction is not in draft status.
-    pub fn validate_can_delete(
-        status: super::types::TransactionStatus,
-    ) -> Result<(), LedgerError> {
+    pub fn validate_can_delete(status: super::types::TransactionStatus) -> Result<(), LedgerError> {
         use super::types::TransactionStatus;
 
         if status != TransactionStatus::Draft {
@@ -258,15 +254,18 @@ mod tests {
         }
     }
 
-    // Mock validators
+    // Mock validators - these return Result/Option to match the expected callback signatures
+    #[allow(clippy::unnecessary_wraps)]
     fn ok_account_validator(id: Uuid) -> Result<AccountInfo, LedgerError> {
         Ok(make_account_info(id))
     }
 
+    #[allow(clippy::unnecessary_wraps)]
     fn ok_dimension_validator(_dims: &[Uuid]) -> Result<(), LedgerError> {
         Ok(())
     }
 
+    #[allow(clippy::unnecessary_wraps)]
     fn same_currency_rate_lookup(_from: &str, _to: &str, _date: NaiveDate) -> Option<Decimal> {
         Some(Decimal::ONE)
     }
@@ -424,7 +423,10 @@ mod tests {
             ok_dimension_validator,
         );
 
-        assert!(matches!(result, Err(LedgerError::AccountNoDirectPosting(_))));
+        assert!(matches!(
+            result,
+            Err(LedgerError::AccountNoDirectPosting(_))
+        ));
     }
 
     #[test]

@@ -266,20 +266,14 @@ mod tests {
 
     #[test]
     fn test_transaction_totals_balanced() {
-        let totals = TransactionTotals::new(
-            Decimal::new(10000, 2),
-            Decimal::new(10000, 2),
-        );
+        let totals = TransactionTotals::new(Decimal::new(10000, 2), Decimal::new(10000, 2));
         assert!(totals.is_balanced);
         assert_eq!(totals.difference(), Decimal::ZERO);
     }
 
     #[test]
     fn test_transaction_totals_unbalanced() {
-        let totals = TransactionTotals::new(
-            Decimal::new(10000, 2),
-            Decimal::new(5000, 2),
-        );
+        let totals = TransactionTotals::new(Decimal::new(10000, 2), Decimal::new(5000, 2));
         assert!(!totals.is_balanced);
         assert_eq!(totals.difference(), Decimal::new(5000, 2));
     }

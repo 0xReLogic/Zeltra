@@ -23,19 +23,18 @@ pub fn api_routes() -> Router<AppState> {
 #[allow(clippy::needless_pass_by_value)]
 pub fn api_routes_with_state(state: AppState) -> Router<AppState> {
     // Protected routes that require authentication
-    let protected_routes =
-        Router::new()
-            .merge(organizations::routes())
-            .merge(fiscal::routes())
-            .merge(accounts::routes())
-            .merge(dimensions::routes())
-            .merge(exchange_rates::routes())
-            .merge(currencies::routes())
-            .merge(transactions::routes())
-            .layer(middleware::from_fn_with_state(
-                state.clone(),
-                auth_middleware,
-            ));
+    let protected_routes = Router::new()
+        .merge(organizations::routes())
+        .merge(fiscal::routes())
+        .merge(accounts::routes())
+        .merge(dimensions::routes())
+        .merge(exchange_rates::routes())
+        .merge(currencies::routes())
+        .merge(transactions::routes())
+        .layer(middleware::from_fn_with_state(
+            state.clone(),
+            auth_middleware,
+        ));
 
     // Combine public and protected routes
     Router::new()

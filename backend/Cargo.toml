@@ -56,6 +56,7 @@ serde_with = "3.12"
 rust_decimal = { version = "1.37", features = ["serde", "serde-with-str"] }
 rust_decimal_macros = "1.37"
 chrono = { version = "0.4", features = ["serde"] }
+chrono-tz = "0.10"
 
 # === Validation ===
 validator = { version = "0.20", features = ["derive"] }
@@ -133,6 +134,7 @@ pedantic = { level = "warn", priority = -1 }
 module_name_repetitions = "allow"
 must_use_candidate = "allow"
 missing_errors_doc = "allow"
+doc_markdown = "allow"
 # CRITICAL for financial app
 float_arithmetic = "deny"
 float_cmp = "deny"

@@ -17,7 +17,9 @@ use crate::{AppState, middleware::AuthUser};
 use zeltra_db::{
     OrganizationRepository,
     entities::sea_orm_active_enums::{AccountSubtype, AccountType, UserRole},
-    repositories::account::{AccountFilter, AccountRepository, CreateAccountInput, UpdateAccountInput},
+    repositories::account::{
+        AccountFilter, AccountRepository, CreateAccountInput, UpdateAccountInput,
+    },
 };
 
 /// Creates the account routes (requires auth middleware to be applied externally).
@@ -25,11 +27,26 @@ pub fn routes() -> Router<AppState> {
     Router::new()
         .route("/organizations/{org_id}/accounts", get(list_accounts))
         .route("/organizations/{org_id}/accounts", post(create_account))
-        .route("/organizations/{org_id}/accounts/{account_id}", get(get_account))
-        .route("/organizations/{org_id}/accounts/{account_id}", put(update_account))
-        .route("/organizations/{org_id}/accounts/{account_id}", delete(delete_account))
-        .route("/organizations/{org_id}/accounts/{account_id}/balance", get(get_account_balance))
-        .route("/organizations/{org_id}/accounts/{account_id}/ledger", get(get_account_ledger))
+        .route(
+            "/organizations/{org_id}/accounts/{account_id}",
+            get(get_account),
+        )
+        .route(
+            "/organizations/{org_id}/accounts/{account_id}",
+            put(update_account),
+        )
+        .route(
+            "/organizations/{org_id}/accounts/{account_id}",
+            delete(delete_account),
+        )
+        .route(
+            "/organizations/{org_id}/accounts/{account_id}/balance",
+            get(get_account_balance),
+        )
+        .route(
+            "/organizations/{org_id}/accounts/{account_id}/ledger",
+            get(get_account_ledger),
+        )
 }
 
 /// Query parameters for listing accounts.
@@ -177,7 +194,6 @@ pub struct LedgerEntryResponse {
     pub created_at: String,
 }
 
-
 /// GET `/organizations/{org_id}/accounts` - List accounts with balances.
 async fn list_accounts(
     State(state): State<AppState>,
@@ -196,7 +212,10 @@ async fn list_accounts(
 
     // Build filter
     let filter = AccountFilter {
-        account_type: query.account_type.as_ref().and_then(|t| string_to_account_type(t)),
+        account_type: query
+            .account_type
+            .as_ref()
+            .and_then(|t| string_to_account_type(t)),
         is_active: query.active,
         parent_id: None,
     };
@@ -211,7 +230,10 @@ async fn list_accounts(
                     name: a.account.name,
                     description: a.account.description,
                     account_type: account_type_to_string(&a.account.account_type),
-                    subtype: a.account.account_subtype.map(|s| account_subtype_to_string(&s)),
+                    subtype: a
+                        .account
+                        .account_subtype
+                        .map(|s| account_subtype_to_string(&s)),
                     parent_id: a.account.parent_id,
                     currency: a.account.currency,
                     balance: a.balance.to_string(),
@@ -237,6 +259,7 @@ async fn list_accounts(
 }
 
 /// POST `/organizations/{org_id}/accounts` - Create an account.
+#[allow(clippy::too_many_lines)]
 async fn create_account(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -263,7 +286,10 @@ async fn create_account(
     };
 
     // Parse subtype if provided
-    let account_subtype = payload.subtype.as_ref().and_then(|s| string_to_account_subtype(s));
+    let account_subtype = payload
+        .subtype
+        .as_ref()
+        .and_then(|s| string_to_account_subtype(s));
 
     let account_repo = AccountRepository::new((*state.db).clone());
 
@@ -356,7 +382,6 @@ async fn create_account(
     }
 }
 
-
 /// GET `/organizations/{org_id}/accounts/{account_id}` - Get account detail.
 async fn get_account(
     State(state): State<AppState>,
@@ -373,30 +398,28 @@ async fn get_account(
     let account_repo = AccountRepository::new((*state.db).clone());
 
     match account_repo.find_account_by_id(account_id).await {
-        Ok(Some(a)) if a.account.organization_id == org_id => {
-            (
-                StatusCode::OK,
-                Json(json!({
-                    "id": a.account.id,
-                    "code": a.account.code,
-                    "name": a.account.name,
-                    "description": a.account.description,
-                    "type": account_type_to_string(&a.account.account_type),
-                    "subtype": a.account.account_subtype.map(|s| account_subtype_to_string(&s)),
-                    "parent_id": a.account.parent_id,
-                    "currency": a.account.currency,
-                    "balance": a.balance.to_string(),
-                    "is_active": a.account.is_active,
-                    "allow_direct_posting": a.account.allow_direct_posting,
-                    "is_system_account": a.account.is_system_account,
-                    "is_bank_account": a.account.is_bank_account,
-                    "bank_account_number": a.account.bank_account_number,
-                    "created_at": a.account.created_at,
-                    "updated_at": a.account.updated_at
-                })),
-            )
-                .into_response()
-        }
+        Ok(Some(a)) if a.account.organization_id == org_id => (
+            StatusCode::OK,
+            Json(json!({
+                "id": a.account.id,
+                "code": a.account.code,
+                "name": a.account.name,
+                "description": a.account.description,
+                "type": account_type_to_string(&a.account.account_type),
+                "subtype": a.account.account_subtype.map(|s| account_subtype_to_string(&s)),
+                "parent_id": a.account.parent_id,
+                "currency": a.account.currency,
+                "balance": a.balance.to_string(),
+                "is_active": a.account.is_active,
+                "allow_direct_posting": a.account.allow_direct_posting,
+                "is_system_account": a.account.is_system_account,
+                "is_bank_account": a.account.is_bank_account,
+                "bank_account_number": a.account.bank_account_number,
+                "created_at": a.account.created_at,
+                "updated_at": a.account.updated_at
+            })),
+        )
+            .into_response(),
         Ok(Some(_)) => (
             StatusCode::FORBIDDEN,
             Json(json!({
@@ -428,6 +451,7 @@ async fn get_account(
 }
 
 /// PUT `/organizations/{org_id}/accounts/{account_id}` - Update account.
+#[allow(clippy::too_many_lines)]
 async fn update_account(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -480,7 +504,10 @@ async fn update_account(
     }
 
     // Parse account type if provided
-    let account_type = payload.account_type.as_ref().and_then(|t| string_to_account_type(t));
+    let account_type = payload
+        .account_type
+        .as_ref()
+        .and_then(|t| string_to_account_type(t));
     if payload.account_type.is_some() && account_type.is_none() {
         return (
             StatusCode::BAD_REQUEST,
@@ -493,7 +520,10 @@ async fn update_account(
     }
 
     // Parse subtype if provided
-    let account_subtype = payload.subtype.as_ref().map(|s| string_to_account_subtype(s));
+    let account_subtype = payload
+        .subtype
+        .as_ref()
+        .map(|s| string_to_account_subtype(s));
 
     let input = UpdateAccountInput {
         code: payload.code,
@@ -578,7 +608,6 @@ async fn update_account(
         }
     }
 }
-
 
 /// DELETE `/organizations/{org_id}/accounts/{account_id}` - Delete (deactivate) account.
 async fn delete_account(
@@ -718,23 +747,23 @@ async fn get_account_balance(
     };
 
     // Use provided date or default to today
-    let as_of = query.as_of.unwrap_or_else(|| chrono::Utc::now().date_naive());
+    let as_of = query
+        .as_of
+        .unwrap_or_else(|| chrono::Utc::now().date_naive());
 
     match account_repo.get_balance_at_date(account_id, as_of).await {
-        Ok(balance) => {
-            (
-                StatusCode::OK,
-                Json(json!({
-                    "account_id": account_id,
-                    "account_code": account.account.code,
-                    "account_name": account.account.name,
-                    "currency": account.account.currency,
-                    "as_of": as_of.to_string(),
-                    "balance": balance.to_string()
-                })),
-            )
-                .into_response()
-        }
+        Ok(balance) => (
+            StatusCode::OK,
+            Json(json!({
+                "account_id": account_id,
+                "account_code": account.account.code,
+                "account_name": account.account.name,
+                "currency": account.account.currency,
+                "as_of": as_of.to_string(),
+                "balance": balance.to_string()
+            })),
+        )
+            .into_response(),
         Err(e) => {
             error!(error = %e, "Failed to get account balance");
             (
@@ -803,7 +832,7 @@ async fn get_account_ledger(
 
     // Parse pagination with defaults and limits
     let page = query.page.unwrap_or(1).max(1);
-    let limit = query.limit.unwrap_or(50).min(100).max(1);
+    let limit = query.limit.unwrap_or(50).clamp(1, 100);
 
     match account_repo
         .get_ledger_entries(account_id, query.from, query.to, page, limit)

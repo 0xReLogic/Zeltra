@@ -27,7 +27,9 @@ mod validation_props;
 pub use balance::AccountBalance;
 pub use entry::{EntryType, LedgerEntry};
 pub use error::LedgerError;
-pub use fiscal::{period_allows_posting, period_requires_elevated_privileges, validate_posting_permission};
+pub use fiscal::{
+    period_allows_posting, period_requires_elevated_privileges, validate_posting_permission,
+};
 pub use service::{AccountInfo, LedgerService};
 pub use transaction::{Transaction, TransactionStatus};
 pub use types::{

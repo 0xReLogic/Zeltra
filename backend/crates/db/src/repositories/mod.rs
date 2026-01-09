@@ -28,7 +28,7 @@ pub use exchange_rate::{
     RateLookupMethod,
 };
 pub use fiscal::{CreateFiscalYearInput, FiscalError, FiscalRepository, FiscalYearWithPeriods};
-pub use organization::OrganizationRepository;
+pub use organization::{OrganizationError, OrganizationRepository};
 pub use session::SessionRepository;
 pub use subscription::{Feature, LimitCheckResult, ResourceLimit, SubscriptionRepository};
 pub use transaction::{

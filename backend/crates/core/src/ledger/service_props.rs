@@ -67,6 +67,8 @@ fn make_input(entries: Vec<LedgerEntryInput>) -> CreateTransactionInput {
 }
 
 /// Mock account validator that always succeeds.
+/// Returns Result to match the expected callback signature.
+#[allow(clippy::unnecessary_wraps)]
 fn ok_account_validator(id: Uuid) -> Result<AccountInfo, LedgerError> {
     Ok(AccountInfo {
         id,
@@ -77,6 +79,8 @@ fn ok_account_validator(id: Uuid) -> Result<AccountInfo, LedgerError> {
 }
 
 /// Mock dimension validator that always succeeds.
+/// Returns Result to match the expected callback signature.
+#[allow(clippy::unnecessary_wraps)]
 fn ok_dimension_validator(_dims: &[Uuid]) -> Result<(), LedgerError> {
     Ok(())
 }
@@ -498,10 +502,10 @@ proptest! {
 
         // Dimension validator that rejects all dimensions
         let invalid_dimension_validator = |dims: &[Uuid]| -> Result<(), LedgerError> {
-            if !dims.is_empty() {
-                Err(LedgerError::InvalidDimension(dims[0]))
-            } else {
+            if dims.is_empty() {
                 Ok(())
+            } else {
+                Err(LedgerError::InvalidDimension(dims[0]))
             }
         };
 
@@ -756,7 +760,10 @@ mod unit_tests {
             ok_dimension_validator,
         );
 
-        assert!(matches!(result, Err(LedgerError::AccountNoDirectPosting(_))));
+        assert!(matches!(
+            result,
+            Err(LedgerError::AccountNoDirectPosting(_))
+        ));
     }
 
     /// Test: Invalid dimension is rejected with specific error.
@@ -771,10 +778,10 @@ mod unit_tests {
         let input = make_input(entries);
 
         let invalid_dim_validator = |dims: &[Uuid]| -> Result<(), LedgerError> {
-            if !dims.is_empty() {
-                Err(LedgerError::InvalidDimension(dims[0]))
-            } else {
+            if dims.is_empty() {
                 Ok(())
+            } else {
+                Err(LedgerError::InvalidDimension(dims[0]))
             }
         };
 
@@ -829,7 +836,8 @@ mod unit_tests {
 
         let first_inactive_validator = |id: Uuid| -> Result<AccountInfo, LedgerError> {
             // First account is inactive
-            static CALL_COUNT: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+            static CALL_COUNT: std::sync::atomic::AtomicUsize =
+                std::sync::atomic::AtomicUsize::new(0);
             let count = CALL_COUNT.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
             if count == 0 {
                 Ok(AccountInfo {

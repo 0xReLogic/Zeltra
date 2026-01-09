@@ -32,7 +32,7 @@ pub fn validate_posting_permission(
     match period_status {
         // Requirement 9.3: OPEN → all authorized users can post
         FiscalPeriodStatus::Open => Ok(()),
-        
+
         // Requirement 9.4: SOFT_CLOSE → only accountant/admin/owner can post
         FiscalPeriodStatus::SoftClose => {
             if user_role.can_post_soft_close() {
@@ -41,7 +41,7 @@ pub fn validate_posting_permission(
                 Err(LedgerError::PeriodSoftClosed)
             }
         }
-        
+
         // Requirement 9.5: CLOSED → no one can post
         FiscalPeriodStatus::Closed => Err(LedgerError::PeriodClosed),
     }
@@ -197,7 +197,7 @@ mod tests {
             role in user_role_strategy(),
         ) {
             let result = validate_posting_permission(&status, &role);
-            
+
             match status {
                 FiscalPeriodStatus::Open => {
                     prop_assert!(result.is_ok(), "Open should always allow posting");
@@ -225,7 +225,7 @@ mod tests {
             status in period_status_strategy(),
         ) {
             let allows = period_allows_posting(&status);
-            
+
             // If period doesn't allow posting, all roles should be rejected
             if !allows {
                 for role in [UserRole::Owner, UserRole::Admin, UserRole::Accountant] {
@@ -233,7 +233,7 @@ mod tests {
                     prop_assert!(result.is_err(), "If period doesn't allow posting, all should be rejected");
                 }
             }
-            
+
             // If period allows posting, at least elevated roles should be allowed
             if allows {
                 let result = validate_posting_permission(&status, &UserRole::Owner);
@@ -249,7 +249,7 @@ mod tests {
     #[test]
     fn test_open_period_all_roles() {
         let status = FiscalPeriodStatus::Open;
-        
+
         assert!(validate_posting_permission(&status, &UserRole::Owner).is_ok());
         assert!(validate_posting_permission(&status, &UserRole::Admin).is_ok());
         assert!(validate_posting_permission(&status, &UserRole::Accountant).is_ok());
@@ -261,7 +261,7 @@ mod tests {
     #[test]
     fn test_soft_close_elevated_roles() {
         let status = FiscalPeriodStatus::SoftClose;
-        
+
         assert!(validate_posting_permission(&status, &UserRole::Owner).is_ok());
         assert!(validate_posting_permission(&status, &UserRole::Admin).is_ok());
         assert!(validate_posting_permission(&status, &UserRole::Accountant).is_ok());
@@ -270,7 +270,7 @@ mod tests {
     #[test]
     fn test_soft_close_non_elevated_roles() {
         let status = FiscalPeriodStatus::SoftClose;
-        
+
         assert!(matches!(
             validate_posting_permission(&status, &UserRole::Approver),
             Err(LedgerError::PeriodSoftClosed)
@@ -288,7 +288,7 @@ mod tests {
     #[test]
     fn test_closed_period_all_roles() {
         let status = FiscalPeriodStatus::Closed;
-        
+
         assert!(matches!(
             validate_posting_permission(&status, &UserRole::Owner),
             Err(LedgerError::PeriodClosed)
@@ -316,8 +316,14 @@ mod tests {
 
     #[test]
     fn test_period_requires_elevated_privileges() {
-        assert!(!period_requires_elevated_privileges(&FiscalPeriodStatus::Open));
-        assert!(period_requires_elevated_privileges(&FiscalPeriodStatus::SoftClose));
-        assert!(!period_requires_elevated_privileges(&FiscalPeriodStatus::Closed));
+        assert!(!period_requires_elevated_privileges(
+            &FiscalPeriodStatus::Open
+        ));
+        assert!(period_requires_elevated_privileges(
+            &FiscalPeriodStatus::SoftClose
+        ));
+        assert!(!period_requires_elevated_privileges(
+            &FiscalPeriodStatus::Closed
+        ));
     }
 }

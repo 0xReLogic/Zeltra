@@ -5,15 +5,12 @@
 use chrono::NaiveDate;
 use rust_decimal::Decimal;
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DatabaseConnection, DbErr, EntityTrait, QueryFilter,
-    QueryOrder, Set,
+    ActiveModelTrait, ColumnTrait, DatabaseConnection, DbErr, EntityTrait, QueryFilter, QueryOrder,
+    Set,
 };
 use uuid::Uuid;
 
-use crate::entities::{
-    currencies, exchange_rates,
-    sea_orm_active_enums::RateSource,
-};
+use crate::entities::{currencies, exchange_rates, sea_orm_active_enums::RateSource};
 
 /// Error types for exchange rate operations.
 #[derive(Debug, thiserror::Error)]
@@ -234,13 +231,13 @@ impl ExchangeRateRepository {
         }
 
         // Try triangulation through USD (Requirement 4.7)
-        if from_currency != "USD" && to_currency != "USD" {
-            if let Some(triangulated) = self
+        if from_currency != "USD"
+            && to_currency != "USD"
+            && let Some(triangulated) = self
                 .find_triangulated_rate(organization_id, from_currency, to_currency, date)
                 .await?
-            {
-                return Ok(triangulated);
-            }
+        {
+            return Ok(triangulated);
         }
 
         // No rate found (Requirement 4.8)
@@ -357,7 +354,6 @@ impl ExchangeRateRepository {
     }
 }
 
-
 // ============================================================================
 // Pure validation functions for property testing
 // ============================================================================
@@ -415,11 +411,13 @@ pub fn simulate_rate_lookup(
 
     // Try triangulation through USD
     if from_currency != "USD" && to_currency != "USD" {
-        let from_to_usd = find_best_rate(stored_rates, from_currency, "USD", date)
-            .or_else(|| find_best_rate(stored_rates, "USD", from_currency, date).map(|r| Decimal::ONE / r));
+        let from_to_usd = find_best_rate(stored_rates, from_currency, "USD", date).or_else(|| {
+            find_best_rate(stored_rates, "USD", from_currency, date).map(|r| Decimal::ONE / r)
+        });
 
-        let usd_to_target = find_best_rate(stored_rates, "USD", to_currency, date)
-            .or_else(|| find_best_rate(stored_rates, to_currency, "USD", date).map(|r| Decimal::ONE / r));
+        let usd_to_target = find_best_rate(stored_rates, "USD", to_currency, date).or_else(|| {
+            find_best_rate(stored_rates, to_currency, "USD", date).map(|r| Decimal::ONE / r)
+        });
 
         if let (Some(r1), Some(r2)) = (from_to_usd, usd_to_target) {
             return Some((r1 * r2, RateLookupMethod::Triangulated));

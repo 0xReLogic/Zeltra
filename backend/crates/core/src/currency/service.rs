@@ -3,8 +3,8 @@
 //! This module provides the main service interface for currency operations,
 //! including conversion with Banker's Rounding and exchange rate lookup.
 
-use rust_decimal::prelude::*;
 use rust_decimal::Decimal;
+use rust_decimal::prelude::*;
 
 /// Currency service for conversion operations.
 ///
@@ -57,7 +57,8 @@ impl CurrencyService {
     /// The converted amount rounded to specified decimal places using Banker's Rounding.
     #[must_use]
     pub fn convert_with_precision(amount: Decimal, rate: Decimal, decimal_places: u32) -> Decimal {
-        (amount * rate).round_dp_with_strategy(decimal_places, RoundingStrategy::MidpointNearestEven)
+        (amount * rate)
+            .round_dp_with_strategy(decimal_places, RoundingStrategy::MidpointNearestEven)
     }
 
     /// Round a decimal value using Banker's Rounding.

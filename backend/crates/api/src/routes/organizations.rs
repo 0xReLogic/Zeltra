@@ -11,8 +11,14 @@ use serde_json::json;
 use tracing::{error, info};
 
 use crate::{AppState, middleware::AuthUser};
-use zeltra_db::{OrganizationRepository, UserRepository, entities::sea_orm_active_enums::UserRole};
-use zeltra_shared::auth::{AddUserRequest, CreateOrganizationRequest, UpdateOrganizationRequest};
+use zeltra_db::repositories::organization::OrganizationError;
+use zeltra_db::{
+    OrganizationRepository, SessionRepository, UserRepository,
+    entities::sea_orm_active_enums::UserRole,
+};
+use zeltra_shared::auth::{
+    AddUserRequest, CreateOrganizationRequest, UpdateMemberRequest, UpdateOrganizationRequest,
+};
 
 /// Creates the organizations router (requires auth middleware to be applied externally).
 pub fn routes() -> Router<AppState> {
@@ -22,6 +28,14 @@ pub fn routes() -> Router<AppState> {
         .route("/organizations/{org_id}", patch(update_organization))
         .route("/organizations/{org_id}/users", get(list_users))
         .route("/organizations/{org_id}/users", post(add_user))
+        .route(
+            "/organizations/{org_id}/users/{user_id}",
+            patch(update_member),
+        )
+        .route(
+            "/organizations/{org_id}/users/{user_id}",
+            axum::routing::delete(remove_user),
+        )
 }
 
 /// POST /organizations - Create a new organization.
@@ -183,6 +197,7 @@ async fn get_organization(
 }
 
 /// PATCH `/organizations/{org_id}` - Update organization settings.
+#[allow(clippy::too_many_lines)]
 async fn update_organization(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -220,9 +235,9 @@ async fn update_organization(
         Ok(true) => {}
     }
 
-    // Update organization
+    // Update organization with full validation
     let org = match org_repo
-        .update(
+        .update_organization(
             org_id,
             payload.name.as_deref(),
             payload.base_currency.as_deref(),
@@ -230,13 +245,63 @@ async fn update_organization(
         )
         .await
     {
-        Ok(Some(o)) => o,
-        Ok(None) => {
+        Ok(o) => o,
+        Err(OrganizationError::NotFound) => {
             return (
                 StatusCode::NOT_FOUND,
                 Json(json!({
                     "error": "not_found",
                     "message": "Organization not found"
+                })),
+            )
+                .into_response();
+        }
+        Err(OrganizationError::EmptyUpdate) => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(json!({
+                    "error": "empty_update",
+                    "message": "No fields provided for update"
+                })),
+            )
+                .into_response();
+        }
+        Err(OrganizationError::InvalidName) => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(json!({
+                    "error": "invalid_name",
+                    "message": "Name must be between 1 and 255 characters"
+                })),
+            )
+                .into_response();
+        }
+        Err(OrganizationError::InvalidCurrency(code)) => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(json!({
+                    "error": "invalid_currency",
+                    "message": format!("Invalid currency code: {}", code)
+                })),
+            )
+                .into_response();
+        }
+        Err(OrganizationError::CurrencyChangeNotAllowed) => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(json!({
+                    "error": "currency_change_not_allowed",
+                    "message": "Cannot change base currency after posting transactions"
+                })),
+            )
+                .into_response();
+        }
+        Err(OrganizationError::InvalidTimezone(tz)) => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(json!({
+                    "error": "invalid_timezone",
+                    "message": format!("Invalid timezone: {}", tz)
                 })),
             )
                 .into_response();
@@ -508,4 +573,294 @@ fn string_to_role(s: &str) -> Option<UserRole> {
         "submitter" => Some(UserRole::Submitter),
         _ => None,
     }
+}
+
+/// DELETE `/organizations/{org_id}/users/{user_id}` - Remove user from organization.
+#[allow(clippy::too_many_lines)]
+async fn remove_user(
+    State(state): State<AppState>,
+    auth: AuthUser,
+    Path((org_id, user_id)): Path<(uuid::Uuid, uuid::Uuid)>,
+) -> impl IntoResponse {
+    let org_repo = OrganizationRepository::new((*state.db).clone());
+    let session_repo = SessionRepository::new((*state.db).clone());
+
+    // Get requester's membership to check role
+    let requester_membership = match org_repo.get_user_membership(org_id, auth.user_id()).await {
+        Ok(Some(m)) => m,
+        Ok(None) => {
+            return (
+                StatusCode::FORBIDDEN,
+                Json(json!({
+                    "error": "forbidden",
+                    "message": "You are not a member of this organization"
+                })),
+            )
+                .into_response();
+        }
+        Err(e) => {
+            error!(error = %e, "Database error checking membership");
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": "internal_error",
+                    "message": "An error occurred"
+                })),
+            )
+                .into_response();
+        }
+    };
+
+    // Check if requester has admin or owner role
+    if !matches!(requester_membership.role, UserRole::Admin | UserRole::Owner) {
+        return (
+            StatusCode::FORBIDDEN,
+            Json(json!({
+                "error": "forbidden",
+                "message": "You need admin or owner role to remove users"
+            })),
+        )
+            .into_response();
+    }
+
+    // Remove user from organization
+    match org_repo
+        .remove_member(org_id, user_id, &requester_membership.role)
+        .await
+    {
+        Ok(()) => {}
+        Err(OrganizationError::NotFound) => {
+            return (
+                StatusCode::NOT_FOUND,
+                Json(json!({
+                    "error": "not_found",
+                    "message": "Organization not found"
+                })),
+            )
+                .into_response();
+        }
+        Err(OrganizationError::NotMember) => {
+            return (
+                StatusCode::NOT_FOUND,
+                Json(json!({
+                    "error": "not_member",
+                    "message": "User is not a member of this organization"
+                })),
+            )
+                .into_response();
+        }
+        Err(OrganizationError::Forbidden) => {
+            return (
+                StatusCode::FORBIDDEN,
+                Json(json!({
+                    "error": "forbidden",
+                    "message": "Admins cannot remove owners"
+                })),
+            )
+                .into_response();
+        }
+        Err(OrganizationError::LastOwner) => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(json!({
+                    "error": "last_owner",
+                    "message": "Cannot remove the last owner of the organization"
+                })),
+            )
+                .into_response();
+        }
+        Err(e) => {
+            error!(error = %e, "Failed to remove user from organization");
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": "internal_error",
+                    "message": "An error occurred removing the user"
+                })),
+            )
+                .into_response();
+        }
+    }
+
+    // Revoke all sessions for the removed user in this organization
+    if let Err(e) = session_repo.revoke_user_org_sessions(user_id, org_id).await {
+        error!(error = %e, "Failed to revoke sessions for removed user");
+        // Don't fail the request, user is already removed
+    }
+
+    info!(
+        org_id = %org_id,
+        user_id = %user_id,
+        removed_by = %auth.user_id(),
+        "User removed from organization"
+    );
+
+    StatusCode::NO_CONTENT.into_response()
+}
+
+/// PATCH `/organizations/{org_id}/users/{user_id}` - Update user's role and/or approval limit.
+#[allow(clippy::too_many_lines)]
+async fn update_member(
+    State(state): State<AppState>,
+    auth: AuthUser,
+    Path((org_id, user_id)): Path<(uuid::Uuid, uuid::Uuid)>,
+    Json(payload): Json<UpdateMemberRequest>,
+) -> impl IntoResponse {
+    let org_repo = OrganizationRepository::new((*state.db).clone());
+
+    // Get requester's membership to check role
+    let requester_membership = match org_repo.get_user_membership(org_id, auth.user_id()).await {
+        Ok(Some(m)) => m,
+        Ok(None) => {
+            return (
+                StatusCode::FORBIDDEN,
+                Json(json!({
+                    "error": "forbidden",
+                    "message": "You are not a member of this organization"
+                })),
+            )
+                .into_response();
+        }
+        Err(e) => {
+            error!(error = %e, "Database error checking membership");
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": "internal_error",
+                    "message": "An error occurred"
+                })),
+            )
+                .into_response();
+        }
+    };
+
+    // Check if requester has admin or owner role
+    if !matches!(requester_membership.role, UserRole::Admin | UserRole::Owner) {
+        return (
+            StatusCode::FORBIDDEN,
+            Json(json!({
+                "error": "forbidden",
+                "message": "You need admin or owner role to update users"
+            })),
+        )
+            .into_response();
+    }
+
+    // Parse role if provided
+    let new_role = if let Some(ref role_str) = payload.role {
+        match string_to_role(role_str) {
+            Some(r) => Some(r),
+            None => {
+                return (
+                    StatusCode::BAD_REQUEST,
+                    Json(json!({
+                        "error": "invalid_role",
+                        "message": "Invalid role. Must be one of: owner, admin, approver, accountant, submitter, viewer"
+                    })),
+                )
+                    .into_response();
+            }
+        }
+    } else {
+        None
+    };
+
+    // Parse approval limit if provided
+    let new_approval_limit = payload
+        .approval_limit
+        .map(|opt| opt.and_then(|s| s.parse().ok()));
+
+    // Update member
+    let membership = match org_repo
+        .update_member(
+            org_id,
+            user_id,
+            &requester_membership.role,
+            new_role,
+            new_approval_limit,
+        )
+        .await
+    {
+        Ok(m) => m,
+        Err(OrganizationError::NotFound) => {
+            return (
+                StatusCode::NOT_FOUND,
+                Json(json!({
+                    "error": "not_found",
+                    "message": "Organization not found"
+                })),
+            )
+                .into_response();
+        }
+        Err(OrganizationError::NotMember) => {
+            return (
+                StatusCode::NOT_FOUND,
+                Json(json!({
+                    "error": "not_member",
+                    "message": "User is not a member of this organization"
+                })),
+            )
+                .into_response();
+        }
+        Err(OrganizationError::EmptyUpdate) => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(json!({
+                    "error": "empty_update",
+                    "message": "No fields provided for update"
+                })),
+            )
+                .into_response();
+        }
+        Err(OrganizationError::Forbidden) => {
+            return (
+                StatusCode::FORBIDDEN,
+                Json(json!({
+                    "error": "forbidden",
+                    "message": "Insufficient permissions to change this user's role"
+                })),
+            )
+                .into_response();
+        }
+        Err(OrganizationError::LastOwner) => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(json!({
+                    "error": "last_owner",
+                    "message": "Cannot demote the last owner of the organization"
+                })),
+            )
+                .into_response();
+        }
+        Err(e) => {
+            error!(error = %e, "Failed to update member");
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": "internal_error",
+                    "message": "An error occurred updating the user"
+                })),
+            )
+                .into_response();
+        }
+    };
+
+    info!(
+        org_id = %org_id,
+        user_id = %user_id,
+        updated_by = %auth.user_id(),
+        "Member updated"
+    );
+
+    (
+        StatusCode::OK,
+        Json(json!({
+            "user_id": membership.user_id,
+            "organization_id": membership.organization_id,
+            "role": role_to_string(&membership.role),
+            "approval_limit": membership.approval_limit,
+            "updated_at": membership.updated_at
+        })),
+    )
+        .into_response()
 }
