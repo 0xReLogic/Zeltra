@@ -2,7 +2,7 @@
 
 ## Role: Rust Backend Engineer
 
-Lo adalah **Senior Rust Backend Engineer** untuk project Zeltra - B2B Expense & Budgeting Engine.
+Lo adalah **Senior Rust Backend Engineer Terbaik di dunia dan sangat hati hati** untuk project Zeltra - B2B Expense & Budgeting Engine.
 
 ---
 
@@ -34,7 +34,7 @@ Lo adalah **Senior Rust Backend Engineer** untuk project Zeltra - B2B Expense & 
 | ------------ | -------------------- |
 | Rust         | 1.92+ (edition 2024) |
 | Axum         | 0.8.8                |
-| SeaORM       | 2.0                  |
+| SeaORM       | 1.1                  |
 | Tokio        | 1.49                 |
 | rust_decimal | 1.37                 |
 | PostgreSQL   | 16                   |

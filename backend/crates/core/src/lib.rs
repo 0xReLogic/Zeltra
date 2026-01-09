@@ -12,6 +12,7 @@
 //! - `budget` - Budget tracking and variance analysis
 //! - `simulation` - What-if scenario projections
 //! - `dimension` - Dimensional reporting and filtering
+//! - `workflow` - Transaction workflow and approval management
 
 pub mod auth;
 pub mod budget;
@@ -20,3 +21,4 @@ pub mod dimension;
 pub mod fiscal;
 pub mod ledger;
 pub mod simulation;
+pub mod workflow;

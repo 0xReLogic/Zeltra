@@ -3,12 +3,12 @@
 #[cfg(test)]
 mod tests {
     use super::super::{
+        Claims, JwtConfig, TokenPair,
         auth::{
             AddUserRequest, CreateOrganizationRequest, LogoutRequest, RefreshRequest,
             RegisterRequest, UpdateMemberRequest, UpdateOrganizationRequest, VerifyEmailRequest,
         },
         jwt::JwtService,
-        Claims, JwtConfig, TokenPair,
     };
     use chrono::{Duration, Utc};
     use serde_json::json;

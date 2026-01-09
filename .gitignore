@@ -7,7 +7,6 @@ Thumbs.db
 .vscode
 .idea
 *.iml
-.kiro
 
 # Backend (Rust)
 backend/target/
