@@ -128,7 +128,7 @@ jobs:
         run: cargo build --release
 
       - name: Upload server binary
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: zeltra-server
           path: backend/target/release/server
