@@ -15,8 +15,6 @@ targets = [
 db-path = "~/.cargo/advisory-db"
 db-urls = ["https://github.com/rustsec/advisory-db"]
 ignore = [
-    # rsa timing sidechannel - only affects sqlx-mysql, we use PostgreSQL
-    "RUSTSEC-2023-0071",
     # tokio-tar file smuggling - only in testcontainers (dev dependency)
     "RUSTSEC-2025-0111",
     # rustls-pemfile unmaintained - only in testcontainers (dev dependency)
@@ -43,7 +41,12 @@ allow = [
     "OpenSSL",
     "Unlicense",
     "0BSD",
+    # webpki-roots uses this license
+    "CDLA-Permissive-2.0",
 ]
+
+# Private workspace crates don't need licenses
+private = { ignore = true }
 confidence-threshold = 0.8
 
 [[licenses.clarify]]
