@@ -42,6 +42,7 @@ import { Calendar } from '@/components/ui/calendar'
 import { cn } from '@/lib/utils'
 import { useCreateTransaction } from '@/lib/queries/transactions'
 import { useAccounts } from '@/lib/queries/accounts'
+import { useDimensions } from '@/lib/queries/dimensions'
 import { toast } from 'sonner'
 
 const formSchema = z.object({
@@ -54,12 +55,15 @@ const formSchema = z.object({
   }),
   main_account: z.string().min(1, 'Account is required'), // e.g. Bank
   contra_account: z.string().min(1, 'Category/Contra account is required'), // e.g. Expense
+  department: z.string().optional(),
+  project: z.string().optional(),
 })
 
 export function CreateTransactionDialog() {
   const [open, setOpen] = useState(false)
   const createMutation = useCreateTransaction()
   const { data: accountsData } = useAccounts()
+  const { data: dimensionsData } = useDimensions()
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -68,6 +72,8 @@ export function CreateTransactionDialog() {
       reference_number: 'REF-NEW',
       description: '',
       amount: '',
+      department: '',
+      project: 'none',
     },
   })
 
@@ -84,23 +90,28 @@ export function CreateTransactionDialog() {
     const amount = values.amount
     let entries = []
 
+    // Construct dimensions array
+    const dims: string[] = []
+    if (values.department) dims.push(values.department)
+    if (values.project && values.project !== 'none') dims.push(values.project)
+
     if (values.transaction_type === 'expense') {
-        // Dr Expense, Cr Asset
+        // Dr Expense (with Dims), Cr Asset
         entries = [
-            { account_code: values.contra_account, debit: amount, credit: '0' },
+            { account_code: values.contra_account, debit: amount, credit: '0', dimensions: dims },
             { account_code: values.main_account, debit: '0', credit: amount }
         ]
     } else if (values.transaction_type === 'revenue') {
-        // Dr Asset, Cr Revenue
+        // Dr Asset, Cr Revenue (with Dims)
         entries = [
             { account_code: values.main_account, debit: amount, credit: '0' },
-            { account_code: values.contra_account, debit: '0', credit: amount }
+            { account_code: values.contra_account, debit: '0', credit: amount, dimensions: dims }
         ]
     } else {
         // Fallback for transfer/journal (simplified)
         entries = [
              { account_code: values.main_account, debit: amount, credit: '0' },
-             { account_code: values.contra_account, debit: '0', credit: amount }
+             { account_code: values.contra_account, debit: '0', credit: amount, dimensions: dims }
         ]
     }
 
@@ -230,6 +241,56 @@ export function CreateTransactionDialog() {
                 </FormItem>
               )}
             />
+
+            {/* Dimensions Section */}
+            <div className="grid grid-cols-2 gap-4">
+                 <FormField
+                    control={form.control}
+                    name="department"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Department</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select Dept" />
+                            </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                                {dimensionsData?.find(d => d.code === 'DEPT')?.values.map((v) => (
+                                    <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
+
+                <FormField
+                    control={form.control}
+                    name="project"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Project (Optional)</FormLabel>
+                         <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select Project" />
+                            </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                                 <SelectItem value="none">None</SelectItem>
+                                {dimensionsData?.find(d => d.code === 'PROJ')?.values.map((v) => (
+                                    <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
+            </div>
 
             <div className="grid grid-cols-2 gap-4">
                 <FormField

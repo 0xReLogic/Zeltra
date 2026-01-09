@@ -12,11 +12,22 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CreateTransactionDialog } from '@/components/transactions/CreateTransactionDialog'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Filter } from 'lucide-react'
 import Link from 'next/link'
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+  } from '@/components/ui/select'
+import { useDimensions } from '@/lib/queries/dimensions'
+import { useState } from 'react'
 
 export default function TransactionsPage() {
-  const { data, isLoading, isError } = useTransactions()
+  const [filterDim, setFilterDim] = useState<string>('all')
+  const { data, isLoading, isError } = useTransactions(1, 50, filterDim)
+  const { data: dimensionsData } = useDimensions()
 
   if (isLoading) {
     return (
@@ -49,7 +60,22 @@ export default function TransactionsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Transactions</h1>
-        <div>
+        <div className="flex gap-2">
+            <Select value={filterDim} onValueChange={setFilterDim}>
+                <SelectTrigger className="w-[180px]">
+                    <Filter className="w-4 h-4 mr-2" />
+                    <SelectValue placeholder="Filter by Dept" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="all">All Departments</SelectItem>
+                    {dimensionsData?.find(d => d.code === 'DEPT')?.values.map((v) => (
+                        <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>
+                    ))}
+                     {dimensionsData?.find(d => d.code === 'PROJ')?.values.map((v) => (
+                        <SelectItem key={v.id} value={v.id}>Proj: {v.name}</SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
            <CreateTransactionDialog />
         </div>
       </div>

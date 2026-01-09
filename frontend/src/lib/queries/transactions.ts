@@ -2,11 +2,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '../api/client'
 import type { GetTransactionsResponse, CreateTransactionRequest, Transaction } from '@/types/transactions'
 
-export function useTransactions(page = 1, limit = 50) {
+export function useTransactions(page = 1, limit = 50, dimension?: string) {
   return useQuery({
-    queryKey: ['transactions', { page, limit }],
+    queryKey: ['transactions', { page, limit, dimension }],
     queryFn: () => apiClient<GetTransactionsResponse>(
-      `/transactions?page=${page}&limit=${limit}`
+      `/transactions?page=${page}&limit=${limit}&dimension=${dimension || 'all'}`
     ),
   })
 }

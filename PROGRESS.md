@@ -6,11 +6,11 @@ Live status untuk sync antara Backend & Frontend.
 
 ## Current State
 
-|                    | Backend                                                 | Frontend                                          |
-| ------------------ | ------------------------------------------------------- | ------------------------------------------------- |
-| **Current Phase**  | 2 (Done)                                                | 1 (Done)                                          |
-| **Last Task Done** | Phase 2 - Ledger Core Complete (229 tests passing)      | Phase 7 - Dashboard & Reports (Wire up mock data) |
-| **Next Task**      | Phase 3 - Transaction Workflow                          | Phase 8: Final Polish & Simulation UI             |
+|                    | Backend                                                 | Frontend                                           |
+| ------------------ | ------------------------------------------------------- | -------------------------------------------------- |
+| **Current Phase**  | 1                                                       | 7 (In Progress)                                    |
+| **Last Task Done** | Phase 7 - Transaction Dimensions (Implemented & Mocked) | Phase 7 - Dashboard & Reports Integration (Mocked) |
+| **Next Task**      | Integration tests                                       | Phase 7 - Recent Activity Widget                   |
 
 **Last Updated:** 2026-01-09
 
@@ -102,28 +102,28 @@ Live status untuk sync antara Backend & Frontend.
 
 ## Phase 2 Tasks (Backend - Ledger Core)
 
-| Task                                    | Status | Notes                                    |
-| --------------------------------------- | ------ | ---------------------------------------- |
-| Fiscal years and periods CRUD           | ✅     | FiscalYearRepository                     |
-| Chart of accounts CRUD                  | ✅     | AccountRepository                        |
-| Dimension types and values CRUD         | ✅     | DimensionRepository                      |
-| Exchange rates CRUD                     | ✅     | ExchangeRateRepository                   |
-| Transaction creation (single currency)  | ✅     | TransactionRepository                    |
-| Validate debit = credit                 | ✅     | LedgerService + DB trigger               |
-| Validate minimum 2 entries              | ✅     | Property test 13                         |
-| Validate no zero/negative amounts       | ✅     | Property test 13                         |
-| Account version increment               | ✅     | DB trigger                               |
-| Running balance tracking                | ✅     | DB trigger (bug fixed!)                  |
-| Concurrent transaction stress test      | ✅     | 1000+ transactions, no drift             |
-| Exchange rate lookup + triangulation    | ✅     | Property test 8                          |
-| Currency conversion (Banker's Rounding) | ✅     | Property test 6                          |
-| Allocation (Largest Remainder Method)   | ✅     | Property test 7                          |
-| Dimensional accounting                  | ✅     | entry_dimensions table                   |
-| Fiscal period validation                | ✅     | Property test 9, DB trigger              |
-| Transaction API endpoints               | ✅     | All CRUD endpoints                       |
-| Master data API endpoints               | ✅     | All endpoints                            |
-| Database trigger tests                  | ✅     | 8 integration tests                      |
-| **Total Tests**                         | ✅     | **229 tests passing** (target was 150+)  |
+| Task                                    | Status | Notes                                   |
+| --------------------------------------- | ------ | --------------------------------------- |
+| Fiscal years and periods CRUD           | ✅     | FiscalYearRepository                    |
+| Chart of accounts CRUD                  | ✅     | AccountRepository                       |
+| Dimension types and values CRUD         | ✅     | DimensionRepository                     |
+| Exchange rates CRUD                     | ✅     | ExchangeRateRepository                  |
+| Transaction creation (single currency)  | ✅     | TransactionRepository                   |
+| Validate debit = credit                 | ✅     | LedgerService + DB trigger              |
+| Validate minimum 2 entries              | ✅     | Property test 13                        |
+| Validate no zero/negative amounts       | ✅     | Property test 13                        |
+| Account version increment               | ✅     | DB trigger                              |
+| Running balance tracking                | ✅     | DB trigger (bug fixed!)                 |
+| Concurrent transaction stress test      | ✅     | 1000+ transactions, no drift            |
+| Exchange rate lookup + triangulation    | ✅     | Property test 8                         |
+| Currency conversion (Banker's Rounding) | ✅     | Property test 6                         |
+| Allocation (Largest Remainder Method)   | ✅     | Property test 7                         |
+| Dimensional accounting                  | ✅     | entry_dimensions table                  |
+| Fiscal period validation                | ✅     | Property test 9, DB trigger             |
+| Transaction API endpoints               | ✅     | All CRUD endpoints                      |
+| Master data API endpoints               | ✅     | All endpoints                           |
+| Database trigger tests                  | ✅     | 8 integration tests                     |
+| **Total Tests**                         | ✅     | **229 tests passing** (target was 150+) |
 
 ---
 
@@ -150,58 +150,58 @@ Frontend cek di sini untuk tau endpoint mana yang udah ready.
 
 ### Organizations
 
-| Endpoint                                    | Status | Notes                                    |
-| ------------------------------------------- | ------ | ---------------------------------------- |
-| POST /api/v1/organizations                  | ✅     | Create org, user as owner                |
-| GET /api/v1/organizations/:id               | ✅     | Get org details                          |
-| GET /api/v1/organizations/:id/users         | ✅     | List org members                         |
-| POST /api/v1/organizations/:id/users        | ✅     | Add user to org (admin+)                 |
-| PATCH /api/v1/organizations/:id             | ✅     | Update org settings (name/currency/tz)   |
-| PATCH /api/v1/organizations/:id/users/:id   | ✅     | Update user role/approval_limit (admin+) |
-| DELETE /api/v1/organizations/:id/users/:id  | ✅     | Remove user from org (admin+, hierarchy) |
+| Endpoint                                   | Status | Notes                                    |
+| ------------------------------------------ | ------ | ---------------------------------------- |
+| POST /api/v1/organizations                 | ✅     | Create org, user as owner                |
+| GET /api/v1/organizations/:id              | ✅     | Get org details                          |
+| GET /api/v1/organizations/:id/users        | ✅     | List org members                         |
+| POST /api/v1/organizations/:id/users       | ✅     | Add user to org (admin+)                 |
+| PATCH /api/v1/organizations/:id            | ✅     | Update org settings (name/currency/tz)   |
+| PATCH /api/v1/organizations/:id/users/:id  | ✅     | Update user role/approval_limit (admin+) |
+| DELETE /api/v1/organizations/:id/users/:id | ✅     | Remove user from org (admin+, hierarchy) |
 
 ### Accounts
 
-| Endpoint                   | Status | Notes                                |
-| -------------------------- | ------ | ------------------------------------ |
-| GET /accounts              | ✅     | Real API - list with balances        |
-| POST /accounts             | ✅     | Real API - create account            |
-| GET /accounts/:id          | ✅     | Real API - get account detail        |
-| PUT /accounts/:id          | ✅     | Real API - update account            |
-| DELETE /accounts/:id       | ✅     | Real API - soft delete               |
-| GET /accounts/:id/balance  | ✅     | Real API - balance at date           |
-| GET /accounts/:id/ledger   | ✅     | Real API - ledger entries with range |
+| Endpoint                  | Status | Notes                                |
+| ------------------------- | ------ | ------------------------------------ |
+| GET /accounts             | ✅     | Real API - list with balances        |
+| POST /accounts            | ✅     | Real API - create account            |
+| GET /accounts/:id         | ✅     | Real API - get account detail        |
+| PUT /accounts/:id         | ✅     | Real API - update account            |
+| DELETE /accounts/:id      | ✅     | Real API - soft delete               |
+| GET /accounts/:id/balance | ✅     | Real API - balance at date           |
+| GET /accounts/:id/ledger  | ✅     | Real API - ledger entries with range |
 
 ### Transactions
 
-| Endpoint                       | Status | Notes                                    |
-| ------------------------------ | ------ | ---------------------------------------- |
-| GET /transactions              | ✅     | Real API - list with filters             |
-| POST /transactions             | ✅     | Real API - create draft                  |
-| GET /transactions/:id          | ✅     | Real API - detail with entries           |
-| PATCH /transactions/:id        | ✅     | Real API - update draft only             |
-| DELETE /transactions/:id       | ✅     | Real API - delete draft only             |
-| POST /transactions/:id/submit  | ⬜     | Phase 3 - Workflow                       |
-| POST /transactions/:id/approve | ⬜     | Phase 3 - Workflow                       |
-| POST /transactions/:id/reject  | ⬜     | Phase 3 - Workflow                       |
-| POST /transactions/:id/post    | ⬜     | Phase 3 - Workflow                       |
-| POST /transactions/:id/void    | ⬜     | Phase 3 - Workflow                       |
+| Endpoint                       | Status | Notes                          |
+| ------------------------------ | ------ | ------------------------------ |
+| GET /transactions              | ✅     | Real API - list with filters   |
+| POST /transactions             | ✅     | Real API - create draft        |
+| GET /transactions/:id          | ✅     | Real API - detail with entries |
+| PATCH /transactions/:id        | ✅     | Real API - update draft only   |
+| DELETE /transactions/:id       | ✅     | Real API - delete draft only   |
+| POST /transactions/:id/submit  | ⬜     | Phase 3 - Workflow             |
+| POST /transactions/:id/approve | ⬜     | Phase 3 - Workflow             |
+| POST /transactions/:id/reject  | ⬜     | Phase 3 - Workflow             |
+| POST /transactions/:id/post    | ⬜     | Phase 3 - Workflow             |
+| POST /transactions/:id/void    | ⬜     | Phase 3 - Workflow             |
 
 ### Master Data
 
-| Endpoint                         | Status | Notes                                |
-| -------------------------------- | ------ | ------------------------------------ |
-| GET /fiscal-years                | ✅     | Real API - list with nested periods  |
-| POST /fiscal-years               | ✅     | Real API - create with auto-periods  |
-| GET /fiscal-periods              | ✅     | Real API - list periods              |
-| PATCH /fiscal-periods/:id/status | ✅     | Real API - update status             |
-| GET /dimension-types             | ✅     | Real API - list types                |
-| POST /dimension-types            | ✅     | Real API - create type               |
-| GET /dimension-values            | ✅     | Real API - list with filters         |
-| POST /dimension-values           | ✅     | Real API - create value              |
-| GET /exchange-rates              | ✅     | Real API - get rate for pair/date    |
-| POST /exchange-rates             | ✅     | Real API - create/update rate        |
-| GET /currencies                  | ✅     | Real API - list all currencies       |
+| Endpoint                         | Status | Notes                               |
+| -------------------------------- | ------ | ----------------------------------- |
+| GET /fiscal-years                | ✅     | Real API - list with nested periods |
+| POST /fiscal-years               | ✅     | Real API - create with auto-periods |
+| GET /fiscal-periods              | ✅     | Real API - list periods             |
+| PATCH /fiscal-periods/:id/status | ✅     | Real API - update status            |
+| GET /dimension-types             | ✅     | Real API - list types               |
+| POST /dimension-types            | ✅     | Real API - create type              |
+| GET /dimension-values            | ✅     | Real API - list with filters        |
+| POST /dimension-values           | ✅     | Real API - create value             |
+| GET /exchange-rates              | ✅     | Real API - get rate for pair/date   |
+| POST /exchange-rates             | ✅     | Real API - create/update rate       |
+| GET /currencies                  | ✅     | Real API - list all currencies      |
 
 ### Reports
 

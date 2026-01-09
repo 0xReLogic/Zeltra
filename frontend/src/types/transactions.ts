@@ -6,6 +6,7 @@ export interface TransactionEntry {
   account_name: string
   debit: string
   credit: string
+  dimensions?: string[] // Array of dimension value IDs
 }
 
 export interface Transaction {
@@ -33,8 +34,9 @@ export interface CreateTransactionRequest {
   transaction_date: string
   description: string
   entries: {
-    account_code: string // We will use code or ID, let's assume code for now
+    account_code: string
     debit: string
     credit: string
+    dimensions?: string[]
   }[]
 }

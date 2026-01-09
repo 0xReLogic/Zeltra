@@ -4,23 +4,27 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { DollarSign, TrendingDown, Clock, Activity } from 'lucide-react'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts'
 
-const cashFlowData = [
-  { month: 'Jan', inflow: 45000, outflow: 32000 },
-  { month: 'Feb', inflow: 52000, outflow: 35000 },
-  { month: 'Mar', inflow: 48000, outflow: 40000 },
-  { month: 'Apr', inflow: 61000, outflow: 38000 },
-  { month: 'May', inflow: 55000, outflow: 42000 },
-  { month: 'Jun', inflow: 67000, outflow: 45000 },
-]
-
-const budgetUtilizationData = [
-  { department: 'Engineering', budget: 50000, spent: 35000, utilization: 70 },
-  { department: 'Marketing', budget: 25000, spent: 28000, utilization: 112 },
-  { department: 'Operations', budget: 15000, spent: 12000, utilization: 80 },
-  { department: 'HR', budget: 10000, spent: 5000, utilization: 50 },
-]
+import { useDashboardMetrics, useCashFlowData } from '@/lib/queries/dashboard'
+import { useBudgets } from '@/lib/queries/budgets'
+import { formatCurrency } from '@/lib/utils/format'
 
 export default function DashboardPage() {
+  const { data: metrics } = useDashboardMetrics()
+  const { data: cashFlow } = useCashFlowData()
+  const { data: budgets } = useBudgets()
+
+  // Transform budgets data for the chart
+  const budgetUtilizationData = budgets?.data.map(b => {
+      const limit = parseFloat(b.budget_limit)
+      const spent = parseFloat(b.actual_spent)
+      const utilization = limit > 0 ? (spent / limit) * 100 : 0
+      return {
+          department: b.department,
+          budget: limit,
+          spent: spent,
+          utilization: Math.round(utilization)
+      }
+  }) || []
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -36,9 +40,11 @@ export default function DashboardPage() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">$150,000.00</div>
+            <div className="text-2xl font-bold">
+                {formatCurrency(parseFloat(metrics?.cash_position.balance || '0'))}
+            </div>
             <p className="text-xs text-muted-foreground">
-              +5.2% from last month
+              +{metrics?.cash_position.change_percent}% from last month
             </p>
           </CardContent>
         </Card>
@@ -51,9 +57,11 @@ export default function DashboardPage() {
             <TrendingDown className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">$75,000.00</div>
+            <div className="text-2xl font-bold">
+                {formatCurrency(parseFloat(metrics?.burn_rate.monthly || '0'))}
+            </div>
             <p className="text-xs text-muted-foreground">
-              -2% from last month
+              {formatCurrency(parseFloat(metrics?.burn_rate.daily || '0'))} / day
             </p>
           </CardContent>
         </Card>
@@ -64,7 +72,7 @@ export default function DashboardPage() {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">60 Days</div>
+            <div className="text-2xl font-bold">{metrics?.runway_days || 0} Days</div>
             <p className="text-xs text-muted-foreground">
               Based on current burn rate
             </p>
@@ -79,9 +87,9 @@ export default function DashboardPage() {
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">3</div>
+            <div className="text-2xl font-bold">{metrics?.pending_approvals.count || 0}</div>
             <p className="text-xs text-muted-foreground">
-              Total value: $15,000.00
+              Total value: {formatCurrency(parseFloat(metrics?.pending_approvals.total_amount || '0'))}
             </p>
           </CardContent>
         </Card>
@@ -94,7 +102,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={cashFlowData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+              <AreaChart data={cashFlow || []} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis dataKey="month" className="text-xs" />
                 <YAxis className="text-xs" tickFormatter={(value) => `$${value/1000}k`} />

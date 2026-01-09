@@ -745,33 +745,24 @@ NOW we start frontend, because backend is solid.
   - [ ] Adjustment parameters
   - [ ] Projection results
 
-### Mock Handlers Needed
+### Mock Handlers Status
 
-Add these to `frontend/src/mocks/handlers.ts`:
+The following mock handlers have been implemented in `frontend/src/mocks/handlers.ts`:
 
-```typescript
-// Account Ledger
-GET /api/v1/accounts/:id/ledger → { entries: [...], running_balance }
-
-// Dimensional Report
-GET /api/v1/reports/dimensional → { data: [...], grouped_by_dimension }
-
-// Fiscal Year Creation
-POST /api/v1/fiscal-years → { id, name, periods: [...] }
-
-// Organization Settings
-PATCH /api/v1/organizations/:id → { success: true }
-
-// Team Management
-GET /api/v1/organizations/:id/users → { users: [...] }
-POST /api/v1/organizations/:id/users → { user_id, role }
-PATCH /api/v1/organizations/:id/users/:userId → { role, approval_limit }
-DELETE /api/v1/organizations/:id/users/:userId → { success: true }
-
-// Budget Management
-POST /api/v1/budgets → { id, name, fiscal_year_id }
-POST /api/v1/budgets/:id/lines → { id, account_id, amount }
-```
+- [x] Account Ledger: `GET /api/v1/accounts/:id/ledger`
+- [x] Dimensional Report: `GET /api/v1/reports/dimensional`
+- [x] Fiscal Year Creation: `POST /api/v1/fiscal-years`
+- [x] Organization Settings: `PATCH /api/v1/organizations/:id`
+- [x] Team Management:
+  - [x] `GET /api/v1/organizations/:id/users`
+  - [x] `POST /api/v1/organizations/:id/users`
+  - [x] `PATCH /api/v1/organizations/:id/users/:userId`
+  - [x] `DELETE /api/v1/organizations/:id/users/:userId`
+- [x] Budget Management:
+  - [x] `POST /api/v1/budgets`
+  - [x] `POST /api/v1/budgets/:id/lines`
+- [x] Dashboard Metrics: `GET /api/v1/dashboard/metrics`
+- [x] Cash Flow: `GET /api/v1/dashboard/cash-flow`
 
 **Deliverable:** Complete frontend application.
 

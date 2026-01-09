@@ -1,51 +1,52 @@
 import { http, HttpResponse } from 'msw'
 
+// Keep track of transactions in memory for persistence test
 const MOCK_TRANSACTIONS = [
   {
     id: 'txn_001',
     reference_number: 'TXN-2026-0001',
-    transaction_type: 'expense',
+    transaction_type: 'expense' as const,
     transaction_date: '2026-01-15',
     description: 'Office supplies purchase',
-    status: 'posted',
+    status: 'posted' as const,
     entries: [
-      { account_code: '5200', account_name: 'Office Supplies', debit: '150.0000', credit: '0.0000' },
+      { account_code: '5200', account_name: 'Office Supplies', debit: '150.0000', credit: '0.0000', dimensions: ['val_eng'] },
       { account_code: '1100', account_name: 'Cash', debit: '0.0000', credit: '150.0000' },
     ]
   },
   {
     id: 'txn_002',
     reference_number: 'TXN-2026-0002',
-    transaction_type: 'revenue',
+    transaction_type: 'revenue' as const,
     transaction_date: '2026-01-16',
     description: 'Project Alpha Payment',
-    status: 'approved',
+    status: 'approved' as const,
     entries: [
       { account_code: '1200', account_name: 'Bank BCA', debit: '5000.0000', credit: '0.0000' },
-      { account_code: '4100', account_name: 'Service Revenue', debit: '0.0000', credit: '5000.0000' },
+      { account_code: '4100', account_name: 'Service Revenue', debit: '0.0000', credit: '5000.0000', dimensions: ['val_p1'] },
     ]
   },
   {
     id: 'txn_003',
     reference_number: 'TXN-2026-0003',
-    transaction_type: 'journal',
+    transaction_type: 'journal' as const,
     transaction_date: '2026-01-17',
     description: 'Accrued Rent Expense',
-    status: 'pending',
+    status: 'pending' as const,
     entries: [
-      { account_code: '5300', account_name: 'Rent Expense', debit: '2500.0000', credit: '0.0000' },
+      { account_code: '5300', account_name: 'Rent Expense', debit: '2500.0000', credit: '0.0000', dimensions: ['val_ops'] },
       { account_code: '2100', account_name: 'Accrued Expenses', debit: '0.0000', credit: '2500.0000' },
     ]
   },
   {
     id: 'txn_004_test',
     reference_number: 'TXN-TEST-PENDING',
-    transaction_type: 'expense',
+    transaction_type: 'expense' as const,
     transaction_date: '2026-01-20',
     description: 'Test Pending for Approval',
-    status: 'pending',
+    status: 'pending' as const,
     entries: [
-      { account_code: '5200', account_name: 'Office Supplies', debit: '500.0000', credit: '0.0000' },
+      { account_code: '5200', account_name: 'Office Supplies', debit: '500.0000', credit: '0.0000', dimensions: ['val_eng'] },
       { account_code: '1100', account_name: 'Cash', debit: '0.0000', credit: '500.0000' },
     ]
   }
@@ -139,11 +140,38 @@ export const handlers = [
   }),
 
   // Transactions
-  http.get('/api/v1/transactions', () => {
+  http.get('/api/v1/transactions', ({ request }) => {
+    const url = new URL(request.url)
+    const dimension = url.searchParams.get('dimension')
+    
+    let filtered = MOCK_TRANSACTIONS
+    if (dimension && dimension !== 'all') {
+        filtered = MOCK_TRANSACTIONS.filter(t => 
+            t.entries.some(e => e.dimensions?.includes(dimension))
+        )
+    }
+
     return HttpResponse.json({
-      data: MOCK_TRANSACTIONS,
-      pagination: { page: 1, limit: 50, total: MOCK_TRANSACTIONS.length }
+      data: filtered,
+      pagination: { page: 1, limit: 50, total: filtered.length }
     })
+  }),
+
+  http.post('/api/v1/transactions', async ({ request }) => {
+    const body = await request.json() as Record<string, unknown> & { entries: Record<string, unknown>[] }
+    const newTxn = {
+        ...body,
+        id: `txn_${Date.now()}`,
+        status: 'draft' as const,
+        entries: body.entries.map((e) => ({
+            ...e,
+            account_name: 'Mock Account' 
+        })),
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    MOCK_TRANSACTIONS.unshift(newTxn as any)
+    
+    return HttpResponse.json(newTxn)
   }),
 
   http.get('/api/v1/transactions/:id', ({ params }) => {
@@ -188,6 +216,17 @@ export const handlers = [
       runway_days: 60,
       pending_approvals: { count: 3, total_amount: '15000.0000' }
     })
+  }),
+
+  http.get('/api/v1/dashboard/cash-flow', () => {
+    return HttpResponse.json([
+      { month: 'Jan', inflow: 45000, outflow: 32000 },
+      { month: 'Feb', inflow: 52000, outflow: 35000 },
+      { month: 'Mar', inflow: 48000, outflow: 40000 },
+      { month: 'Apr', inflow: 61000, outflow: 38000 },
+      { month: 'May', inflow: 55000, outflow: 42000 },
+      { month: 'Jun', inflow: 67000, outflow: 45000 },
+    ])
   }),
 
   // Budgets
