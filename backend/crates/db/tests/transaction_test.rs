@@ -15,7 +15,9 @@ use zeltra_db::{
 
 fn get_database_url() -> String {
     env::var("DATABASE_URL").unwrap_or_else(|_| {
-        "postgres://zeltra:zeltra_dev_password@localhost:5432/zeltra_dev".to_string()
+        env::var("ZELTRA__DATABASE__URL").unwrap_or_else(|_| {
+            "postgres://postgres:postgres@localhost:5432/zeltra_dev".to_string()
+        })
     })
 }
 

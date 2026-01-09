@@ -104,6 +104,7 @@ async fn setup_concurrent_test_data(db: &DatabaseConnection) -> Result<Concurren
     // Create fiscal period (OPEN)
     fiscal_periods::ActiveModel {
         id: Set(fiscal_period_id),
+        organization_id: Set(org_id),
         fiscal_year_id: Set(fiscal_year_id),
         period_number: Set(1),
         name: Set("January 2025 Concurrent".to_string()),
@@ -423,7 +424,6 @@ async fn test_concurrent_100_transactions_correct_balance() {
 // Validates: Requirements 14.1, 14.2, 14.3, 14.4
 // ============================================================================
 #[tokio::test]
-#[ignore] // Run with: cargo test --test concurrent_test test_stress_1000_concurrent -- --ignored
 async fn test_stress_1000_concurrent_transactions() {
     let db = match Database::connect(&get_database_url()).await {
         Ok(db) => db,
@@ -745,6 +745,77 @@ async fn test_concurrent_version_monotonicity() {
     println!(
         "✓ Version monotonicity verified: {} entries with versions 1..{}",
         entries.len(), max_version
+    );
+    
+    cleanup_concurrent_test_data(&db, &data).await.expect("Cleanup failed");
+}
+
+
+// ============================================================================
+// Test: Sequential transactions verify balance correctness (baseline test)
+// This test verifies the balance logic works correctly without concurrency
+// ============================================================================
+#[tokio::test]
+async fn test_sequential_transactions_correct_balance() {
+    let db = match Database::connect(&get_database_url()).await {
+        Ok(db) => db,
+        Err(e) => {
+            eprintln!("Skipping test - database not available: {}", e);
+            return;
+        }
+    };
+
+    let data = match setup_concurrent_test_data(&db).await {
+        Ok(d) => d,
+        Err(e) => {
+            eprintln!("Skipping test - setup failed: {}", e);
+            return;
+        }
+    };
+
+    const NUM_TRANSACTIONS: usize = 10;
+    let amount_per_tx = Decimal::new(1000, 2); // $10.00 per transaction
+    
+    // Create transactions SEQUENTIALLY (not concurrently)
+    for i in 0..NUM_TRANSACTIONS {
+        create_balanced_transaction(
+            &db,
+            &data,
+            amount_per_tx,
+            &format!("Sequential tx {}", i),
+        )
+        .await
+        .expect("Failed to create transaction");
+    }
+    
+    // Verify final balance is mathematically correct
+    let expense_balance = get_account_balance(&db, data.expense_account_id)
+        .await
+        .expect("Failed to get expense balance");
+    
+    let expected_expense = amount_per_tx * Decimal::from(NUM_TRANSACTIONS as i64);
+    
+    assert_eq!(
+        expense_balance, expected_expense,
+        "Expense balance should be {} but was {}",
+        expected_expense, expense_balance
+    );
+    
+    let asset_balance = get_account_balance(&db, data.asset_account_id)
+        .await
+        .expect("Failed to get asset balance");
+    
+    let expected_asset = -amount_per_tx * Decimal::from(NUM_TRANSACTIONS as i64);
+    
+    assert_eq!(
+        asset_balance, expected_asset,
+        "Asset balance should be {} but was {}",
+        expected_asset, asset_balance
+    );
+    
+    println!(
+        "✓ Sequential test passed: {} transactions, expense={}, asset={}",
+        NUM_TRANSACTIONS, expense_balance, asset_balance
     );
     
     cleanup_concurrent_test_data(&db, &data).await.expect("Cleanup failed");

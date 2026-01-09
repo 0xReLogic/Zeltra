@@ -776,6 +776,8 @@ EXECUTE FUNCTION prevent_posted_modification();
 -- ============================================================
 -- FUNCTION: update_account_balance
 -- Tracks running balance per account for historical queries
+-- Uses ORDER BY + LIMIT 1 instead of MAX() to get correct balance
+-- from the entry with highest version (not just highest balance value)
 -- ============================================================
 CREATE OR REPLACE FUNCTION update_account_balance()
 RETURNS TRIGGER AS $$
@@ -785,16 +787,30 @@ DECLARE
     new_balance NUMERIC(19, 4);
     account_type_val account_type;
 BEGIN
+    -- Lock the account row to prevent concurrent modifications
     SELECT coa.account_type INTO account_type_val
     FROM chart_of_accounts coa
     WHERE coa.id = NEW.account_id
     FOR UPDATE;
     
-    SELECT COALESCE(MAX(account_version), 0), COALESCE(MAX(account_current_balance), 0)
+    -- Get the current version and balance from the LATEST entry (by version)
+    -- Note: Using ORDER BY + LIMIT instead of MAX() because MAX(balance)
+    -- would return the highest balance value, not the balance from the
+    -- entry with the highest version number
+    SELECT account_version, account_current_balance
     INTO current_version, current_balance
     FROM ledger_entries
-    WHERE account_id = NEW.account_id;
+    WHERE account_id = NEW.account_id
+    ORDER BY account_version DESC
+    LIMIT 1;
     
+    -- Default to 0 if no entries exist
+    current_version := COALESCE(current_version, 0);
+    current_balance := COALESCE(current_balance, 0);
+    
+    -- Calculate new balance based on account type
+    -- Asset/Expense: balance increases with debits
+    -- Liability/Equity/Revenue: balance increases with credits
     IF account_type_val IN ('asset', 'expense') THEN
         new_balance := current_balance + NEW.debit - NEW.credit;
     ELSE
