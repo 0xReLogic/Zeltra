@@ -524,6 +524,9 @@ tests/
   - Currency exposure
   - Cash flow chart data (weekly inflow/outflow)
   - Utilization chart data (budgeted vs actual by department)
+- [ ] Cash Flow API: `GET /api/v1/dashboard/cash-flow`
+  - Monthly inflow/outflow data for charts
+  - Optional period_id and months parameters
 - [ ] Activity Log API: `GET /api/v1/dashboard/recent-activity`
   - Transaction events (created, submitted, approved, rejected, posted, voided)
   - Budget events (created, updated, locked)

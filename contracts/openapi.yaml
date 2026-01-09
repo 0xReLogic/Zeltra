@@ -624,6 +624,22 @@ components:
             total_amount:
               $ref: '#/components/schemas/Money'
 
+    CashFlowDataPoint:
+      type: object
+      required: [month, inflow, outflow]
+      properties:
+        month:
+          type: string
+          description: Month label (e.g., "Jan", "Feb")
+        inflow:
+          type: number
+          format: float
+          description: Total cash inflow for the month
+        outflow:
+          type: number
+          format: float
+          description: Total cash outflow for the month
+
     ActivityItem:
       type: object
       required: [id, type, action, entity_type, entity_id, timestamp]
@@ -1213,6 +1229,32 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DashboardMetrics'
+
+  /dashboard/cash-flow:
+    get:
+      tags: [Reports]
+      summary: Cash flow data for charts
+      parameters:
+        - name: period_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: months
+          in: query
+          schema:
+            type: integer
+            default: 6
+            maximum: 12
+      responses:
+        '200':
+          description: Cash flow data points
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CashFlowDataPoint'
 
   /dashboard/recent-activity:
     get:
