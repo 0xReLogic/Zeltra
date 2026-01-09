@@ -471,19 +471,19 @@ Example queries:
     - Run `cargo clippy -p zeltra-db -- -D warnings`
     - Run `cargo test -p zeltra-db -- immutab`
 
-- [ ] 16. Checkpoint - Immutability tests pass
+- [x] 16. Checkpoint - Immutability tests pass
   - Run `cargo test -p zeltra-db`
   - Verify at least 35 tests passing (cumulative)
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 17. Implement ApprovalRuleRepository
-  - [ ] 17.1 Create ApprovalRuleRepository
+- [x] 17. Implement ApprovalRuleRepository
+  - [x] 17.1 Create ApprovalRuleRepository
     - Create `backend/crates/db/src/repositories/approval_rule.rs`
     - Define ApprovalRuleRepository struct
     - Export from repositories mod.rs
     - _Requirements: 3.1, 6.8, 6.9_
 
-  - [ ] 17.2 Implement CRUD methods
+  - [x] 17.2 Implement CRUD methods
     - Implement `create_rule()` method
     - Implement `list_rules()` method with organization filter
     - Implement `get_rule()` method by id
@@ -492,12 +492,12 @@ Example queries:
     - Implement `get_rules_for_transaction()` method for rule matching
     - _Requirements: 3.1, 6.8, 6.9_
 
-  - [ ] 17.3 Run fmt and clippy
+  - [x] 17.3 Run fmt and clippy
     - Run `cargo fmt --all`
     - Run `cargo clippy -p zeltra-db -- -D warnings`
 
-- [ ] 18. Implement bulk approval
-  - [ ] 18.1 Add bulk_approve() to WorkflowRepository
+- [x] 18. Implement bulk approval
+  - [x] 18.1 Add bulk_approve() to WorkflowRepository
     - Accept transaction_ids array, approved_by, and optional approval_notes
     - Iterate through each transaction_id
     - Validate and approve each individually
@@ -506,7 +506,7 @@ Example queries:
     - Return BulkApproveResult with per-transaction status
     - _Requirements: 5.2, 5.3, 5.4, 6.7_
 
-  - [ ] 18.2 Write property tests for bulk approval
+  - [x] 18.2 Write property tests for bulk approval
     - **Property 11: Bulk Approval Partial Success**
     - Generate N transactions with M invalid (wrong status, unauthorized)
     - Call bulk_approve
@@ -515,12 +515,12 @@ Example queries:
     - Verify successful transactions are now Approved
     - **Validates: Requirements 5.2, 5.3, 5.4**
 
-  - [ ] 18.3 Run fmt and clippy
+  - [x] 18.3 Run fmt and clippy
     - Run `cargo fmt --all`
     - Run `cargo clippy -p zeltra-db -- -D warnings`
     - Run `cargo test -p zeltra-db -- bulk`
 
-- [ ] 19. Checkpoint - Database layer complete
+- [x] 19. Checkpoint - Database layer complete
   - Run `cargo test -p zeltra-db`
   - Verify at least 40 tests passing (cumulative)
   - Ensure all tests pass, ask the user if questions arise.

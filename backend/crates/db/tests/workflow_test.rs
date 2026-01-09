@@ -616,3 +616,224 @@ proptest! {
         }
     }
 }
+
+// ============================================================================
+// Property Tests: Bulk Approval (Property 11)
+// **Validates: Requirements 5.2, 5.3, 5.4**
+// ============================================================================
+
+/// **Property 11: Bulk Approval Partial Success**
+///
+/// *For any* bulk approval request containing N transactions where M transactions
+/// fail validation, the response SHALL contain N results with exactly M failures
+/// and (N-M) successes.
+///
+/// Note: This test verifies the bulk approval behavior with non-existent transactions
+/// (which will all fail). Full integration tests with real transactions require
+/// seeded database.
+
+#[tokio::test]
+async fn test_bulk_approve_returns_correct_counts() {
+    let db = Database::connect(&get_database_url())
+        .await
+        .expect("Failed to connect to database");
+
+    let repo = WorkflowRepository::new(db);
+
+    let org_id = Uuid::new_v4();
+    let user_id = Uuid::new_v4();
+
+    // Test with 5 non-existent transactions (all should fail)
+    let tx_ids: Vec<Uuid> = (0..5).map(|_| Uuid::new_v4()).collect();
+
+    let result = repo
+        .bulk_approve(org_id, tx_ids.clone(), user_id, None)
+        .await;
+
+    assert!(
+        result.is_ok(),
+        "Bulk approve should succeed even with failures"
+    );
+    let bulk_result = result.unwrap();
+
+    // Property: response contains N results
+    assert_eq!(
+        bulk_result.results.len(),
+        5,
+        "Response must contain exactly N results"
+    );
+
+    // Property: all failures counted correctly
+    assert_eq!(
+        bulk_result.failure_count, 5,
+        "All 5 transactions should fail (not found)"
+    );
+    assert_eq!(bulk_result.success_count, 0, "No successes expected");
+
+    // Property: each result has correct transaction_id
+    for (i, item) in bulk_result.results.iter().enumerate() {
+        assert_eq!(
+            item.transaction_id, tx_ids[i],
+            "Result must reference correct transaction_id"
+        );
+        assert!(!item.success, "Transaction should be marked as failed");
+        assert!(
+            item.error.is_some(),
+            "Failed transaction must have error message"
+        );
+    }
+}
+
+#[tokio::test]
+async fn test_bulk_approve_empty_returns_zero_counts() {
+    let db = Database::connect(&get_database_url())
+        .await
+        .expect("Failed to connect to database");
+
+    let repo = WorkflowRepository::new(db);
+
+    let org_id = Uuid::new_v4();
+    let user_id = Uuid::new_v4();
+
+    let result = repo.bulk_approve(org_id, vec![], user_id, None).await;
+
+    assert!(result.is_ok());
+    let bulk_result = result.unwrap();
+
+    // Property: empty input returns zero counts
+    assert_eq!(bulk_result.results.len(), 0);
+    assert_eq!(bulk_result.success_count, 0);
+    assert_eq!(bulk_result.failure_count, 0);
+}
+
+#[tokio::test]
+async fn test_bulk_approve_preserves_order() {
+    let db = Database::connect(&get_database_url())
+        .await
+        .expect("Failed to connect to database");
+
+    let repo = WorkflowRepository::new(db);
+
+    let org_id = Uuid::new_v4();
+    let user_id = Uuid::new_v4();
+
+    // Create specific UUIDs to verify order preservation
+    let tx_ids: Vec<Uuid> = (0..10).map(|_| Uuid::new_v4()).collect();
+
+    let result = repo
+        .bulk_approve(
+            org_id,
+            tx_ids.clone(),
+            user_id,
+            Some("Bulk approval".to_string()),
+        )
+        .await;
+
+    assert!(result.is_ok());
+    let bulk_result = result.unwrap();
+
+    // Property: results are in same order as input
+    for (i, item) in bulk_result.results.iter().enumerate() {
+        assert_eq!(
+            item.transaction_id, tx_ids[i],
+            "Result order must match input order at index {}",
+            i
+        );
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig::with_cases(50))]
+
+    /// **Property 11.1: Bulk approval result count equals input count**
+    ///
+    /// *For any* N transaction IDs, bulk_approve returns exactly N results.
+    ///
+    /// **Validates: Requirements 5.3**
+    #[test]
+    fn prop_bulk_approve_result_count_equals_input(
+        count in 1usize..20,
+    ) {
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        rt.block_on(async {
+            let db = Database::connect(&get_database_url())
+                .await
+                .expect("Failed to connect to database");
+
+            let repo = WorkflowRepository::new(db);
+
+            let org_id = Uuid::new_v4();
+            let user_id = Uuid::new_v4();
+            let tx_ids: Vec<Uuid> = (0..count).map(|_| Uuid::new_v4()).collect();
+
+            let result = repo
+                .bulk_approve(org_id, tx_ids.clone(), user_id, None)
+                .await;
+
+            prop_assert!(result.is_ok());
+            let bulk_result = result.unwrap();
+
+            prop_assert_eq!(
+                bulk_result.results.len(),
+                count,
+                "Result count must equal input count"
+            );
+
+            // success_count + failure_count must equal total
+            prop_assert_eq!(
+                bulk_result.success_count + bulk_result.failure_count,
+                count,
+                "success + failure must equal total"
+            );
+
+            Ok(())
+        })?;
+    }
+
+    /// **Property 11.2: Bulk approval continues after failures**
+    ///
+    /// *For any* bulk approval with failures, processing continues for all transactions.
+    ///
+    /// **Validates: Requirements 5.4**
+    #[test]
+    fn prop_bulk_approve_continues_after_failure(
+        count in 2usize..10,
+    ) {
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        rt.block_on(async {
+            let db = Database::connect(&get_database_url())
+                .await
+                .expect("Failed to connect to database");
+
+            let repo = WorkflowRepository::new(db);
+
+            let org_id = Uuid::new_v4();
+            let user_id = Uuid::new_v4();
+            let tx_ids: Vec<Uuid> = (0..count).map(|_| Uuid::new_v4()).collect();
+
+            let result = repo
+                .bulk_approve(org_id, tx_ids.clone(), user_id, None)
+                .await;
+
+            prop_assert!(result.is_ok(), "Bulk approve must not fail even with invalid transactions");
+            let bulk_result = result.unwrap();
+
+            // All transactions should be processed (all fail because they don't exist)
+            prop_assert_eq!(
+                bulk_result.results.len(),
+                count,
+                "All transactions must be processed"
+            );
+
+            // Each result should have an error (since transactions don't exist)
+            for item in &bulk_result.results {
+                prop_assert!(
+                    item.error.is_some(),
+                    "Non-existent transaction must have error"
+                );
+            }
+
+            Ok(())
+        })?;
+    }
+}

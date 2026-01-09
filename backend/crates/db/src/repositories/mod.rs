@@ -4,6 +4,7 @@
 //! hiding the `SeaORM` implementation details from the rest of the application.
 
 pub mod account;
+pub mod approval_rule;
 pub mod dimension;
 pub mod email_verification;
 pub mod exchange_rate;
@@ -18,6 +19,9 @@ pub mod workflow;
 pub use account::{
     AccountError, AccountFilter, AccountRepository, AccountWithBalance, CreateAccountInput,
     UpdateAccountInput,
+};
+pub use approval_rule::{
+    ApprovalRuleError, ApprovalRuleRepository, CreateApprovalRuleInput, UpdateApprovalRuleInput,
 };
 pub use dimension::{
     CreateDimensionTypeInput, CreateDimensionValueInput, DimensionError, DimensionRepository,
