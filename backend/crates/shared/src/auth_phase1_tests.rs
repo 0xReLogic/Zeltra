@@ -7,9 +7,9 @@ mod tests {
             AddUserRequest, CreateOrganizationRequest, LogoutRequest, RefreshRequest,
             RegisterRequest, UpdateMemberRequest, UpdateOrganizationRequest, VerifyEmailRequest,
         },
-        Claims, TokenPair,
+        jwt::JwtService,
+        Claims, JwtConfig, TokenPair,
     };
-    use crate::{jwt::JwtService, JwtConfig};
     use chrono::{Duration, Utc};
     use serde_json::json;
     use uuid::Uuid;
