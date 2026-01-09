@@ -11,6 +11,7 @@ pub mod fiscal;
 pub mod organization;
 pub mod session;
 pub mod subscription;
+pub mod transaction;
 pub mod user;
 
 pub use account::{
@@ -30,4 +31,8 @@ pub use fiscal::{CreateFiscalYearInput, FiscalError, FiscalRepository, FiscalYea
 pub use organization::OrganizationRepository;
 pub use session::SessionRepository;
 pub use subscription::{Feature, LimitCheckResult, ResourceLimit, SubscriptionRepository};
+pub use transaction::{
+    CreateLedgerEntryInput, CreateTransactionInput, LedgerEntryWithDimensions, TransactionError,
+    TransactionFilter, TransactionRepository, TransactionWithEntries,
+};
 pub use user::UserRepository;
