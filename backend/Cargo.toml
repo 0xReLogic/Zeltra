@@ -104,7 +104,7 @@ features = ["derive"]
 version = "0.13"
 
 [workspace.dependencies.rstest]
-version = "0.24"
+version = "0.26"
 
 [workspace.dependencies.testcontainers]
 version = "0.24"
