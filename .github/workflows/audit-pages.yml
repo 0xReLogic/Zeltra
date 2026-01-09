@@ -99,8 +99,8 @@ jobs:
       - name: Generate Cargo Audit Report
         working-directory: backend
         run: |
-          cargo audit --json > ../_site/cargo-audit.json 2>&1 || true
-          cargo audit > ../_site/cargo-audit.txt 2>&1 || true
+          cargo audit --color never --json > ../_site/cargo-audit.json 2>&1 || true
+          cargo audit --color never > ../_site/cargo-audit.txt 2>&1 || true
 
       - name: Generate Rust Test Coverage Report
         working-directory: backend
@@ -108,9 +108,13 @@ jobs:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/zeltra_test
           APP_DATABASE_URL: postgres://zeltra_app:zeltra_app_password@localhost:5432/zeltra_test
         run: |
-          cargo tarpaulin --out Html --out Json --output-dir ../_site --skip-clean --timeout 300 2>&1 || true
+          cargo tarpaulin --out Html --out Json --output-dir ../_site --skip-clean --timeout 600 --color never 2>&1 || true
           mv ../_site/tarpaulin-report.html ../_site/coverage.html 2>/dev/null || true
           mv ../_site/tarpaulin-report.json ../_site/coverage.json 2>/dev/null || true
+          # Create fallback coverage.json if tarpaulin failed
+          if [ ! -f ../_site/coverage.json ]; then
+            echo '{"coverage_percentage": 0, "covered_lines": 0, "total_lines": 0, "error": "Coverage generation failed"}' > ../_site/coverage.json
+          fi
 
       - name: Generate NPM Audit Report
         working-directory: frontend
@@ -273,11 +277,14 @@ jobs:
               fetch('coverage.json')
                 .then(r => r.json())
                 .then(data => {
-                  const coverage = data.coverage_percentage || 0;
+                  // tarpaulin uses: coverage (percentage), covered (lines), coverable (total lines)
+                  const coverage = data.coverage || data.coverage_percentage || 0;
+                  const covered = data.covered || data.covered_lines || 0;
+                  const total = data.coverable || data.total_lines || 0;
                   const badgeClass = coverage >= 80 ? 'badge-success' : coverage >= 50 ? 'badge-warning' : 'badge-danger';
                   document.getElementById('coverage-summary').innerHTML = 
                     '<span class="badge ' + badgeClass + '">' + coverage.toFixed(1) + '% Coverage</span> ' +
-                    'Lines: ' + (data.covered_lines || 0) + '/' + (data.total_lines || 0);
+                    'Lines: ' + covered + '/' + total;
                 })
                 .catch(() => document.getElementById('coverage-summary').textContent = 'Coverage report not available');
             </script>

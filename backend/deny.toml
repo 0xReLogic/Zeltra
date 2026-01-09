@@ -15,12 +15,12 @@ targets = [
 db-path = "~/.cargo/advisory-db"
 db-urls = ["https://github.com/rustsec/advisory-db"]
 ignore = [
-    # rsa timing sidechannel - only affects sqlx-mysql, we use PostgreSQL
-    "RUSTSEC-2023-0071",
+    # rsa timing sidechannel (Marvin Attack) - from jsonwebtoken, no fix available yet
+    { id = "RUSTSEC-2023-0071", reason = "timing attack requires network observation, JWT used for internal auth only" },
     # tokio-tar file smuggling - only in testcontainers (dev dependency)
-    "RUSTSEC-2025-0111",
+    { id = "RUSTSEC-2025-0111", reason = "only affects testcontainers dev dependency, not production code" },
     # rustls-pemfile unmaintained - only in testcontainers (dev dependency)
-    "RUSTSEC-2025-0134",
+    { id = "RUSTSEC-2025-0134", reason = "only affects testcontainers dev dependency, not production code" },
 ]
 
 # ============================================================
