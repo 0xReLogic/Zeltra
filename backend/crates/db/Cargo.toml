@@ -15,7 +15,7 @@ sea-orm-migration = { workspace = true }
 sqlx = { workspace = true }
 async-trait = "0.1"
 sha2 = "0.10"
-rand = "0.8"
+rand = "0.9"
 base64-url = "3.0"
 
 tokio = { workspace = true }
