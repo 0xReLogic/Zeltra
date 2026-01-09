@@ -82,6 +82,7 @@ Live status untuk sync antara Backend & Frontend.
 | Organization routes         | ✅     | Create, get, list users, add user           |
 | RLS context per request     | ✅     | `RlsConnection` wrapper, `SET LOCAL` helper |
 | Test cross-tenant isolation | ✅     | 3 integration tests, non-superuser role     |
+| QA coverage (Phase 1)       | ✅     | +70 auth/org unit tests (roles, JWT, payloads) |
 
 ---
 

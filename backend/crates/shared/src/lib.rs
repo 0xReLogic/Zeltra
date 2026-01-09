@@ -18,6 +18,8 @@ pub mod types;
 
 #[cfg(test)]
 mod jwt_tests;
+#[cfg(test)]
+mod auth_phase1_tests;
 
 pub use auth::{Claims, TokenPair};
 pub use config::{AppConfig, EmailConfig};

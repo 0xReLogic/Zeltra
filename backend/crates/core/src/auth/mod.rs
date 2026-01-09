@@ -71,6 +71,8 @@ impl std::fmt::Display for UserRole {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rstest::rstest;
+    use serde_json::json;
 
     #[test]
     fn test_role_permissions() {
@@ -84,5 +86,85 @@ mod tests {
         assert!(UserRole::Admin.can_post_soft_close());
         assert!(UserRole::Accountant.can_post_soft_close());
         assert!(!UserRole::Approver.can_post_soft_close());
+    }
+
+    #[rstest]
+    #[case(UserRole::Owner, true)]
+    #[case(UserRole::Admin, true)]
+    #[case(UserRole::Approver, true)]
+    #[case(UserRole::Accountant, false)]
+    #[case(UserRole::Viewer, false)]
+    #[case(UserRole::Submitter, false)]
+    fn role_can_approve_matrix(#[case] role: UserRole, #[case] expected: bool) {
+        assert_eq!(role.can_approve(), expected);
+    }
+
+    #[rstest]
+    #[case(UserRole::Owner, true)]
+    #[case(UserRole::Admin, true)]
+    #[case(UserRole::Accountant, true)]
+    #[case(UserRole::Approver, false)]
+    #[case(UserRole::Viewer, false)]
+    #[case(UserRole::Submitter, false)]
+    fn role_can_post_soft_close_matrix(#[case] role: UserRole, #[case] expected: bool) {
+        assert_eq!(role.can_post_soft_close(), expected);
+    }
+
+    #[rstest]
+    #[case(UserRole::Owner, true)]
+    #[case(UserRole::Admin, true)]
+    #[case(UserRole::Accountant, false)]
+    #[case(UserRole::Approver, false)]
+    #[case(UserRole::Viewer, false)]
+    #[case(UserRole::Submitter, false)]
+    fn role_can_manage_users_matrix(#[case] role: UserRole, #[case] expected: bool) {
+        assert_eq!(role.can_manage_users(), expected);
+    }
+
+    #[rstest]
+    #[case(UserRole::Owner, true)]
+    #[case(UserRole::Admin, true)]
+    #[case(UserRole::Accountant, false)]
+    #[case(UserRole::Approver, false)]
+    #[case(UserRole::Viewer, false)]
+    #[case(UserRole::Submitter, false)]
+    fn role_can_modify_settings_matrix(#[case] role: UserRole, #[case] expected: bool) {
+        assert_eq!(role.can_modify_settings(), expected);
+    }
+
+    #[rstest]
+    #[case(UserRole::Owner, "owner")]
+    #[case(UserRole::Admin, "admin")]
+    #[case(UserRole::Accountant, "accountant")]
+    #[case(UserRole::Approver, "approver")]
+    #[case(UserRole::Viewer, "viewer")]
+    #[case(UserRole::Submitter, "submitter")]
+    fn role_display_formats_to_snake_case(#[case] role: UserRole, #[case] expected: &str) {
+        assert_eq!(role.to_string(), expected);
+    }
+
+    #[rstest]
+    #[case(UserRole::Owner, "\"owner\"")]
+    #[case(UserRole::Admin, "\"admin\"")]
+    #[case(UserRole::Accountant, "\"accountant\"")]
+    #[case(UserRole::Approver, "\"approver\"")]
+    #[case(UserRole::Viewer, "\"viewer\"")]
+    #[case(UserRole::Submitter, "\"submitter\"")]
+    fn role_serializes_to_snake_case(#[case] role: UserRole, #[case] expected: &str) {
+        let serialized = serde_json::to_string(&role).expect("serialize role");
+        assert_eq!(serialized, expected);
+    }
+
+    #[rstest]
+    #[case("owner", UserRole::Owner)]
+    #[case("admin", UserRole::Admin)]
+    #[case("accountant", UserRole::Accountant)]
+    #[case("approver", UserRole::Approver)]
+    #[case("viewer", UserRole::Viewer)]
+    #[case("submitter", UserRole::Submitter)]
+    fn role_deserializes_from_snake_case(#[case] raw: &str, #[case] expected: UserRole) {
+        let value = json!(raw);
+        let parsed: UserRole = serde_json::from_value(value).expect("deserialize role");
+        assert_eq!(parsed, expected);
     }
 }
