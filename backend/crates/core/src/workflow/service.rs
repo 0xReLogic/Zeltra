@@ -243,7 +243,7 @@ mod tests {
 
     #[test]
     fn test_reject_empty_reason_fails() {
-        let result = WorkflowService::reject(TransactionStatus::Pending, "".to_string());
+        let result = WorkflowService::reject(TransactionStatus::Pending, String::new());
         assert!(matches!(
             result,
             Err(WorkflowError::RejectionReasonRequired)
@@ -292,7 +292,7 @@ mod tests {
     #[test]
     fn test_void_empty_reason_fails() {
         let user_id = Uuid::new_v4();
-        let result = WorkflowService::void(TransactionStatus::Posted, user_id, "".to_string());
+        let result = WorkflowService::void(TransactionStatus::Posted, user_id, String::new());
         assert!(matches!(result, Err(WorkflowError::VoidReasonRequired)));
     }
 

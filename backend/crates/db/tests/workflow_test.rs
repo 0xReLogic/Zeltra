@@ -736,8 +736,7 @@ async fn test_bulk_approve_preserves_order() {
     for (i, item) in bulk_result.results.iter().enumerate() {
         assert_eq!(
             item.transaction_id, tx_ids[i],
-            "Result order must match input order at index {}",
-            i
+            "Result order must match input order at index {i}"
         );
     }
 }

@@ -50,7 +50,7 @@ jobs:
       - name: Run Lighthouse CI
         uses: treosh/lighthouse-ci-action@v12
         with:
-          configPath: './frontend/lighthouserc.json'
+          configPath: 'frontend/lighthouserc.json'
           uploadArtifacts: true
           temporaryPublicStorage: true
 
@@ -141,7 +141,7 @@ jobs:
         run: pnpm build
 
       - name: Install Playwright
-        run: pnpm exec playwright install --with-deps chromium
+        run: pnpm add -D @playwright/test @axe-core/playwright && pnpm exec playwright install --with-deps chromium
 
       - name: Start server and run accessibility tests
         run: |
@@ -217,7 +217,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Install type-coverage
-        run: pnpm add -D type-coverage
+        run: pnpm add -D -w type-coverage
 
       - name: Check type coverage
         run: |
@@ -255,6 +255,6 @@ jobs:
 
       - name: Check for unused dependencies
         run: |
-          pnpm add -D depcheck
+          pnpm add -D -w depcheck
           echo "## Unused Dependencies Check" >> $GITHUB_STEP_SUMMARY
           pnpm exec depcheck --ignores="@types/*,eslint*,prettier*,postcss*,tailwindcss,autoprefixer" >> $GITHUB_STEP_SUMMARY 2>&1 || true

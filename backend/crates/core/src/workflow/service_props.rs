@@ -3,6 +3,8 @@
 //! These tests validate the correctness properties defined in the design document
 //! using proptest for randomized input generation.
 
+#![allow(clippy::uninlined_format_args)]
+
 use proptest::prelude::*;
 use uuid::Uuid;
 
@@ -250,8 +252,7 @@ proptest! {
         let expected_valid = matches!(
             (from, to),
             (TransactionStatus::Draft, TransactionStatus::Pending)
-                | (TransactionStatus::Pending, TransactionStatus::Approved)
-                | (TransactionStatus::Pending, TransactionStatus::Draft)
+                | (TransactionStatus::Pending, TransactionStatus::Approved | TransactionStatus::Draft)
                 | (TransactionStatus::Approved, TransactionStatus::Posted)
                 | (TransactionStatus::Posted, TransactionStatus::Voided)
         );
@@ -344,8 +345,7 @@ mod edge_case_tests {
                 let expected = valid_transitions.contains(&(*from, *to));
                 assert_eq!(
                     is_valid, expected,
-                    "is_valid_transition({:?}, {:?}) = {}, expected {}",
-                    from, to, is_valid, expected
+                    "is_valid_transition({from:?}, {to:?}) = {is_valid}, expected {expected}"
                 );
             }
         }
@@ -365,9 +365,7 @@ mod edge_case_tests {
         for status in &statuses {
             assert!(
                 !WorkflowService::is_valid_transition(*status, *status),
-                "Same status transition should be invalid: {:?} -> {:?}",
-                status,
-                status
+                "Same status transition should be invalid: {status:?} -> {status:?}"
             );
         }
     }
@@ -386,8 +384,7 @@ mod edge_case_tests {
         for to in &statuses {
             assert!(
                 !WorkflowService::is_valid_transition(TransactionStatus::Voided, *to),
-                "Voided should not transition to {:?}",
-                to
+                "Voided should not transition to {to:?}"
             );
         }
     }
