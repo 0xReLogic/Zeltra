@@ -532,9 +532,7 @@ tests/
   - Budget events (created, updated, locked)
   - User events (invited, role changed)
   - Pagination with cursor
-- [ ] Budget Summary API: `GET /api/v1/dashboard/budget-vs-actual`
-  - Summary for dashboard widget
-  - Period-based comparison
+- [x] ~~Budget Summary API~~ (Frontend uses `GET /budgets` data directly for budget vs actual)
 - [ ] Frontend Integration: Replace mock data with real-time API responses
 
 ### API Polish

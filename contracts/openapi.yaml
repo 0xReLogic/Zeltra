@@ -2058,6 +2058,10 @@ paths:
     get:
       tags: [Reports]
       summary: Dashboard budget vs actual summary
+      deprecated: true
+      description: |
+        **Deprecated**: Frontend uses `GET /budgets` data directly for budget vs actual charts.
+        This endpoint may be removed in future versions.
       parameters:
         - name: period_id
           in: query
