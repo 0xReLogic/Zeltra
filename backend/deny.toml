@@ -77,8 +77,6 @@ allow = ["LicenseRef-Proprietary"]
 name = "zeltra-seeder"
 allow = ["LicenseRef-Proprietary"]
 
-confidence-threshold = 0.8
-
 [[licenses.clarify]]
 name = "ring"
 expression = "MIT AND ISC AND OpenSSL"
