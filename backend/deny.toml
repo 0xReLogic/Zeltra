@@ -47,6 +47,35 @@ allow = [
 
 # Private workspace crates don't need licenses
 private = { ignore = true }
+
+# Exceptions for workspace crates (they don't have license fields)
+[[licenses.exceptions]]
+name = "zeltra-api"
+allow = ["LicenseRef-Proprietary"]
+
+[[licenses.exceptions]]
+name = "zeltra-core"
+allow = ["LicenseRef-Proprietary"]
+
+[[licenses.exceptions]]
+name = "zeltra-db"
+allow = ["LicenseRef-Proprietary"]
+
+[[licenses.exceptions]]
+name = "zeltra-shared"
+allow = ["LicenseRef-Proprietary"]
+
+[[licenses.exceptions]]
+name = "zeltra-server"
+allow = ["LicenseRef-Proprietary"]
+
+[[licenses.exceptions]]
+name = "zeltra-migrator"
+allow = ["LicenseRef-Proprietary"]
+
+[[licenses.exceptions]]
+name = "zeltra-seeder"
+allow = ["LicenseRef-Proprietary"]
 confidence-threshold = 0.8
 
 [[licenses.clarify]]
