@@ -17,7 +17,7 @@ uuid = { workspace = true }
 
 # Auth (minimal deps for password hashing)
 argon2 = { workspace = true }
-rand_core = { version = "0.6", features = ["std"] }
+rand_core = { version = "0.9", features = ["std"] }
 
 # NO database deps, NO web deps - pure business logic
 
