@@ -1,0 +1,10 @@
+# cargo-audit configuration
+# https://rustsec.org/
+
+[advisories]
+ignore = [
+    # rsa timing sidechannel - only affects sqlx-mysql, we use PostgreSQL
+    "RUSTSEC-2023-0071",
+    # tokio-tar file smuggling - only in testcontainers (dev dependency)
+    "RUSTSEC-2025-0111",
+]
