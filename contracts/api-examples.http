@@ -178,6 +178,87 @@ POST {{baseUrl}}/transactions/{{txnId}}/post
 Authorization: Bearer {{accessToken}}
 X-Organization-ID: {{orgId}}
 
+### Reject Transaction
+POST {{baseUrl}}/transactions/{{txnId}}/reject
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+Content-Type: application/json
+
+{
+  "rejection_reason": "Missing supporting documentation"
+}
+
+### Void Transaction (Posted only)
+POST {{baseUrl}}/transactions/{{txnId}}/void
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+Content-Type: application/json
+
+{
+  "void_reason": "Duplicate entry - correcting error"
+}
+
+### Get Pending Transactions (Approval Queue)
+GET {{baseUrl}}/transactions/pending
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+
+### Bulk Approve Transactions
+POST {{baseUrl}}/transactions/bulk-approve
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+Content-Type: application/json
+
+{
+  "transaction_ids": [
+    "transaction-uuid-1",
+    "transaction-uuid-2",
+    "transaction-uuid-3"
+  ],
+  "approval_notes": "Batch approved - month-end processing"
+}
+
+### ============ APPROVAL RULES ============
+
+### List Approval Rules
+GET {{baseUrl}}/organizations/{{orgId}}/approval-rules
+Authorization: Bearer {{accessToken}}
+
+### Create Approval Rule
+# @name createRule
+POST {{baseUrl}}/organizations/{{orgId}}/approval-rules
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Large Expense Approval",
+  "min_amount": "10000.00",
+  "max_amount": null,
+  "transaction_types": ["expense", "journal"],
+  "required_role": "admin",
+  "priority": 1
+}
+
+@ruleId = {{createRule.response.body.id}}
+
+### Get Approval Rule
+GET {{baseUrl}}/organizations/{{orgId}}/approval-rules/{{ruleId}}
+Authorization: Bearer {{accessToken}}
+
+### Update Approval Rule
+PATCH {{baseUrl}}/organizations/{{orgId}}/approval-rules/{{ruleId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Large Expense Approval (Updated)",
+  "min_amount": "5000.00"
+}
+
+### Delete Approval Rule (Soft Delete)
+DELETE {{baseUrl}}/organizations/{{orgId}}/approval-rules/{{ruleId}}
+Authorization: Bearer {{accessToken}}
+
 ### ============ REPORTS ============
 
 ### Trial Balance

@@ -16,6 +16,9 @@ pub mod transaction;
 pub mod user;
 pub mod workflow;
 
+#[cfg(test)]
+mod workflow_integration_tests;
+
 pub use account::{
     AccountError, AccountFilter, AccountRepository, AccountWithBalance, CreateAccountInput,
     UpdateAccountInput,

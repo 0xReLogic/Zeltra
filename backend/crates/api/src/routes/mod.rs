@@ -5,6 +5,7 @@ use axum::{Router, middleware};
 use crate::{AppState, middleware::auth::auth_middleware};
 
 pub mod accounts;
+pub mod approval_rules;
 pub mod auth;
 pub mod currencies;
 pub mod dimensions;
@@ -31,6 +32,7 @@ pub fn api_routes_with_state(state: AppState) -> Router<AppState> {
         .merge(exchange_rates::routes())
         .merge(currencies::routes())
         .merge(transactions::routes())
+        .merge(approval_rules::routes())
         .layer(middleware::from_fn_with_state(
             state.clone(),
             auth_middleware,

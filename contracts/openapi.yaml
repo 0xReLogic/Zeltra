@@ -719,6 +719,228 @@ components:
           type: string
           format: date-time
 
+    # ============ Workflow Request/Response ============
+    ApproveRequest:
+      type: object
+      properties:
+        approval_notes:
+          type: string
+          description: Optional notes for the approval
+          example: "Approved after budget review"
+
+    RejectRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          description: Reason for rejection (required)
+          minLength: 1
+          example: "Missing receipt documentation"
+
+    VoidRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          description: Reason for voiding the transaction (required)
+          minLength: 1
+          example: "Duplicate entry - correcting error"
+
+    VoidResponse:
+      type: object
+      required: [original_transaction, reversing_transaction]
+      properties:
+        original_transaction:
+          $ref: '#/components/schemas/Transaction'
+        reversing_transaction:
+          $ref: '#/components/schemas/Transaction'
+
+    BulkApproveRequest:
+      type: object
+      required: [transaction_ids]
+      properties:
+        transaction_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          minItems: 1
+          maxItems: 50
+          description: Array of transaction IDs to approve
+        approval_notes:
+          type: string
+          description: Optional notes applied to all approvals
+
+    BulkApproveResponse:
+      type: object
+      required: [results, success_count, failure_count]
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/BulkApproveItemResult'
+        success_count:
+          type: integer
+          description: Number of successfully approved transactions
+        failure_count:
+          type: integer
+          description: Number of failed approvals
+
+    BulkApproveItemResult:
+      type: object
+      required: [transaction_id, success]
+      properties:
+        transaction_id:
+          type: string
+          format: uuid
+        success:
+          type: boolean
+        error:
+          type: string
+          description: Error message if approval failed
+          nullable: true
+
+    PendingTransaction:
+      type: object
+      required: [id, transaction_type, transaction_date, description, status, total_amount, submitted_at, can_approve]
+      properties:
+        id:
+          type: string
+          format: uuid
+        reference_number:
+          type: string
+          nullable: true
+        transaction_type:
+          $ref: '#/components/schemas/TransactionType'
+        transaction_date:
+          type: string
+          format: date
+        description:
+          type: string
+        status:
+          $ref: '#/components/schemas/TransactionStatus'
+        total_amount:
+          $ref: '#/components/schemas/Money'
+        submitted_by:
+          $ref: '#/components/schemas/UserSummary'
+        submitted_at:
+          type: string
+          format: date-time
+        can_approve:
+          type: boolean
+          description: Whether the current user can approve this transaction
+
+    # ============ Approval Rules ============
+    ApprovalRule:
+      type: object
+      required: [id, organization_id, name, transaction_types, required_role, priority, is_active, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        organization_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          description: Name of the approval rule
+        description:
+          type: string
+          nullable: true
+        min_amount:
+          $ref: '#/components/schemas/Money'
+          nullable: true
+          description: Minimum amount threshold (inclusive)
+        max_amount:
+          $ref: '#/components/schemas/Money'
+          nullable: true
+          description: Maximum amount threshold (inclusive)
+        transaction_types:
+          type: array
+          items:
+            $ref: '#/components/schemas/TransactionType'
+          description: Transaction types this rule applies to
+        required_role:
+          $ref: '#/components/schemas/UserRole'
+          description: Minimum role required to approve
+        priority:
+          type: integer
+          description: Priority (lower = higher priority)
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CreateApprovalRuleRequest:
+      type: object
+      required: [name, transaction_types, required_role, priority]
+      properties:
+        name:
+          type: string
+          description: Name of the approval rule
+        description:
+          type: string
+          nullable: true
+        min_amount:
+          $ref: '#/components/schemas/Money'
+          nullable: true
+          description: Minimum amount threshold (inclusive)
+        max_amount:
+          $ref: '#/components/schemas/Money'
+          nullable: true
+          description: Maximum amount threshold (inclusive)
+        transaction_types:
+          type: array
+          items:
+            $ref: '#/components/schemas/TransactionType'
+          description: Transaction types this rule applies to
+        required_role:
+          $ref: '#/components/schemas/UserRole'
+          description: Minimum role required to approve
+        priority:
+          type: integer
+          description: Priority (lower = higher priority)
+
+    UpdateApprovalRuleRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        min_amount:
+          $ref: '#/components/schemas/Money'
+          nullable: true
+        max_amount:
+          $ref: '#/components/schemas/Money'
+          nullable: true
+        transaction_types:
+          type: array
+          items:
+            $ref: '#/components/schemas/TransactionType'
+        required_role:
+          $ref: '#/components/schemas/UserRole'
+        priority:
+          type: integer
+        is_active:
+          type: boolean
+
+    ApprovalRuleListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApprovalRule'
+
 security:
   - bearerAuth: []
 
@@ -1138,12 +1360,13 @@ paths:
                   success:
                     type: boolean
                 
-  /transactions/{id}/submit:
-    post:
+  /organizations/{org_id}/transactions/pending:
+    get:
       tags: [Transactions]
-      summary: Submit for approval
+      summary: Get pending transactions for approval queue
+      description: Returns all pending transactions that the authenticated user can view, with a flag indicating if they can approve each one.
       parameters:
-        - name: id
+        - name: org_id
           in: path
           required: true
           schema:
@@ -1151,131 +1374,490 @@ paths:
             format: uuid
       responses:
         '200':
-          description: Submitted
-          
-  /transactions/{id}/approve:
-    post:
-      tags: [Transactions]
-      summary: Approve transaction
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '200':
-          description: Approved
-          
-  /transactions/{id}/post:
-    post:
-      tags: [Transactions]
-      summary: Post to ledger
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '200':
-          description: Posted
-
-  /transactions/{id}/reject:
-    post:
-      tags: [Transactions]
-      summary: Reject transaction
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [reason]
-              properties:
-                reason:
-                  type: string
-      responses:
-        '200':
-          description: Rejected
-
-  /transactions/{id}/void:
-    post:
-      tags: [Transactions]
-      summary: Void transaction
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [reason]
-              properties:
-                reason:
-                  type: string
-      responses:
-        '200':
-          description: Voided
-
-  /transactions/bulk-approve:
-    post:
-      tags: [Transactions]
-      summary: Bulk approve multiple transactions
-      description: Approve multiple pending transactions at once. User must have approver role with sufficient approval limit.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [transaction_ids]
-              properties:
-                transaction_ids:
-                  type: array
-                  items:
-                    type: string
-                    format: uuid
-                  minItems: 1
-                  maxItems: 50
-      responses:
-        '200':
-          description: Bulk approval result
+          description: List of pending transactions
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  approved:
+                  data:
                     type: array
                     items:
-                      type: string
-                      format: uuid
-                  failed:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id:
-                          type: string
-                          format: uuid
-                        reason:
-                          type: string
+                      $ref: '#/components/schemas/PendingTransaction'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Not a member of organization
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /organizations/{org_id}/transactions/{id}/submit:
+    post:
+      tags: [Transactions]
+      summary: Submit transaction for approval
+      description: Transitions a draft transaction to pending status for approval.
+      parameters:
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Transaction submitted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+        '400':
+          description: Invalid status transition (not in draft status)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Transaction not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          
+  /organizations/{org_id}/transactions/{id}/approve:
+    post:
+      tags: [Transactions]
+      summary: Approve transaction
+      description: Approves a pending transaction. User must have sufficient role and approval limit.
+      parameters:
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApproveRequest'
+      responses:
+        '200':
+          description: Transaction approved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+        '400':
+          description: Invalid status transition (not in pending status)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Not authorized to approve (insufficient role or exceeds approval limit)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Transaction not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          
+  /organizations/{org_id}/transactions/{id}/post:
+    post:
+      tags: [Transactions]
+      summary: Post transaction to ledger
+      description: Posts an approved transaction to the ledger. This makes the transaction immutable.
+      parameters:
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Transaction posted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+        '400':
+          description: Invalid status transition (not in approved status)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Transaction not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /organizations/{org_id}/transactions/{id}/reject:
+    post:
+      tags: [Transactions]
+      summary: Reject transaction
+      description: Rejects a pending transaction back to draft status with a reason.
+      parameters:
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RejectRequest'
+      responses:
+        '200':
+          description: Transaction rejected successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+        '400':
+          description: Invalid status transition or missing rejection reason
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Transaction not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /organizations/{org_id}/transactions/{id}/void:
+    post:
+      tags: [Transactions]
+      summary: Void posted transaction
+      description: Voids a posted transaction by creating a reversing entry. The original transaction becomes immutable with status 'voided'.
+      parameters:
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VoidRequest'
+      responses:
+        '200':
+          description: Transaction voided successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoidResponse'
+        '400':
+          description: Invalid status transition or missing void reason
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Transaction not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /organizations/{org_id}/transactions/bulk-approve:
+    post:
+      tags: [Transactions]
+      summary: Bulk approve multiple transactions
+      description: Approve multiple pending transactions at once. User must have approver role with sufficient approval limit. Processing continues even if some transactions fail.
+      parameters:
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkApproveRequest'
+      responses:
+        '200':
+          description: Bulk approval result with per-transaction status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkApproveResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ============ Approval Rules ============
+  /organizations/{org_id}/approval-rules:
+    get:
+      tags: [Transactions]
+      summary: List approval rules
+      description: Get all active approval rules for the organization. Requires organization membership.
+      operationId: listApprovalRules
+      parameters:
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of approval rules
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApprovalRuleListResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden - not a member of the organization
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      tags: [Transactions]
+      summary: Create approval rule
+      description: Create a new approval rule for the organization. Requires admin or owner role.
+      operationId: createApprovalRule
+      parameters:
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateApprovalRuleRequest'
+      responses:
+        '201':
+          description: Approval rule created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApprovalRule'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden - admin or owner role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /organizations/{org_id}/approval-rules/{rule_id}:
+    get:
+      tags: [Transactions]
+      summary: Get approval rule
+      description: Get a specific approval rule by ID. Requires organization membership.
+      operationId: getApprovalRule
+      parameters:
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: rule_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Approval rule details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApprovalRule'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Approval rule not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    patch:
+      tags: [Transactions]
+      summary: Update approval rule
+      description: Update an existing approval rule. Requires admin or owner role.
+      operationId: updateApprovalRule
+      parameters:
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: rule_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateApprovalRuleRequest'
+      responses:
+        '200':
+          description: Approval rule updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApprovalRule'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden - admin or owner role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Approval rule not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      tags: [Transactions]
+      summary: Delete approval rule
+      description: Soft delete an approval rule (sets is_active to false). Requires admin or owner role.
+      operationId: deleteApprovalRule
+      parameters:
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: rule_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Approval rule deleted
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden - admin or owner role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Approval rule not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /transactions/{id}/attachments:
     get:

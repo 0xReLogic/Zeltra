@@ -525,22 +525,22 @@ Example queries:
   - Verify at least 40 tests passing (cumulative)
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 20. Implement workflow API endpoints
+- [x] 20. Implement workflow API endpoints
   - **Reference:** requirements.md → Requirement 6; design.md → Data Models → API Request/Response Models
   - **Research if needed:** "Axum 0.8 router state extractor 2025 2026", "Axum 0.8 path parameter extract 2025 2026"
-  - [ ] 20.1 Review existing OpenAPI spec and transactions routes
+  - [x] 20.1 Review existing OpenAPI spec and transactions routes
     - Check `contracts/openapi.yaml` for existing workflow endpoint definitions
     - Check `backend/crates/api/src/routes/transactions.rs` for existing implementation
     - Note: OpenAPI already has /transactions/{id}/submit, approve, reject, post, void defined but needs request/response schemas
     - Note: transactions.rs has CRUD but no workflow endpoints yet
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7_
 
-  - [ ] 20.2 Add workflow routes to existing transactions.rs
+  - [x] 20.2 Add workflow routes to existing transactions.rs
     - Add workflow request/response structs (ApproveRequest, RejectRequest, VoidRequest, BulkApproveRequest)
     - Add routes for workflow endpoints to existing Router
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7_
 
-  - [ ] 20.3 Implement POST /organizations/{org_id}/transactions/{id}/submit
+  - [x] 20.3 Implement POST /organizations/{org_id}/transactions/{id}/submit
     - Add route to existing transactions router
     - Extract transaction_id from path
     - Extract user_id from auth context
@@ -548,7 +548,7 @@ Example queries:
     - Return updated transaction or error
     - _Requirements: 6.1_
 
-  - [ ] 20.4 Implement POST /organizations/{org_id}/transactions/{id}/approve
+  - [x] 20.4 Implement POST /organizations/{org_id}/transactions/{id}/approve
     - Add route to existing transactions router
     - Extract transaction_id from path
     - Extract ApproveRequest body (approval_notes)
@@ -557,7 +557,7 @@ Example queries:
     - Return updated transaction or error
     - _Requirements: 6.2_
 
-  - [ ] 20.5 Implement POST /organizations/{org_id}/transactions/{id}/reject
+  - [x] 20.5 Implement POST /organizations/{org_id}/transactions/{id}/reject
     - Add route to existing transactions router
     - Extract transaction_id from path
     - Extract RejectRequest body (rejection_reason)
@@ -566,7 +566,7 @@ Example queries:
     - Return updated transaction or error
     - _Requirements: 6.3_
 
-  - [ ] 20.6 Implement POST /organizations/{org_id}/transactions/{id}/post
+  - [x] 20.6 Implement POST /organizations/{org_id}/transactions/{id}/post
     - Add route to existing transactions router
     - Extract transaction_id from path
     - Extract user_id from auth context
@@ -574,7 +574,7 @@ Example queries:
     - Return updated transaction or error
     - _Requirements: 6.4_
 
-  - [ ] 20.7 Implement POST /organizations/{org_id}/transactions/{id}/void
+  - [x] 20.7 Implement POST /organizations/{org_id}/transactions/{id}/void
     - Add route to existing transactions router
     - Extract transaction_id from path
     - Extract VoidRequest body (void_reason)
@@ -584,14 +584,14 @@ Example queries:
     - Return original and reversing transactions
     - _Requirements: 6.5_
 
-  - [ ] 20.8 Implement GET /organizations/{org_id}/transactions/pending
+  - [x] 20.8 Implement GET /organizations/{org_id}/transactions/pending
     - Add route to existing transactions router
     - Extract user_id and organization_id from auth context
     - Call WorkflowRepository.get_pending_transactions()
     - Return list of pending transactions with can_approve flag
     - _Requirements: 6.6_
 
-  - [ ] 20.9 Implement POST /organizations/{org_id}/transactions/bulk-approve
+  - [x] 20.9 Implement POST /organizations/{org_id}/transactions/bulk-approve
     - Add route to existing transactions router
     - Extract BulkApproveRequest body (transaction_ids, approval_notes)
     - Extract user_id from auth context
@@ -599,77 +599,85 @@ Example queries:
     - Return BulkApproveResponse with per-transaction results
     - _Requirements: 6.7_
 
-  - [ ] 20.10 Run fmt and clippy
+  - [x] 20.10 Run fmt and clippy
     - Run `cargo fmt --all`
     - Run `cargo clippy -p zeltra-api -- -D warnings`
 
-- [ ] 21. Implement approval rules API endpoints
-  - [ ] 21.1 Create approval rules routes
+- [x] 21. Implement approval rules API endpoints
+  - [x] 21.1 Create approval rules routes
     - Create `backend/crates/api/src/routes/approval_rules.rs`
     - Define CreateApprovalRuleRequest and ApprovalRuleResponse structs
     - _Requirements: 6.8, 6.9_
 
-  - [ ] 21.2 Implement POST /approval-rules
+  - [x] 21.2 Implement POST /approval-rules
     - Extract CreateApprovalRuleRequest body
     - Validate required fields
     - Call ApprovalRuleRepository.create_rule()
     - Return created rule
     - _Requirements: 6.8_
 
-  - [ ] 21.3 Implement GET /approval-rules
+  - [x] 21.3 Implement GET /approval-rules
     - Extract organization_id from auth context
     - Call ApprovalRuleRepository.list_rules()
     - Return list of rules
     - _Requirements: 6.9_
 
-  - [ ] 21.4 Register approval rules routes
+  - [x] 21.4 Register approval rules routes
     - Add routes to main API router
     - Apply auth middleware (admin+ only for create)
 
-  - [ ] 21.5 Run fmt and clippy
+  - [x] 21.5 Run fmt and clippy
     - Run `cargo fmt --all`
     - Run `cargo clippy -p zeltra-api -- -D warnings`
 
-- [ ] 22. Checkpoint - API layer complete
+  - [x] 21.6 Update OpenAPI spec with approval rules endpoints
+    - Add ApprovalRule, CreateApprovalRuleRequest, UpdateApprovalRuleRequest schemas
+    - Add GET/POST /organizations/{org_id}/approval-rules endpoints
+    - Add GET/PATCH/DELETE /organizations/{org_id}/approval-rules/{rule_id} endpoints
+    - _Requirements: 6.8, 6.9_
+
+- [x] 22. Checkpoint - API layer complete
   - Run `cargo test -p zeltra-api`
   - Verify at least 45 tests passing (cumulative)
   - Ensure all tests pass, ask the user if questions arise.
+  - **Result: 495 tests passing (target: 45+) ✓**
 
-- [ ] 23. Write integration tests
+- [x] 23. Write integration tests
   - **Reference:** design.md → Testing Strategy; requirements.md → All requirements
   - **Research if needed:** "Rust tokio test async integration test 2025 2026", "proptest Rust property based testing 2025 2026"
-  - [ ] 23.1 Write integration tests for full workflow cycle
+  - [x] 23.1 Write integration tests for full workflow cycle
     - Test draft → pending → approved → posted flow
     - Test draft → pending → rejected → draft → pending → approved → posted flow
     - Test posted → voided flow with reversing entry verification
     - Verify account balances at each step
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 2.1, 2.7_
 
-  - [ ] 23.2 Write integration tests for approval queue
+  - [x] 23.2 Write integration tests for approval queue
     - Test filtering by user authorization
     - Test bulk approval with mixed results
     - Test approval limit enforcement
     - _Requirements: 5.1, 5.2, 5.3, 5.4_
 
-  - [ ] 23.3 Write integration tests for immutability via API
+  - [x] 23.3 Write integration tests for immutability via API
     - Test PATCH /transactions/:id returns 400 for posted
     - Test DELETE /transactions/:id returns 400 for posted
     - Test PATCH /transactions/:id returns 400 for voided
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
 
-  - [ ] 23.4 Write integration tests for approval rules
+  - [x] 23.4 Write integration tests for approval rules
     - Test create rule with all fields
     - Test list rules returns only org's rules
     - Test rule matching for transaction approval
     - _Requirements: 3.1, 6.8, 6.9_
 
-  - [ ] 23.5 Run fmt and clippy
+  - [x] 23.5 Run fmt and clippy
     - Run `cargo fmt --all`
     - Run `cargo clippy --workspace -- -D warnings`
     - Run `cargo test --workspace`
+    - **Result: 515 tests passing ✓**
 
-- [ ] 24. Update OpenAPI spec and API examples
-  - [ ] 24.1 Review and update contracts/openapi.yaml
+- [x] 24. Update OpenAPI spec and API examples
+  - [x] 24.1 Review and update contracts/openapi.yaml
     - Note: Workflow endpoints already defined but need request/response schemas
     - Add ApproveRequest schema (approval_notes optional)
     - Add RejectRequest schema (rejection_reason required)
@@ -678,13 +686,12 @@ Example queries:
     - Add BulkApproveResponse schema with per-transaction results
     - Add PendingTransactionResponse schema with can_approve flag
     - Update existing endpoint definitions with proper request/response refs
-    - Add GET /transactions/pending endpoint
-    - Add POST /transactions/bulk-approve endpoint
-    - Add POST /approval-rules endpoint
-    - Add GET /approval-rules endpoint
-    - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8, 6.9_
+    - Add GET /organizations/{org_id}/transactions/pending endpoint
+    - Add POST /organizations/{org_id}/transactions/bulk-approve endpoint
+    - Note: Approval rules endpoints will be added in Task 21
+    - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7_
 
-  - [ ] 24.2 Update contracts/api-examples.http
+  - [x] 24.2 Update contracts/api-examples.http
     - Add example for submit transaction
     - Add example for approve transaction
     - Add example for reject transaction
@@ -694,14 +701,16 @@ Example queries:
     - Add example for bulk approve
     - Add example for create approval rule
     - Add example for list approval rules
+    - **Result: All workflow examples added ✓**
 
-- [ ] 25. Final checkpoint - Phase 3 complete
+- [x] 25. Final checkpoint - Phase 3 complete
   - Run `cargo test --workspace`
   - Run `cargo fmt --all -- --check`
   - Run `cargo clippy --workspace -- -D warnings`
   - Verify 50+ tests passing for Phase 3
   - Update `PROGRESS.md` with Phase 3 completion status
   - Ensure all tests pass, ask the user if questions arise.
+  - **Result: 515 tests passing (target: 50+) ✓ Phase 3 COMPLETE!**
 
 ## Notes
 

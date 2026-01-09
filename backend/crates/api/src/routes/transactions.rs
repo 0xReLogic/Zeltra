@@ -1,6 +1,7 @@
 //! Transaction management routes.
 //!
 //! Implements Requirements 10.1-10.7 for transaction API endpoints.
+//! Implements Requirements 6.1-6.7 for workflow API endpoints.
 
 use axum::{
     Json, Router,
@@ -21,6 +22,7 @@ use crate::{AppState, middleware::AuthUser};
 use zeltra_db::{
     OrganizationRepository,
     entities::sea_orm_active_enums::{TransactionStatus, TransactionType},
+    repositories::WorkflowRepository,
     repositories::transaction::{
         CreateLedgerEntryInput, CreateTransactionInput, TransactionFilter, TransactionRepository,
     },
@@ -38,6 +40,14 @@ pub fn routes() -> Router<AppState> {
             post(create_transaction),
         )
         .route(
+            "/organizations/{org_id}/transactions/pending",
+            get(get_pending_transactions),
+        )
+        .route(
+            "/organizations/{org_id}/transactions/bulk-approve",
+            post(bulk_approve_transactions),
+        )
+        .route(
             "/organizations/{org_id}/transactions/{transaction_id}",
             get(get_transaction),
         )
@@ -48,6 +58,26 @@ pub fn routes() -> Router<AppState> {
         .route(
             "/organizations/{org_id}/transactions/{transaction_id}",
             delete(delete_transaction),
+        )
+        .route(
+            "/organizations/{org_id}/transactions/{transaction_id}/submit",
+            post(submit_transaction),
+        )
+        .route(
+            "/organizations/{org_id}/transactions/{transaction_id}/approve",
+            post(approve_transaction),
+        )
+        .route(
+            "/organizations/{org_id}/transactions/{transaction_id}/reject",
+            post(reject_transaction),
+        )
+        .route(
+            "/organizations/{org_id}/transactions/{transaction_id}/post",
+            post(post_transaction),
+        )
+        .route(
+            "/organizations/{org_id}/transactions/{transaction_id}/void",
+            post(void_transaction),
         )
 }
 
@@ -201,6 +231,95 @@ pub struct TransactionListItem {
     pub status: String,
     /// Created at timestamp.
     pub created_at: String,
+}
+
+// ============================================================================
+// Workflow Request/Response Types
+// ============================================================================
+
+/// Request body for approving a transaction.
+#[derive(Debug, Deserialize)]
+pub struct ApproveRequest {
+    /// Optional approval notes.
+    pub approval_notes: Option<String>,
+}
+
+/// Request body for rejecting a transaction.
+#[derive(Debug, Deserialize)]
+pub struct RejectRequest {
+    /// Rejection reason (required).
+    pub reason: String,
+}
+
+/// Request body for voiding a transaction.
+#[derive(Debug, Deserialize)]
+pub struct VoidRequest {
+    /// Void reason (required).
+    pub reason: String,
+}
+
+/// Request body for bulk approval.
+#[derive(Debug, Deserialize)]
+pub struct BulkApproveRequest {
+    /// Transaction IDs to approve.
+    pub transaction_ids: Vec<Uuid>,
+    /// Optional approval notes.
+    pub approval_notes: Option<String>,
+}
+
+/// Response for void operation.
+#[derive(Debug, Serialize)]
+pub struct VoidResponse {
+    /// Original transaction (now voided).
+    pub original_transaction: TransactionResponse,
+    /// Reversing transaction (posted).
+    pub reversing_transaction: TransactionResponse,
+}
+
+/// Response for bulk approval.
+#[derive(Debug, Serialize)]
+pub struct BulkApproveResponse {
+    /// Results for each transaction.
+    pub results: Vec<BulkApproveItemResponse>,
+    /// Number of successful approvals.
+    pub success_count: usize,
+    /// Number of failed approvals.
+    pub failure_count: usize,
+}
+
+/// Response for a single bulk approval item.
+#[derive(Debug, Serialize)]
+pub struct BulkApproveItemResponse {
+    /// Transaction ID.
+    pub transaction_id: Uuid,
+    /// Whether the approval succeeded.
+    pub success: bool,
+    /// Error message if failed.
+    pub error: Option<String>,
+}
+
+/// Response for pending transaction in approval queue.
+#[derive(Debug, Serialize)]
+pub struct PendingTransactionResponse {
+    /// Transaction ID.
+    pub id: Uuid,
+    /// Reference number.
+    pub reference_number: Option<String>,
+    /// Transaction type.
+    #[serde(rename = "type")]
+    pub transaction_type: String,
+    /// Transaction date.
+    pub transaction_date: String,
+    /// Description.
+    pub description: String,
+    /// Status.
+    pub status: String,
+    /// Total amount.
+    pub total_amount: String,
+    /// Submitted at timestamp.
+    pub submitted_at: Option<String>,
+    /// Whether the current user can approve this transaction.
+    pub can_approve: bool,
 }
 
 // ============================================================================
@@ -760,6 +879,515 @@ async fn delete_transaction(
                     .into_response(),
             }
         }
+    }
+}
+
+// ============================================================================
+// Workflow Route Handlers
+// ============================================================================
+
+/// POST `/organizations/{org_id}/transactions/{transaction_id}/submit` - Submit for approval.
+///
+/// Requirements: 6.1
+async fn submit_transaction(
+    State(state): State<AppState>,
+    auth: AuthUser,
+    Path((org_id, transaction_id)): Path<(Uuid, Uuid)>,
+) -> impl IntoResponse {
+    let org_repo = OrganizationRepository::new((*state.db).clone());
+
+    if let Err(response) = check_membership(&org_repo, org_id, auth.user_id()).await {
+        return response;
+    }
+
+    let workflow_repo = WorkflowRepository::new((*state.db).clone());
+
+    match workflow_repo
+        .submit_transaction(org_id, transaction_id, auth.user_id())
+        .await
+    {
+        Ok(transaction) => {
+            info!(
+                org_id = %org_id,
+                transaction_id = %transaction_id,
+                "Transaction submitted for approval"
+            );
+
+            let submitted_at = transaction
+                .submitted_at
+                .as_ref()
+                .map(chrono::DateTime::to_rfc3339);
+
+            (
+                StatusCode::OK,
+                Json(json!({
+                    "id": transaction.id,
+                    "status": status_to_string(&transaction.status),
+                    "submitted_at": submitted_at,
+                    "submitted_by": transaction.submitted_by
+                })),
+            )
+                .into_response()
+        }
+        Err(e) => {
+            error!(error = %e, "Failed to submit transaction");
+            workflow_error_response(e)
+        }
+    }
+}
+
+/// POST `/organizations/{org_id}/transactions/{transaction_id}/approve` - Approve transaction.
+///
+/// Requirements: 6.2
+async fn approve_transaction(
+    State(state): State<AppState>,
+    auth: AuthUser,
+    Path((org_id, transaction_id)): Path<(Uuid, Uuid)>,
+    payload: Option<Json<ApproveRequest>>,
+) -> impl IntoResponse {
+    let org_repo = OrganizationRepository::new((*state.db).clone());
+
+    if let Err(response) = check_membership(&org_repo, org_id, auth.user_id()).await {
+        return response;
+    }
+
+    let approval_notes = payload.and_then(|p| p.approval_notes.clone());
+    let workflow_repo = WorkflowRepository::new((*state.db).clone());
+
+    match workflow_repo
+        .approve_transaction(org_id, transaction_id, auth.user_id(), approval_notes)
+        .await
+    {
+        Ok(transaction) => {
+            info!(
+                org_id = %org_id,
+                transaction_id = %transaction_id,
+                "Transaction approved"
+            );
+
+            let approved_at = transaction
+                .approved_at
+                .as_ref()
+                .map(chrono::DateTime::to_rfc3339);
+
+            (
+                StatusCode::OK,
+                Json(json!({
+                    "id": transaction.id,
+                    "status": status_to_string(&transaction.status),
+                    "approved_at": approved_at,
+                    "approved_by": transaction.approved_by,
+                    "approval_notes": transaction.approval_notes
+                })),
+            )
+                .into_response()
+        }
+        Err(e) => {
+            error!(error = %e, "Failed to approve transaction");
+            workflow_error_response(e)
+        }
+    }
+}
+
+/// POST `/organizations/{org_id}/transactions/{transaction_id}/reject` - Reject transaction.
+///
+/// Requirements: 6.3
+async fn reject_transaction(
+    State(state): State<AppState>,
+    auth: AuthUser,
+    Path((org_id, transaction_id)): Path<(Uuid, Uuid)>,
+    Json(payload): Json<RejectRequest>,
+) -> impl IntoResponse {
+    let org_repo = OrganizationRepository::new((*state.db).clone());
+
+    if let Err(response) = check_membership(&org_repo, org_id, auth.user_id()).await {
+        return response;
+    }
+
+    if payload.reason.trim().is_empty() {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({
+                "error": "rejection_reason_required",
+                "message": "Rejection reason is required"
+            })),
+        )
+            .into_response();
+    }
+
+    let workflow_repo = WorkflowRepository::new((*state.db).clone());
+
+    match workflow_repo
+        .reject_transaction(org_id, transaction_id, payload.reason)
+        .await
+    {
+        Ok(transaction) => {
+            info!(
+                org_id = %org_id,
+                transaction_id = %transaction_id,
+                "Transaction rejected"
+            );
+
+            (
+                StatusCode::OK,
+                Json(json!({
+                    "id": transaction.id,
+                    "status": status_to_string(&transaction.status),
+                    "approval_notes": transaction.approval_notes
+                })),
+            )
+                .into_response()
+        }
+        Err(e) => {
+            error!(error = %e, "Failed to reject transaction");
+            workflow_error_response(e)
+        }
+    }
+}
+
+/// POST `/organizations/{org_id}/transactions/{transaction_id}/post` - Post to ledger.
+///
+/// Requirements: 6.4
+async fn post_transaction(
+    State(state): State<AppState>,
+    auth: AuthUser,
+    Path((org_id, transaction_id)): Path<(Uuid, Uuid)>,
+) -> impl IntoResponse {
+    let org_repo = OrganizationRepository::new((*state.db).clone());
+
+    if let Err(response) = check_membership(&org_repo, org_id, auth.user_id()).await {
+        return response;
+    }
+
+    let workflow_repo = WorkflowRepository::new((*state.db).clone());
+
+    match workflow_repo
+        .post_transaction(org_id, transaction_id, auth.user_id())
+        .await
+    {
+        Ok(transaction) => {
+            info!(
+                org_id = %org_id,
+                transaction_id = %transaction_id,
+                "Transaction posted"
+            );
+
+            let posted_at = transaction
+                .posted_at
+                .as_ref()
+                .map(chrono::DateTime::to_rfc3339);
+
+            (
+                StatusCode::OK,
+                Json(json!({
+                    "id": transaction.id,
+                    "status": status_to_string(&transaction.status),
+                    "posted_at": posted_at,
+                    "posted_by": transaction.posted_by
+                })),
+            )
+                .into_response()
+        }
+        Err(e) => {
+            error!(error = %e, "Failed to post transaction");
+            workflow_error_response(e)
+        }
+    }
+}
+
+/// POST `/organizations/{org_id}/transactions/{transaction_id}/void` - Void transaction.
+///
+/// Requirements: 6.5
+async fn void_transaction(
+    State(state): State<AppState>,
+    auth: AuthUser,
+    Path((org_id, transaction_id)): Path<(Uuid, Uuid)>,
+    Json(payload): Json<VoidRequest>,
+) -> impl IntoResponse {
+    let org_repo = OrganizationRepository::new((*state.db).clone());
+
+    if let Err(response) = check_membership(&org_repo, org_id, auth.user_id()).await {
+        return response;
+    }
+
+    if payload.reason.trim().is_empty() {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({
+                "error": "void_reason_required",
+                "message": "Void reason is required"
+            })),
+        )
+            .into_response();
+    }
+
+    let workflow_repo = WorkflowRepository::new((*state.db).clone());
+
+    match workflow_repo
+        .void_transaction(org_id, transaction_id, auth.user_id(), payload.reason)
+        .await
+    {
+        Ok(result) => {
+            info!(
+                org_id = %org_id,
+                transaction_id = %transaction_id,
+                reversing_id = %result.reversing_transaction.id,
+                "Transaction voided"
+            );
+
+            let voided_at = result
+                .original_transaction
+                .voided_at
+                .as_ref()
+                .map(chrono::DateTime::to_rfc3339);
+
+            (
+                StatusCode::OK,
+                Json(json!({
+                    "original_transaction": {
+                        "id": result.original_transaction.id,
+                        "status": status_to_string(&result.original_transaction.status),
+                        "voided_at": voided_at,
+                        "voided_by": result.original_transaction.voided_by,
+                        "void_reason": result.original_transaction.void_reason,
+                        "reversed_by_transaction_id": result.original_transaction.reversed_by_transaction_id
+                    },
+                    "reversing_transaction": {
+                        "id": result.reversing_transaction.id,
+                        "status": status_to_string(&result.reversing_transaction.status),
+                        "transaction_type": tx_type_to_string(&result.reversing_transaction.transaction_type),
+                        "reverses_transaction_id": result.reversing_transaction.reverses_transaction_id
+                    }
+                })),
+            )
+                .into_response()
+        }
+        Err(e) => {
+            error!(error = %e, "Failed to void transaction");
+            workflow_error_response(e)
+        }
+    }
+}
+
+/// GET `/organizations/{org_id}/transactions/pending` - Get pending transactions.
+///
+/// Requirements: 6.6
+async fn get_pending_transactions(
+    State(state): State<AppState>,
+    auth: AuthUser,
+    Path(org_id): Path<Uuid>,
+) -> impl IntoResponse {
+    let org_repo = OrganizationRepository::new((*state.db).clone());
+
+    if let Err(response) = check_membership(&org_repo, org_id, auth.user_id()).await {
+        return response;
+    }
+
+    let workflow_repo = WorkflowRepository::new((*state.db).clone());
+
+    match workflow_repo
+        .get_pending_transactions(org_id, auth.user_id())
+        .await
+    {
+        Ok(pending) => {
+            let items: Vec<PendingTransactionResponse> = pending
+                .into_iter()
+                .map(|p| {
+                    let submitted_at = p
+                        .transaction
+                        .submitted_at
+                        .as_ref()
+                        .map(chrono::DateTime::to_rfc3339);
+                    PendingTransactionResponse {
+                        id: p.transaction.id,
+                        reference_number: p.transaction.reference_number,
+                        transaction_type: tx_type_to_string(&p.transaction.transaction_type),
+                        transaction_date: p.transaction.transaction_date.to_string(),
+                        description: p.transaction.description,
+                        status: status_to_string(&p.transaction.status),
+                        total_amount: "0.0000".to_string(), // TODO: Calculate from entries
+                        submitted_at,
+                        can_approve: p.can_approve,
+                    }
+                })
+                .collect();
+
+            (StatusCode::OK, Json(json!({ "data": items }))).into_response()
+        }
+        Err(e) => {
+            error!(error = %e, "Failed to get pending transactions");
+            workflow_error_response(e)
+        }
+    }
+}
+
+/// POST `/organizations/{org_id}/transactions/bulk-approve` - Bulk approve transactions.
+///
+/// Requirements: 6.7
+async fn bulk_approve_transactions(
+    State(state): State<AppState>,
+    auth: AuthUser,
+    Path(org_id): Path<Uuid>,
+    Json(payload): Json<BulkApproveRequest>,
+) -> impl IntoResponse {
+    let org_repo = OrganizationRepository::new((*state.db).clone());
+
+    if let Err(response) = check_membership(&org_repo, org_id, auth.user_id()).await {
+        return response;
+    }
+
+    if payload.transaction_ids.is_empty() {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({
+                "error": "empty_transaction_ids",
+                "message": "At least one transaction ID is required"
+            })),
+        )
+            .into_response();
+    }
+
+    if payload.transaction_ids.len() > 50 {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({
+                "error": "too_many_transactions",
+                "message": "Maximum 50 transactions per bulk approval"
+            })),
+        )
+            .into_response();
+    }
+
+    let workflow_repo = WorkflowRepository::new((*state.db).clone());
+
+    match workflow_repo
+        .bulk_approve(
+            org_id,
+            payload.transaction_ids,
+            auth.user_id(),
+            payload.approval_notes,
+        )
+        .await
+    {
+        Ok(result) => {
+            info!(
+                org_id = %org_id,
+                success_count = result.success_count,
+                failure_count = result.failure_count,
+                "Bulk approval completed"
+            );
+
+            let response = BulkApproveResponse {
+                results: result
+                    .results
+                    .into_iter()
+                    .map(|r| BulkApproveItemResponse {
+                        transaction_id: r.transaction_id,
+                        success: r.success,
+                        error: r.error,
+                    })
+                    .collect(),
+                success_count: result.success_count,
+                failure_count: result.failure_count,
+            };
+
+            (StatusCode::OK, Json(response)).into_response()
+        }
+        Err(e) => {
+            error!(error = %e, "Failed to bulk approve transactions");
+            workflow_error_response(e)
+        }
+    }
+}
+
+/// Convert WorkflowError to HTTP response.
+fn workflow_error_response(e: zeltra_core::workflow::WorkflowError) -> axum::response::Response {
+    use zeltra_core::workflow::WorkflowError;
+
+    match e {
+        WorkflowError::InvalidTransition { from, to } => (
+            StatusCode::BAD_REQUEST,
+            Json(json!({
+                "error": "invalid_transition",
+                "message": format!("Invalid status transition from {:?} to {:?}", from, to)
+            })),
+        )
+            .into_response(),
+        WorkflowError::TransactionNotFound(_) => (
+            StatusCode::NOT_FOUND,
+            Json(json!({
+                "error": "not_found",
+                "message": "Transaction not found"
+            })),
+        )
+            .into_response(),
+        WorkflowError::NotAuthorizedToApprove => (
+            StatusCode::FORBIDDEN,
+            Json(json!({
+                "error": "not_authorized",
+                "message": "Not authorized to approve this transaction"
+            })),
+        )
+            .into_response(),
+        WorkflowError::ExceedsApprovalLimit { amount, limit } => (
+            StatusCode::FORBIDDEN,
+            Json(json!({
+                "error": "exceeds_approval_limit",
+                "message": format!("Transaction amount {} exceeds approval limit {}", amount, limit)
+            })),
+        )
+            .into_response(),
+        WorkflowError::InsufficientRole {
+            user_role,
+            required_role,
+        } => (
+            StatusCode::FORBIDDEN,
+            Json(json!({
+                "error": "insufficient_role",
+                "message": format!("Role {} does not meet required role {}", user_role, required_role)
+            })),
+        )
+            .into_response(),
+        WorkflowError::VoidReasonRequired => (
+            StatusCode::BAD_REQUEST,
+            Json(json!({
+                "error": "void_reason_required",
+                "message": "Void reason is required"
+            })),
+        )
+            .into_response(),
+        WorkflowError::RejectionReasonRequired => (
+            StatusCode::BAD_REQUEST,
+            Json(json!({
+                "error": "rejection_reason_required",
+                "message": "Rejection reason is required"
+            })),
+        )
+            .into_response(),
+        WorkflowError::CannotModifyPosted => (
+            StatusCode::BAD_REQUEST,
+            Json(json!({
+                "error": "cannot_modify_posted",
+                "message": "Cannot modify posted transaction"
+            })),
+        )
+            .into_response(),
+        WorkflowError::CannotModifyVoided => (
+            StatusCode::BAD_REQUEST,
+            Json(json!({
+                "error": "cannot_modify_voided",
+                "message": "Cannot modify voided transaction"
+            })),
+        )
+            .into_response(),
+        _ => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({
+                "error": "internal_error",
+                "message": "An error occurred"
+            })),
+        )
+            .into_response(),
     }
 }
 
