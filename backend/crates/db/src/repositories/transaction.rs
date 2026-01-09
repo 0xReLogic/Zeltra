@@ -498,7 +498,7 @@ impl TransactionRepository {
 
     /// Deletes a draft transaction.
     ///
-    /// Requirements: 10.6, 10.7
+    /// Requirements: 10.6, 10.7, 4.2, 4.4
     ///
     /// # Errors
     ///
@@ -518,9 +518,12 @@ impl TransactionRepository {
             .await?
             .ok_or(TransactionError::NotFound(transaction_id))?;
 
-        // Check status (Requirement 10.7)
-        if transaction.status != TransactionStatus::Draft {
-            return Err(TransactionError::CanOnlyDeleteDraft);
+        // Check status (Requirements 4.2, 4.4, 10.7)
+        match transaction.status {
+            TransactionStatus::Draft => {} // OK to delete
+            TransactionStatus::Posted => return Err(TransactionError::CannotModifyPosted),
+            TransactionStatus::Voided => return Err(TransactionError::CannotModifyVoided),
+            _ => return Err(TransactionError::CanOnlyDeleteDraft),
         }
 
         // Delete transaction (cascade will delete entries and dimensions)

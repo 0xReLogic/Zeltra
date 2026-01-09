@@ -17,6 +17,13 @@ pub mod reversal;
 pub mod service;
 pub mod types;
 
+#[cfg(test)]
+mod approval_props;
+#[cfg(test)]
+mod reversal_props;
+#[cfg(test)]
+mod service_props;
+
 pub use approval::{ApprovalEngine, ApprovalRule, UserRole};
 pub use error::WorkflowError;
 pub use reversal::{OriginalEntry, ReversalInput, ReversalOutput, ReversalService};

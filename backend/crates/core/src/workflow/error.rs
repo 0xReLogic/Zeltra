@@ -30,8 +30,12 @@ pub enum WorkflowError {
     CannotModifyVoided,
 
     /// User is not authorized to approve the transaction.
+    #[error("User is not authorized to approve this transaction")]
+    NotAuthorizedToApprove,
+
+    /// User is not authorized to approve the transaction (with user_id).
     #[error("User {user_id} is not authorized to approve this transaction")]
-    NotAuthorizedToApprove {
+    NotAuthorizedToApproveUser {
         /// The user who attempted to approve.
         user_id: Uuid,
     },
@@ -91,7 +95,8 @@ impl WorkflowError {
             | Self::VoidReasonRequired
             | Self::RejectionReasonRequired => 400,
 
-            Self::NotAuthorizedToApprove { .. }
+            Self::NotAuthorizedToApprove
+            | Self::NotAuthorizedToApproveUser { .. }
             | Self::ExceedsApprovalLimit { .. }
             | Self::InsufficientRole { .. } => 403,
 
@@ -108,7 +113,9 @@ impl WorkflowError {
             Self::InvalidTransition { .. } => "INVALID_TRANSITION",
             Self::CannotModifyPosted => "CANNOT_MODIFY_POSTED",
             Self::CannotModifyVoided => "CANNOT_MODIFY_VOIDED",
-            Self::NotAuthorizedToApprove { .. } => "NOT_AUTHORIZED_TO_APPROVE",
+            Self::NotAuthorizedToApprove | Self::NotAuthorizedToApproveUser { .. } => {
+                "NOT_AUTHORIZED_TO_APPROVE"
+            }
             Self::ExceedsApprovalLimit { .. } => "EXCEEDS_APPROVAL_LIMIT",
             Self::NoApprovalRuleFound { .. } => "NO_APPROVAL_RULE_FOUND",
             Self::InsufficientRole { .. } => "INSUFFICIENT_ROLE",
@@ -152,7 +159,14 @@ mod tests {
 
     #[test]
     fn test_not_authorized_error() {
-        let err = WorkflowError::NotAuthorizedToApprove {
+        let err = WorkflowError::NotAuthorizedToApprove;
+        assert_eq!(err.status_code(), 403);
+        assert_eq!(err.error_code(), "NOT_AUTHORIZED_TO_APPROVE");
+    }
+
+    #[test]
+    fn test_not_authorized_user_error() {
+        let err = WorkflowError::NotAuthorizedToApproveUser {
             user_id: Uuid::nil(),
         };
         assert_eq!(err.status_code(), 403);

@@ -4870,6 +4870,7 @@ dependencies = [
  "tokio",
  "tracing",
  "uuid",
+ "zeltra-core",
  "zeltra-shared",
 ]
 

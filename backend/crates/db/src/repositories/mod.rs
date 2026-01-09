@@ -13,6 +13,7 @@ pub mod session;
 pub mod subscription;
 pub mod transaction;
 pub mod user;
+pub mod workflow;
 
 pub use account::{
     AccountError, AccountFilter, AccountRepository, AccountWithBalance, CreateAccountInput,
@@ -36,3 +37,6 @@ pub use transaction::{
     TransactionFilter, TransactionRepository, TransactionWithEntries,
 };
 pub use user::UserRepository;
+pub use workflow::{
+    BulkApproveItemResult, BulkApproveResult, PendingTransaction, VoidResult, WorkflowRepository,
+};
