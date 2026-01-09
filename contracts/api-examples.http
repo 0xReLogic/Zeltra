@@ -76,6 +76,49 @@ Content-Type: application/json
 
 @orgId = {{createOrg.response.body.id}}
 
+### Get Organization Detail
+GET {{baseUrl}}/organizations/{{orgId}}
+Authorization: Bearer {{accessToken}}
+
+### Update Organization
+PATCH {{baseUrl}}/organizations/{{orgId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Acme Corporation",
+  "timezone": "America/New_York"
+}
+
+### List Organization Users
+GET {{baseUrl}}/organizations/{{orgId}}/users
+Authorization: Bearer {{accessToken}}
+
+### Add User to Organization
+POST {{baseUrl}}/organizations/{{orgId}}/users
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "email": "newuser@example.com",
+  "role": "approver",
+  "approval_limit": "5000.00"
+}
+
+### Update User Role
+PATCH {{baseUrl}}/organizations/{{orgId}}/users/user-uuid
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "role": "admin",
+  "approval_limit": null
+}
+
+### Remove User from Organization
+DELETE {{baseUrl}}/organizations/{{orgId}}/users/user-uuid
+Authorization: Bearer {{accessToken}}
+
 ### ============ ACCOUNTS ============
 
 ### List Accounts
@@ -83,8 +126,58 @@ GET {{baseUrl}}/accounts
 Authorization: Bearer {{accessToken}}
 X-Organization-ID: {{orgId}}
 
-### List Expense Accounts
+### List Expense Accounts (filtered)
 GET {{baseUrl}}/accounts?type=expense&active=true
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+
+### Create Account
+# @name createAccount
+POST {{baseUrl}}/accounts
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+Content-Type: application/json
+
+{
+  "code": "1100",
+  "name": "Cash on Hand",
+  "account_type": "asset",
+  "account_subtype": "current_asset",
+  "currency": "USD",
+  "is_active": true,
+  "allow_direct_posting": true
+}
+
+@accountId = {{createAccount.response.body.id}}
+
+### Get Account Detail
+GET {{baseUrl}}/accounts/{{accountId}}
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+
+### Update Account
+PUT {{baseUrl}}/accounts/{{accountId}}
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+Content-Type: application/json
+
+{
+  "name": "Petty Cash",
+  "is_active": true
+}
+
+### Delete Account (Soft Delete)
+DELETE {{baseUrl}}/accounts/{{accountId}}
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+
+### Get Account Balance
+GET {{baseUrl}}/accounts/{{accountId}}/balance?as_of=2026-01-31
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+
+### Get Account Ledger
+GET {{baseUrl}}/accounts/{{accountId}}/ledger?from=2026-01-01&to=2026-01-31
 Authorization: Bearer {{accessToken}}
 X-Organization-ID: {{orgId}}
 
@@ -158,6 +251,24 @@ GET {{baseUrl}}/transactions/{{txnId}}
 Authorization: Bearer {{accessToken}}
 X-Organization-ID: {{orgId}}
 
+### Update Transaction (Draft only)
+PATCH {{baseUrl}}/transactions/{{txnId}}
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+Content-Type: application/json
+
+{
+  "description": "Updated description",
+  "transaction_date": "2026-01-16"
+}
+
+### Delete Transaction (Draft only)
+DELETE {{baseUrl}}/transactions/{{txnId}}
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+
+### ============ TRANSACTION WORKFLOW ============
+
 ### Submit for Approval
 POST {{baseUrl}}/organizations/{{orgId}}/transactions/{{txnId}}/submit
 Authorization: Bearer {{accessToken}}
@@ -168,7 +279,7 @@ Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
 {
-  "notes": "Approved - within budget"
+  "approval_notes": "Approved - within budget"
 }
 
 ### Post Transaction
@@ -252,6 +363,166 @@ Content-Type: application/json
 DELETE {{baseUrl}}/organizations/{{orgId}}/approval-rules/{{ruleId}}
 Authorization: Bearer {{accessToken}}
 
+### ============ FISCAL YEARS & PERIODS ============
+
+### List Fiscal Years
+GET {{baseUrl}}/fiscal-years
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+
+### Create Fiscal Year
+# @name createFiscalYear
+POST {{baseUrl}}/fiscal-years
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+Content-Type: application/json
+
+{
+  "name": "FY 2026",
+  "start_date": "2026-01-01",
+  "end_date": "2026-12-31"
+}
+
+@fiscalYearId = {{createFiscalYear.response.body.id}}
+
+### Update Fiscal Period Status
+PATCH {{baseUrl}}/fiscal-periods/period-uuid/status
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+Content-Type: application/json
+
+{
+  "status": "closed"
+}
+
+### ============ CURRENCIES & EXCHANGE RATES ============
+
+### List Currencies
+GET {{baseUrl}}/currencies
+Authorization: Bearer {{accessToken}}
+
+### Get Exchange Rate
+GET {{baseUrl}}/exchange-rates?from=EUR&to=USD&date=2026-01-15
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+
+### Create/Update Exchange Rate
+POST {{baseUrl}}/exchange-rates
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+Content-Type: application/json
+
+{
+  "from_currency": "EUR",
+  "to_currency": "USD",
+  "rate": "1.0850",
+  "effective_date": "2026-01-15"
+}
+
+### Bulk Import Exchange Rates
+POST {{baseUrl}}/exchange-rates/bulk
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+Content-Type: application/json
+
+{
+  "rates": [
+    { "from_currency": "EUR", "to_currency": "USD", "rate": "1.0850", "effective_date": "2026-01-15" },
+    { "from_currency": "GBP", "to_currency": "USD", "rate": "1.2650", "effective_date": "2026-01-15" },
+    { "from_currency": "JPY", "to_currency": "USD", "rate": "0.0067", "effective_date": "2026-01-15" }
+  ]
+}
+
+### ============ DIMENSIONS ============
+
+### List Dimension Types
+GET {{baseUrl}}/dimension-types
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+
+### Create Dimension Type
+# @name createDimType
+POST {{baseUrl}}/dimension-types
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+Content-Type: application/json
+
+{
+  "name": "Cost Center",
+  "code": "COST_CENTER",
+  "is_required": false
+}
+
+@dimTypeId = {{createDimType.response.body.id}}
+
+### List Dimension Values
+GET {{baseUrl}}/dimension-values?type_id={{dimTypeId}}
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+
+### Create Dimension Value
+POST {{baseUrl}}/dimension-values
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+Content-Type: application/json
+
+{
+  "dimension_type_id": "{{dimTypeId}}",
+  "code": "CC001",
+  "name": "Marketing",
+  "is_active": true
+}
+
+### ============ BUDGETS ============
+
+### List Budgets
+GET {{baseUrl}}/budgets
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+
+### Create Budget
+# @name createBudget
+POST {{baseUrl}}/budgets
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+Content-Type: application/json
+
+{
+  "name": "Q1 2026 Operating Budget",
+  "fiscal_year_id": "fiscal-year-uuid",
+  "budget_type": "operating"
+}
+
+@budgetId = {{createBudget.response.body.id}}
+
+### Get Budget Detail
+GET {{baseUrl}}/budgets/{{budgetId}}
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+
+### Add Budget Line
+POST {{baseUrl}}/budgets/{{budgetId}}/lines
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+Content-Type: application/json
+
+{
+  "account_id": "expense-account-uuid",
+  "fiscal_period_id": "period-uuid",
+  "amount": "50000.00",
+  "dimensions": ["department-uuid"]
+}
+
+### Lock Budget
+POST {{baseUrl}}/budgets/{{budgetId}}/lock
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+
+### Get Budget vs Actual
+GET {{baseUrl}}/budgets/{{budgetId}}/vs-actual
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+
 ### ============ REPORTS ============
 
 ### Trial Balance
@@ -269,10 +540,20 @@ GET {{baseUrl}}/reports/income-statement?from=2026-01-01&to=2026-01-31
 Authorization: Bearer {{accessToken}}
 X-Organization-ID: {{orgId}}
 
+### Dimensional Report
+GET {{baseUrl}}/reports/dimensional?dimension_type=DEPARTMENT&from=2026-01-01&to=2026-01-31
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+
 ### ============ DASHBOARD ============
 
 ### Dashboard Metrics
 GET {{baseUrl}}/dashboard/metrics?period_id=period-uuid
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+
+### Cash Flow Data
+GET {{baseUrl}}/dashboard/cash-flow?months=6
 Authorization: Bearer {{accessToken}}
 X-Organization-ID: {{orgId}}
 
@@ -286,7 +567,61 @@ GET {{baseUrl}}/dashboard/recent-activity?limit=20&type=transaction
 Authorization: Bearer {{accessToken}}
 X-Organization-ID: {{orgId}}
 
-### Recent Activity (Budget Only)
-GET {{baseUrl}}/dashboard/recent-activity?limit=10&type=budget
+### Budget vs Actual Dashboard
+GET {{baseUrl}}/dashboard/budget-vs-actual?period_id=period-uuid
 Authorization: Bearer {{accessToken}}
 X-Organization-ID: {{orgId}}
+
+### ============ ATTACHMENTS ============
+
+### Upload Attachment (Get Presigned URL)
+POST {{baseUrl}}/attachments/upload
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+Content-Type: application/json
+
+{
+  "filename": "receipt.pdf",
+  "content_type": "application/pdf",
+  "size": 102400
+}
+
+### Get Attachment
+GET {{baseUrl}}/attachments/attachment-uuid
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+
+### Delete Attachment
+DELETE {{baseUrl}}/attachments/attachment-uuid
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+
+### List Transaction Attachments
+GET {{baseUrl}}/transactions/{{txnId}}/attachments
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+
+### ============ SIMULATION ============
+
+### Run Simulation/Projection
+POST {{baseUrl}}/simulation/project
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+Content-Type: application/json
+
+{
+  "base_period_id": "period-uuid",
+  "projection_months": 12,
+  "adjustments": [
+    {
+      "account_id": "revenue-account-uuid",
+      "adjustment_type": "percentage",
+      "value": "10"
+    },
+    {
+      "account_id": "expense-account-uuid",
+      "adjustment_type": "fixed",
+      "value": "5000.00"
+    }
+  ]
+}
