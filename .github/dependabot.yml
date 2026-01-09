@@ -118,19 +118,3 @@ updates:
         update-types:
           - "minor"
           - "patch"
-
-  # ============================================================
-  # DOCKER - Base Images
-  # ============================================================
-  - package-ecosystem: "docker"
-    directory: "/backend/docker"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "06:00"
-      timezone: "Asia/Jakarta"
-    commit-message:
-      prefix: "chore(docker)"
-    labels:
-      - "dependencies"
-      - "docker"
