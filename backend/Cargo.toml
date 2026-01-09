@@ -15,7 +15,7 @@ rust-version = "1.92"
 [workspace.dependencies]
 # === Web Framework ===
 axum = { version = "0.8.8", features = ["macros", "ws", "multipart"] }
-axum-extra = { version = "0.10", features = ["typed-header", "cookie"] }
+axum-extra = { version = "0.12", features = ["typed-header", "cookie"] }
 tower = { version = "0.5", features = ["full"] }
 tower-http = { version = "0.6", features = [
     "fs", "cors", "compression-gzip", "trace", 
