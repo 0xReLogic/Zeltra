@@ -1,0 +1,284 @@
+name: Security Audit Report (GitHub Pages)
+
+on:
+  schedule:
+    # Run daily at 06:00 UTC
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/Cargo.lock'
+      - 'frontend/pnpm-lock.yaml'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build-report:
+    name: Build Audit Report
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: zeltra_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "1.92"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install cargo-audit
+        run: cargo install cargo-audit
+
+      - name: Install cargo-tarpaulin for coverage
+        run: cargo install cargo-tarpaulin
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Create report directory
+        run: mkdir -p _site
+
+      - name: Generate Cargo Audit Report
+        working-directory: backend
+        run: |
+          cargo audit --json > ../_site/cargo-audit.json 2>&1 || true
+          cargo audit > ../_site/cargo-audit.txt 2>&1 || true
+
+      - name: Generate Rust Test Coverage Report
+        working-directory: backend
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/zeltra_test
+        run: |
+          cargo tarpaulin --out Html --out Json --output-dir ../_site --skip-clean --timeout 300 2>&1 || true
+          mv ../_site/tarpaulin-report.html ../_site/coverage.html 2>/dev/null || true
+          mv ../_site/tarpaulin-report.json ../_site/coverage.json 2>/dev/null || true
+
+      - name: Generate NPM Audit Report
+        working-directory: frontend
+        run: |
+          pnpm audit --json > ../_site/npm-audit.json 2>&1 || true
+          pnpm audit > ../_site/npm-audit.txt 2>&1 || true
+
+      - name: Generate HTML Report
+        run: |
+          cat > _site/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Zeltra Security Audit Report</title>
+            <style>
+              :root {
+                --bg: #0d1117;
+                --card-bg: #161b22;
+                --border: #30363d;
+                --text: #c9d1d9;
+                --text-muted: #8b949e;
+                --accent: #58a6ff;
+                --success: #3fb950;
+                --warning: #d29922;
+                --danger: #f85149;
+              }
+              * { box-sizing: border-box; margin: 0; padding: 0; }
+              body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                background: var(--bg);
+                color: var(--text);
+                line-height: 1.6;
+                padding: 2rem;
+              }
+              .container { max-width: 1200px; margin: 0 auto; }
+              h1 { color: var(--accent); margin-bottom: 0.5rem; }
+              .subtitle { color: var(--text-muted); margin-bottom: 2rem; }
+              .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+              .card {
+                background: var(--card-bg);
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                padding: 1.5rem;
+              }
+              .card h2 { color: var(--accent); font-size: 1.25rem; margin-bottom: 1rem; }
+              .card a {
+                display: inline-block;
+                color: var(--accent);
+                text-decoration: none;
+                padding: 0.5rem 1rem;
+                border: 1px solid var(--accent);
+                border-radius: 4px;
+                margin-right: 0.5rem;
+                margin-bottom: 0.5rem;
+                transition: all 0.2s;
+              }
+              .card a:hover { background: var(--accent); color: var(--bg); }
+              pre {
+                background: var(--bg);
+                border: 1px solid var(--border);
+                border-radius: 4px;
+                padding: 1rem;
+                overflow-x: auto;
+                font-size: 0.875rem;
+                max-height: 400px;
+                overflow-y: auto;
+              }
+              .timestamp { color: var(--text-muted); font-size: 0.875rem; }
+              .badge {
+                display: inline-block;
+                padding: 0.25rem 0.5rem;
+                border-radius: 4px;
+                font-size: 0.75rem;
+                font-weight: 600;
+              }
+              .badge-success { background: var(--success); color: var(--bg); }
+              .badge-warning { background: var(--warning); color: var(--bg); }
+              .badge-danger { background: var(--danger); color: white; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <h1>Zeltra Security Audit Report</h1>
+              <p class="subtitle">Automated security scanning and test coverage</p>
+              <p class="timestamp">Last updated: <span id="timestamp"></span></p>
+              
+              <div class="grid">
+                <div class="card">
+                  <h2>Rust Backend (Cargo Audit)</h2>
+                  <p>Scans Cargo.lock for known vulnerabilities using RustSec Advisory Database.</p>
+                  <br>
+                  <a href="cargo-audit.txt" target="_blank">Text Report</a>
+                  <a href="cargo-audit.json" target="_blank">JSON Report</a>
+                </div>
+                
+                <div class="card">
+                  <h2>Frontend (NPM Audit)</h2>
+                  <p>Scans pnpm-lock.yaml for known vulnerabilities in npm packages.</p>
+                  <br>
+                  <a href="npm-audit.txt" target="_blank">Text Report</a>
+                  <a href="npm-audit.json" target="_blank">JSON Report</a>
+                </div>
+
+                <div class="card">
+                  <h2>Rust Test Coverage</h2>
+                  <p>Line coverage report from cargo-tarpaulin showing tested code.</p>
+                  <br>
+                  <a href="coverage.html" target="_blank">HTML Report</a>
+                  <a href="coverage.json" target="_blank">JSON Report</a>
+                </div>
+              </div>
+
+              <div class="card">
+                <h2>Quick Summary</h2>
+                <div id="cargo-summary">Loading Cargo audit...</div>
+                <br>
+                <div id="npm-summary">Loading NPM audit...</div>
+                <br>
+                <div id="coverage-summary">Loading coverage...</div>
+              </div>
+
+              <div class="card" style="margin-top: 1.5rem;">
+                <h2>Cargo Audit Output</h2>
+                <pre id="cargo-output">Loading...</pre>
+              </div>
+
+              <div class="card" style="margin-top: 1.5rem;">
+                <h2>NPM Audit Output</h2>
+                <pre id="npm-output">Loading...</pre>
+              </div>
+            </div>
+
+            <script>
+              document.getElementById('timestamp').textContent = new Date().toLocaleString();
+              
+              fetch('cargo-audit.txt')
+                .then(r => r.text())
+                .then(text => {
+                  document.getElementById('cargo-output').textContent = text || 'No vulnerabilities found!';
+                  const hasVuln = text.includes('Vulnerability') || text.includes('warning:');
+                  document.getElementById('cargo-summary').innerHTML = hasVuln 
+                    ? '<span class="badge badge-warning">Review Required</span> Check the report below'
+                    : '<span class="badge badge-success">No Issues</span> All clear!';
+                })
+                .catch(() => document.getElementById('cargo-output').textContent = 'Failed to load report');
+
+              fetch('npm-audit.txt')
+                .then(r => r.text())
+                .then(text => {
+                  document.getElementById('npm-output').textContent = text || 'No vulnerabilities found!';
+                  const hasVuln = text.includes('high') || text.includes('critical') || text.includes('moderate');
+                  document.getElementById('npm-summary').innerHTML = hasVuln 
+                    ? '<span class="badge badge-warning">Review Required</span> Check the report below'
+                    : '<span class="badge badge-success">No Issues</span> All clear!';
+                })
+                .catch(() => document.getElementById('npm-output').textContent = 'Failed to load report');
+
+              fetch('coverage.json')
+                .then(r => r.json())
+                .then(data => {
+                  const coverage = data.coverage_percentage || 0;
+                  const badgeClass = coverage >= 80 ? 'badge-success' : coverage >= 50 ? 'badge-warning' : 'badge-danger';
+                  document.getElementById('coverage-summary').innerHTML = 
+                    '<span class="badge ' + badgeClass + '">' + coverage.toFixed(1) + '% Coverage</span> ' +
+                    'Lines: ' + (data.covered_lines || 0) + '/' + (data.total_lines || 0);
+                })
+                .catch(() => document.getElementById('coverage-summary').textContent = 'Coverage report not available');
+            </script>
+          </body>
+          </html>
+          EOF
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '_site'
+
+  deploy:
+    name: Deploy to GitHub Pages
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build-report
+    
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

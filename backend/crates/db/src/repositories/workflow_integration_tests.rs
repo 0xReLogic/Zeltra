@@ -282,26 +282,6 @@ mod tests {
     // **Validates: Requirements 5.1, 5.2, 5.3, 5.4**
     // ========================================================================
 
-    /// Strategy for generating approval rules
-    fn approval_rule_strategy() -> impl Strategy<Value = ApprovalRule> {
-        (
-            user_id_strategy(),
-            non_empty_string_strategy(),
-            0i64..100_000i64,
-            100_000i64..1_000_000i64,
-            1i16..10i16,
-        )
-            .prop_map(|(id, name, min, max, priority)| ApprovalRule {
-                id,
-                name,
-                min_amount: Some(Decimal::new(min, 2)),
-                max_amount: Some(Decimal::new(max, 2)),
-                transaction_types: vec!["journal".to_string(), "expense".to_string()],
-                required_role: "approver".to_string(),
-                priority,
-            })
-    }
-
     proptest! {
         #![proptest_config(ProptestConfig::with_cases(100))]
 

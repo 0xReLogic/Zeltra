@@ -10,11 +10,6 @@ use uuid::Uuid;
 use crate::workflow::approval::{ApprovalEngine, ApprovalRule, UserRole};
 use crate::workflow::error::WorkflowError;
 
-/// Strategy for generating random UUIDs.
-fn arb_uuid() -> impl Strategy<Value = Uuid> {
-    any::<u128>().prop_map(Uuid::from_u128)
-}
-
 /// Strategy for generating random positive Decimal amounts.
 fn arb_amount() -> impl Strategy<Value = Decimal> {
     (1i64..1_000_000i64).prop_map(|n| Decimal::new(n, 2))
@@ -30,33 +25,6 @@ fn arb_user_role() -> impl Strategy<Value = UserRole> {
         Just(UserRole::Admin),
         Just(UserRole::Owner),
     ]
-}
-
-/// Strategy for generating approval rules with specific priority.
-fn arb_approval_rule(priority: i16) -> impl Strategy<Value = ApprovalRule> {
-    (
-        arb_uuid(),
-        "[a-zA-Z ]{1,20}",
-        prop::option::of(arb_amount()),
-        prop::option::of(arb_amount()),
-        arb_user_role(),
-    )
-        .prop_map(move |(id, name, min, max, role)| {
-            // Ensure min <= max if both are set
-            let (min_amount, max_amount) = match (min, max) {
-                (Some(a), Some(b)) if a > b => (Some(b), Some(a)),
-                other => other,
-            };
-            ApprovalRule {
-                id,
-                name,
-                min_amount,
-                max_amount,
-                transaction_types: vec!["expense".to_string()],
-                required_role: role.as_str().to_string(),
-                priority,
-            }
-        })
 }
 
 proptest! {

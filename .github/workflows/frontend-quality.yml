@@ -1,0 +1,260 @@
+name: Frontend Quality
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'frontend/**'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'frontend/**'
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  # ============================================================
+  # LIGHTHOUSE CI - Performance & Accessibility
+  # ============================================================
+  lighthouse:
+    name: Lighthouse CI
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Next.js
+        run: pnpm build
+
+      - name: Run Lighthouse CI
+        uses: treosh/lighthouse-ci-action@v12
+        with:
+          configPath: './frontend/lighthouserc.json'
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+
+  # ============================================================
+  # BUNDLE ANALYSIS - Track bundle size changes
+  # ============================================================
+  bundle-analysis:
+    name: Bundle Size Analysis
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build with bundle analyzer
+        run: ANALYZE=true pnpm build
+        continue-on-error: true
+
+      - name: Analyze bundle
+        run: |
+          echo "## Bundle Analysis" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -d ".next" ]; then
+            echo "### Build Output Size" >> $GITHUB_STEP_SUMMARY
+            du -sh .next/ >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Static Files" >> $GITHUB_STEP_SUMMARY
+            if [ -d ".next/static" ]; then
+              du -sh .next/static/*/ 2>/dev/null >> $GITHUB_STEP_SUMMARY || echo "No static chunks found" >> $GITHUB_STEP_SUMMARY
+            fi
+          fi
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nextjs-build
+          path: frontend/.next/
+          retention-days: 7
+
+  # ============================================================
+  # ACCESSIBILITY CHECK - axe-core
+  # ============================================================
+  accessibility:
+    name: Accessibility Check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Next.js
+        run: pnpm build
+
+      - name: Install Playwright
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Start server and run accessibility tests
+        run: |
+          pnpm start &
+          sleep 10
+          
+          # Create a11y test script
+          cat > a11y-test.mjs << 'EOF'
+          import { chromium } from 'playwright';
+          import AxeBuilder from '@axe-core/playwright';
+
+          const browser = await chromium.launch();
+          const page = await browser.newPage();
+          
+          const pages = ['/', '/login', '/dashboard'];
+          let hasViolations = false;
+          
+          console.log('Running accessibility tests...\n');
+          
+          for (const path of pages) {
+            try {
+              await page.goto(`http://localhost:3000${path}`, { timeout: 10000 });
+              const results = await new AxeBuilder({ page }).analyze();
+              
+              if (results.violations.length > 0) {
+                hasViolations = true;
+                console.log(`FAIL ${path}: ${results.violations.length} violations`);
+                results.violations.forEach(v => {
+                  console.log(`   - ${v.id}: ${v.description} (${v.impact})`);
+                });
+              } else {
+                console.log(`PASS ${path}: No violations`);
+              }
+            } catch (e) {
+              console.log(`SKIP ${path}: Skipped (page not found or error)`);
+            }
+          }
+          
+          await browser.close();
+          process.exit(hasViolations ? 1 : 0);
+          EOF
+          
+          node a11y-test.mjs || echo "Some accessibility issues found"
+        continue-on-error: true
+
+  # ============================================================
+  # TYPE COVERAGE - Check TypeScript coverage
+  # ============================================================
+  type-coverage:
+    name: TypeScript Coverage
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install type-coverage
+        run: pnpm add -D type-coverage
+
+      - name: Check type coverage
+        run: |
+          echo "## TypeScript Coverage" >> $GITHUB_STEP_SUMMARY
+          pnpm exec type-coverage --detail --strict >> $GITHUB_STEP_SUMMARY 2>&1 || true
+
+  # ============================================================
+  # UNUSED DEPENDENCIES - Check for unused deps
+  # ============================================================
+  depcheck:
+    name: Dependency Check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check for unused dependencies
+        run: |
+          pnpm add -D depcheck
+          echo "## Unused Dependencies Check" >> $GITHUB_STEP_SUMMARY
+          pnpm exec depcheck --ignores="@types/*,eslint*,prettier*,postcss*,tailwindcss,autoprefixer" >> $GITHUB_STEP_SUMMARY 2>&1 || true
