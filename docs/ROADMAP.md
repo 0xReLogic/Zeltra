@@ -365,6 +365,7 @@ tests/
 - [ ] `POST /transactions/:id/post` (approved → posted)
 - [ ] `POST /transactions/:id/void` (posted → voided)
 - [ ] `GET /transactions/pending` (approval queue)
+- [ ] `POST /transactions/bulk-approve` (approve multiple at once)
 - [ ] `POST /approval-rules` + `GET /approval-rules`
 
 ### Tests

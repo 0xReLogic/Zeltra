@@ -340,6 +340,17 @@ components:
         approved_by:
           $ref: '#/components/schemas/UserSummary'
           nullable: true
+        submitted_by:
+          $ref: '#/components/schemas/UserSummary'
+          nullable: true
+        submitted_at:
+          type: string
+          format: date-time
+          nullable: true
+        approved_at:
+          type: string
+          format: date-time
+          nullable: true
         posted_at:
           type: string
           format: date-time
@@ -639,6 +650,36 @@ components:
           type: number
           format: float
           description: Total cash outflow for the month
+
+    Attachment:
+      type: object
+      required: [id, filename, content_type, size, uploaded_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        transaction_id:
+          type: string
+          format: uuid
+        filename:
+          type: string
+        content_type:
+          type: string
+        size:
+          type: integer
+          description: File size in bytes
+        description:
+          type: string
+          nullable: true
+        url:
+          type: string
+          format: uri
+          description: Signed URL to download the file
+        uploaded_by:
+          $ref: '#/components/schemas/UserSummary'
+        uploaded_at:
+          type: string
+          format: date-time
 
     ActivityItem:
       type: object
@@ -1191,7 +1232,137 @@ paths:
       responses:
         '200':
           description: Voided
-          
+
+  /transactions/bulk-approve:
+    post:
+      tags: [Transactions]
+      summary: Bulk approve multiple transactions
+      description: Approve multiple pending transactions at once. User must have approver role with sufficient approval limit.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [transaction_ids]
+              properties:
+                transaction_ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                  minItems: 1
+                  maxItems: 50
+      responses:
+        '200':
+          description: Bulk approval result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  approved:
+                    type: array
+                    items:
+                      type: string
+                      format: uuid
+                  failed:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        reason:
+                          type: string
+
+  /transactions/{id}/attachments:
+    get:
+      tags: [Transactions]
+      summary: List transaction attachments
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of attachments
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Attachment'
+    post:
+      tags: [Transactions]
+      summary: Upload attachment to transaction
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                description:
+                  type: string
+      responses:
+        '201':
+          description: Attachment uploaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attachment'
+
+  /attachments/{id}:
+    get:
+      tags: [Transactions]
+      summary: Get attachment details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Attachment details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attachment'
+    delete:
+      tags: [Transactions]
+      summary: Delete attachment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Attachment deleted
+           
   # ============ Reports ============
   /reports/trial-balance:
     get:
