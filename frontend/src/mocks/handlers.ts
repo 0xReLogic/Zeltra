@@ -78,6 +78,18 @@ export const handlers = [
     return HttpResponse.json({ success: true })
   }),
 
+  http.post('/api/v1/auth/verify-email', async ({ request }) => {
+      const body = await request.json() as { token: string }
+      if (body.token === 'invalid_token') {
+          return HttpResponse.json({ error: { message: 'Invalid or expired token' } }, { status: 400 })
+      }
+      return HttpResponse.json({ message: 'Email verified successfully', verified: true })
+  }),
+
+  http.post('/api/v1/auth/resend-verification', () => {
+      return HttpResponse.json({ message: 'Verification email sent' })
+  }),
+
   // Accounts
   http.get('/api/v1/accounts', () => {
     return HttpResponse.json({

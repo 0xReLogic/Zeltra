@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query'
 import { apiClient } from '../api/client'
 import { useAuthStore } from '../stores/authStore'
-import { type LoginRequest, type RegisterRequest, type AuthResponse } from '@/types/auth'
+import { type LoginRequest, type RegisterRequest, type AuthResponse, type VerifyEmailRequest, type VerifyEmailResponse, type ResendVerificationRequest, type ResendVerificationResponse } from '@/types/auth'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 
@@ -63,5 +63,37 @@ export function useLogout() {
       logout()
       router.push('/login')
     }
+  })
+}
+
+export function useVerifyEmail() {
+  return useMutation({
+    mutationFn: (data: VerifyEmailRequest) =>
+      apiClient<VerifyEmailResponse>('/auth/verify-email', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    onSuccess: (data) => {
+      toast.success(data.message || 'Email verified successfully')
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Verification failed')
+    },
+  })
+}
+
+export function useResendVerification() {
+  return useMutation({
+    mutationFn: (data: ResendVerificationRequest) =>
+      apiClient<ResendVerificationResponse>('/auth/resend-verification', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    onSuccess: (data) => {
+      toast.success(data.message || 'Verification email sent')
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to resend verification email')
+    },
   })
 }

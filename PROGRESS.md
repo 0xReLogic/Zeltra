@@ -6,13 +6,13 @@ Live status untuk sync antara Backend & Frontend.
 
 ## Current State
 
-|                    | Backend                 | Frontend                                           |
-| ------------------ | ----------------------- | -------------------------------------------------- |
-| **Current Phase**  | 1                       | 1 (Done)                                           |
-| **Last Task Done** | Auth API implementation | Phase 7: Advanced UI Features (Charts, Budgets) ✅ |
-| **Next Task**      | Integration tests       | Phase 8: Final Polish & Simulation UI              |
+|                    | Backend                   | Frontend                                             |
+| ------------------ | ------------------------- | ---------------------------------------------------- |
+| **Current Phase**  | 1                         | 1 (Done)                                             |
+| **Last Task Done** | Email verification routes | Phase 6: Frontend Foundation (Email Verification) ✅ |
+| **Next Task**      | Integration tests         | Phase 8: Final Polish & Simulation UI                |
 
-**Last Updated:** 2026-01-08
+**Last Updated:** 2026-01-09
 
 ---
 

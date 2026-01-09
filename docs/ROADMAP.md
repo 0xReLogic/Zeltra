@@ -577,8 +577,8 @@ NOW we start frontend, because backend is solid.
 - [x] Forgot password
 - [x] Organization selector
 - [x] Logout (UI ready, mock API connected - needs real backend integration)
-- [ ] Email verification page (`/verify-email?token=xxx`)
-- [ ] Resend verification email UI (in register success / login blocked state)
+- [x] Email verification page (`/verify-email?token=xxx`)
+- [x] Resend verification email UI (in register success / login blocked state)
 
 ### Core Layout
 

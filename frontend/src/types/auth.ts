@@ -26,3 +26,20 @@ export interface AuthResponse {
   refresh_token: string
   expires_in: number
 }
+
+export interface VerifyEmailRequest {
+  token: string
+}
+
+export interface VerifyEmailResponse {
+  message: string
+  verified: boolean
+}
+
+export interface ResendVerificationRequest {
+  email: string
+}
+
+export interface ResendVerificationResponse {
+  message: string
+}

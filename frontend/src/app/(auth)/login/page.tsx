@@ -24,8 +24,23 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>
 
+
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import { useState } from 'react'
+import { useResendVerification } from '@/lib/queries/auth'
+
 export default function LoginPage() {
   const { mutate: login, isPending } = useLogin()
+  const resendVerification = useResendVerification()
+  const [resendEmail, setResendEmail] = useState('')
+  const [open, setOpen] = useState(false)
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -37,6 +52,19 @@ export default function LoginPage() {
 
   function onSubmit(data: LoginFormValues) {
     login(data)
+  }
+
+  function handleResend() {
+    if (!resendEmail) return
+    resendVerification.mutate(
+      { email: resendEmail },
+      {
+        onSuccess: () => {
+          setOpen(false)
+          setResendEmail('')
+        },
+      }
+    )
   }
 
   return (
@@ -87,13 +115,47 @@ export default function LoginPage() {
           </form>
         </Form>
       </CardContent>
-      <CardFooter className="justify-center">
+      <CardFooter className="flex flex-col gap-2 justify-center">
         <p className="text-sm text-muted-foreground">
           Don&apos;t have an account?{' '}
           <Link href="/register" className="font-medium text-primary hover:underline">
             Sign up
           </Link>
         </p>
+        
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button variant="link" className="text-xs text-muted-foreground font-normal h-auto p-0">
+              Didn&apos;t receive verification email?
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Resend Verification Email</DialogTitle>
+              <DialogDescription>
+                Enter your email address and we&apos;ll send you a new link.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              <div className="space-y-2">
+                <label htmlFor="resend-email" className="text-sm font-medium">Email</label>
+                <Input 
+                  id="resend-email"
+                  placeholder="name@example.com"
+                  value={resendEmail}
+                  onChange={(e) => setResendEmail(e.target.value)}
+                />
+              </div>
+              <Button 
+                onClick={handleResend} 
+                className="w-full"
+                disabled={resendVerification.isPending || !resendEmail}
+              >
+                {resendVerification.isPending ? 'Sending...' : 'Send Verification Email'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </CardFooter>
     </Card>
   )
