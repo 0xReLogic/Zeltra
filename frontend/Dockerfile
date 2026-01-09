@@ -4,7 +4,7 @@
 # ============================================================
 # Stage 1: Dependencies
 # ============================================================
-FROM node:22-alpine AS deps
+FROM node:25-alpine AS deps
 
 RUN corepack enable && corepack prepare pnpm@9 --activate
 
@@ -19,7 +19,7 @@ RUN pnpm install --frozen-lockfile
 # ============================================================
 # Stage 2: Build
 # ============================================================
-FROM node:22-alpine AS builder
+FROM node:25-alpine AS builder
 
 RUN corepack enable && corepack prepare pnpm@9 --activate
 
@@ -39,7 +39,7 @@ RUN pnpm build
 # ============================================================
 # Stage 3: Runtime
 # ============================================================
-FROM node:22-alpine AS runner
+FROM node:25-alpine AS runner
 
 WORKDIR /app
 
