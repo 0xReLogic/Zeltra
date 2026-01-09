@@ -392,6 +392,242 @@ proptest! {
     }
 }
 
+// =========================================================================
+// Property 12: Inactive Entity Rejection
+// Validates: Requirements 2.7, 5.6, 5.7, 7.1
+// =========================================================================
+
+proptest! {
+    #![proptest_config(ProptestConfig::with_cases(100))]
+
+    /// Property 12.1: Inactive accounts are rejected.
+    ///
+    /// *For any* transaction with entries referencing inactive accounts,
+    /// validation SHALL fail with AccountInactive error.
+    #[test]
+    fn prop_inactive_account_rejected(
+        amount in positive_amount(),
+    ) {
+        let entries = vec![
+            make_entry(EntryType::Debit, amount, "USD"),
+            make_entry(EntryType::Credit, amount, "USD"),
+        ];
+        let input = make_input(entries);
+
+        // Account validator that returns inactive account
+        let inactive_account_validator = |id: Uuid| -> Result<AccountInfo, LedgerError> {
+            Ok(AccountInfo {
+                id,
+                is_active: false,
+                allow_direct_posting: true,
+                currency: "USD".to_string(),
+            })
+        };
+
+        let rate_lookup = |_: &str, _: &str, _: NaiveDate| Some(Decimal::ONE);
+
+        let result = LedgerService::validate_and_resolve(
+            &input,
+            "USD",
+            rate_lookup,
+            inactive_account_validator,
+            ok_dimension_validator,
+        );
+
+        prop_assert!(
+            matches!(result, Err(LedgerError::AccountInactive(_))),
+            "Inactive account should be rejected"
+        );
+    }
+
+    /// Property 12.2: No-direct-posting accounts are rejected.
+    ///
+    /// *For any* transaction with entries referencing accounts that don't allow
+    /// direct posting, validation SHALL fail with AccountNoDirectPosting error.
+    #[test]
+    fn prop_no_direct_posting_rejected(
+        amount in positive_amount(),
+    ) {
+        let entries = vec![
+            make_entry(EntryType::Debit, amount, "USD"),
+            make_entry(EntryType::Credit, amount, "USD"),
+        ];
+        let input = make_input(entries);
+
+        // Account validator that returns account with no direct posting
+        let no_posting_validator = |id: Uuid| -> Result<AccountInfo, LedgerError> {
+            Ok(AccountInfo {
+                id,
+                is_active: true,
+                allow_direct_posting: false,
+                currency: "USD".to_string(),
+            })
+        };
+
+        let rate_lookup = |_: &str, _: &str, _: NaiveDate| Some(Decimal::ONE);
+
+        let result = LedgerService::validate_and_resolve(
+            &input,
+            "USD",
+            rate_lookup,
+            no_posting_validator,
+            ok_dimension_validator,
+        );
+
+        prop_assert!(
+            matches!(result, Err(LedgerError::AccountNoDirectPosting(_))),
+            "No-direct-posting account should be rejected"
+        );
+    }
+
+    /// Property 12.3: Invalid dimensions are rejected.
+    ///
+    /// *For any* transaction with entries referencing invalid dimension values,
+    /// validation SHALL fail with InvalidDimension error.
+    #[test]
+    fn prop_invalid_dimension_rejected(
+        amount in positive_amount(),
+    ) {
+        let mut entries = vec![
+            make_entry(EntryType::Debit, amount, "USD"),
+            make_entry(EntryType::Credit, amount, "USD"),
+        ];
+        // Add invalid dimension to first entry
+        entries[0].dimensions = vec![Uuid::new_v4()];
+        let input = make_input(entries);
+
+        // Dimension validator that rejects all dimensions
+        let invalid_dimension_validator = |dims: &[Uuid]| -> Result<(), LedgerError> {
+            if !dims.is_empty() {
+                Err(LedgerError::InvalidDimension(dims[0]))
+            } else {
+                Ok(())
+            }
+        };
+
+        let rate_lookup = |_: &str, _: &str, _: NaiveDate| Some(Decimal::ONE);
+
+        let result = LedgerService::validate_and_resolve(
+            &input,
+            "USD",
+            rate_lookup,
+            ok_account_validator,
+            invalid_dimension_validator,
+        );
+
+        prop_assert!(
+            matches!(result, Err(LedgerError::InvalidDimension(_))),
+            "Invalid dimension should be rejected"
+        );
+    }
+
+    /// Property 12.4: Active accounts with direct posting are accepted.
+    ///
+    /// *For any* transaction with entries referencing active accounts that allow
+    /// direct posting, validation SHALL succeed (assuming balance is correct).
+    #[test]
+    fn prop_active_direct_posting_accepted(
+        amount in positive_amount(),
+    ) {
+        let entries = vec![
+            make_entry(EntryType::Debit, amount, "USD"),
+            make_entry(EntryType::Credit, amount, "USD"),
+        ];
+        let input = make_input(entries);
+
+        // Account validator that returns active account with direct posting
+        let active_account_validator = |id: Uuid| -> Result<AccountInfo, LedgerError> {
+            Ok(AccountInfo {
+                id,
+                is_active: true,
+                allow_direct_posting: true,
+                currency: "USD".to_string(),
+            })
+        };
+
+        let rate_lookup = |_: &str, _: &str, _: NaiveDate| Some(Decimal::ONE);
+
+        let result = LedgerService::validate_and_resolve(
+            &input,
+            "USD",
+            rate_lookup,
+            active_account_validator,
+            ok_dimension_validator,
+        );
+
+        prop_assert!(result.is_ok(), "Active account with direct posting should be accepted");
+    }
+
+    /// Property 12.5: Valid dimensions are accepted.
+    ///
+    /// *For any* transaction with entries referencing valid dimension values,
+    /// validation SHALL succeed (assuming other validations pass).
+    #[test]
+    fn prop_valid_dimension_accepted(
+        amount in positive_amount(),
+    ) {
+        let mut entries = vec![
+            make_entry(EntryType::Debit, amount, "USD"),
+            make_entry(EntryType::Credit, amount, "USD"),
+        ];
+        // Add valid dimension to first entry
+        entries[0].dimensions = vec![Uuid::new_v4()];
+        let input = make_input(entries);
+
+        // Dimension validator that accepts all dimensions
+        let valid_dimension_validator = |_dims: &[Uuid]| -> Result<(), LedgerError> {
+            Ok(())
+        };
+
+        let rate_lookup = |_: &str, _: &str, _: NaiveDate| Some(Decimal::ONE);
+
+        let result = LedgerService::validate_and_resolve(
+            &input,
+            "USD",
+            rate_lookup,
+            ok_account_validator,
+            valid_dimension_validator,
+        );
+
+        prop_assert!(result.is_ok(), "Valid dimension should be accepted");
+    }
+
+    /// Property 12.6: Account not found is rejected.
+    ///
+    /// *For any* transaction with entries referencing non-existent accounts,
+    /// validation SHALL fail with AccountNotFound error.
+    #[test]
+    fn prop_account_not_found_rejected(
+        amount in positive_amount(),
+    ) {
+        let entries = vec![
+            make_entry(EntryType::Debit, amount, "USD"),
+            make_entry(EntryType::Credit, amount, "USD"),
+        ];
+        let input = make_input(entries);
+
+        // Account validator that returns not found
+        let not_found_validator = |id: Uuid| -> Result<AccountInfo, LedgerError> {
+            Err(LedgerError::AccountNotFound(id))
+        };
+
+        let rate_lookup = |_: &str, _: &str, _: NaiveDate| Some(Decimal::ONE);
+
+        let result = LedgerService::validate_and_resolve(
+            &input,
+            "USD",
+            rate_lookup,
+            not_found_validator,
+            ok_dimension_validator,
+        );
+
+        prop_assert!(
+            matches!(result, Err(LedgerError::AccountNotFound(_))),
+            "Non-existent account should be rejected"
+        );
+    }
+}
+
 #[cfg(test)]
 mod unit_tests {
     use super::*;
@@ -454,5 +690,207 @@ mod unit_tests {
         assert!(totals.is_balanced);
         assert_eq!(resolved[0].functional_amount, dec!(150));
         assert_eq!(resolved[0].exchange_rate, dec!(1.5));
+    }
+
+    // =========================================================================
+    // Property 12 Unit Tests: Inactive Entity Rejection
+    // Validates: Requirements 2.7, 5.6, 5.7, 7.1
+    // =========================================================================
+
+    /// Test: Inactive account is rejected with specific error.
+    #[test]
+    fn test_inactive_account_rejected() {
+        let entries = vec![
+            make_entry(EntryType::Debit, dec!(100), "USD"),
+            make_entry(EntryType::Credit, dec!(100), "USD"),
+        ];
+        let input = make_input(entries);
+
+        let inactive_validator = |id: Uuid| -> Result<AccountInfo, LedgerError> {
+            Ok(AccountInfo {
+                id,
+                is_active: false,
+                allow_direct_posting: true,
+                currency: "USD".to_string(),
+            })
+        };
+
+        let rate_lookup = |_: &str, _: &str, _: NaiveDate| Some(Decimal::ONE);
+
+        let result = LedgerService::validate_and_resolve(
+            &input,
+            "USD",
+            rate_lookup,
+            inactive_validator,
+            ok_dimension_validator,
+        );
+
+        assert!(matches!(result, Err(LedgerError::AccountInactive(_))));
+    }
+
+    /// Test: No-direct-posting account is rejected with specific error.
+    #[test]
+    fn test_no_direct_posting_rejected() {
+        let entries = vec![
+            make_entry(EntryType::Debit, dec!(100), "USD"),
+            make_entry(EntryType::Credit, dec!(100), "USD"),
+        ];
+        let input = make_input(entries);
+
+        let no_posting_validator = |id: Uuid| -> Result<AccountInfo, LedgerError> {
+            Ok(AccountInfo {
+                id,
+                is_active: true,
+                allow_direct_posting: false,
+                currency: "USD".to_string(),
+            })
+        };
+
+        let rate_lookup = |_: &str, _: &str, _: NaiveDate| Some(Decimal::ONE);
+
+        let result = LedgerService::validate_and_resolve(
+            &input,
+            "USD",
+            rate_lookup,
+            no_posting_validator,
+            ok_dimension_validator,
+        );
+
+        assert!(matches!(result, Err(LedgerError::AccountNoDirectPosting(_))));
+    }
+
+    /// Test: Invalid dimension is rejected with specific error.
+    #[test]
+    fn test_invalid_dimension_rejected() {
+        let invalid_dim_id = Uuid::new_v4();
+        let mut entries = vec![
+            make_entry(EntryType::Debit, dec!(100), "USD"),
+            make_entry(EntryType::Credit, dec!(100), "USD"),
+        ];
+        entries[0].dimensions = vec![invalid_dim_id];
+        let input = make_input(entries);
+
+        let invalid_dim_validator = |dims: &[Uuid]| -> Result<(), LedgerError> {
+            if !dims.is_empty() {
+                Err(LedgerError::InvalidDimension(dims[0]))
+            } else {
+                Ok(())
+            }
+        };
+
+        let rate_lookup = |_: &str, _: &str, _: NaiveDate| Some(Decimal::ONE);
+
+        let result = LedgerService::validate_and_resolve(
+            &input,
+            "USD",
+            rate_lookup,
+            ok_account_validator,
+            invalid_dim_validator,
+        );
+
+        assert!(matches!(result, Err(LedgerError::InvalidDimension(_))));
+    }
+
+    /// Test: Account not found is rejected with specific error.
+    #[test]
+    fn test_account_not_found_rejected() {
+        let entries = vec![
+            make_entry(EntryType::Debit, dec!(100), "USD"),
+            make_entry(EntryType::Credit, dec!(100), "USD"),
+        ];
+        let input = make_input(entries);
+
+        let not_found_validator = |id: Uuid| -> Result<AccountInfo, LedgerError> {
+            Err(LedgerError::AccountNotFound(id))
+        };
+
+        let rate_lookup = |_: &str, _: &str, _: NaiveDate| Some(Decimal::ONE);
+
+        let result = LedgerService::validate_and_resolve(
+            &input,
+            "USD",
+            rate_lookup,
+            not_found_validator,
+            ok_dimension_validator,
+        );
+
+        assert!(matches!(result, Err(LedgerError::AccountNotFound(_))));
+    }
+
+    /// Test: First inactive account in multi-entry transaction is caught.
+    #[test]
+    fn test_first_inactive_account_caught() {
+        let entries = vec![
+            make_entry(EntryType::Debit, dec!(50), "USD"),
+            make_entry(EntryType::Debit, dec!(50), "USD"),
+            make_entry(EntryType::Credit, dec!(100), "USD"),
+        ];
+        let input = make_input(entries);
+
+        let first_inactive_validator = |id: Uuid| -> Result<AccountInfo, LedgerError> {
+            // First account is inactive
+            static CALL_COUNT: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+            let count = CALL_COUNT.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            if count == 0 {
+                Ok(AccountInfo {
+                    id,
+                    is_active: false,
+                    allow_direct_posting: true,
+                    currency: "USD".to_string(),
+                })
+            } else {
+                Ok(AccountInfo {
+                    id,
+                    is_active: true,
+                    allow_direct_posting: true,
+                    currency: "USD".to_string(),
+                })
+            }
+        };
+
+        let rate_lookup = |_: &str, _: &str, _: NaiveDate| Some(Decimal::ONE);
+
+        let result = LedgerService::validate_and_resolve(
+            &input,
+            "USD",
+            rate_lookup,
+            first_inactive_validator,
+            ok_dimension_validator,
+        );
+
+        assert!(matches!(result, Err(LedgerError::AccountInactive(_))));
+    }
+
+    /// Test: Both inactive and no-direct-posting - inactive checked first.
+    #[test]
+    fn test_inactive_checked_before_direct_posting() {
+        let entries = vec![
+            make_entry(EntryType::Debit, dec!(100), "USD"),
+            make_entry(EntryType::Credit, dec!(100), "USD"),
+        ];
+        let input = make_input(entries);
+
+        // Account is both inactive AND doesn't allow direct posting
+        let both_invalid_validator = |id: Uuid| -> Result<AccountInfo, LedgerError> {
+            Ok(AccountInfo {
+                id,
+                is_active: false,
+                allow_direct_posting: false,
+                currency: "USD".to_string(),
+            })
+        };
+
+        let rate_lookup = |_: &str, _: &str, _: NaiveDate| Some(Decimal::ONE);
+
+        let result = LedgerService::validate_and_resolve(
+            &input,
+            "USD",
+            rate_lookup,
+            both_invalid_validator,
+            ok_dimension_validator,
+        );
+
+        // Should fail with AccountInactive (checked first)
+        assert!(matches!(result, Err(LedgerError::AccountInactive(_))));
     }
 }
