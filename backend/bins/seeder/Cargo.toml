@@ -6,6 +6,7 @@ edition.workspace = true
 license.workspace = true
 rust-version.workspace = true
 description = "Database seeder for Zeltra development and testing"
+publish = false
 
 [[bin]]
 name = "seeder"

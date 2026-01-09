@@ -45,37 +45,9 @@ allow = [
     "CDLA-Permissive-2.0",
 ]
 
-# Private workspace crates don't need licenses
-private = { ignore = true }
-
-# Exceptions for workspace crates (they don't have license fields)
-[[licenses.exceptions]]
-name = "zeltra-api"
-allow = ["LicenseRef-Proprietary"]
-
-[[licenses.exceptions]]
-name = "zeltra-core"
-allow = ["LicenseRef-Proprietary"]
-
-[[licenses.exceptions]]
-name = "zeltra-db"
-allow = ["LicenseRef-Proprietary"]
-
-[[licenses.exceptions]]
-name = "zeltra-shared"
-allow = ["LicenseRef-Proprietary"]
-
-[[licenses.exceptions]]
-name = "zeltra-server"
-allow = ["LicenseRef-Proprietary"]
-
-[[licenses.exceptions]]
-name = "zeltra-migrator"
-allow = ["LicenseRef-Proprietary"]
-
-[[licenses.exceptions]]
-name = "zeltra-seeder"
-allow = ["LicenseRef-Proprietary"]
+# Private workspace crates (publish = false) are automatically ignored
+[licenses.private]
+ignore = true
 
 [[licenses.clarify]]
 name = "ring"

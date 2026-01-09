@@ -4,6 +4,7 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 description = "Main server binary for Zeltra"
+publish = false
 
 [[bin]]
 name = "zeltra"
