@@ -76,6 +76,7 @@ allow = ["LicenseRef-Proprietary"]
 [[licenses.exceptions]]
 name = "zeltra-seeder"
 allow = ["LicenseRef-Proprietary"]
+
 confidence-threshold = 0.8
 
 [[licenses.clarify]]
