@@ -39,7 +39,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps
+        run: pnpm add -D -w @playwright/test && pnpm exec playwright install --with-deps
 
       - name: Build Next.js
         run: pnpm build

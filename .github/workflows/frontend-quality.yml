@@ -141,7 +141,7 @@ jobs:
         run: pnpm build
 
       - name: Install Playwright
-        run: pnpm add -D @playwright/test @axe-core/playwright && pnpm exec playwright install --with-deps chromium
+        run: pnpm add -D -w @playwright/test @axe-core/playwright && pnpm exec playwright install --with-deps chromium
 
       - name: Start server and run accessibility tests
         run: |
