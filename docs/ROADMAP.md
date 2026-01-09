@@ -217,76 +217,76 @@ This is the MOST CRITICAL phase. Take your time. Get it right.
 
 #### Master Data CRUD + API
 
-- [ ] Fiscal years and periods CRUD
-- [ ] Chart of accounts CRUD
-- [ ] Dimension types and values CRUD
-- [ ] Exchange rates CRUD (manual entry)
+- [x] Fiscal years and periods CRUD
+- [x] Chart of accounts CRUD
+- [x] Dimension types and values CRUD
+- [x] Exchange rates CRUD (manual entry)
 
 #### Master Data API Endpoints
 
-- [ ] `POST /fiscal-years` + `GET /fiscal-years`
-- [ ] `POST /fiscal-periods` + `GET /fiscal-periods`
-- [ ] `PATCH /fiscal-periods/:id/status` (OPEN/SOFT_CLOSE/CLOSED)
-- [ ] `POST /accounts` + `GET /accounts` (List)
-- [ ] `GET /accounts/:id` (Detail) + `PUT /accounts/:id` (Update) + `DELETE /accounts/:id` (Delete)
-- [ ] `POST /dimension-types` + `GET /dimension-types`
-- [ ] `POST /dimension-values` + `GET /dimension-values`
-- [ ] `POST /exchange-rates` + `GET /exchange-rates`
+- [x] `POST /fiscal-years` + `GET /fiscal-years`
+- [x] `POST /fiscal-periods` + `GET /fiscal-periods`
+- [x] `PATCH /fiscal-periods/:id/status` (OPEN/SOFT_CLOSE/CLOSED)
+- [x] `POST /accounts` + `GET /accounts` (List)
+- [x] `GET /accounts/:id` (Detail) + `PUT /accounts/:id` (Update) + `DELETE /accounts/:id` (Delete)
+- [x] `POST /dimension-types` + `GET /dimension-types`
+- [x] `POST /dimension-values` + `GET /dimension-values`
+- [x] `POST /exchange-rates` + `GET /exchange-rates`
 
 #### Transaction Creation
 
-- [ ] Create transaction with entries (single currency)
-- [ ] Validate debit = credit (in functional currency)
-- [ ] Validate minimum 2 entries
-- [ ] Validate no zero amounts
-- [ ] Validate account exists and is active
-- [ ] Validate account allows direct posting
+- [x] Create transaction with entries (single currency)
+- [x] Validate debit = credit (in functional currency)
+- [x] Validate minimum 2 entries
+- [x] Validate no zero amounts
+- [x] Validate account exists and is active
+- [x] Validate account allows direct posting
 
 #### Account Balance Tracking
 
-- [ ] Implement `account_version` increment
-- [ ] Implement `previous_balance` / `current_balance` tracking
-- [ ] Test concurrent transactions on same account (race condition)
-- [ ] Verify balance never drifts (write stress test)
+- [x] Implement `account_version` increment
+- [x] Implement `previous_balance` / `current_balance` tracking
+- [x] Test concurrent transactions on same account (race condition)
+- [x] Verify balance never drifts (write stress test)
 
 #### Database Trigger Verification
 
-- [ ] Test `check_transaction_balance` trigger
-- [ ] Test `update_account_balance` trigger
-- [ ] Test with DEFERRABLE constraint (multi-entry insert)
+- [x] Test `check_transaction_balance` trigger
+- [x] Test `update_account_balance` trigger
+- [x] Test with DEFERRABLE constraint (multi-entry insert)
 
 ### Week 7-8: Multi-Currency & Dimensions
 
 #### Multi-Currency
 
-- [ ] Exchange rate lookup function
-- [ ] Currency conversion (source → functional)
-- [ ] Store all 3 values (source_amount, exchange_rate, functional_amount)
-- [ ] Test conversion accuracy (no floating point errors)
-- [ ] Test missing exchange rate error handling
-- [ ] Implement rounding strategy (Banker's Rounding)
-- [ ] Handle rounding differences in split transactions
+- [x] Exchange rate lookup function
+- [x] Currency conversion (source → functional)
+- [x] Store all 3 values (source_amount, exchange_rate, functional_amount)
+- [x] Test conversion accuracy (no floating point errors)
+- [x] Test missing exchange rate error handling
+- [x] Implement rounding strategy (Banker's Rounding)
+- [x] Handle rounding differences in split transactions
 
 #### Dimensional Accounting
 
-- [ ] Validate dimension values exist
-- [ ] Link entries to dimensions
-- [ ] Test required dimension enforcement
+- [x] Validate dimension values exist
+- [x] Link entries to dimensions
+- [x] Test required dimension enforcement
 
 #### Fiscal Period Validation
 
-- [ ] Find fiscal period for transaction date
-- [ ] Validate period status (OPEN/SOFT_CLOSE/CLOSED)
-- [ ] Test posting to closed period (must fail)
-- [ ] Test soft-close with different user roles
+- [x] Find fiscal period for transaction date
+- [x] Validate period status (OPEN/SOFT_CLOSE/CLOSED)
+- [x] Test posting to closed period (must fail)
+- [x] Test soft-close with different user roles
 
 #### Transaction API Endpoints (Vertical Slice)
 
-- [ ] `POST /transactions` (create draft)
-- [ ] `GET /transactions` (list with filters)
-- [ ] `GET /transactions/:id` (detail with entries)
-- [ ] `PATCH /transactions/:id` (update draft only)
-- [ ] `DELETE /transactions/:id` (delete draft only)
+- [x] `POST /transactions` (create draft)
+- [x] `GET /transactions` (list with filters)
+- [x] `GET /transactions/:id` (detail with entries)
+- [x] `PATCH /transactions/:id` (update draft only)
+- [x] `DELETE /transactions/:id` (delete draft only)
 
 ### Ledger Tests (CRITICAL)
 
@@ -311,13 +311,13 @@ tests/
 
 **Exit Criteria:**
 
-- 150+ unit tests passing
-- Concurrent transaction stress test passing
-- Balance drift test passing (1000+ transactions)
-- Multi-currency conversion accurate to 4 decimal places
-- All fiscal period rules enforced
-- All API endpoints return correct responses
-- Postman/curl testing works
+- [x] 150+ unit tests passing (229 tests!)
+- [x] Concurrent transaction stress test passing
+- [x] Balance drift test passing (1000+ transactions)
+- [x] Multi-currency conversion accurate to 4 decimal places
+- [x] All fiscal period rules enforced
+- [x] All API endpoints return correct responses
+- [x] Postman/curl testing works
 
 ---
 
@@ -901,13 +901,13 @@ Spend extra time here if needed. Do NOT rush.
 
 Checklist before leaving Phase 2:
 
-- [ ] Balance NEVER drifts (stress tested)
-- [ ] Concurrent transactions handled correctly
-- [ ] Multi-currency conversion accurate
-- [ ] Rounding differences handled correctly
-- [ ] Fiscal period rules enforced
-- [ ] All API endpoints working
-- [ ] All edge cases covered with tests
+- [x] Balance NEVER drifts (stress tested)
+- [x] Concurrent transactions handled correctly
+- [x] Multi-currency conversion accurate
+- [x] Rounding differences handled correctly
+- [x] Fiscal period rules enforced
+- [x] All API endpoints working
+- [x] All edge cases covered with tests
 
 ### Test Coverage Requirements
 
