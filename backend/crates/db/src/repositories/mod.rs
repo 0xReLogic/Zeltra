@@ -6,6 +6,7 @@
 pub mod account;
 pub mod dimension;
 pub mod email_verification;
+pub mod exchange_rate;
 pub mod fiscal;
 pub mod organization;
 pub mod session;
@@ -21,6 +22,10 @@ pub use dimension::{
     DimensionTypeFilter, DimensionValueFilter, UpdateDimensionTypeInput, UpdateDimensionValueInput,
 };
 pub use email_verification::EmailVerificationRepository;
+pub use exchange_rate::{
+    CreateExchangeRateInput, ExchangeRateError, ExchangeRateLookup, ExchangeRateRepository,
+    RateLookupMethod,
+};
 pub use fiscal::{CreateFiscalYearInput, FiscalError, FiscalRepository, FiscalYearWithPeriods};
 pub use organization::OrganizationRepository;
 pub use session::SessionRepository;

@@ -27,6 +27,7 @@ tracing = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }
+rust_decimal_macros = "1"
 testcontainers = { workspace = true }
 testcontainers-modules = { workspace = true }
 
