@@ -136,7 +136,7 @@ jobs:
           echo '```' >> ../audit-reports/index.md
 
       - name: Upload audit report artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: cargo-audit-report
           path: audit-reports/
@@ -181,7 +181,7 @@ jobs:
           pnpm audit > ../audit-reports/npm-audit.txt 2>&1 || true
 
       - name: Upload audit report artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: npm-audit-report
           path: audit-reports/
