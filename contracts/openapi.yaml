@@ -274,6 +274,31 @@ components:
         - interest_expense
         - tax_expense
         - other_expense
+
+    CreateAccountRequest:
+      type: object
+      required: [code, name, account_type]
+      properties:
+        code:
+          type: string
+          example: "1101"
+        name:
+          type: string
+          example: "Petty Cash"
+        account_type:
+          $ref: '#/components/schemas/AccountType'
+        account_subtype:
+          $ref: '#/components/schemas/AccountSubtype'
+        parent_id:
+          type: string
+          format: uuid
+          nullable: true
+        is_active:
+          type: boolean
+          default: true
+        currency:
+          type: string
+          example: USD
         
     # ============ Transaction ============
     Transaction:
@@ -847,6 +872,85 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/Account'
+
+    post:
+      tags: [Accounts]
+      summary: Create new account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAccountRequest'
+      responses:
+        '201':
+          description: Account created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+
+  /accounts/{id}:
+    get:
+      tags: [Accounts]
+      summary: Get account detail
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Account detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+    put:
+      tags: [Accounts]
+      summary: Update account
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAccountRequest'
+      responses:
+        '200':
+          description: Account updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+    delete:
+      tags: [Accounts]
+      summary: Delete account
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Account deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
                       
   # ============ Transactions ============
   /transactions:

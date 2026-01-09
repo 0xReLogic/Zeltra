@@ -133,12 +133,14 @@ Frontend cek di sini untuk tau endpoint mana yang udah ready.
 
 ### Accounts
 
-| Endpoint                  | Status | Notes  |
-| ------------------------- | ------ | ------ |
-| GET /accounts             | ✅     | Mocked |
-| POST /accounts            | ✅     | Mocked |
-| GET /accounts/:id/balance | ✅     | Mocked |
-| GET /accounts/:id/ledger  | ✅     | Mocked |
+| Endpoint                 | Status | Notes               |
+| ------------------------ | ------ | ------------------- |
+| GET /accounts            | ✅     | Mocked              |
+| POST /accounts           | ✅     | Mocked (Spec Added) |
+| GET /accounts/:id        | ✅     | Mocked (Spec Added) |
+| PUT /accounts/:id        | ✅     | Mocked (Spec Added) |
+| DELETE /accounts/:id     | ✅     | Mocked (Spec Added) |
+| GET /accounts/:id/ledger | ✅     | Mocked              |
 
 ### Transactions
 

@@ -224,7 +224,8 @@ This is the MOST CRITICAL phase. Take your time. Get it right.
 - [ ] `POST /fiscal-years` + `GET /fiscal-years`
 - [ ] `POST /fiscal-periods` + `GET /fiscal-periods`
 - [ ] `PATCH /fiscal-periods/:id/status` (OPEN/SOFT_CLOSE/CLOSED)
-- [ ] `POST /accounts` + `GET /accounts` + `PATCH /accounts/:id`
+- [ ] `POST /accounts` + `GET /accounts` (List)
+- [ ] `GET /accounts/:id` (Detail) + `PUT /accounts/:id` (Update) + `DELETE /accounts/:id` (Delete)
 - [ ] `POST /dimension-types` + `GET /dimension-types`
 - [ ] `POST /dimension-values` + `GET /dimension-values`
 - [ ] `POST /exchange-rates` + `GET /exchange-rates`
@@ -621,8 +622,9 @@ NOW we start frontend, because backend is solid.
 - [x] Chart of Accounts management
   - [x] List accounts with hierarchy (parent_id)
   - [x] Account type/subtype display
-  - [ ] Create new account (`POST /accounts`)
-  - [ ] Edit account (`PATCH /accounts/:id`)
+  - [x] Create new account (`POST /accounts`)
+  - [x] Edit account (`PATCH /accounts/:id`)
+  - [x] Delete account (`DELETE /accounts/:id`)
   - [ ] Toggle account active status
 - [x] Fiscal period management
   - [x] List fiscal years with nested periods

@@ -103,6 +103,28 @@ export const handlers = [
     })
   }),
 
+  http.post('/api/v1/accounts', async ({ request }) => {
+    const body = await request.json() as Record<string, unknown>
+    return HttpResponse.json({
+        id: `acc_${Date.now()}`,
+        balance: '0.0000',
+        ...body
+    })
+  }),
+
+  http.put('/api/v1/accounts/:id', async ({ request, params }) => {
+    const body = await request.json() as Record<string, unknown>
+    return HttpResponse.json({
+        id: params.id,
+        balance: '0.0000', 
+        ...body
+    })
+  }),
+
+  http.delete('/api/v1/accounts/:id', () => {
+    return HttpResponse.json({ success: true })
+  }),
+
   // Account Ledger
   http.get('/api/v1/accounts/:id/ledger', () => {
     return HttpResponse.json({
