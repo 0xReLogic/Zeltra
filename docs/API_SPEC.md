@@ -31,18 +31,18 @@ Content-Type: application/json
 
 ### Common Error Codes
 
-| Code | HTTP Status | Description |
-|------|-------------|-------------|
-| `UNAUTHORIZED` | 401 | Invalid or expired token |
-| `FORBIDDEN` | 403 | Insufficient permissions |
-| `NOT_FOUND` | 404 | Resource not found |
-| `VALIDATION_ERROR` | 400 | Invalid request body |
-| `UNBALANCED_TRANSACTION` | 400 | Debit != Credit |
-| `PERIOD_CLOSED` | 400 | Fiscal period is closed |
-| `PERIOD_SOFT_CLOSED` | 400 | Only accountants can post |
-| `NO_EXCHANGE_RATE` | 400 | Missing exchange rate |
-| `INVALID_DIMENSION` | 400 | Dimension value not found |
-| `CONCURRENT_MODIFICATION` | 409 | Optimistic lock failure |
+| Code                      | HTTP Status | Description               |
+| ------------------------- | ----------- | ------------------------- |
+| `UNAUTHORIZED`            | 401         | Invalid or expired token  |
+| `FORBIDDEN`               | 403         | Insufficient permissions  |
+| `NOT_FOUND`               | 404         | Resource not found        |
+| `VALIDATION_ERROR`        | 400         | Invalid request body      |
+| `UNBALANCED_TRANSACTION`  | 400         | Debit != Credit           |
+| `PERIOD_CLOSED`           | 400         | Fiscal period is closed   |
+| `PERIOD_SOFT_CLOSED`      | 400         | Only accountants can post |
+| `NO_EXCHANGE_RATE`        | 400         | Missing exchange rate     |
+| `INVALID_DIMENSION`       | 400         | Dimension value not found |
+| `CONCURRENT_MODIFICATION` | 409         | Optimistic lock failure   |
 
 ---
 
@@ -549,6 +549,51 @@ Query: `?type=expense&active=true&currency=USD`
 }
 ```
 
+### GET /accounts/:id
+
+```json
+// Response 200
+{
+  "id": "uuid",
+  "code": "5100",
+  "name": "Marketing Expense",
+  "account_type": "expense",
+  "account_subtype": "operating_expense",
+  "currency": "USD",
+  "parent_id": null,
+  "is_active": true,
+  "allow_direct_posting": true,
+  "balance": "25000.0000"
+}
+```
+
+### PUT /accounts/:id
+
+```json
+// Request
+{
+  "name": "Marketing & Ads Expense",
+  "is_active": true
+}
+
+// Response 200
+{
+  "id": "uuid",
+  "code": "5100",
+  "name": "Marketing & Ads Expense",
+  "account_type": "expense"
+}
+```
+
+### DELETE /accounts/:id
+
+```json
+// Response 200
+{
+  "success": true
+}
+```
+
 ### GET /accounts/:id/balance
 
 Query: `?as_of=2026-01-31`
@@ -596,7 +641,6 @@ Query: `?from=2026-01-01&to=2026-01-31&page=1&limit=50`
   }
 }
 ```
-
 
 ---
 
@@ -1122,7 +1166,11 @@ Query: `?as_of=2026-01-31`
       "total": "200000.0000",
       "accounts": [
         { "code": "1100", "name": "Cash", "balance": "150000.0000" },
-        { "code": "1200", "name": "Accounts Receivable", "balance": "50000.0000" }
+        {
+          "code": "1200",
+          "name": "Accounts Receivable",
+          "balance": "50000.0000"
+        }
       ]
     },
     "fixed_assets": {
@@ -1335,12 +1383,22 @@ Query: `?period_id=uuid`
   "top_expenses_by_department": [
     { "department": "Engineering", "amount": "35000.0000", "percent": 46.67 },
     { "department": "Marketing", "amount": "25000.0000", "percent": 33.33 },
-    { "department": "Operations", "amount": "15000.0000", "percent": 20.00 }
+    { "department": "Operations", "amount": "15000.0000", "percent": 20.0 }
   ],
   "currency_exposure": [
     { "currency": "USD", "balance": "150000.0000", "percent": 85.0 },
-    { "currency": "EUR", "balance": "15000.0000", "functional_value": "16275.0000", "percent": 9.2 },
-    { "currency": "IDR", "balance": "150000000", "functional_value": "9464.0000", "percent": 5.8 }
+    {
+      "currency": "EUR",
+      "balance": "15000.0000",
+      "functional_value": "16275.0000",
+      "percent": 9.2
+    },
+    {
+      "currency": "IDR",
+      "balance": "150000000",
+      "functional_value": "9464.0000",
+      "percent": 5.8
+    }
   ],
   "cash_flow_chart": {
     "labels": ["Week 1", "Week 2", "Week 3", "Week 4"],
@@ -1470,6 +1528,7 @@ Returns recent activity log for the organization.
 ```
 
 Activity Types:
+
 - `transaction_created` - New transaction draft created
 - `transaction_submitted` - Transaction submitted for approval
 - `transaction_approved` - Transaction approved

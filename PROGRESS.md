@@ -6,11 +6,11 @@ Live status untuk sync antara Backend & Frontend.
 
 ## Current State
 
-|                    | Backend                   | Frontend                                             |
-| ------------------ | ------------------------- | ---------------------------------------------------- |
-| **Current Phase**  | 1                         | 1 (Done)                                             |
-| **Last Task Done** | Email verification routes | Phase 6: Frontend Foundation (Email Verification) ✅ |
-| **Next Task**      | Integration tests         | Phase 8: Final Polish & Simulation UI                |
+|                    | Backend                                                 | Frontend                                          |
+| ------------------ | ------------------------------------------------------- | ------------------------------------------------- |
+| **Current Phase**  | 1                                                       | 1 (Done)                                          |
+| **Last Task Done** | Phase 7 - Transaction Dimensions (Implemented & Mocked) | Phase 7 - Dashboard & Reports (Wire up mock data) |
+| **Next Task**      | Integration tests                                       | Phase 8: Final Polish & Simulation UI             |
 
 **Last Updated:** 2026-01-09
 

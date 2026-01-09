@@ -650,11 +650,11 @@ NOW we start frontend, because backend is solid.
   - [x] Filter by status (draft/pending/approved/posted/voided)
   - [x] Filter by date range
   - [x] Filter by transaction type
-  - [ ] Filter by dimension (department/project)
+  - [x] Filter by dimension (department/project)
 - [x] Transaction entry form
   - [x] Multi-line journal entry (debit/credit)
   - [x] Account selector
-  - [ ] Dimension assignment per entry (`entry_dimensions`)
+  - [x] Dimension assignment per entry (`entry_dimensions`)
   - [ ] Multi-currency support (source_currency, exchange_rate)
   - [ ] Attachment upload
 - [x] Approval queue
