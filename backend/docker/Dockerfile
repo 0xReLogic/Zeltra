@@ -46,7 +46,7 @@ RUN cargo build --release --bin server --bin migrator
 # ============================================================
 # Stage 2: Runtime
 # ============================================================
-FROM alpine:3.20 AS runtime
+FROM alpine:3.23 AS runtime
 
 # Install runtime dependencies
 RUN apk add --no-cache ca-certificates libgcc
