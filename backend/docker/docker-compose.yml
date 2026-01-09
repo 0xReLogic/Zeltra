@@ -1,6 +1,9 @@
 version: '3.8'
 
 services:
+  # ============================================================
+  # Database
+  # ============================================================
   postgres:
     image: postgres:16-alpine
     container_name: zeltra-postgres
@@ -17,6 +20,69 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - zeltra-network
+
+  # ============================================================
+  # Backend API
+  # ============================================================
+  backend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: zeltra-backend
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/zeltra_dev
+      RUST_LOG: info
+      SERVER_HOST: 0.0.0.0
+      SERVER_PORT: 8080
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - zeltra-network
+
+  # ============================================================
+  # Frontend
+  # ============================================================
+  frontend:
+    build:
+      context: ../../frontend
+      dockerfile: Dockerfile
+    container_name: zeltra-frontend
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8080
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - zeltra-network
+
+  # ============================================================
+  # Database Migrator (run once)
+  # ============================================================
+  migrator:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: zeltra-migrator
+    command: ["./migrator", "up"]
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/zeltra_dev
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - zeltra-network
+    profiles:
+      - migrate
+
+networks:
+  zeltra-network:
+    driver: bridge
 
 volumes:
   postgres_data:

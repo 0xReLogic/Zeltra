@@ -118,3 +118,38 @@ updates:
         update-types:
           - "minor"
           - "patch"
+
+
+  # ============================================================
+  # DOCKER - Backend Dockerfile
+  # ============================================================
+  - package-ecosystem: "docker"
+    directory: "/backend/docker"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Asia/Jakarta"
+    commit-message:
+      prefix: "chore(docker)"
+    labels:
+      - "dependencies"
+      - "docker"
+      - "backend"
+
+  # ============================================================
+  # DOCKER - Frontend Dockerfile
+  # ============================================================
+  - package-ecosystem: "docker"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Asia/Jakarta"
+    commit-message:
+      prefix: "chore(docker)"
+    labels:
+      - "dependencies"
+      - "docker"
+      - "frontend"
