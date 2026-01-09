@@ -331,42 +331,42 @@ tests/
 
 ### Status Transitions
 
-- [ ] Draft → Pending (submit)
-- [ ] Pending → Approved (approve)
-- [ ] Pending → Draft (reject, with reason)
-- [ ] Approved → Posted (post)
-- [ ] Posted → Voided (void, with reversing entry)
+- [x] Draft → Pending (submit)
+- [x] Pending → Approved (approve)
+- [x] Pending → Draft (reject, with reason)
+- [x] Approved → Posted (post)
+- [x] Posted → Voided (void, with reversing entry)
 
 ### Void with Reversing Entry
 
-- [ ] Create reversing transaction automatically
-- [ ] Link original ↔ reversing transaction
-- [ ] Verify balances after void
+- [x] Create reversing transaction automatically
+- [x] Link original ↔ reversing transaction
+- [x] Verify balances after void
 
 ### Approval Rules Engine
 
-- [ ] CRUD for approval rules
-- [ ] Match transaction to approval rules
-- [ ] Check amount thresholds
-- [ ] Check user role hierarchy
-- [ ] Check user approval limit
+- [x] CRUD for approval rules
+- [x] Match transaction to approval rules
+- [x] Check amount thresholds
+- [x] Check user role hierarchy
+- [x] Check user approval limit
 
 ### Immutability Enforcement
 
-- [ ] Test: Cannot UPDATE posted transaction
-- [ ] Test: Cannot DELETE posted transaction
-- [ ] Test: Cannot UPDATE voided transaction
+- [x] Test: Cannot UPDATE posted transaction
+- [x] Test: Cannot DELETE posted transaction
+- [x] Test: Cannot UPDATE voided transaction
 
 ### Workflow API Endpoints
 
-- [ ] `POST /transactions/:id/submit` (draft → pending)
-- [ ] `POST /transactions/:id/approve` (pending → approved)
-- [ ] `POST /transactions/:id/reject` (pending → draft)
-- [ ] `POST /transactions/:id/post` (approved → posted)
-- [ ] `POST /transactions/:id/void` (posted → voided)
-- [ ] `GET /transactions/pending` (approval queue)
-- [ ] `POST /transactions/bulk-approve` (approve multiple at once)
-- [ ] `POST /approval-rules` + `GET /approval-rules`
+- [x] `POST /transactions/:id/submit` (draft → pending)
+- [x] `POST /transactions/:id/approve` (pending → approved)
+- [x] `POST /transactions/:id/reject` (pending → draft)
+- [x] `POST /transactions/:id/post` (approved → posted)
+- [x] `POST /transactions/:id/void` (posted → voided)
+- [x] `GET /transactions/pending` (approval queue)
+- [x] `POST /transactions/bulk-approve` (approve multiple at once)
+- [x] `POST /approval-rules` + `GET /approval-rules`
 
 ### Tests
 
@@ -385,11 +385,11 @@ tests/
 
 **Exit Criteria:**
 
-- All status transitions work correctly
-- Void creates accurate reversing entry
-- Approval rules match correctly
-- Immutability cannot be bypassed
-- 50+ tests passing
+- [x] All status transitions work correctly
+- [x] Void creates accurate reversing entry
+- [x] Approval rules match correctly
+- [x] Immutability cannot be bypassed
+- [x] 50+ tests passing (515 tests!)
 
 ---
 
