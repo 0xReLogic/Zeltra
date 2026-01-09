@@ -1037,6 +1037,49 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Transaction'
+    patch:
+      tags: [Transactions]
+      summary: Update draft transaction
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTransactionRequest'
+      responses:
+        '200':
+          description: Transaction updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+    delete:
+      tags: [Transactions]
+      summary: Delete draft transaction
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Transaction deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
                 
   /transactions/{id}/submit:
     post:
@@ -1082,6 +1125,56 @@ paths:
       responses:
         '200':
           description: Posted
+
+  /transactions/{id}/reject:
+    post:
+      tags: [Transactions]
+      summary: Reject transaction
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Rejected
+
+  /transactions/{id}/void:
+    post:
+      tags: [Transactions]
+      summary: Void transaction
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Voided
           
   # ============ Reports ============
   /reports/trial-balance:
@@ -1159,3 +1252,776 @@ paths:
                         type: boolean
                       next_cursor:
                         type: string
+
+  # ============ Fiscal Periods ============
+  /fiscal-years:
+    get:
+      tags: [Fiscal]
+      summary: List fiscal years with periods
+      responses:
+        '200':
+          description: List of fiscal years
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FiscalYear'
+    post:
+      tags: [Fiscal]
+      summary: Create fiscal year with auto-generated periods
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, start_date, end_date]
+              properties:
+                name:
+                  type: string
+                  example: "FY 2026"
+                start_date:
+                  type: string
+                  format: date
+                end_date:
+                  type: string
+                  format: date
+                period_frequency:
+                  type: string
+                  enum: [monthly, quarterly]
+                  default: monthly
+      responses:
+        '201':
+          description: Fiscal year created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FiscalYear'
+
+  /fiscal-periods/{id}/status:
+    patch:
+      tags: [Fiscal]
+      summary: Update fiscal period status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [OPEN, SOFT_CLOSE, CLOSED]
+      responses:
+        '200':
+          description: Period status updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FiscalPeriod'
+
+  # ============ Currencies & Exchange Rates ============
+  /currencies:
+    get:
+      tags: [Currencies]
+      summary: List all currencies
+      responses:
+        '200':
+          description: List of currencies
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        code:
+                          type: string
+                          example: USD
+                        name:
+                          type: string
+                          example: US Dollar
+                        symbol:
+                          type: string
+                          example: $
+                        decimal_places:
+                          type: integer
+                          example: 2
+
+  /exchange-rates:
+    get:
+      tags: [Currencies]
+      summary: Get exchange rate for currency pair
+      parameters:
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: date
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Exchange rate
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  from_currency:
+                    type: string
+                  to_currency:
+                    type: string
+                  rate:
+                    type: string
+                  effective_date:
+                    type: string
+                    format: date
+    post:
+      tags: [Currencies]
+      summary: Create or update exchange rate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [from_currency, to_currency, rate, effective_date]
+              properties:
+                from_currency:
+                  type: string
+                to_currency:
+                  type: string
+                rate:
+                  type: number
+                effective_date:
+                  type: string
+                  format: date
+      responses:
+        '201':
+          description: Exchange rate created
+
+  /exchange-rates/bulk:
+    post:
+      tags: [Currencies]
+      summary: Bulk import exchange rates
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [rates]
+              properties:
+                rates:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      from:
+                        type: string
+                      to:
+                        type: string
+                      rate:
+                        type: number
+                      date:
+                        type: string
+                        format: date
+      responses:
+        '201':
+          description: Rates imported
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  imported:
+                    type: integer
+                  failed:
+                    type: integer
+
+  # ============ Dimensions ============
+  /dimension-types:
+    get:
+      tags: [Dimensions]
+      summary: List dimension types
+      responses:
+        '200':
+          description: List of dimension types
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DimensionType'
+    post:
+      tags: [Dimensions]
+      summary: Create dimension type
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code, name]
+              properties:
+                code:
+                  type: string
+                name:
+                  type: string
+                is_required:
+                  type: boolean
+                  default: false
+      responses:
+        '201':
+          description: Dimension type created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DimensionType'
+
+  /dimension-values:
+    get:
+      tags: [Dimensions]
+      summary: List dimension values
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+        - name: active
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: List of dimension values
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DimensionValue'
+    post:
+      tags: [Dimensions]
+      summary: Create dimension value
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [dimension_type_id, code, name]
+              properties:
+                dimension_type_id:
+                  type: string
+                  format: uuid
+                code:
+                  type: string
+                name:
+                  type: string
+                parent_id:
+                  type: string
+                  format: uuid
+      responses:
+        '201':
+          description: Dimension value created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DimensionValue'
+
+  # ============ Account Balance & Ledger ============
+  /accounts/{id}/balance:
+    get:
+      tags: [Accounts]
+      summary: Get account balance at date
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: as_of
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Account balance
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  account_id:
+                    type: string
+                    format: uuid
+                  account_code:
+                    type: string
+                  balance:
+                    $ref: '#/components/schemas/Money'
+                  currency:
+                    type: string
+                  as_of:
+                    type: string
+                    format: date-time
+
+  /accounts/{id}/ledger:
+    get:
+      tags: [Accounts]
+      summary: Get account ledger entries
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        '200':
+          description: Ledger entries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        transaction_id:
+                          type: string
+                          format: uuid
+                        transaction_date:
+                          type: string
+                          format: date
+                        description:
+                          type: string
+                        debit:
+                          $ref: '#/components/schemas/Money'
+                        credit:
+                          $ref: '#/components/schemas/Money'
+                        running_balance:
+                          $ref: '#/components/schemas/Money'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+  # ============ Organization Users ============
+  /organizations/{id}:
+    patch:
+      tags: [Organizations]
+      summary: Update organization settings
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                base_currency:
+                  type: string
+                timezone:
+                  type: string
+      responses:
+        '200':
+          description: Organization updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+
+  /organizations/{id}/users:
+    get:
+      tags: [Organizations]
+      summary: List organization users
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        user_id:
+                          type: string
+                          format: uuid
+                        email:
+                          type: string
+                        full_name:
+                          type: string
+                        role:
+                          $ref: '#/components/schemas/UserRole'
+                        approval_limit:
+                          $ref: '#/components/schemas/Money'
+    post:
+      tags: [Organizations]
+      summary: Invite user to organization
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, role]
+              properties:
+                email:
+                  type: string
+                  format: email
+                role:
+                  $ref: '#/components/schemas/UserRole'
+                approval_limit:
+                  type: number
+      responses:
+        '201':
+          description: User invited
+
+  /organizations/{orgId}/users/{userId}:
+    patch:
+      tags: [Organizations]
+      summary: Update user role
+      parameters:
+        - name: orgId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                role:
+                  $ref: '#/components/schemas/UserRole'
+                approval_limit:
+                  type: number
+      responses:
+        '200':
+          description: User updated
+    delete:
+      tags: [Organizations]
+      summary: Remove user from organization
+      parameters:
+        - name: orgId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User removed
+
+  # ============ Reports ============
+  /reports/balance-sheet:
+    get:
+      tags: [Reports]
+      summary: Balance sheet report
+      parameters:
+        - name: as_of
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Balance sheet
+
+  /reports/income-statement:
+    get:
+      tags: [Reports]
+      summary: Income statement (P&L) report
+      parameters:
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: dimension
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Income statement
+
+  /reports/dimensional:
+    get:
+      tags: [Reports]
+      summary: Dimensional report
+      parameters:
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: group_by
+          in: query
+          schema:
+            type: string
+            description: Comma-separated dimension types
+        - name: account_type
+          in: query
+          schema:
+            $ref: '#/components/schemas/AccountType'
+      responses:
+        '200':
+          description: Dimensional report
+
+  # ============ Budgets ============
+  /budgets:
+    get:
+      tags: [Budgets]
+      summary: List budgets
+      parameters:
+        - name: fiscal_year_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of budgets
+    post:
+      tags: [Budgets]
+      summary: Create budget
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, fiscal_year_id]
+              properties:
+                name:
+                  type: string
+                fiscal_year_id:
+                  type: string
+                  format: uuid
+                budget_type:
+                  type: string
+                  enum: [annual, quarterly, monthly]
+                currency:
+                  type: string
+      responses:
+        '201':
+          description: Budget created
+
+  /budgets/{id}:
+    get:
+      tags: [Budgets]
+      summary: Get budget detail
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Budget detail
+
+  /budgets/{id}/lines:
+    post:
+      tags: [Budgets]
+      summary: Add budget lines
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [lines]
+              properties:
+                lines:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      account_id:
+                        type: string
+                        format: uuid
+                      fiscal_period_id:
+                        type: string
+                        format: uuid
+                      amount:
+                        type: number
+                      dimensions:
+                        type: array
+                        items:
+                          type: string
+                          format: uuid
+      responses:
+        '201':
+          description: Budget lines added
+
+  /budgets/{id}/lock:
+    post:
+      tags: [Budgets]
+      summary: Lock budget
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Budget locked
+
+  /budgets/{id}/vs-actual:
+    get:
+      tags: [Budgets]
+      summary: Budget vs actual comparison
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: period_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: dimension
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Budget vs actual data
+
+  /dashboard/budget-vs-actual:
+    get:
+      tags: [Reports]
+      summary: Dashboard budget vs actual summary
+      parameters:
+        - name: period_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Budget vs actual summary for dashboard

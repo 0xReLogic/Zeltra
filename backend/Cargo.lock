@@ -4779,6 +4779,7 @@ dependencies = [
  "fake",
  "jsonwebtoken",
  "rstest",
+ "rust_decimal",
  "sea-orm",
  "serde",
  "serde_json",

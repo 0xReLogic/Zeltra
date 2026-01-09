@@ -161,8 +161,11 @@ No frontend work until Phase 6. Backend must be battle-tested first.
 - [x] `POST /auth/resend-verification`
 - [x] `POST /organizations`
 - [x] `GET /organizations/:id`
+- [ ] `PATCH /organizations/:id` (update settings: name, base_currency, timezone)
 - [x] `POST /organizations/:id/users`
 - [x] `GET /organizations/:id/users`
+- [ ] `PATCH /organizations/:id/users/:userId` (update role, approval_limit)
+- [ ] `DELETE /organizations/:id/users/:userId` (remove user)
 
 ### Tests
 
@@ -430,7 +433,10 @@ tests/
 ### Report & Simulation API Endpoints
 
 - [ ] `POST /budgets` + `GET /budgets`
+- [ ] `GET /budgets/:id` (budget detail)
 - [ ] `POST /budgets/:id/lines` + `GET /budgets/:id/lines`
+- [ ] `POST /budgets/:id/lock` (lock budget)
+- [ ] `GET /budgets/:id/vs-actual` (budget vs actual comparison)
 - [ ] `GET /reports/trial-balance`
 - [ ] `GET /reports/balance-sheet`
 - [ ] `GET /reports/income-statement`
@@ -506,6 +512,7 @@ tests/
 - [ ] Config: pilih source (mock/frankfurter/manual)
 - [ ] Fallback ke last known rate kalau API down
 - [ ] API endpoint: `POST /exchange-rates/fetch` (manual trigger)
+- [ ] API endpoint: `POST /exchange-rates/bulk` (bulk import rates)
 
 ### Dashboard Analytics
 
@@ -522,6 +529,9 @@ tests/
   - Budget events (created, updated, locked)
   - User events (invited, role changed)
   - Pagination with cursor
+- [ ] Budget Summary API: `GET /api/v1/dashboard/budget-vs-actual`
+  - Summary for dashboard widget
+  - Period-based comparison
 - [ ] Frontend Integration: Replace mock data with real-time API responses
 
 ### API Polish

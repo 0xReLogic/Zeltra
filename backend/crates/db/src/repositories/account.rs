@@ -2,16 +2,17 @@
 //!
 //! Implements Requirements 2.1-2.7 for chart of accounts management.
 
+use chrono::NaiveDate;
 use rust_decimal::Decimal;
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DatabaseConnection, DbErr, EntityTrait, PaginatorTrait,
-    QueryFilter, QueryOrder, Set,
+    ActiveModelTrait, ColumnTrait, DatabaseConnection, DbErr, EntityTrait, JoinType,
+    PaginatorTrait, QueryFilter, QueryOrder, QuerySelect, RelationTrait, Set,
 };
 use uuid::Uuid;
 
 use crate::entities::{
-    chart_of_accounts, currencies, ledger_entries,
-    sea_orm_active_enums::{AccountSubtype, AccountType},
+    chart_of_accounts, currencies, ledger_entries, transactions,
+    sea_orm_active_enums::{AccountSubtype, AccountType, TransactionStatus},
 };
 
 /// Error types for account operations.
@@ -57,6 +58,36 @@ pub struct AccountWithBalance {
     pub account: chart_of_accounts::Model,
     /// Current balance (from latest ledger entry, or zero if no entries).
     pub balance: Decimal,
+}
+
+/// Ledger entry with transaction details for ledger listing.
+#[derive(Debug, Clone)]
+pub struct LedgerEntryWithTransaction {
+    /// The ledger entry.
+    pub entry: ledger_entries::Model,
+    /// Transaction date.
+    pub transaction_date: NaiveDate,
+    /// Transaction reference number.
+    pub reference_number: Option<String>,
+    /// Transaction description.
+    pub description: String,
+    /// Transaction status.
+    pub status: TransactionStatus,
+}
+
+/// Paginated result for ledger entries.
+#[derive(Debug, Clone)]
+pub struct PaginatedLedgerEntries {
+    /// The ledger entries.
+    pub entries: Vec<LedgerEntryWithTransaction>,
+    /// Total count of entries.
+    pub total: u64,
+    /// Current page (1-indexed).
+    pub page: u64,
+    /// Page size.
+    pub limit: u64,
+    /// Total pages.
+    pub total_pages: u64,
 }
 
 /// Input for creating an account.
@@ -448,6 +479,185 @@ impl AccountRepository {
             .await?;
 
         Ok(count)
+    }
+
+    /// Gets the balance for an account at a specific date.
+    ///
+    /// Returns the `account_current_balance` from the most recent ledger entry
+    /// on or before the given date, or zero if no entries exist before that date.
+    ///
+    /// # Arguments
+    /// * `account_id` - The account ID
+    /// * `as_of` - The date to get the balance as of (inclusive)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the database query fails.
+    pub async fn get_balance_at_date(
+        &self,
+        account_id: Uuid,
+        as_of: NaiveDate,
+    ) -> Result<Decimal, AccountError> {
+        // Join with transactions to filter by transaction_date
+        let latest_entry = ledger_entries::Entity::find()
+            .filter(ledger_entries::Column::AccountId.eq(account_id))
+            .join(
+                JoinType::InnerJoin,
+                ledger_entries::Relation::Transactions.def(),
+            )
+            .filter(transactions::Column::TransactionDate.lte(as_of))
+            .filter(transactions::Column::Status.eq(TransactionStatus::Posted))
+            .order_by_desc(transactions::Column::TransactionDate)
+            .order_by_desc(ledger_entries::Column::AccountVersion)
+            .one(&self.db)
+            .await?;
+
+        Ok(latest_entry
+            .map(|e| e.account_current_balance)
+            .unwrap_or(Decimal::ZERO))
+    }
+
+    /// Gets ledger entries for an account with pagination.
+    ///
+    /// Returns ledger entries with transaction details, filtered by date range.
+    ///
+    /// # Arguments
+    /// * `account_id` - The account ID
+    /// * `from` - Optional start date (inclusive)
+    /// * `to` - Optional end date (inclusive)
+    /// * `page` - Page number (1-indexed)
+    /// * `limit` - Number of entries per page
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the database query fails.
+    pub async fn get_ledger_entries(
+        &self,
+        account_id: Uuid,
+        from: Option<NaiveDate>,
+        to: Option<NaiveDate>,
+        page: u64,
+        limit: u64,
+    ) -> Result<PaginatedLedgerEntries, AccountError> {
+        use sea_orm::FromQueryResult;
+
+        // Build base query
+        let mut query = ledger_entries::Entity::find()
+            .filter(ledger_entries::Column::AccountId.eq(account_id))
+            .join(
+                JoinType::InnerJoin,
+                ledger_entries::Relation::Transactions.def(),
+            );
+
+        // Apply date filters
+        if let Some(from_date) = from {
+            query = query.filter(transactions::Column::TransactionDate.gte(from_date));
+        }
+        if let Some(to_date) = to {
+            query = query.filter(transactions::Column::TransactionDate.lte(to_date));
+        }
+
+        // Get total count first
+        let total = query.clone().count(&self.db).await?;
+
+        // Calculate pagination
+        let total_pages = if total == 0 {
+            1
+        } else {
+            (total + limit - 1) / limit
+        };
+        let offset = (page.saturating_sub(1)) * limit;
+
+        // Select specific columns including transaction fields
+        #[derive(Debug, FromQueryResult)]
+        struct LedgerEntryRow {
+            // Ledger entry fields
+            id: Uuid,
+            transaction_id: Uuid,
+            account_id: Uuid,
+            source_currency: String,
+            source_amount: Decimal,
+            exchange_rate: Decimal,
+            functional_currency: String,
+            functional_amount: Decimal,
+            debit: Decimal,
+            credit: Decimal,
+            account_version: i64,
+            account_previous_balance: Decimal,
+            account_current_balance: Decimal,
+            memo: Option<String>,
+            event_at: chrono::DateTime<chrono::FixedOffset>,
+            created_at: chrono::DateTime<chrono::FixedOffset>,
+            // Transaction fields (aliased)
+            txn_date: NaiveDate,
+            txn_ref: Option<String>,
+            txn_desc: String,
+            txn_status: TransactionStatus,
+        }
+
+        let mut query = ledger_entries::Entity::find()
+            .filter(ledger_entries::Column::AccountId.eq(account_id))
+            .join(
+                JoinType::InnerJoin,
+                ledger_entries::Relation::Transactions.def(),
+            )
+            .column_as(transactions::Column::TransactionDate, "txn_date")
+            .column_as(transactions::Column::ReferenceNumber, "txn_ref")
+            .column_as(transactions::Column::Description, "txn_desc")
+            .column_as(transactions::Column::Status, "txn_status");
+
+        if let Some(from_date) = from {
+            query = query.filter(transactions::Column::TransactionDate.gte(from_date));
+        }
+        if let Some(to_date) = to {
+            query = query.filter(transactions::Column::TransactionDate.lte(to_date));
+        }
+
+        let rows: Vec<LedgerEntryRow> = query
+            .order_by_desc(transactions::Column::TransactionDate)
+            .order_by_desc(ledger_entries::Column::AccountVersion)
+            .offset(offset)
+            .limit(limit)
+            .into_model::<LedgerEntryRow>()
+            .all(&self.db)
+            .await?;
+
+        // Convert to result type
+        let entries = rows
+            .into_iter()
+            .map(|row| LedgerEntryWithTransaction {
+                entry: ledger_entries::Model {
+                    id: row.id,
+                    transaction_id: row.transaction_id,
+                    account_id: row.account_id,
+                    source_currency: row.source_currency,
+                    source_amount: row.source_amount,
+                    exchange_rate: row.exchange_rate,
+                    functional_currency: row.functional_currency,
+                    functional_amount: row.functional_amount,
+                    debit: row.debit,
+                    credit: row.credit,
+                    account_version: row.account_version,
+                    account_previous_balance: row.account_previous_balance,
+                    account_current_balance: row.account_current_balance,
+                    memo: row.memo,
+                    event_at: row.event_at,
+                    created_at: row.created_at,
+                },
+                transaction_date: row.txn_date,
+                reference_number: row.txn_ref,
+                description: row.txn_desc,
+                status: row.txn_status,
+            })
+            .collect();
+
+        Ok(PaginatedLedgerEntries {
+            entries,
+            total,
+            page,
+            limit,
+            total_pages,
+        })
     }
 }
 
