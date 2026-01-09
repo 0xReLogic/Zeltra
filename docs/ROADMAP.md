@@ -667,17 +667,17 @@ NOW we start frontend, because backend is solid.
   - [x] Multi-line journal entry (debit/credit)
   - [x] Account selector
   - [x] Dimension assignment per entry (`entry_dimensions`)
-  - [ ] Multi-currency support (source_currency, exchange_rate)
-  - [ ] Attachment upload
+  - [ ] Multi-currency support (source_currency, exchange_rate) (API Spec Ready)
+  - [ ] Attachment upload (API Spec Ready)
 - [x] Approval queue
   - [x] List pending transactions
   - [x] Approve/Reject actions
-  - [ ] Bulk approve
+  - [ ] Bulk approve (API Spec Ready)
 - [x] Transaction detail
   - [x] View entries with debit/credit
-  - [ ] View dimension assignments
-  - [ ] View attachments
-  - [ ] Audit trail (submitted_by, approved_by, posted_by timestamps)
+  - [x] View dimension assignments
+  - [ ] View attachments (API Spec Ready)
+  - [ ] Audit trail (submitted_by, approved_by, posted_by timestamps) (API Spec Ready)
 
 ### Dashboard
 
@@ -742,7 +742,7 @@ NOW we start frontend, because backend is solid.
   - [x] Assign dimensions to budget lines (`budget_line_dimensions`)
   - [x] Lock/unlock budget
   - [x] Mock: `POST /budgets`, `POST /budgets/:id/lines`
-- [ ] Simulation/Forecasting UI (Phase 4 backend dependency)
+- [ ] Simulation/Forecasting UI (Phase 4 backend dependency) (API Spec Ready)
   - [ ] Historical data selection
   - [ ] Adjustment parameters
   - [ ] Projection results

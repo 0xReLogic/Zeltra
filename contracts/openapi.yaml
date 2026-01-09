@@ -2242,3 +2242,22 @@ paths:
       responses:
         '200':
           description: Budget vs actual summary for dashboard
+
+  /simulation/project:
+    post:
+      tags: [Simulation]
+      summary: Run budget simulation
+      description: Generate financial projections based on historical data and adjustments.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SimulationRequest'
+      responses:
+        '200':
+          description: Simulation results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimulationResult'
