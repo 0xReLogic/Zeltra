@@ -67,6 +67,28 @@ jobs:
       - name: Install cargo-tarpaulin for coverage
         run: cargo install cargo-tarpaulin
 
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Build migrator and run migrations
+        working-directory: backend
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/zeltra_test
+        run: |
+          cargo build -p zeltra-migrator
+          ./target/debug/migrator up
+
+      - name: Setup app user for RLS tests
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d zeltra_test -c "CREATE USER zeltra_app WITH PASSWORD 'zeltra_app_password';"
+          psql -h localhost -U postgres -d zeltra_test -c "GRANT CONNECT ON DATABASE zeltra_test TO zeltra_app;"
+          psql -h localhost -U postgres -d zeltra_test -c "GRANT USAGE ON SCHEMA public TO zeltra_app;"
+          psql -h localhost -U postgres -d zeltra_test -c "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO zeltra_app;"
+          psql -h localhost -U postgres -d zeltra_test -c "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO zeltra_app;"
+          psql -h localhost -U postgres -d zeltra_test -c "GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO zeltra_app;"
+
       - name: Install frontend dependencies
         working-directory: frontend
         run: pnpm install --frozen-lockfile
@@ -84,6 +106,7 @@ jobs:
         working-directory: backend
         env:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/zeltra_test
+          APP_DATABASE_URL: postgres://zeltra_app:zeltra_app_password@localhost:5432/zeltra_test
         run: |
           cargo tarpaulin --out Html --out Json --output-dir ../_site --skip-clean --timeout 300 2>&1 || true
           mv ../_site/tarpaulin-report.html ../_site/coverage.html 2>/dev/null || true
