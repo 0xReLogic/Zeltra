@@ -12,6 +12,7 @@ pub mod exchange_rates;
 pub mod fiscal;
 pub mod health;
 pub mod organizations;
+pub mod transactions;
 
 /// Creates the API router with all routes.
 pub fn api_routes() -> Router<AppState> {
@@ -30,6 +31,7 @@ pub fn api_routes_with_state(state: AppState) -> Router<AppState> {
             .merge(dimensions::routes())
             .merge(exchange_rates::routes())
             .merge(currencies::routes())
+            .merge(transactions::routes())
             .layer(middleware::from_fn_with_state(
                 state.clone(),
                 auth_middleware,
