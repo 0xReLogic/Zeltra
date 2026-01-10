@@ -9,6 +9,9 @@ pub mod types;
 #[cfg(test)]
 mod tests;
 
+#[cfg(test)]
+mod benchmark;
+
 pub use cache::SimulationCache;
 pub use engine::SimulationEngine;
 pub use error::SimulationError;

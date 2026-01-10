@@ -8,6 +8,7 @@ use sea_orm::{ActiveModelTrait, Database, DatabaseConnection, EntityTrait, Set};
 use uuid::Uuid;
 use zeltra_db::{
     entities::organizations,
+    entities::sea_orm_active_enums::SubscriptionTier,
     repositories::{Feature, ResourceLimit, SubscriptionRepository},
 };
 
@@ -28,6 +29,22 @@ async fn create_test_org(db: &DatabaseConnection) -> Uuid {
         slug: Set(format!("test-org-{org_id}")),
         base_currency: Set("USD".to_string()),
         timezone: Set("UTC".to_string()),
+        ..Default::default()
+    };
+    org.insert(db).await.expect("Failed to create test org");
+    org_id
+}
+
+/// Create a test organization with specific tier.
+async fn create_test_org_with_tier(db: &DatabaseConnection, tier: SubscriptionTier) -> Uuid {
+    let org_id = Uuid::new_v4();
+    let org = organizations::ActiveModel {
+        id: Set(org_id),
+        name: Set(format!("Test Org {org_id}")),
+        slug: Set(format!("test-org-{org_id}")),
+        base_currency: Set("USD".to_string()),
+        timezone: Set("UTC".to_string()),
+        subscription_tier: Set(tier),
         ..Default::default()
     };
     org.insert(db).await.expect("Failed to create test org");
@@ -57,6 +74,18 @@ async fn test_get_tier_limits() {
     assert_eq!(starter.max_users, Some(50));
     assert!(!starter.has_multi_currency);
     assert!(!starter.has_simulation);
+
+    // Test growth tier
+    let growth = SubscriptionRepository::get_tier_limits(&db, SubscriptionTier::Growth)
+        .await
+        .expect("Failed to get growth limits");
+
+    assert!(growth.is_some());
+    let growth = growth.unwrap();
+    assert_eq!(growth.max_users, Some(200));
+    assert!(growth.has_multi_currency);
+    assert!(!growth.has_simulation);
+    assert!(growth.has_api_access);
 
     // Test enterprise tier
     let enterprise = SubscriptionRepository::get_tier_limits(&db, SubscriptionTier::Enterprise)
@@ -97,6 +126,40 @@ async fn test_has_feature_starter_tier() {
         .await
         .expect("Failed to check feature");
     assert!(!has_sso, "Starter should not have SSO");
+
+    cleanup_org(&db, org_id).await;
+}
+
+#[tokio::test]
+async fn test_has_feature_growth_tier() {
+    let db = Database::connect(&get_database_url())
+        .await
+        .expect("Failed to connect");
+
+    // Create org with Growth tier
+    let org_id = create_test_org_with_tier(&db, SubscriptionTier::Growth).await;
+
+    // Growth tier should have these features
+    let has_multi_currency =
+        SubscriptionRepository::has_feature(&db, org_id, Feature::MultiCurrency)
+            .await
+            .expect("Failed to check feature");
+    assert!(has_multi_currency, "Growth should have multi-currency");
+
+    let has_simulation = SubscriptionRepository::has_feature(&db, org_id, Feature::Simulation)
+        .await
+        .expect("Failed to check feature");
+    assert!(!has_simulation, "Growth should not have simulation");
+
+    let has_sso = SubscriptionRepository::has_feature(&db, org_id, Feature::Sso)
+        .await
+        .expect("Failed to check feature");
+    assert!(!has_sso, "Growth should not have SSO");
+
+    let has_api = SubscriptionRepository::has_feature(&db, org_id, Feature::ApiAccess)
+        .await
+        .expect("Failed to check feature");
+    assert!(has_api, "Growth should have API access");
 
     cleanup_org(&db, org_id).await;
 }

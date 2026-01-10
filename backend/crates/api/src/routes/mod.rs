@@ -7,12 +7,16 @@ use crate::{AppState, middleware::auth::auth_middleware};
 pub mod accounts;
 pub mod approval_rules;
 pub mod auth;
+pub mod budgets;
 pub mod currencies;
+pub mod dashboard;
 pub mod dimensions;
 pub mod exchange_rates;
 pub mod fiscal;
 pub mod health;
 pub mod organizations;
+pub mod reports;
+pub mod simulation;
 pub mod transactions;
 
 /// Creates the API router with all routes.
@@ -33,6 +37,10 @@ pub fn api_routes_with_state(state: AppState) -> Router<AppState> {
         .merge(currencies::routes())
         .merge(transactions::routes())
         .merge(approval_rules::routes())
+        .merge(budgets::routes())
+        .merge(reports::routes())
+        .merge(simulation::routes())
+        .merge(dashboard::routes())
         .layer(middleware::from_fn_with_state(
             state.clone(),
             auth_middleware,

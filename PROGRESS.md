@@ -8,9 +8,9 @@ Live status untuk sync antara Backend & Frontend.
 
 |                    | Backend                                    | Frontend                              |
 | ------------------ | ------------------------------------------ | ------------------------------------- |
-| **Current Phase**  | 4 (Reports Mock)                           | 8 (Transaction Enhancements)          |
-| **Last Task Done** | Phase 3 - Transaction Workflow (515 tests) | Phase 8 - Transaction Enhancements ✅ |
-| **Next Task**      | Phase 4 - Real Reports Implementation      | Playwright E2E                        |
+| **Current Phase**  | 4 (Reports & Simulation) ✅ COMPLETE       | 8 (Transaction Enhancements)          |
+| **Last Task Done** | Phase 4 - All Tasks Complete (716 tests)   | Phase 8 - Transaction Enhancements ✅ |
+| **Next Task**      | Phase 5 - TBD                              | Playwright E2E                        |
 
 **Last Updated:** 2026-01-10
 
@@ -123,36 +123,38 @@ Frontend cek di sini untuk tau endpoint mana yang udah ready.
 
 ### Reports
 
-| Endpoint                      | Status | Notes  |
-| ----------------------------- | ------ | ------ |
-| GET /reports/trial-balance    | ⚠️     | Mocked |
-| GET /reports/balance-sheet    | ⚠️     | Mocked |
-| GET /reports/income-statement | ⚠️     | Mocked |
-| GET /reports/dimensional      | ⚠️     | Mocked |
-| GET /budgets/:id/vs-actual    | ⚠️     | Mocked |
+| Endpoint                      | Status | Notes                                |
+| ----------------------------- | ------ | ------------------------------------ |
+| GET /reports/trial-balance    | ✅     | Real API - as_of, dimension filters  |
+| GET /reports/balance-sheet    | ✅     | Real API - as_of date                |
+| GET /reports/income-statement | ✅     | Real API - from/to, dimension filter |
+| GET /reports/dimensional      | ✅     | Real API - group_by dimensions       |
+| GET /budgets/:id/vs-actual    | ✅     | Real API - variance analysis         |
 
 ### Budgets
 
-| Endpoint                  | Status | Notes                 |
-| ------------------------- | ------ | --------------------- |
-| GET /budgets              | ⚠️     | Mocked                |
-| POST /budgets             | ⚠️     | Mocked (Create)       |
-| GET /budgets/:id          | ⚠️     | Mocked (Detail+Lines) |
-| POST /budgets/:id/lines   | ⚠️     | Mocked (Add Line)     |
-| PATCH /budgets/:id/status | ⚠️     | Mocked (Lock/Unlock)  |
+| Endpoint                  | Status | Notes                                |
+| ------------------------- | ------ | ------------------------------------ |
+| GET /budgets              | ✅     | Real API - list with summary         |
+| POST /budgets             | ✅     | Real API - create budget             |
+| GET /budgets/:id          | ✅     | Real API - detail with lines         |
+| PUT /budgets/:id          | ✅     | Real API - update budget             |
+| GET /budgets/:id/lines    | ✅     | Real API - list budget lines         |
+| POST /budgets/:id/lines   | ✅     | Real API - bulk create lines         |
+| POST /budgets/:id/lock    | ✅     | Real API - lock budget               |
 
 ### Dashboard
 
-| Endpoint                       | Status | Notes                           |
-| ------------------------------ | ------ | ------------------------------- |
-| GET /dashboard/metrics         | ⚠️     | Mocked (Cash Flow, Utilization) |
-| GET /dashboard/recent-activity | ⚠️     | Mocked                          |
+| Endpoint                       | Status | Notes                                |
+| ------------------------------ | ------ | ------------------------------------ |
+| GET /dashboard/metrics         | ✅     | Real API - cash, burn rate, runway   |
+| GET /dashboard/recent-activity | ✅     | Real API - cursor pagination         |
 
 ### Simulation
 
-| Endpoint             | Status | Notes  |
-| -------------------- | ------ | ------ |
-| POST /simulation/run | ⚠️     | Mocked |
+| Endpoint             | Status | Notes                                |
+| -------------------- | ------ | ------------------------------------ |
+| POST /simulation/run | ✅     | Real API - projections with caching  |
 
 ---
 

@@ -6,10 +6,10 @@ Zeltra: Enterprise-grade B2B Expense & Budgeting Engine
 
 ## Positioning
 
-> "Sage Intacct features at Expensify prices"
+> "Enterprise accounting at Xero prices"
 
 Zeltra fills the gap between:
-- **Basic tools** (Expensify, Zoho) - cheap but limited
+- **Basic tools** (Xero, QuickBooks) - flat pricing but limited features
 - **Enterprise ERP** (Sage Intacct, NetSuite) - powerful but expensive
 
 ---
@@ -20,33 +20,37 @@ Zeltra fills the gap between:
 
 | Product | Pricing | Core Focus | Weakness |
 |---------|---------|------------|----------|
-| **Expensify** | $5-36/user/mo | Receipt scanning, simple expense | No dimensional accounting, basic reporting |
+| **Expensify** | $5-36/user/mo | Receipt scanning, expense tracking, corporate cards | No accounting, expense-only solution |
+| **Zoho Expense** | $4-7/user/mo | Budget-friendly expense management | Limited to expense workflows |
 | **Ramp** | Free - $15/user/mo | Corporate cards, spend control | Card-centric, no ledger |
 | **Brex** | Free + quote | Corporate cards, startups | Card-centric, no simulation |
-| **Zoho Expense** | $3-8/user/mo | Budget-friendly | Basic features, no multi-currency proper |
 | **SAP Concur** | $9-50+/user/mo (quote) | Enterprise travel + expense | Expensive, legacy UI, complex |
 
 ### Accounting/ERP Players
 
 | Product | Pricing | Core Focus | Weakness |
 |---------|---------|------------|----------|
+| **Xero** | $65/month flat | SME accounting, easy to use | Limited dimensions, no simulation |
+| **QuickBooks** | $30-200/mo | SMB accounting | Not enterprise-ready |
 | **Sage Intacct** | ~$400/mo + $99/user | Dimensional accounting, multi-entity | Expensive for mid-market |
 | **NetSuite** | $999/mo + $99/user | Full ERP | Overkill, expensive |
-| **QuickBooks** | $30-200/mo | SMB accounting | Not enterprise-ready |
 
 ### Feature Comparison
 
-| Feature | Expensify | Ramp | Sage Intacct | **Zeltra** |
-|---------|-----------|------|--------------|------------|
-| Expense tracking | ✅ | ✅ | ✅ | ✅ |
-| Multi-currency (proper) | ❌ | ❌ | ✅ | ✅ 3-value |
-| Dimensional accounting | ❌ | ❌ | ✅ | ✅ |
-| Budget simulation | ❌ | ❌ | Limited | ✅ Real-time |
-| Double-entry ledger | ❌ | ❌ | ✅ | ✅ |
-| On-premise option | ❌ | ❌ | ❌ | ✅ |
-| Approval workflow | Basic | ✅ | ✅ | ✅ |
-| Corporate cards | ❌ | ✅ Core | ❌ | ❌ |
-| Receipt OCR | ✅ | ✅ | ✅ | ❌ (roadmap) |
+| Feature | Expensify | Zoho Expense | Xero | QuickBooks | Sage Intacct | **Zeltra** |
+|---------|-----------|--------------|------|------------|--------------|------------|
+| Expense tracking | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Receipt OCR | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ (roadmap) |
+| Corporate cards | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Mobile app | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ (roadmap) |
+| Multi-currency (proper) | ❌ | ❌ | ❌ | Limited | ✅ | ✅ 3-value |
+| Dimensional accounting | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ |
+| Budget simulation | ❌ | ❌ | ❌ | ❌ | Limited | ✅ Real-time |
+| Double-entry ledger | ❌ | ❌ | ✅ | ✅ | ✅ | ✅ |
+| On-premise option | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
+| Approval workflow | ✅ | ✅ | Basic | ✅ | ✅ | ✅ |
+| Financial reports | ❌ | ❌ | ✅ | ✅ | ✅ | ✅ |
+| Self-hosted | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
 
 ---
 
@@ -67,9 +71,9 @@ Zeltra fills the gap between:
 
 ### 3. Dimensional Accounting at Mid-Market Price
 - Sage Intacct charges $400/mo + $99/user for this
-- Zeltra: included in Growth tier ($25/user)
+- Zeltra: included in Growth tier ($25/month flat)
 - Slice data by department, project, cost center, location
-- **Same power, fraction of the cost**
+- **Same power, 94% cheaper**
 
 ### 4. Self-Hosted / On-Premise Option
 - Ramp, Brex, Expensify: SaaS only
@@ -87,12 +91,14 @@ Zeltra fills the gap between:
 
 ## What Zeltra Does NOT Have (Honest)
 
-- ❌ Corporate cards (Ramp/Brex core feature)
-- ❌ Receipt OCR (planned for v2)
-- ❌ Mobile app (planned for v2)
-- ❌ Integrations ecosystem (QuickBooks, Slack, etc.)
-- ❌ Brand recognition / trust
-- ❌ Customer reviews / case studies
+- ❌ Corporate cards (Ramp/Brex core feature - $0 financing)
+- ❌ Receipt OCR (Expensify/Zoho core feature - SmartScan)
+- ❌ Mobile app (All competitors have mature mobile apps)
+- ❌ Integrations ecosystem (QuickBooks, Slack, 800+ apps)
+- ❌ Brand recognition / trust (15M users for Expensify)
+- ❌ Customer reviews / case studies (Established competitors have thousands)
+- ❌ Instant reimbursement (Expensify/Ramp feature)
+- ❌ Policy enforcement AI (Expensify SmartScanning AI)
 
 ---
 
@@ -107,12 +113,26 @@ Profile:
 - Multi-department, need budget visibility
 
 Why Zeltra:
-- Outgrown Expensify/spreadsheets
+- Outgrown Expensify/Zoho Expense (expense-only solutions)
 - Can't afford Sage Intacct ($15k+/year)
 - Need dimensional reporting
 - Want simulation for planning
 
-### Tier 2: Mid-Market Multi-Currency
+### Tier 2: Expense-to-Accounting Transition (Secondary)
+
+Profile:
+- 20-200 employees
+- Currently using Expensify/Zoho + QuickBooks/Xero
+- Manual reconciliation between expense and accounting
+- Need unified system
+
+Why Zeltra:
+- Single platform for expenses + accounting
+- Eliminates manual data entry between systems
+- 81% cheaper than Xero + Expensify combo
+- Advanced features not available in expense tools
+
+### Tier 3: Mid-Market Multi-Currency
 
 Profile:
 - 200-1000 employees
@@ -142,18 +162,23 @@ Why Zeltra:
 
 ## Pricing Strategy
 
-### Cloud SaaS Pricing (Per User/Month)
+### Cloud SaaS Pricing (Tiered Flat Monthly)
 
-| Tier | Price | Target | Key Features |
-|------|-------|--------|--------------|
-| **Starter** | $12/user/mo | Small teams (5-50) | Basic expense, single currency, 2 dimensions |
-| **Growth** | $25/user/mo | Mid-market (50-200) | Multi-currency, unlimited dimensions, budgets |
-| **Enterprise** | $45/user/mo | Large (200+) | Simulation, API, SSO, dedicated support |
+| Tier | Price | User Limits | Target | Key Features |
+|------|-------|-------------|--------|--------------|
+| **Starter** | $12/month | Up to 50 users | Small teams (5-50) | Basic expense, single currency, 2 dimensions |
+| **Growth** | $25/month | Up to 200 users | Mid-market (50-200) | Multi-currency, unlimited dimensions, budgets |
+| **Enterprise** | $45/month | Unlimited users | Large (200+) | Simulation, API, SSO, dedicated support |
+
+**Effective Per-User Cost:**
+- Starter: $0.24/user (for 50 users)
+- Growth: $0.125/user (for 200 users)
+- Enterprise: Varies by team size
 
 Comparison:
-- Starter ($12) vs Expensify Control ($9) - similar price, +dimensions
-- Growth ($25) vs Sage Intacct ($99/user) - 75% cheaper, similar features
-- Enterprise ($45) vs SAP Concur ($50+) - competitive, modern stack
+- Starter ($12) vs Xero Established ($65) - 81% cheaper, +dimensions
+- Growth ($25) vs QuickBooks Plus ($90) - 72% cheaper, +multi-currency
+- Enterprise ($45) vs Sage Intacct ($400+/mo) - 89% cheaper, similar features
 
 ### Self-Hosted License
 
@@ -381,9 +406,11 @@ Most enterprise clients prefer Docker (easier), some want source (audit/customiz
 1. **Subscription (MRR)** - Primary driver
 2. **Overage fees** - Extra users/transactions beyond tier
 3. **Add-ons** (future):
-   - Receipt OCR: +$5/user/mo
-   - Bank feed integration: +$50/mo
-   - Advanced API: +$100/mo
+   - Receipt OCR: +$3/user/mo (vs Expensify $5-36/user)
+   - Mobile app: +$2/user/mo (included in competitors)
+   - Corporate cards: +$5/user/mo + interchange (vs Ramp free tier)
+   - Advanced integrations: +$50/mo (vs enterprise pricing)
+   - Priority support: +$100/mo (vs enterprise support fees)
 
 ### Enterprise Revenue
 
@@ -404,6 +431,7 @@ Tactics:
 - LinkedIn content about budgeting pain
 - Free trial with hands-on onboarding
 - Focus on simulation as differentiator
+- Target Expensify/Zoho users needing real accounting
 
 ### Phase 2: Product-Led Growth (Month 6-12)
 
@@ -414,6 +442,8 @@ Tactics:
 - Self-serve onboarding
 - Content marketing (SEO)
 - Product Hunt launch
+- Migration guides from Expensify + QuickBooks/Xero combos
+- "Unified expense + accounting" messaging
 
 ### Phase 3: Enterprise Sales (Month 12+)
 
@@ -435,9 +465,9 @@ Tactics:
 |--------|--------|
 | Launch | June 2026 |
 | SaaS Customers | 15 |
-| Avg MRR/customer | $300 |
-| MRR (end of year) | $4,500 |
-| ARR | $54,000 |
+| Avg MRR/customer | $25 (mix of Starter/Growth) |
+| MRR (end of year) | $375 |
+| ARR | $4,500 |
 | Enterprise deals | 0-1 |
 | **Total Revenue** | **~$60,000** |
 
@@ -446,9 +476,9 @@ Tactics:
 | Metric | Target |
 |--------|--------|
 | SaaS Customers | 80 |
-| Avg MRR/customer | $400 |
-| MRR (end of year) | $32,000 |
-| ARR | $384,000 |
+| Avg MRR/customer | $35 (mix of tiers) |
+| MRR (end of year) | $2,800 |
+| ARR | $33,600 |
 | Enterprise deals | 2-3 |
 | Enterprise revenue | $75,000 |
 | **Total Revenue** | **~$450,000** |
@@ -458,9 +488,9 @@ Tactics:
 | Metric | Target |
 |--------|--------|
 | SaaS Customers | 200 |
-| Avg MRR/customer | $500 |
-| MRR (end of year) | $100,000 |
-| ARR | $1,200,000 |
+| Avg MRR/customer | $40 (mix of tiers with more Enterprise) |
+| MRR (end of year) | $8,000 |
+| ARR | $96,000 |
 | Enterprise deals | 5-8 |
 | Enterprise revenue | $200,000 |
 | **Total Revenue** | **~$1,400,000** |
