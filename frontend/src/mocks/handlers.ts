@@ -59,11 +59,17 @@ const budgetStatuses: Record<string, 'open' | 'locked'> = {
 
 export const handlers = [
   // Auth
-  http.post('/api/v1/auth/login', () => {
+  http.post('/api/v1/auth/login', async ({ request }) => {
+    const body = await request.json() as { email?: string; password?: string }
+
+    if (body.email === 'wrong@example.com' || body.password === 'wrongpass') {
+        return HttpResponse.json({ error: { message: 'Invalid credentials' } }, { status: 401 })
+    }
+
     return HttpResponse.json({
       user: { 
-        id: 'usr_001', 
-        email: 'demo@zeltra.io', 
+        id: `usr_${Date.now()}`, 
+        email: body.email || 'demo@zeltra.io', 
         full_name: 'Demo User',
         organizations: [
           { id: 'org_001', name: 'Acme Corp', slug: 'acme', role: 'owner' }
