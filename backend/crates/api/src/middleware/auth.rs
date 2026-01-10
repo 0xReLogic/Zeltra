@@ -135,3 +135,125 @@ where
             })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use axum::{Router, body::Body, http::Request, middleware::from_fn_with_state};
+    use sea_orm::DatabaseConnection;
+    use std::sync::Arc;
+    use tower::ServiceExt;
+    use uuid::Uuid;
+    use zeltra_shared::{EmailConfig, EmailService, JwtConfig, JwtService};
+
+    // Helper to create a test AppState
+    fn create_test_state() -> AppState {
+        // Use Disconnected variant since we don't need DB for auth middleware tests
+        let db = DatabaseConnection::Disconnected;
+        let jwt_service = JwtService::new(JwtConfig::default());
+        let email_service = EmailService::new(EmailConfig::default());
+
+        AppState {
+            db: Arc::new(db),
+            jwt_service: Arc::new(jwt_service),
+            email_service: Arc::new(email_service),
+        }
+    }
+
+    #[test]
+    fn test_extract_bearer_token() {
+        assert_eq!(extract_bearer_token("Bearer token123"), Some("token123"));
+        assert_eq!(extract_bearer_token("bearer token123"), Some("token123"));
+        assert_eq!(extract_bearer_token("Basic token123"), None);
+        assert_eq!(extract_bearer_token("Token token123"), None);
+        assert_eq!(extract_bearer_token(""), None);
+    }
+
+    #[test]
+    fn test_auth_user() {
+        let user_id = Uuid::new_v4();
+        let org_id = Uuid::new_v4();
+        let claims = Claims::new(
+            user_id,
+            org_id,
+            "admin",
+            chrono::Utc::now() + chrono::Duration::hours(1),
+        );
+        let auth_user = AuthUser(claims.clone());
+
+        assert_eq!(auth_user.user_id(), user_id);
+        assert_eq!(auth_user.organization_id(), org_id);
+        assert_eq!(auth_user.role(), "admin");
+        assert_eq!(auth_user.claims().user_id(), user_id);
+    }
+
+    #[tokio::test]
+    async fn test_auth_middleware_missing_token() {
+        let state = create_test_state();
+        let app = Router::new()
+            .route("/", axum::routing::get(|| async { "OK" }))
+            .layer(from_fn_with_state(state, auth_middleware));
+
+        let response = app
+            .oneshot(Request::builder().uri("/").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+    }
+
+    #[tokio::test]
+    async fn test_auth_middleware_valid_token() {
+        let state = create_test_state();
+        let user_id = Uuid::new_v4();
+        let org_id = Uuid::new_v4();
+        let token = state
+            .jwt_service
+            .generate_access_token(user_id, org_id, "user")
+            .unwrap();
+
+        let app = Router::new()
+            .route(
+                "/",
+                axum::routing::get(|claims: AuthUser| async move {
+                    assert_eq!(claims.role(), "user");
+                    "OK"
+                }),
+            )
+            .layer(from_fn_with_state(state, auth_middleware));
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/")
+                    .header(AUTHORIZATION, format!("Bearer {}", token))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn test_auth_middleware_invalid_token() {
+        let state = create_test_state();
+        let app = Router::new()
+            .route("/", axum::routing::get(|| async { "OK" }))
+            .layer(from_fn_with_state(state, auth_middleware));
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/")
+                    .header(AUTHORIZATION, "Bearer invalid-token")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+    }
+}
