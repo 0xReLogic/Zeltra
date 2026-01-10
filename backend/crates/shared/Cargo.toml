@@ -21,6 +21,8 @@ tokio = { workspace = true }
 
 [dev-dependencies]
 rstest = { workspace = true }
+rust_decimal_macros.workspace = true
+temp-env = "0.3.6"
 
 [lints]
 workspace = true

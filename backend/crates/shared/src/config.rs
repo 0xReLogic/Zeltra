@@ -155,3 +155,77 @@ impl AppConfig {
         config.try_deserialize()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_server_config_defaults() {
+        let config = AppConfig {
+            server: ServerConfig {
+                host: default_host(),
+                port: default_port(),
+            },
+            database: DatabaseConfig {
+                url: "postgres://".into(),
+                max_connections: default_max_connections(),
+                min_connections: default_min_connections(),
+            },
+            jwt: JwtConfig {
+                secret: "secret".into(),
+                access_token_expiry_secs: default_access_token_expiry(),
+                refresh_token_expiry_secs: default_refresh_token_expiry(),
+            },
+            email: EmailConfig::default(),
+        };
+
+        assert_eq!(config.server.host, "0.0.0.0");
+        assert_eq!(config.server.port, 8080);
+    }
+
+    #[test]
+    fn test_database_config_defaults() {
+        assert_eq!(default_max_connections(), 10);
+        assert_eq!(default_min_connections(), 1);
+    }
+
+    #[test]
+    fn test_jwt_config_defaults() {
+        assert_eq!(default_access_token_expiry(), 900);
+        assert_eq!(default_refresh_token_expiry(), 604_800);
+    }
+
+    #[test]
+    fn test_email_config_defaults() {
+        let config = EmailConfig::default();
+        assert_eq!(config.smtp_host, "localhost");
+        assert_eq!(config.smtp_port, 1025);
+        assert_eq!(config.smtp_username, "");
+        assert_eq!(config.smtp_password, "");
+        assert_eq!(config.from_email, "noreply@zeltra.app");
+        assert_eq!(config.from_name, "Zeltra");
+        assert_eq!(config.frontend_url, "http://localhost:3000");
+    }
+
+    #[test]
+    fn test_app_config_load() {
+        // Set environment variables
+        temp_env::with_vars(
+            [
+                ("ZELTRA__SERVER__PORT", Some("9090")),
+                (
+                    "ZELTRA__DATABASE__URL",
+                    Some("postgres://test:test@localhost/test"),
+                ),
+                ("ZELTRA__JWT__SECRET", Some("test_secret")),
+            ],
+            || {
+                let config = AppConfig::load().expect("Failed to load config");
+                assert_eq!(config.server.port, 9090);
+                assert_eq!(config.database.url, "postgres://test:test@localhost/test");
+                assert_eq!(config.jwt.secret, "test_secret");
+            },
+        );
+    }
+}

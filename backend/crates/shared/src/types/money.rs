@@ -74,6 +74,72 @@ impl std::fmt::Display for Currency {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rust_decimal_macros::dec;
+    use std::str::FromStr;
+
+    #[test]
+    fn test_money_new() {
+        let amount = dec!(100.00);
+        let money = Money::new(amount, Currency::Usd);
+        assert_eq!(money.amount, amount);
+        assert_eq!(money.currency, Currency::Usd);
+    }
+
+    #[test]
+    fn test_money_zero() {
+        let money = Money::zero(Currency::Idr);
+        assert!(money.is_zero());
+        assert_eq!(money.amount, Decimal::ZERO);
+        assert_eq!(money.currency, Currency::Idr);
+    }
+
+    #[test]
+    fn test_money_is_zero() {
+        let zero_money = Money::new(dec!(0), Currency::Usd);
+        assert!(zero_money.is_zero());
+
+        let non_zero_money = Money::new(dec!(10), Currency::Usd);
+        assert!(!non_zero_money.is_zero());
+    }
+
+    #[test]
+    fn test_money_is_negative() {
+        let positive = Money::new(dec!(10), Currency::Usd);
+        assert!(!positive.is_negative());
+
+        let negative = Money::new(dec!(-10), Currency::Usd);
+        assert!(negative.is_negative());
+
+        let zero = Money::new(dec!(0), Currency::Usd);
+        assert!(!zero.is_negative());
+    }
+
+    #[test]
+    fn test_currency_display() {
+        assert_eq!(Currency::Usd.to_string(), "USD");
+        assert_eq!(Currency::Idr.to_string(), "IDR");
+        assert_eq!(Currency::Eur.to_string(), "EUR");
+        assert_eq!(Currency::Sgd.to_string(), "SGD");
+        assert_eq!(Currency::Jpy.to_string(), "JPY");
+    }
+
+    #[test]
+    fn test_currency_from_str() {
+        assert_eq!(Currency::from_str("USD").unwrap(), Currency::Usd);
+        assert_eq!(Currency::from_str("usd").unwrap(), Currency::Usd);
+        assert_eq!(Currency::from_str("IDR").unwrap(), Currency::Idr);
+        assert_eq!(Currency::from_str("EUR").unwrap(), Currency::Eur);
+        assert_eq!(Currency::from_str("SGD").unwrap(), Currency::Sgd);
+        assert_eq!(Currency::from_str("JPY").unwrap(), Currency::Jpy);
+
+        assert!(Currency::from_str("XXX").is_err());
+        assert!(Currency::from_str("").is_err());
+    }
+}
+
 impl std::str::FromStr for Currency {
     type Err = String;
 

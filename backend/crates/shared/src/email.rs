@@ -142,4 +142,20 @@ mod tests {
         assert_eq!(config.smtp_host, "localhost");
         assert_eq!(config.smtp_port, 1025);
     }
+
+    #[test]
+    fn test_email_error_display() {
+        assert_eq!(
+            EmailError::BuildError("msg".into()).to_string(),
+            "Failed to build email: msg"
+        );
+        assert_eq!(
+            EmailError::SendError("msg".into()).to_string(),
+            "Failed to send email: msg"
+        );
+        assert_eq!(
+            EmailError::InvalidAddress("msg".into()).to_string(),
+            "Invalid email address: msg"
+        );
+    }
 }
