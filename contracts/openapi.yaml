@@ -3,7 +3,7 @@ info:
   title: Zeltra API
   description: B2B Expense & Budgeting Engine API
   version: 0.1.0
-  
+
 servers:
   - url: http://localhost:8080/api/v1
     description: Local development
@@ -32,7 +32,7 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      
+
   schemas:
     # ============ Common ============
     Error:
@@ -54,7 +54,7 @@ components:
             request_id:
               type: string
               format: uuid
-              
+
     Pagination:
       type: object
       properties:
@@ -70,13 +70,13 @@ components:
         total_pages:
           type: integer
           example: 3
-          
+
     Money:
       type: string
       pattern: '^-?\d+\.\d{4}$'
       description: Decimal string with 4 decimal places
       example: "1000.0000"
-      
+
     # ============ Auth ============
     LoginRequest:
       type: object
@@ -88,13 +88,13 @@ components:
         password:
           type: string
           minLength: 8
-          
+
     LoginResponse:
       type: object
       required: [user, access_token, refresh_token, expires_in]
       properties:
         user:
-          $ref: '#/components/schemas/User'
+          $ref: "#/components/schemas/User"
         access_token:
           type: string
         refresh_token:
@@ -103,7 +103,7 @@ components:
           type: integer
           description: Seconds until access_token expires
           example: 3600
-          
+
     RegisterRequest:
       type: object
       required: [email, password, full_name]
@@ -117,14 +117,14 @@ components:
         full_name:
           type: string
           minLength: 2
-          
+
     RefreshRequest:
       type: object
       required: [refresh_token]
       properties:
         refresh_token:
           type: string
-          
+
     # ============ User ============
     User:
       type: object
@@ -141,11 +141,11 @@ components:
         organizations:
           type: array
           items:
-            $ref: '#/components/schemas/UserOrganization'
+            $ref: "#/components/schemas/UserOrganization"
         created_at:
           type: string
           format: date-time
-          
+
     UserOrganization:
       type: object
       required: [id, name, slug, role]
@@ -158,12 +158,12 @@ components:
         slug:
           type: string
         role:
-          $ref: '#/components/schemas/UserRole'
-          
+          $ref: "#/components/schemas/UserRole"
+
     UserRole:
       type: string
       enum: [owner, admin, accountant, approver, viewer, submitter]
-      
+
     # ============ Organization ============
     Organization:
       type: object
@@ -178,7 +178,7 @@ components:
           type: string
         base_currency:
           type: string
-          pattern: '^[A-Z]{3}$'
+          pattern: "^[A-Z]{3}$"
           example: USD
         timezone:
           type: string
@@ -192,7 +192,7 @@ components:
         created_at:
           type: string
           format: date-time
-          
+
     CreateOrganizationRequest:
       type: object
       required: [name, slug, base_currency]
@@ -201,14 +201,14 @@ components:
           type: string
         slug:
           type: string
-          pattern: '^[a-z0-9-]+$'
+          pattern: "^[a-z0-9-]+$"
         base_currency:
           type: string
-          pattern: '^[A-Z]{3}$'
+          pattern: "^[A-Z]{3}$"
         timezone:
           type: string
           default: UTC
-          
+
     # ============ Account ============
     Account:
       type: object
@@ -224,9 +224,9 @@ components:
           type: string
           example: Marketing Expense
         account_type:
-          $ref: '#/components/schemas/AccountType'
+          $ref: "#/components/schemas/AccountType"
         account_subtype:
-          $ref: '#/components/schemas/AccountSubtype'
+          $ref: "#/components/schemas/AccountSubtype"
         currency:
           type: string
         parent_id:
@@ -238,12 +238,12 @@ components:
         allow_direct_posting:
           type: boolean
         balance:
-          $ref: '#/components/schemas/Money'
-          
+          $ref: "#/components/schemas/Money"
+
     AccountType:
       type: string
       enum: [asset, liability, equity, revenue, expense]
-      
+
     AccountSubtype:
       type: string
       enum:
@@ -286,9 +286,9 @@ components:
           type: string
           example: "Petty Cash"
         account_type:
-          $ref: '#/components/schemas/AccountType'
+          $ref: "#/components/schemas/AccountType"
         account_subtype:
-          $ref: '#/components/schemas/AccountSubtype'
+          $ref: "#/components/schemas/AccountSubtype"
         parent_id:
           type: string
           format: uuid
@@ -299,11 +299,20 @@ components:
         currency:
           type: string
           example: USD
-        
+
     # ============ Transaction ============
     Transaction:
       type: object
-      required: [id, transaction_type, transaction_date, description, status, entries, created_at]
+      required:
+        [
+          id,
+          transaction_type,
+          transaction_date,
+          description,
+          status,
+          entries,
+          created_at,
+        ]
       properties:
         id:
           type: string
@@ -312,7 +321,7 @@ components:
           type: string
           nullable: true
         transaction_type:
-          $ref: '#/components/schemas/TransactionType'
+          $ref: "#/components/schemas/TransactionType"
         transaction_date:
           type: string
           format: date
@@ -322,7 +331,7 @@ components:
           type: string
           nullable: true
         status:
-          $ref: '#/components/schemas/TransactionStatus'
+          $ref: "#/components/schemas/TransactionStatus"
         fiscal_period:
           type: object
           properties:
@@ -334,14 +343,14 @@ components:
         entries:
           type: array
           items:
-            $ref: '#/components/schemas/LedgerEntry'
+            $ref: "#/components/schemas/LedgerEntry"
         created_by:
-          $ref: '#/components/schemas/UserSummary'
+          $ref: "#/components/schemas/UserSummary"
         approved_by:
-          $ref: '#/components/schemas/UserSummary'
+          $ref: "#/components/schemas/UserSummary"
           nullable: true
         submitted_by:
-          $ref: '#/components/schemas/UserSummary'
+          $ref: "#/components/schemas/UserSummary"
           nullable: true
         submitted_at:
           type: string
@@ -358,18 +367,38 @@ components:
         created_at:
           type: string
           format: date-time
-          
+
     TransactionType:
       type: string
-      enum: [journal, expense, invoice, bill, payment, transfer, adjustment, opening_balance, reversal]
-      
+      enum:
+        [
+          journal,
+          expense,
+          invoice,
+          bill,
+          payment,
+          transfer,
+          adjustment,
+          opening_balance,
+          reversal,
+        ]
+
     TransactionStatus:
       type: string
       enum: [draft, pending, approved, posted, voided]
-      
+
     LedgerEntry:
       type: object
-      required: [id, account_id, source_currency, source_amount, functional_amount, debit, credit]
+      required:
+        [
+          id,
+          account_id,
+          source_currency,
+          source_amount,
+          functional_amount,
+          debit,
+          credit,
+        ]
       properties:
         id:
           type: string
@@ -384,32 +413,32 @@ components:
         source_currency:
           type: string
         source_amount:
-          $ref: '#/components/schemas/Money'
+          $ref: "#/components/schemas/Money"
         exchange_rate:
           type: string
           example: "1.0850000000"
         functional_currency:
           type: string
         functional_amount:
-          $ref: '#/components/schemas/Money'
+          $ref: "#/components/schemas/Money"
         debit:
-          $ref: '#/components/schemas/Money'
+          $ref: "#/components/schemas/Money"
         credit:
-          $ref: '#/components/schemas/Money'
+          $ref: "#/components/schemas/Money"
         memo:
           type: string
           nullable: true
         dimensions:
           type: array
           items:
-            $ref: '#/components/schemas/DimensionValue'
-            
+            $ref: "#/components/schemas/DimensionValue"
+
     CreateTransactionRequest:
       type: object
       required: [transaction_type, transaction_date, description, entries]
       properties:
         transaction_type:
-          $ref: '#/components/schemas/TransactionType'
+          $ref: "#/components/schemas/TransactionType"
         transaction_date:
           type: string
           format: date
@@ -423,8 +452,8 @@ components:
           type: array
           minItems: 2
           items:
-            $ref: '#/components/schemas/CreateEntryRequest'
-            
+            $ref: "#/components/schemas/CreateEntryRequest"
+
     CreateEntryRequest:
       type: object
       required: [account_id, source_currency, source_amount, entry_type]
@@ -434,7 +463,7 @@ components:
           format: uuid
         source_currency:
           type: string
-          pattern: '^[A-Z]{3}$'
+          pattern: "^[A-Z]{3}$"
         source_amount:
           type: string
           description: Decimal string
@@ -450,7 +479,7 @@ components:
             type: string
             format: uuid
           description: Array of dimension_value_ids
-          
+
     UserSummary:
       type: object
       properties:
@@ -459,7 +488,7 @@ components:
           format: uuid
         full_name:
           type: string
-          
+
     # ============ Dimensions ============
     DimensionType:
       type: object
@@ -480,7 +509,7 @@ components:
           type: boolean
         sort_order:
           type: integer
-          
+
     DimensionValue:
       type: object
       required: [id, code, name]
@@ -502,7 +531,7 @@ components:
           nullable: true
         is_active:
           type: boolean
-          
+
     # ============ Fiscal Period ============
     FiscalYear:
       type: object
@@ -526,8 +555,8 @@ components:
         periods:
           type: array
           items:
-            $ref: '#/components/schemas/FiscalPeriod'
-            
+            $ref: "#/components/schemas/FiscalPeriod"
+
     FiscalPeriod:
       type: object
       required: [id, name, period_number, start_date, end_date, status]
@@ -551,7 +580,7 @@ components:
           enum: [OPEN, SOFT_CLOSE, CLOSED]
         is_adjustment_period:
           type: boolean
-          
+
     # ============ Reports ============
     TrialBalance:
       type: object
@@ -578,23 +607,23 @@ components:
               name:
                 type: string
               account_type:
-                $ref: '#/components/schemas/AccountType'
+                $ref: "#/components/schemas/AccountType"
               debit:
-                $ref: '#/components/schemas/Money'
+                $ref: "#/components/schemas/Money"
               credit:
-                $ref: '#/components/schemas/Money'
+                $ref: "#/components/schemas/Money"
               balance:
-                $ref: '#/components/schemas/Money'
+                $ref: "#/components/schemas/Money"
         totals:
           type: object
           properties:
             total_debit:
-              $ref: '#/components/schemas/Money'
+              $ref: "#/components/schemas/Money"
             total_credit:
-              $ref: '#/components/schemas/Money'
+              $ref: "#/components/schemas/Money"
             is_balanced:
               type: boolean
-              
+
     # ============ Dashboard ============
     DashboardMetrics:
       type: object
@@ -611,20 +640,20 @@ components:
           type: object
           properties:
             balance:
-              $ref: '#/components/schemas/Money'
+              $ref: "#/components/schemas/Money"
             currency:
               type: string
             change_from_last_period:
-              $ref: '#/components/schemas/Money'
+              $ref: "#/components/schemas/Money"
             change_percent:
               type: number
         burn_rate:
           type: object
           properties:
             daily:
-              $ref: '#/components/schemas/Money'
+              $ref: "#/components/schemas/Money"
             monthly:
-              $ref: '#/components/schemas/Money'
+              $ref: "#/components/schemas/Money"
         runway_days:
           type: integer
         pending_approvals:
@@ -633,7 +662,7 @@ components:
             count:
               type: integer
             total_amount:
-              $ref: '#/components/schemas/Money'
+              $ref: "#/components/schemas/Money"
 
     CashFlowDataPoint:
       type: object
@@ -676,7 +705,7 @@ components:
           format: uri
           description: Signed URL to download the file
         uploaded_by:
-          $ref: '#/components/schemas/UserSummary'
+          $ref: "#/components/schemas/UserSummary"
         uploaded_at:
           type: string
           format: date-time
@@ -690,7 +719,20 @@ components:
           format: uuid
         type:
           type: string
-          enum: [transaction_created, transaction_submitted, transaction_approved, transaction_rejected, transaction_posted, transaction_voided, budget_created, budget_updated, budget_locked, user_invited, user_role_changed]
+          enum:
+            [
+              transaction_created,
+              transaction_submitted,
+              transaction_approved,
+              transaction_rejected,
+              transaction_posted,
+              transaction_voided,
+              budget_created,
+              budget_updated,
+              budget_locked,
+              user_invited,
+              user_role_changed,
+            ]
         action:
           type: string
         entity_type:
@@ -702,7 +744,7 @@ components:
         description:
           type: string
         amount:
-          $ref: '#/components/schemas/Money'
+          $ref: "#/components/schemas/Money"
         currency:
           type: string
         user:
@@ -753,9 +795,9 @@ components:
       required: [original_transaction, reversing_transaction]
       properties:
         original_transaction:
-          $ref: '#/components/schemas/Transaction'
+          $ref: "#/components/schemas/Transaction"
         reversing_transaction:
-          $ref: '#/components/schemas/Transaction'
+          $ref: "#/components/schemas/Transaction"
 
     BulkApproveRequest:
       type: object
@@ -780,7 +822,7 @@ components:
         results:
           type: array
           items:
-            $ref: '#/components/schemas/BulkApproveItemResult'
+            $ref: "#/components/schemas/BulkApproveItemResult"
         success_count:
           type: integer
           description: Number of successfully approved transactions
@@ -804,7 +846,17 @@ components:
 
     PendingTransaction:
       type: object
-      required: [id, transaction_type, transaction_date, description, status, total_amount, submitted_at, can_approve]
+      required:
+        [
+          id,
+          transaction_type,
+          transaction_date,
+          description,
+          status,
+          total_amount,
+          submitted_at,
+          can_approve,
+        ]
       properties:
         id:
           type: string
@@ -813,18 +865,18 @@ components:
           type: string
           nullable: true
         transaction_type:
-          $ref: '#/components/schemas/TransactionType'
+          $ref: "#/components/schemas/TransactionType"
         transaction_date:
           type: string
           format: date
         description:
           type: string
         status:
-          $ref: '#/components/schemas/TransactionStatus'
+          $ref: "#/components/schemas/TransactionStatus"
         total_amount:
-          $ref: '#/components/schemas/Money'
+          $ref: "#/components/schemas/Money"
         submitted_by:
-          $ref: '#/components/schemas/UserSummary'
+          $ref: "#/components/schemas/UserSummary"
         submitted_at:
           type: string
           format: date-time
@@ -835,7 +887,18 @@ components:
     # ============ Approval Rules ============
     ApprovalRule:
       type: object
-      required: [id, organization_id, name, transaction_types, required_role, priority, is_active, created_at, updated_at]
+      required:
+        [
+          id,
+          organization_id,
+          name,
+          transaction_types,
+          required_role,
+          priority,
+          is_active,
+          created_at,
+          updated_at,
+        ]
       properties:
         id:
           type: string
@@ -850,20 +913,20 @@ components:
           type: string
           nullable: true
         min_amount:
-          $ref: '#/components/schemas/Money'
+          $ref: "#/components/schemas/Money"
           nullable: true
           description: Minimum amount threshold (inclusive)
         max_amount:
-          $ref: '#/components/schemas/Money'
+          $ref: "#/components/schemas/Money"
           nullable: true
           description: Maximum amount threshold (inclusive)
         transaction_types:
           type: array
           items:
-            $ref: '#/components/schemas/TransactionType'
+            $ref: "#/components/schemas/TransactionType"
           description: Transaction types this rule applies to
         required_role:
-          $ref: '#/components/schemas/UserRole'
+          $ref: "#/components/schemas/UserRole"
           description: Minimum role required to approve
         priority:
           type: integer
@@ -888,20 +951,20 @@ components:
           type: string
           nullable: true
         min_amount:
-          $ref: '#/components/schemas/Money'
+          $ref: "#/components/schemas/Money"
           nullable: true
           description: Minimum amount threshold (inclusive)
         max_amount:
-          $ref: '#/components/schemas/Money'
+          $ref: "#/components/schemas/Money"
           nullable: true
           description: Maximum amount threshold (inclusive)
         transaction_types:
           type: array
           items:
-            $ref: '#/components/schemas/TransactionType'
+            $ref: "#/components/schemas/TransactionType"
           description: Transaction types this rule applies to
         required_role:
-          $ref: '#/components/schemas/UserRole'
+          $ref: "#/components/schemas/UserRole"
           description: Minimum role required to approve
         priority:
           type: integer
@@ -916,17 +979,17 @@ components:
           type: string
           nullable: true
         min_amount:
-          $ref: '#/components/schemas/Money'
+          $ref: "#/components/schemas/Money"
           nullable: true
         max_amount:
-          $ref: '#/components/schemas/Money'
+          $ref: "#/components/schemas/Money"
           nullable: true
         transaction_types:
           type: array
           items:
-            $ref: '#/components/schemas/TransactionType'
+            $ref: "#/components/schemas/TransactionType"
         required_role:
-          $ref: '#/components/schemas/UserRole'
+          $ref: "#/components/schemas/UserRole"
         priority:
           type: integer
         is_active:
@@ -939,7 +1002,7 @@ components:
         data:
           type: array
           items:
-            $ref: '#/components/schemas/ApprovalRule'
+            $ref: "#/components/schemas/ApprovalRule"
 
 security:
   - bearerAuth: []
@@ -956,21 +1019,21 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/RegisterRequest'
+              $ref: "#/components/schemas/RegisterRequest"
       responses:
-        '201':
+        "201":
           description: User created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LoginResponse'
-        '400':
+                $ref: "#/components/schemas/LoginResponse"
+        "400":
           description: Validation error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-                
+                $ref: "#/components/schemas/Error"
+
   /auth/login:
     post:
       tags: [Auth]
@@ -981,21 +1044,21 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/LoginRequest'
+              $ref: "#/components/schemas/LoginRequest"
       responses:
-        '200':
+        "200":
           description: Login successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LoginResponse'
-        '401':
+                $ref: "#/components/schemas/LoginResponse"
+        "401":
           description: Invalid credentials
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-                
+                $ref: "#/components/schemas/Error"
+
   /auth/refresh:
     post:
       tags: [Auth]
@@ -1006,21 +1069,21 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/RefreshRequest'
+              $ref: "#/components/schemas/RefreshRequest"
       responses:
-        '200':
+        "200":
           description: Token refreshed
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LoginResponse'
-                
+                $ref: "#/components/schemas/LoginResponse"
+
   /auth/logout:
     post:
       tags: [Auth]
       summary: Logout
       responses:
-        '204':
+        "204":
           description: Logged out
 
   /auth/verify-email:
@@ -1040,7 +1103,7 @@ paths:
                   type: string
                   description: Verification token from email
       responses:
-        '200':
+        "200":
           description: Email verified successfully
           content:
             application/json:
@@ -1051,12 +1114,12 @@ paths:
                     type: string
                   verified:
                     type: boolean
-        '400':
+        "400":
           description: Invalid or expired token
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
 
   /auth/resend-verification:
     post:
@@ -1075,7 +1138,7 @@ paths:
                   type: string
                   format: email
       responses:
-        '200':
+        "200":
           description: Verification email sent (if account exists)
           content:
             application/json:
@@ -1084,20 +1147,20 @@ paths:
                 properties:
                   message:
                     type: string
-        '400':
+        "400":
           description: Email already verified
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-          
+                $ref: "#/components/schemas/Error"
+
   # ============ Organizations ============
   /organizations:
     get:
       tags: [Organizations]
       summary: List user's organizations
       responses:
-        '200':
+        "200":
           description: List of organizations
           content:
             application/json:
@@ -1107,7 +1170,7 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/Organization'
+                      $ref: "#/components/schemas/Organization"
     post:
       tags: [Organizations]
       summary: Create organization
@@ -1116,15 +1179,15 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateOrganizationRequest'
+              $ref: "#/components/schemas/CreateOrganizationRequest"
       responses:
-        '201':
+        "201":
           description: Organization created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Organization'
-                
+                $ref: "#/components/schemas/Organization"
+
   # ============ Accounts ============
   /accounts:
     get:
@@ -1134,13 +1197,13 @@ paths:
         - name: type
           in: query
           schema:
-            $ref: '#/components/schemas/AccountType'
+            $ref: "#/components/schemas/AccountType"
         - name: active
           in: query
           schema:
             type: boolean
       responses:
-        '200':
+        "200":
           description: List of accounts
           content:
             application/json:
@@ -1150,7 +1213,7 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/Account'
+                      $ref: "#/components/schemas/Account"
 
     post:
       tags: [Accounts]
@@ -1160,14 +1223,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateAccountRequest'
+              $ref: "#/components/schemas/CreateAccountRequest"
       responses:
-        '201':
+        "201":
           description: Account created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Account'
+                $ref: "#/components/schemas/Account"
 
   /accounts/{id}:
     get:
@@ -1181,12 +1244,12 @@ paths:
             type: string
             format: uuid
       responses:
-        '200':
+        "200":
           description: Account detail
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Account'
+                $ref: "#/components/schemas/Account"
     put:
       tags: [Accounts]
       summary: Update account
@@ -1202,14 +1265,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateAccountRequest'
+              $ref: "#/components/schemas/CreateAccountRequest"
       responses:
-        '200':
+        "200":
           description: Account updated
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Account'
+                $ref: "#/components/schemas/Account"
     delete:
       tags: [Accounts]
       summary: Delete account
@@ -1221,7 +1284,7 @@ paths:
             type: string
             format: uuid
       responses:
-        '200':
+        "200":
           description: Account deleted
           content:
             application/json:
@@ -1230,7 +1293,36 @@ paths:
                 properties:
                   success:
                     type: boolean
-                      
+
+    patch:
+      tags: [Accounts]
+      summary: Toggle account active status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [active, inactive]
+      responses:
+        "200":
+          description: Account status updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Account"
+
   # ============ Transactions ============
   /transactions:
     get:
@@ -1240,7 +1332,7 @@ paths:
         - name: status
           in: query
           schema:
-            $ref: '#/components/schemas/TransactionStatus'
+            $ref: "#/components/schemas/TransactionStatus"
         - name: from
           in: query
           schema:
@@ -1262,7 +1354,7 @@ paths:
             type: integer
             default: 50
       responses:
-        '200':
+        "200":
           description: List of transactions
           content:
             application/json:
@@ -1272,9 +1364,9 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/Transaction'
+                      $ref: "#/components/schemas/Transaction"
                   pagination:
-                    $ref: '#/components/schemas/Pagination'
+                    $ref: "#/components/schemas/Pagination"
     post:
       tags: [Transactions]
       summary: Create transaction
@@ -1283,21 +1375,21 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateTransactionRequest'
+              $ref: "#/components/schemas/CreateTransactionRequest"
       responses:
-        '201':
+        "201":
           description: Transaction created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Transaction'
-        '400':
+                $ref: "#/components/schemas/Transaction"
+        "400":
           description: Validation error (unbalanced, period closed, etc)
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-                
+                $ref: "#/components/schemas/Error"
+
   /transactions/{id}:
     get:
       tags: [Transactions]
@@ -1310,12 +1402,12 @@ paths:
             type: string
             format: uuid
       responses:
-        '200':
+        "200":
           description: Transaction detail
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Transaction'
+                $ref: "#/components/schemas/Transaction"
     patch:
       tags: [Transactions]
       summary: Update draft transaction
@@ -1331,14 +1423,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateTransactionRequest'
+              $ref: "#/components/schemas/CreateTransactionRequest"
       responses:
-        '200':
+        "200":
           description: Transaction updated
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Transaction'
+                $ref: "#/components/schemas/Transaction"
     delete:
       tags: [Transactions]
       summary: Delete draft transaction
@@ -1350,7 +1442,7 @@ paths:
             type: string
             format: uuid
       responses:
-        '200':
+        "200":
           description: Transaction deleted
           content:
             application/json:
@@ -1359,7 +1451,7 @@ paths:
                 properties:
                   success:
                     type: boolean
-                
+
   /organizations/{org_id}/transactions/pending:
     get:
       tags: [Transactions]
@@ -1373,7 +1465,7 @@ paths:
             type: string
             format: uuid
       responses:
-        '200':
+        "200":
           description: List of pending transactions
           content:
             application/json:
@@ -1383,19 +1475,19 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/PendingTransaction'
-        '401':
+                      $ref: "#/components/schemas/PendingTransaction"
+        "401":
           description: Unauthorized
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '403':
+                $ref: "#/components/schemas/Error"
+        "403":
           description: Not a member of organization
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
 
   /organizations/{org_id}/transactions/{id}/submit:
     post:
@@ -1416,25 +1508,25 @@ paths:
             type: string
             format: uuid
       responses:
-        '200':
+        "200":
           description: Transaction submitted successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Transaction'
-        '400':
+                $ref: "#/components/schemas/Transaction"
+        "400":
           description: Invalid status transition (not in draft status)
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '404':
+                $ref: "#/components/schemas/Error"
+        "404":
           description: Transaction not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-          
+                $ref: "#/components/schemas/Error"
+
   /organizations/{org_id}/transactions/{id}/approve:
     post:
       tags: [Transactions]
@@ -1458,33 +1550,33 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ApproveRequest'
+              $ref: "#/components/schemas/ApproveRequest"
       responses:
-        '200':
+        "200":
           description: Transaction approved successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Transaction'
-        '400':
+                $ref: "#/components/schemas/Transaction"
+        "400":
           description: Invalid status transition (not in pending status)
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '403':
+                $ref: "#/components/schemas/Error"
+        "403":
           description: Not authorized to approve (insufficient role or exceeds approval limit)
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '404':
+                $ref: "#/components/schemas/Error"
+        "404":
           description: Transaction not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-          
+                $ref: "#/components/schemas/Error"
+
   /organizations/{org_id}/transactions/{id}/post:
     post:
       tags: [Transactions]
@@ -1504,24 +1596,24 @@ paths:
             type: string
             format: uuid
       responses:
-        '200':
+        "200":
           description: Transaction posted successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Transaction'
-        '400':
+                $ref: "#/components/schemas/Transaction"
+        "400":
           description: Invalid status transition (not in approved status)
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '404':
+                $ref: "#/components/schemas/Error"
+        "404":
           description: Transaction not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
 
   /organizations/{org_id}/transactions/{id}/reject:
     post:
@@ -1546,26 +1638,26 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/RejectRequest'
+              $ref: "#/components/schemas/RejectRequest"
       responses:
-        '200':
+        "200":
           description: Transaction rejected successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Transaction'
-        '400':
+                $ref: "#/components/schemas/Transaction"
+        "400":
           description: Invalid status transition or missing rejection reason
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '404':
+                $ref: "#/components/schemas/Error"
+        "404":
           description: Transaction not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
 
   /organizations/{org_id}/transactions/{id}/void:
     post:
@@ -1590,26 +1682,26 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/VoidRequest'
+              $ref: "#/components/schemas/VoidRequest"
       responses:
-        '200':
+        "200":
           description: Transaction voided successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/VoidResponse'
-        '400':
+                $ref: "#/components/schemas/VoidResponse"
+        "400":
           description: Invalid status transition or missing void reason
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '404':
+                $ref: "#/components/schemas/Error"
+        "404":
           description: Transaction not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
 
   /organizations/{org_id}/transactions/bulk-approve:
     post:
@@ -1628,20 +1720,20 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/BulkApproveRequest'
+              $ref: "#/components/schemas/BulkApproveRequest"
       responses:
-        '200':
+        "200":
           description: Bulk approval result with per-transaction status
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/BulkApproveResponse'
-        '401':
+                $ref: "#/components/schemas/BulkApproveResponse"
+        "401":
           description: Unauthorized
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
 
   # ============ Approval Rules ============
   /organizations/{org_id}/approval-rules:
@@ -1658,24 +1750,24 @@ paths:
             type: string
             format: uuid
       responses:
-        '200':
+        "200":
           description: List of approval rules
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApprovalRuleListResponse'
-        '401':
+                $ref: "#/components/schemas/ApprovalRuleListResponse"
+        "401":
           description: Unauthorized
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '403':
+                $ref: "#/components/schemas/Error"
+        "403":
           description: Forbidden - not a member of the organization
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
     post:
       tags: [Transactions]
       summary: Create approval rule
@@ -1693,32 +1785,32 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateApprovalRuleRequest'
+              $ref: "#/components/schemas/CreateApprovalRuleRequest"
       responses:
-        '201':
+        "201":
           description: Approval rule created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApprovalRule'
-        '400':
+                $ref: "#/components/schemas/ApprovalRule"
+        "400":
           description: Validation error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '401':
+                $ref: "#/components/schemas/Error"
+        "401":
           description: Unauthorized
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '403':
+                $ref: "#/components/schemas/Error"
+        "403":
           description: Forbidden - admin or owner role required
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
 
   /organizations/{org_id}/approval-rules/{rule_id}:
     get:
@@ -1740,30 +1832,30 @@ paths:
             type: string
             format: uuid
       responses:
-        '200':
+        "200":
           description: Approval rule details
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApprovalRule'
-        '401':
+                $ref: "#/components/schemas/ApprovalRule"
+        "401":
           description: Unauthorized
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '403':
+                $ref: "#/components/schemas/Error"
+        "403":
           description: Forbidden
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '404':
+                $ref: "#/components/schemas/Error"
+        "404":
           description: Approval rule not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
     patch:
       tags: [Transactions]
       summary: Update approval rule
@@ -1787,38 +1879,38 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateApprovalRuleRequest'
+              $ref: "#/components/schemas/UpdateApprovalRuleRequest"
       responses:
-        '200':
+        "200":
           description: Approval rule updated
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApprovalRule'
-        '400':
+                $ref: "#/components/schemas/ApprovalRule"
+        "400":
           description: Validation error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '401':
+                $ref: "#/components/schemas/Error"
+        "401":
           description: Unauthorized
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '403':
+                $ref: "#/components/schemas/Error"
+        "403":
           description: Forbidden - admin or owner role required
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '404':
+                $ref: "#/components/schemas/Error"
+        "404":
           description: Approval rule not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
     delete:
       tags: [Transactions]
       summary: Delete approval rule
@@ -1838,26 +1930,26 @@ paths:
             type: string
             format: uuid
       responses:
-        '204':
+        "204":
           description: Approval rule deleted
-        '401':
+        "401":
           description: Unauthorized
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '403':
+                $ref: "#/components/schemas/Error"
+        "403":
           description: Forbidden - admin or owner role required
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '404':
+                $ref: "#/components/schemas/Error"
+        "404":
           description: Approval rule not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
 
   /transactions/{id}/attachments:
     get:
@@ -1871,7 +1963,7 @@ paths:
             type: string
             format: uuid
       responses:
-        '200':
+        "200":
           description: List of attachments
           content:
             application/json:
@@ -1881,7 +1973,7 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/Attachment'
+                      $ref: "#/components/schemas/Attachment"
     post:
       tags: [Transactions]
       summary: Upload attachment to transaction
@@ -1906,12 +1998,12 @@ paths:
                 description:
                   type: string
       responses:
-        '201':
+        "201":
           description: Attachment uploaded
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Attachment'
+                $ref: "#/components/schemas/Attachment"
 
   /attachments/{id}:
     get:
@@ -1925,12 +2017,12 @@ paths:
             type: string
             format: uuid
       responses:
-        '200':
+        "200":
           description: Attachment details
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Attachment'
+                $ref: "#/components/schemas/Attachment"
     delete:
       tags: [Transactions]
       summary: Delete attachment
@@ -1942,9 +2034,9 @@ paths:
             type: string
             format: uuid
       responses:
-        '204':
+        "204":
           description: Attachment deleted
-           
+
   # ============ Reports ============
   /reports/trial-balance:
     get:
@@ -1957,13 +2049,13 @@ paths:
             type: string
             format: date
       responses:
-        '200':
+        "200":
           description: Trial balance
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TrialBalance'
-                
+                $ref: "#/components/schemas/TrialBalance"
+
   # ============ Dashboard ============
   /dashboard/metrics:
     get:
@@ -1976,12 +2068,12 @@ paths:
             type: string
             format: uuid
       responses:
-        '200':
+        "200":
           description: Dashboard metrics
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DashboardMetrics'
+                $ref: "#/components/schemas/DashboardMetrics"
 
   /dashboard/cash-flow:
     get:
@@ -2000,14 +2092,14 @@ paths:
             default: 6
             maximum: 12
       responses:
-        '200':
+        "200":
           description: Cash flow data points
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/CashFlowDataPoint'
+                  $ref: "#/components/schemas/CashFlowDataPoint"
 
   /dashboard/recent-activity:
     get:
@@ -2027,7 +2119,7 @@ paths:
             enum: [all, transaction, budget, approval]
             default: all
       responses:
-        '200':
+        "200":
           description: Recent activity list
           content:
             application/json:
@@ -2037,7 +2129,7 @@ paths:
                   activities:
                     type: array
                     items:
-                      $ref: '#/components/schemas/ActivityItem'
+                      $ref: "#/components/schemas/ActivityItem"
                   pagination:
                     type: object
                     properties:
@@ -2054,7 +2146,7 @@ paths:
       tags: [Fiscal]
       summary: List fiscal years with periods
       responses:
-        '200':
+        "200":
           description: List of fiscal years
           content:
             application/json:
@@ -2064,7 +2156,7 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/FiscalYear'
+                      $ref: "#/components/schemas/FiscalYear"
     post:
       tags: [Fiscal]
       summary: Create fiscal year with auto-generated periods
@@ -2090,12 +2182,12 @@ paths:
                   enum: [monthly, quarterly]
                   default: monthly
       responses:
-        '201':
+        "201":
           description: Fiscal year created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FiscalYear'
+                $ref: "#/components/schemas/FiscalYear"
 
   /fiscal-periods/{id}/status:
     patch:
@@ -2120,12 +2212,12 @@ paths:
                   type: string
                   enum: [OPEN, SOFT_CLOSE, CLOSED]
       responses:
-        '200':
+        "200":
           description: Period status updated
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FiscalPeriod'
+                $ref: "#/components/schemas/FiscalPeriod"
 
   # ============ Currencies & Exchange Rates ============
   /currencies:
@@ -2133,7 +2225,7 @@ paths:
       tags: [Currencies]
       summary: List all currencies
       responses:
-        '200':
+        "200":
           description: List of currencies
           content:
             application/json:
@@ -2179,7 +2271,7 @@ paths:
             type: string
             format: date
       responses:
-        '200':
+        "200":
           description: Exchange rate
           content:
             application/json:
@@ -2216,7 +2308,7 @@ paths:
                   type: string
                   format: date
       responses:
-        '201':
+        "201":
           description: Exchange rate created
 
   /exchange-rates/bulk:
@@ -2246,7 +2338,7 @@ paths:
                         type: string
                         format: date
       responses:
-        '201':
+        "201":
           description: Rates imported
           content:
             application/json:
@@ -2264,7 +2356,7 @@ paths:
       tags: [Dimensions]
       summary: List dimension types
       responses:
-        '200':
+        "200":
           description: List of dimension types
           content:
             application/json:
@@ -2274,7 +2366,7 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/DimensionType'
+                      $ref: "#/components/schemas/DimensionType"
     post:
       tags: [Dimensions]
       summary: Create dimension type
@@ -2294,12 +2386,12 @@ paths:
                   type: boolean
                   default: false
       responses:
-        '201':
+        "201":
           description: Dimension type created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DimensionType'
+                $ref: "#/components/schemas/DimensionType"
 
   /dimension-values:
     get:
@@ -2315,7 +2407,7 @@ paths:
           schema:
             type: boolean
       responses:
-        '200':
+        "200":
           description: List of dimension values
           content:
             application/json:
@@ -2325,7 +2417,7 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/DimensionValue'
+                      $ref: "#/components/schemas/DimensionValue"
     post:
       tags: [Dimensions]
       summary: Create dimension value
@@ -2348,12 +2440,74 @@ paths:
                   type: string
                   format: uuid
       responses:
-        '201':
+        "201":
           description: Dimension value created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DimensionValue'
+                $ref: "#/components/schemas/DimensionValue"
+
+  /dimension-values/{id}:
+    patch:
+      tags: [Dimensions]
+      summary: Update dimension value
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+                name:
+                  type: string
+                description:
+                  type: string
+      responses:
+        "200":
+          description: Dimension value updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DimensionValue"
+
+  /dimension-values/{id}/status:
+    patch:
+      tags: [Dimensions]
+      summary: Toggle dimension value active status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [active, inactive]
+      responses:
+        "200":
+          description: Dimension value status updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DimensionValue"
 
   # ============ Account Balance & Ledger ============
   /accounts/{id}/balance:
@@ -2373,7 +2527,7 @@ paths:
             type: string
             format: date
       responses:
-        '200':
+        "200":
           description: Account balance
           content:
             application/json:
@@ -2386,7 +2540,7 @@ paths:
                   account_code:
                     type: string
                   balance:
-                    $ref: '#/components/schemas/Money'
+                    $ref: "#/components/schemas/Money"
                   currency:
                     type: string
                   as_of:
@@ -2425,7 +2579,7 @@ paths:
             type: integer
             default: 50
       responses:
-        '200':
+        "200":
           description: Ledger entries
           content:
             application/json:
@@ -2449,13 +2603,13 @@ paths:
                         description:
                           type: string
                         debit:
-                          $ref: '#/components/schemas/Money'
+                          $ref: "#/components/schemas/Money"
                         credit:
-                          $ref: '#/components/schemas/Money'
+                          $ref: "#/components/schemas/Money"
                         running_balance:
-                          $ref: '#/components/schemas/Money'
+                          $ref: "#/components/schemas/Money"
                   pagination:
-                    $ref: '#/components/schemas/Pagination'
+                    $ref: "#/components/schemas/Pagination"
 
   # ============ Organization Users ============
   /organizations/{id}:
@@ -2483,12 +2637,12 @@ paths:
                 timezone:
                   type: string
       responses:
-        '200':
+        "200":
           description: Organization updated
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Organization'
+                $ref: "#/components/schemas/Organization"
 
   /organizations/{id}/users:
     get:
@@ -2502,7 +2656,7 @@ paths:
             type: string
             format: uuid
       responses:
-        '200':
+        "200":
           description: List of users
           content:
             application/json:
@@ -2522,9 +2676,9 @@ paths:
                         full_name:
                           type: string
                         role:
-                          $ref: '#/components/schemas/UserRole'
+                          $ref: "#/components/schemas/UserRole"
                         approval_limit:
-                          $ref: '#/components/schemas/Money'
+                          $ref: "#/components/schemas/Money"
     post:
       tags: [Organizations]
       summary: Invite user to organization
@@ -2547,11 +2701,11 @@ paths:
                   type: string
                   format: email
                 role:
-                  $ref: '#/components/schemas/UserRole'
+                  $ref: "#/components/schemas/UserRole"
                 approval_limit:
                   type: number
       responses:
-        '201':
+        "201":
           description: User invited
 
   /organizations/{orgId}/users/{userId}:
@@ -2579,11 +2733,11 @@ paths:
               type: object
               properties:
                 role:
-                  $ref: '#/components/schemas/UserRole'
+                  $ref: "#/components/schemas/UserRole"
                 approval_limit:
                   type: number
       responses:
-        '200':
+        "200":
           description: User updated
     delete:
       tags: [Organizations]
@@ -2602,7 +2756,7 @@ paths:
             type: string
             format: uuid
       responses:
-        '200':
+        "200":
           description: User removed
 
   # ============ Reports ============
@@ -2617,7 +2771,7 @@ paths:
             type: string
             format: date
       responses:
-        '200':
+        "200":
           description: Balance sheet
 
   /reports/income-statement:
@@ -2641,7 +2795,7 @@ paths:
             type: string
             format: uuid
       responses:
-        '200':
+        "200":
           description: Income statement
 
   /reports/dimensional:
@@ -2667,9 +2821,9 @@ paths:
         - name: account_type
           in: query
           schema:
-            $ref: '#/components/schemas/AccountType'
+            $ref: "#/components/schemas/AccountType"
       responses:
-        '200':
+        "200":
           description: Dimensional report
 
   # ============ Budgets ============
@@ -2684,7 +2838,7 @@ paths:
             type: string
             format: uuid
       responses:
-        '200':
+        "200":
           description: List of budgets
     post:
       tags: [Budgets]
@@ -2708,7 +2862,7 @@ paths:
                 currency:
                   type: string
       responses:
-        '201':
+        "201":
           description: Budget created
 
   /budgets/{id}:
@@ -2723,7 +2877,7 @@ paths:
             type: string
             format: uuid
       responses:
-        '200':
+        "200":
           description: Budget detail
 
   /budgets/{id}/lines:
@@ -2764,7 +2918,7 @@ paths:
                           type: string
                           format: uuid
       responses:
-        '201':
+        "201":
           description: Budget lines added
 
   /budgets/{id}/lock:
@@ -2779,7 +2933,7 @@ paths:
             type: string
             format: uuid
       responses:
-        '200':
+        "200":
           description: Budget locked
 
   /budgets/{id}/vs-actual:
@@ -2804,7 +2958,7 @@ paths:
             type: string
             format: uuid
       responses:
-        '200':
+        "200":
           description: Budget vs actual data
 
   /dashboard/budget-vs-actual:
@@ -2822,7 +2976,7 @@ paths:
             type: string
             format: uuid
       responses:
-        '200':
+        "200":
           description: Budget vs actual summary for dashboard
 
   /simulation/project:
@@ -2835,11 +2989,11 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SimulationRequest'
+              $ref: "#/components/schemas/SimulationRequest"
       responses:
-        '200':
+        "200":
           description: Simulation results
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SimulationResult'
+                $ref: "#/components/schemas/SimulationResult"

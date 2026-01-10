@@ -166,6 +166,16 @@ Content-Type: application/json
   "is_active": true
 }
 
+### Toggle Account Status
+PATCH {{baseUrl}}/accounts/{{accountId}}/status
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+Content-Type: application/json
+
+{
+  "status": "inactive"
+}
+
 ### Delete Account (Soft Delete)
 DELETE {{baseUrl}}/accounts/{{accountId}}
 Authorization: Bearer {{accessToken}}
@@ -471,6 +481,27 @@ Content-Type: application/json
   "code": "CC001",
   "name": "Marketing",
   "is_active": true
+}
+
+### Update Dimension Value
+PATCH {{baseUrl}}/dimension-values/dim-value-uuid
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+Content-Type: application/json
+
+{
+  "name": "Marketing & Sales",
+  "code": "CC001-A"
+}
+
+### Toggle Dimension Value Status
+PATCH {{baseUrl}}/dimension-values/dim-value-uuid/status
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+Content-Type: application/json
+
+{
+  "status": "inactive"
 }
 
 ### ============ BUDGETS ============

@@ -515,6 +515,14 @@ tests/
 - [ ] API endpoint: `POST /exchange-rates/fetch` (manual trigger)
 - [ ] API endpoint: `POST /exchange-rates/bulk` (bulk import rates)
 
+- [ ] API endpoint: `POST /exchange-rates/bulk` (bulk import rates)
+
+### Missing Master Data APIs (Frontend Mocked)
+
+- [ ] `PATCH /accounts/:id/status` (Toggle active/inactive)
+- [ ] `PATCH /dimension-values/:id` (Update value name/code)
+- [ ] `PATCH /dimension-values/:id/status` (Toggle active/inactive)
+
 ### Dashboard Analytics
 
 - [ ] Dashboard API: `GET /api/v1/dashboard/metrics`
@@ -696,11 +704,11 @@ NOW we start frontend, because backend is solid.
   - [x] Expense trend chart
   - [x] Cash flow chart
   - [x] Budget utilization by department
-- [ ] Recent Activity Widget
-  - [ ] Feed-style list of latest transaction & budget actions
-  - [ ] Uses `GET /api/v1/dashboard/recent-activity` endpoint
-  - [ ] Activity type icons (created, approved, posted, voided, etc.)
-  - [ ] Relative timestamps ("2 hours ago")
+- [x] Recent Activity Widget
+  - [x] Feed-style list of latest transaction & budget actions
+  - [x] Uses `GET /api/v1/dashboard/recent-activity` endpoint
+  - [x] Activity type icons (created, approved, posted, voided, etc.)
+  - [x] Relative timestamps ("2 hours ago")
   - [ ] Click to navigate to transaction/budget detail
 
 ### Reports UI

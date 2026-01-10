@@ -38,3 +38,32 @@ export function useCashFlowData() {
     queryFn: () => apiClient<CashFlowDataPoint[]>('/dashboard/cash-flow'),
   })
 }
+
+// TODO: Move types to lib/api/types.ts once generated
+interface ActivityResponse {
+    activities: {
+        id: string
+        type: string
+        action: string
+        entity_type: string
+        entity_id: string
+        description: string
+        amount?: string
+        currency?: string
+        user: { id: string, full_name: string }
+        timestamp: string
+    }[]
+    pagination: {
+        limit: number
+        has_more: boolean
+        next_cursor: string | null
+    }
+}
+
+export function useRecentActivity() {
+    return useQuery({
+        queryKey: ['dashboard', 'recent-activity'],
+        queryFn: () => apiClient<ActivityResponse>('/dashboard/recent-activity'),
+        refetchInterval: 30000 // Real-time feed, refresh every 30s
+    })
+}

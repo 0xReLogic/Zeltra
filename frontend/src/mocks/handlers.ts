@@ -218,6 +218,49 @@ export const handlers = [
     })
   }),
 
+  // Recent Activity
+  http.get('/api/v1/dashboard/recent-activity', () => {
+    return HttpResponse.json({
+        activities: [
+            {
+                id: 'act_1',
+                type: 'transaction_created',
+                action: 'created',
+                entity_type: 'transaction',
+                entity_id: 'txn_001',
+                description: 'Office supplies purchase',
+                amount: '150.0000',
+                currency: 'USD',
+                user: { id: 'usr_001', full_name: 'Demo User' },
+                timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString() // 30 mins ago
+            },
+            {
+                id: 'act_2',
+                type: 'budget_updated',
+                action: 'updated',
+                entity_type: 'budget',
+                entity_id: 'bdg_001',
+                description: 'Engineering Budget FY2026',
+                user: { id: 'usr_002', full_name: 'Admin' },
+                timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString() // 2 hours ago
+            },
+            {
+                id: 'act_3',
+                type: 'transaction_approved',
+                action: 'approved',
+                entity_type: 'transaction',
+                entity_id: 'txn_002',
+                description: 'Project Alpha Payment',
+                amount: '5000.0000',
+                currency: 'USD',
+                user: { id: 'usr_003', full_name: 'Manager' },
+                timestamp: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString() // 5 hours ago
+            }
+        ],
+        pagination: { limit: 10, has_more: false, next_cursor: null }
+    })
+  }),
+
   http.get('/api/v1/dashboard/cash-flow', () => {
     return HttpResponse.json([
       { month: 'Jan', inflow: 45000, outflow: 32000 },

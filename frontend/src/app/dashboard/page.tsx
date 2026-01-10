@@ -7,6 +7,7 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { useDashboardMetrics, useCashFlowData } from '@/lib/queries/dashboard'
 import { useBudgets } from '@/lib/queries/budgets'
 import { formatCurrency } from '@/lib/utils/format'
+import { RecentActivity } from '@/components/dashboard/RecentActivity'
 
 export default function DashboardPage() {
   const { data: metrics } = useDashboardMetrics()
@@ -114,26 +115,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
         
-        <Card className="col-span-3">
-          <CardHeader>
-            <CardTitle>Budget Utilization by Dept</CardTitle>
-          </CardHeader>
-          <CardContent className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={budgetUtilizationData} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis type="number" domain={[0, 120]} tickFormatter={(value) => `${value}%`} className="text-xs" />
-                <YAxis type="category" dataKey="department" className="text-xs" width={80} />
-                <Tooltip formatter={(value: number | string | undefined) => `${value || 0}%`} />
-                <Bar dataKey="utilization" name="Utilization">
-                  {budgetUtilizationData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.utilization > 100 ? '#f87171' : '#34d399'} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+        <RecentActivity />
       </div>
     </div>
   )
