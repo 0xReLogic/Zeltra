@@ -100,10 +100,7 @@ mod tests {
             AppError::Unauthorized(String::new()).error_code(),
             "UNAUTHORIZED"
         );
-        assert_eq!(
-            AppError::Forbidden(String::new()).error_code(),
-            "FORBIDDEN"
-        );
+        assert_eq!(AppError::Forbidden(String::new()).error_code(), "FORBIDDEN");
         assert_eq!(AppError::NotFound(String::new()).error_code(), "NOT_FOUND");
         assert_eq!(
             AppError::Validation(String::new()).error_code(),
