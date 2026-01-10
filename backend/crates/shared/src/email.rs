@@ -27,7 +27,8 @@ pub enum EmailError {
 /// Email service for sending transactional emails.
 #[derive(Clone)]
 pub struct EmailService {
-    config: EmailConfig,
+    /// Email configuration.
+    pub config: EmailConfig,
 }
 
 impl EmailService {
@@ -38,7 +39,7 @@ impl EmailService {
     }
 
     /// Creates an SMTP transport.
-    fn create_transport(&self) -> Result<AsyncSmtpTransport<Tokio1Executor>, EmailError> {
+    pub fn create_transport(&self) -> Result<AsyncSmtpTransport<Tokio1Executor>, EmailError> {
         let creds = Credentials::new(
             self.config.smtp_username.clone(),
             self.config.smtp_password.clone(),

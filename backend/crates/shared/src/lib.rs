@@ -19,6 +19,10 @@ pub mod types;
 #[cfg(test)]
 mod auth_phase1_tests;
 #[cfg(test)]
+mod email_tests;
+#[cfg(test)]
+mod error_tests;
+#[cfg(test)]
 mod jwt_tests;
 
 pub use auth::{Claims, TokenPair};
