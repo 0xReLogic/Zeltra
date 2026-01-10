@@ -6,11 +6,11 @@ Live status untuk sync antara Backend & Frontend.
 
 ## Current State
 
-|                    | Backend                                                 | Frontend                                           |
-| ------------------ | ------------------------------------------------------- | -------------------------------------------------- |
-| **Current Phase**  | 3 (Complete)                                            | 7 (In Progress)                                    |
-| **Last Task Done** | Phase 3 - Transaction Workflow (515 tests)              | Phase 7 - Dashboard & Reports Integration (Mocked) |
-| **Next Task**      | Phase 4 - Reports                                       | Phase 7 - Recent Activity Widget                   |
+|                    | Backend                                    | Frontend                                           |
+| ------------------ | ------------------------------------------ | -------------------------------------------------- |
+| **Current Phase**  | 3 (Complete)                               | 7 (In Progress)                                    |
+| **Last Task Done** | Phase 3 - Transaction Workflow (515 tests) | Phase 7 - Dashboard & Reports Integration (Mocked) |
+| **Next Task**      | Phase 4 - Reports                          | Phase 7 - Recent Activity Widget                   |
 
 **Last Updated:** 2026-01-09
 
@@ -32,7 +32,7 @@ Live status untuk sync antara Backend & Frontend.
 | 0: Foundation    | ✅      | ⬜       | BE workspace setup done                        |
 | 1: Auth          | ✅      | ✅       | BE Auth API complete                           |
 | 2: Ledger        | ✅      | -        | 229 tests, 1000+ concurrent stress test passed |
-| 3: Workflow      | ✅      | -        | 515 tests, state machine + approval engine |
+| 3: Workflow      | ✅      | -        | 515 tests, state machine + approval engine     |
 | 4: Reports       | ⬜      | -        |                                                |
 | 5: Polish        | ⬜      | -        |                                                |
 | 6: FE Foundation | -       | ✅       | Auth & Org Management complete                 |
@@ -67,21 +67,21 @@ Live status untuk sync antara Backend & Frontend.
 
 ## Phase 1 Tasks (Backend - Auth)
 
-| Task                        | Status | Notes                                       |
-| --------------------------- | ------ | ------------------------------------------- |
-| JWT Service                 | ✅     | Access & refresh token generation           |
-| Password hashing            | ✅     | Argon2id with secure defaults               |
-| User repository             | ✅     | CRUD, find by email, get organizations      |
-| Organization repository     | ✅     | CRUD, membership management, role checks    |
-| Session repository          | ✅     | Create, revoke, cleanup sessions            |
-| Email verification repo     | ✅     | Create/verify tokens, invalidate, cleanup   |
-| Email service               | ✅     | SMTP via lettre, verification emails        |
-| Auth middleware             | ✅     | JWT validation, claims extraction           |
-| Auth routes                 | ✅     | Login, register, refresh, logout            |
-| Email verification routes   | ✅     | verify-email, resend-verification           |
-| Organization routes         | ✅     | Create, get, list users, add user           |
-| RLS context per request     | ✅     | `RlsConnection` wrapper, `SET LOCAL` helper |
-| Test cross-tenant isolation | ✅     | 3 integration tests, non-superuser role     |
+| Task                        | Status | Notes                                          |
+| --------------------------- | ------ | ---------------------------------------------- |
+| JWT Service                 | ✅     | Access & refresh token generation              |
+| Password hashing            | ✅     | Argon2id with secure defaults                  |
+| User repository             | ✅     | CRUD, find by email, get organizations         |
+| Organization repository     | ✅     | CRUD, membership management, role checks       |
+| Session repository          | ✅     | Create, revoke, cleanup sessions               |
+| Email verification repo     | ✅     | Create/verify tokens, invalidate, cleanup      |
+| Email service               | ✅     | SMTP via lettre, verification emails           |
+| Auth middleware             | ✅     | JWT validation, claims extraction              |
+| Auth routes                 | ✅     | Login, register, refresh, logout               |
+| Email verification routes   | ✅     | verify-email, resend-verification              |
+| Organization routes         | ✅     | Create, get, list users, add user              |
+| RLS context per request     | ✅     | `RlsConnection` wrapper, `SET LOCAL` helper    |
+| Test cross-tenant isolation | ✅     | 3 integration tests, non-superuser role        |
 | QA coverage (Phase 1)       | ✅     | +70 auth/org unit tests (roles, JWT, payloads) |
 
 ---
@@ -130,27 +130,27 @@ Live status untuk sync antara Backend & Frontend.
 
 ## Phase 3 Tasks (Backend - Transaction Workflow)
 
-| Task                                    | Status | Notes                                   |
-| --------------------------------------- | ------ | --------------------------------------- |
-| WorkflowService state machine           | ✅     | Draft→Pending→Approved→Posted→Voided    |
-| TransactionStatus enum                  | ✅     | 5 states with valid transitions         |
-| WorkflowAction enum                     | ✅     | Submit, Approve, Reject, Post, Void     |
-| WorkflowError enum                      | ✅     | InvalidTransition, CannotModify, etc.   |
-| ApprovalEngine                          | ✅     | Rule matching, role hierarchy           |
-| UserRole enum with hierarchy            | ✅     | Viewer < Submitter < Approver < Admin   |
-| Approval limit enforcement              | ✅     | Approver role amount limits             |
-| ReversalService                         | ✅     | Balanced reversing entries              |
-| WorkflowRepository                      | ✅     | All workflow operations                 |
-| ApprovalRuleRepository                  | ✅     | CRUD for approval rules                 |
-| Bulk approval                           | ✅     | Partial success handling                |
-| Immutability enforcement                | ✅     | Posted/Voided cannot be modified        |
-| Workflow API endpoints                  | ✅     | submit, approve, reject, post, void     |
-| Approval rules API endpoints            | ✅     | CRUD with admin+ authorization          |
-| Pending transactions queue              | ✅     | GET /transactions/pending               |
-| OpenAPI spec updated                    | ✅     | All schemas and endpoints               |
-| Property-based tests                    | ✅     | 11 properties validated                 |
-| Integration tests                       | ✅     | Full workflow cycle tests               |
-| **Total Tests**                         | ✅     | **515 tests passing** (target was 50+)  |
+| Task                          | Status | Notes                                  |
+| ----------------------------- | ------ | -------------------------------------- |
+| WorkflowService state machine | ✅     | Draft→Pending→Approved→Posted→Voided   |
+| TransactionStatus enum        | ✅     | 5 states with valid transitions        |
+| WorkflowAction enum           | ✅     | Submit, Approve, Reject, Post, Void    |
+| WorkflowError enum            | ✅     | InvalidTransition, CannotModify, etc.  |
+| ApprovalEngine                | ✅     | Rule matching, role hierarchy          |
+| UserRole enum with hierarchy  | ✅     | Viewer < Submitter < Approver < Admin  |
+| Approval limit enforcement    | ✅     | Approver role amount limits            |
+| ReversalService               | ✅     | Balanced reversing entries             |
+| WorkflowRepository            | ✅     | All workflow operations                |
+| ApprovalRuleRepository        | ✅     | CRUD for approval rules                |
+| Bulk approval                 | ✅     | Partial success handling               |
+| Immutability enforcement      | ✅     | Posted/Voided cannot be modified       |
+| Workflow API endpoints        | ✅     | submit, approve, reject, post, void    |
+| Approval rules API endpoints  | ✅     | CRUD with admin+ authorization         |
+| Pending transactions queue    | ✅     | GET /transactions/pending              |
+| OpenAPI spec updated          | ✅     | All schemas and endpoints              |
+| Property-based tests          | ✅     | 11 properties validated                |
+| Integration tests             | ✅     | Full workflow cycle tests              |
+| **Total Tests**               | ✅     | **515 tests passing** (target was 50+) |
 
 ---
 
@@ -201,46 +201,51 @@ Frontend cek di sini untuk tau endpoint mana yang udah ready.
 
 ### Transactions
 
-| Endpoint                       | Status | Notes                          |
-| ------------------------------ | ------ | ------------------------------ |
-| GET /transactions              | ✅     | Real API - list with filters   |
-| POST /transactions             | ✅     | Real API - create draft        |
-| GET /transactions/:id          | ✅     | Real API - detail with entries |
-| PATCH /transactions/:id        | ✅     | Real API - update draft only   |
-| DELETE /transactions/:id       | ✅     | Real API - delete draft only   |
-| POST /transactions/:id/submit  | ✅     | Real API - draft → pending     |
-| POST /transactions/:id/approve | ✅     | Real API - pending → approved  |
-| POST /transactions/:id/reject  | ✅     | Real API - pending → draft     |
-| POST /transactions/:id/post    | ✅     | Real API - approved → posted   |
-| POST /transactions/:id/void    | ✅     | Real API - posted → voided     |
-| GET /transactions/pending      | ✅     | Real API - approval queue      |
-| POST /transactions/bulk-approve| ✅     | Real API - batch approval      |
+| Endpoint                        | Status | Notes                          |
+| ------------------------------- | ------ | ------------------------------ |
+| GET /transactions               | ✅     | Real API - list with filters   |
+| POST /transactions              | ✅     | Real API - create draft        |
+| GET /transactions/:id           | ✅     | Real API - detail with entries |
+| PATCH /transactions/:id         | ✅     | Real API - update draft only   |
+| DELETE /transactions/:id        | ✅     | Real API - delete draft only   |
+| POST /transactions/:id/submit   | ✅     | Real API - draft → pending     |
+| POST /transactions/:id/approve  | ✅     | Real API - pending → approved  |
+| POST /transactions/:id/reject   | ✅     | Real API - pending → draft     |
+| POST /transactions/:id/post     | ✅     | Real API - approved → posted   |
+| POST /transactions/:id/void     | ✅     | Real API - posted → voided     |
+| GET /transactions/pending       | ✅     | Real API - approval queue      |
+| POST /transactions/bulk-approve | ✅     | Real API - batch approval      |
 
 ### Master Data
 
-| Endpoint                         | Status | Notes                               |
-| -------------------------------- | ------ | ----------------------------------- |
-| GET /fiscal-years                | ✅     | Real API - list with nested periods |
-| POST /fiscal-years               | ✅     | Real API - create with auto-periods |
-| GET /fiscal-periods              | ✅     | Real API - list periods             |
-| PATCH /fiscal-periods/:id/status | ✅     | Real API - update status            |
-| GET /dimension-types             | ✅     | Real API - list types               |
-| POST /dimension-types            | ✅     | Real API - create type              |
-| GET /dimension-values            | ✅     | Real API - list with filters        |
-| POST /dimension-values           | ✅     | Real API - create value             |
-| GET /exchange-rates              | ✅     | Real API - get rate for pair/date   |
-| POST /exchange-rates             | ✅     | Real API - create/update rate       |
-| GET /currencies                  | ✅     | Real API - list all currencies      |
+| Endpoint                           | Status | Notes                               |
+| ---------------------------------- | ------ | ----------------------------------- |
+| GET /fiscal-years                  | ✅     | Real API - list with nested periods |
+| POST /fiscal-years                 | ✅     | Real API - create with auto-periods |
+| GET /fiscal-periods                | ✅     | Real API - list periods             |
+| PATCH /fiscal-periods/:id/status   | ✅     | Real API - update status            |
+| GET /dimension-types               | ✅     | Real API - list types               |
+| POST /dimension-types              | ✅     | Real API - create type              |
+| GET /dimension-values              | ✅     | Real API - list with filters        |
+| POST /dimension-values             | ✅     | Real API - create value             |
+| GET /exchange-rates                | ✅     | Real API - get rate for pair/date   |
+| POST /exchange-rates               | ✅     | Real API - create/update rate       |
+| GET /currencies                    | ✅     | Real API - list all currencies      |
+| PATCH /accounts/:id/status         | ✅     | Frontend Mocked (Needs BE)          |
+| POST /dimension-types              | ✅     | Frontend Mocked (Needs BE)          |
+| PATCH /dimension-values/:id        | ✅     | Frontend Mocked (Needs BE)          |
+| PATCH /dimension-values/:id/status | ✅     | Frontend Mocked (Needs BE)          |
+| POST /exchange-rates/bulk          | ✅     | Frontend Mocked (Needs BE)          |
 
 ### Approval Rules
 
-| Endpoint                                | Status | Notes                          |
-| --------------------------------------- | ------ | ------------------------------ |
-| GET /organizations/:id/approval-rules   | ✅     | Real API - list rules          |
-| POST /organizations/:id/approval-rules  | ✅     | Real API - create rule (admin+)|
-| GET /organizations/:id/approval-rules/:id | ✅   | Real API - get rule detail     |
-| PATCH /organizations/:id/approval-rules/:id | ✅ | Real API - update rule (admin+)|
-| DELETE /organizations/:id/approval-rules/:id | ✅| Real API - soft delete (admin+)|
+| Endpoint                                     | Status | Notes                           |
+| -------------------------------------------- | ------ | ------------------------------- |
+| GET /organizations/:id/approval-rules        | ✅     | Real API - list rules           |
+| POST /organizations/:id/approval-rules       | ✅     | Real API - create rule (admin+) |
+| GET /organizations/:id/approval-rules/:id    | ✅     | Real API - get rule detail      |
+| PATCH /organizations/:id/approval-rules/:id  | ✅     | Real API - update rule (admin+) |
+| DELETE /organizations/:id/approval-rules/:id | ✅     | Real API - soft delete (admin+) |
 
 ### Reports
 
@@ -279,9 +284,9 @@ Frontend cek di sini untuk tau endpoint mana yang udah ready.
 
 ## Blockers
 
-| Issue | Reporter | Status | Resolution |
-| ----- | -------- | ------ | ---------- |
-| -     | -        | -      | -          |
+| Issue        | Reporter | Status | Resolution                                                                           |
+| ------------ | -------- | ------ | ------------------------------------------------------------------------------------ |
+| Missing APIs | Frontend | 🟡     | Needs BE implementation: Toggle Account, Create Dim Type, Edit Dim Value, Bulk Rates |
 
 ---
 

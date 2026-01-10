@@ -4,6 +4,7 @@ export interface Account {
   name: string
   account_type: 'asset' | 'liability' | 'equity' | 'revenue' | 'expense'
   balance: string // money type usually string from backend
+  is_active?: boolean
 }
 
 export interface GetAccountsResponse {

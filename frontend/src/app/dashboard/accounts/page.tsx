@@ -24,13 +24,14 @@ import {
 import { AccountForm } from '@/components/accounts/AccountForm'
 import { toast } from 'sonner'
 import { Account, CreateAccountRequest } from '@/types/accounts'
-import { useUpdateAccount, useDeleteAccount } from '@/lib/queries/accounts'
+import { useUpdateAccount, useDeleteAccount, useToggleAccountActive } from '@/lib/queries/accounts'
 
 export default function AccountsPage() {
   const { data, isLoading, isError } = useAccounts()
   const createAccount = useCreateAccount()
   const updateAccount = useUpdateAccount()
   const deleteAccount = useDeleteAccount()
+  const toggleAccount = useToggleAccountActive()
   const [open, setOpen] = React.useState(false)
   const [editingAccount, setEditingAccount] = React.useState<Account | null>(null)
 
@@ -114,14 +115,14 @@ export default function AccountsPage() {
                 {editingAccount ? 'Update account details.' : 'Add a new account to your chart of accounts.'}
               </DialogDescription>
             </DialogHeader>
-            <AccountForm 
-              onSubmit={handleSubmit} 
+            <AccountForm
+              onSubmit={handleSubmit}
               defaultValues={editingAccount ? {
                 code: editingAccount.code,
                 name: editingAccount.name,
                 account_type: editingAccount.account_type
               } : undefined}
-              isSubmitting={createAccount.isPending || updateAccount.isPending} 
+              isSubmitting={createAccount.isPending || updateAccount.isPending}
             />
           </DialogContent>
         </Dialog>
@@ -146,7 +147,7 @@ export default function AccountsPage() {
                       <Pencil className="mr-2 h-4 w-4" />
                       Edit
                     </DropdownMenuItem>
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
                       className="text-destructive focus:text-destructive"
                       onClick={(e) => {
                         e.preventDefault()
@@ -155,6 +156,19 @@ export default function AccountsPage() {
                     >
                       <Trash className="mr-2 h-4 w-4" />
                       Delete
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={(e) => {
+                        e.preventDefault()
+                        toggleAccount.mutate({
+                          id: account.id,
+                          isActive: !(account.is_active ?? true)
+                        }, {
+                          onSuccess: () => toast.success(`Account ${account.is_active === false ? 'activated' : 'deactivated'}`)
+                        })
+                      }}
+                    >
+                      {account.is_active === false ? 'Activate' : 'Deactivate'}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>

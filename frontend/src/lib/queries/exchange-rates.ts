@@ -42,3 +42,17 @@ export function useCreateExchangeRate() {
     },
   })
 }
+
+export function useBulkImportExchangeRates() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (data: { rates: CreateExchangeRateRequest[] }) =>
+      apiClient('/exchange-rates/bulk', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['exchange-rates'] })
+    },
+  })
+}

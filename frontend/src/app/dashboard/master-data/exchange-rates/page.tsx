@@ -12,6 +12,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Plus, Loader2 } from 'lucide-react'
+import { BulkImportDialog } from './BulkImportDialog'
 import { useExchangeRates, useCreateExchangeRate } from '@/lib/queries/exchange-rates'
 import {
   Dialog,
@@ -97,131 +98,134 @@ export default function ExchangeRatesPage() {
             Manage daily exchange rates for multi-currency transactions.
           </p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Rate
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add New Exchange Rate</DialogTitle>
-              <DialogDescription>
-                Set a conversion rate for a specific date.
-              </DialogDescription>
-            </DialogHeader>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="from_currency"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>From</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+        <div className="flex gap-2">
+          <BulkImportDialog />
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Rate
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add New Exchange Rate</DialogTitle>
+                <DialogDescription>
+                  Set a conversion rate for a specific date.
+                </DialogDescription>
+              </DialogHeader>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="from_currency"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>From</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select currency" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="USD">USD</SelectItem>
+                              <SelectItem value="SGD">SGD</SelectItem>
+                              <SelectItem value="EUR">EUR</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="to_currency"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>To</FormLabel>
                           <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select currency" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="USD">USD</SelectItem>
-                            <SelectItem value="SGD">SGD</SelectItem>
-                            <SelectItem value="EUR">EUR</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="to_currency"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>To</FormLabel>
-                         <FormControl>
                             <Input {...field} readOnly className="bg-muted" />
                           </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="rate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Exchange Rate</FormLabel>
+                        <FormControl>
+                          <Input type="number" step="0.01" placeholder="e.g. 15500" {...field} />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                </div>
 
-                <FormField
-                  control={form.control}
-                  name="rate"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Exchange Rate</FormLabel>
-                      <FormControl>
-                        <Input type="number" step="0.01" placeholder="e.g. 15500" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  <FormField
+                    control={form.control}
+                    name="date"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Date</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name="date"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Date</FormLabel>
-                      <FormControl>
-                        <Input type="date" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="flex justify-end pt-4">
-                  <Button type="submit" disabled={createRate.isPending}>
-                    {createRate.isPending ? 'Saving...' : 'Save Rate'}
-                  </Button>
-                </div>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
+                  <div className="flex justify-end pt-4">
+                    <Button type="submit" disabled={createRate.isPending}>
+                      {createRate.isPending ? 'Saving...' : 'Save Rate'}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Rate History</CardTitle>
-          <CardDescription>
-             List of recorded exchange rates ordered by date.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>From</TableHead>
-                <TableHead>To</TableHead>
-                <TableHead>Rate</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {data?.data.sort((a,b) => b.date.localeCompare(a.date)).map((rate) => (
-                <TableRow key={rate.id}>
-                  <TableCell>{rate.date}</TableCell>
-                  <TableCell className="font-medium">{rate.from_currency}</TableCell>
-                  <TableCell>{rate.to_currency}</TableCell>
-                  <TableCell>
-                    {parseFloat(rate.rate).toLocaleString('id-ID')}
-                  </TableCell>
+        <Card>
+          <CardHeader>
+            <CardTitle>Rate History</CardTitle>
+            <CardDescription>
+              List of recorded exchange rates ordered by date.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>From</TableHead>
+                  <TableHead>To</TableHead>
+                  <TableHead>Rate</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-    </div>
-  )
+              </TableHeader>
+              <TableBody>
+                {data?.data.sort((a, b) => b.date.localeCompare(a.date)).map((rate) => (
+                  <TableRow key={rate.id}>
+                    <TableCell>{rate.date}</TableCell>
+                    <TableCell className="font-medium">{rate.from_currency}</TableCell>
+                    <TableCell>{rate.to_currency}</TableCell>
+                    <TableCell>
+                      {parseFloat(rate.rate).toLocaleString('id-ID')}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
+      )
 }

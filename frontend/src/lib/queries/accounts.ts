@@ -13,7 +13,7 @@ export function useAccounts(type?: string) {
 
 export function useCreateAccount() {
   const queryClient = useQueryClient()
-  
+
   return useMutation({
     mutationFn: (data: CreateAccountRequest) =>
       apiClient<Account>('/accounts', {
@@ -80,7 +80,7 @@ export function useAccountLedger(id: string, params?: { page?: number; limit?: n
       if (params?.limit) queryParams.set('limit', params.limit.toString())
       if (params?.from) queryParams.set('from', params.from)
       if (params?.to) queryParams.set('to', params.to)
-      
+
       return apiClient<GetLedgerResponse>(`/accounts/${id}/ledger?${queryParams.toString()}`)
     },
     enabled: !!id,
@@ -94,6 +94,21 @@ export function useDeleteAccount() {
     mutationFn: (id: string) =>
       apiClient<{ success: boolean }>(`/accounts/${id}`, {
         method: 'DELETE',
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['accounts'] })
+    },
+  })
+}
+
+export function useToggleAccountActive() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
+      apiClient<{ success: boolean; is_active: boolean }>(`/accounts/${id}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ is_active: isActive }),
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounts'] })

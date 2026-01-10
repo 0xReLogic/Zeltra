@@ -637,7 +637,7 @@ NOW we start frontend, because backend is solid.
   - [x] Create new account (`POST /accounts`)
   - [x] Edit account (`PATCH /accounts/:id`)
   - [x] Delete account (`DELETE /accounts/:id`)
-  - [ ] Toggle account active status
+  - [x] Toggle account active status
 - [x] Fiscal period management
   - [x] List fiscal years with nested periods
   - [x] Period status badges (OPEN/SOFT_CLOSE/CLOSED)
@@ -646,13 +646,13 @@ NOW we start frontend, because backend is solid.
 - [x] Dimension management
   - [x] List dimension types with nested values
   - [x] Add dimension value (`POST /dimensions/:typeId/values`)
-  - [ ] Create dimension type (`POST /dimension-types`)
-  - [ ] Edit dimension value
-  - [ ] Toggle dimension active status
+  - [x] Create dimension type (`POST /dimension-types`)
+  - [x] Edit dimension value
+  - [x] Toggle dimension active status
 - [x] Exchange rate management
   - [x] List exchange rates
   - [x] Add exchange rate (`POST /exchange-rates`)
-  - [ ] Bulk import exchange rates
+  - [x] Bulk import exchange rates
 
 ### Transaction UI
 
