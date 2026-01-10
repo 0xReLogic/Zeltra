@@ -19,13 +19,21 @@ uuid = { workspace = true }
 argon2 = { workspace = true }
 rand_core = { version = "0.9", features = ["std"] }
 
+# Parallel processing for simulation engine
+rayon = { workspace = true }
+
+# Caching for simulation results
+moka = { version = "0.12", default-features = false, features = ["sync"] }
+
+# JSON for metadata fields
+serde_json = { workspace = true }
+
 # NO database deps, NO web deps - pure business logic
 
 [dev-dependencies]
 rust_decimal_macros = { workspace = true }
 proptest = { workspace = true }
 rstest = { workspace = true }
-serde_json = { workspace = true }
 
 [lints]
 workspace = true

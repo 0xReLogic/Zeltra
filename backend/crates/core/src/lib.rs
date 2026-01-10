@@ -13,12 +13,16 @@
 //! - `simulation` - What-if scenario projections
 //! - `dimension` - Dimensional reporting and filtering
 //! - `workflow` - Transaction workflow and approval management
+//! - `reports` - Financial report generation
+//! - `dashboard` - Dashboard metrics and activity types
 
 pub mod auth;
 pub mod budget;
 pub mod currency;
+pub mod dashboard;
 pub mod dimension;
 pub mod fiscal;
 pub mod ledger;
+pub mod reports;
 pub mod simulation;
 pub mod workflow;

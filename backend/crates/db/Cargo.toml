@@ -18,6 +18,9 @@ sha2 = "0.10"
 rand = "0.9"
 base64-url = "3.0"
 
+# Caching for simulation results
+moka = { workspace = true }
+
 tokio = { workspace = true }
 chrono = { workspace = true }
 chrono-tz = { workspace = true }
