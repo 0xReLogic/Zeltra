@@ -83,40 +83,49 @@ mod tests {
 
     #[test]
     fn test_error_status_codes() {
-        assert_eq!(AppError::Unauthorized("".into()).status_code(), 401);
-        assert_eq!(AppError::Forbidden("".into()).status_code(), 403);
-        assert_eq!(AppError::NotFound("".into()).status_code(), 404);
-        assert_eq!(AppError::Validation("".into()).status_code(), 400);
-        assert_eq!(AppError::BusinessRule("".into()).status_code(), 422);
-        assert_eq!(AppError::Conflict("".into()).status_code(), 409);
-        assert_eq!(AppError::Database("".into()).status_code(), 500);
-        assert_eq!(AppError::ExternalService("".into()).status_code(), 500);
-        assert_eq!(AppError::Internal("".into()).status_code(), 500);
+        assert_eq!(AppError::Unauthorized(String::new()).status_code(), 401);
+        assert_eq!(AppError::Forbidden(String::new()).status_code(), 403);
+        assert_eq!(AppError::NotFound(String::new()).status_code(), 404);
+        assert_eq!(AppError::Validation(String::new()).status_code(), 400);
+        assert_eq!(AppError::BusinessRule(String::new()).status_code(), 422);
+        assert_eq!(AppError::Conflict(String::new()).status_code(), 409);
+        assert_eq!(AppError::Database(String::new()).status_code(), 500);
+        assert_eq!(AppError::ExternalService(String::new()).status_code(), 500);
+        assert_eq!(AppError::Internal(String::new()).status_code(), 500);
     }
 
     #[test]
     fn test_error_codes() {
         assert_eq!(
-            AppError::Unauthorized("".into()).error_code(),
+            AppError::Unauthorized(String::new()).error_code(),
             "UNAUTHORIZED"
         );
-        assert_eq!(AppError::Forbidden("".into()).error_code(), "FORBIDDEN");
-        assert_eq!(AppError::NotFound("".into()).error_code(), "NOT_FOUND");
         assert_eq!(
-            AppError::Validation("".into()).error_code(),
+            AppError::Forbidden(String::new()).error_code(),
+            "FORBIDDEN"
+        );
+        assert_eq!(AppError::NotFound(String::new()).error_code(), "NOT_FOUND");
+        assert_eq!(
+            AppError::Validation(String::new()).error_code(),
             "VALIDATION_ERROR"
         );
         assert_eq!(
-            AppError::BusinessRule("".into()).error_code(),
+            AppError::BusinessRule(String::new()).error_code(),
             "BUSINESS_RULE_VIOLATION"
         );
-        assert_eq!(AppError::Conflict("".into()).error_code(), "CONFLICT");
-        assert_eq!(AppError::Database("".into()).error_code(), "DATABASE_ERROR");
+        assert_eq!(AppError::Conflict(String::new()).error_code(), "CONFLICT");
         assert_eq!(
-            AppError::ExternalService("".into()).error_code(),
+            AppError::Database(String::new()).error_code(),
+            "DATABASE_ERROR"
+        );
+        assert_eq!(
+            AppError::ExternalService(String::new()).error_code(),
             "EXTERNAL_SERVICE_ERROR"
         );
-        assert_eq!(AppError::Internal("".into()).error_code(), "INTERNAL_ERROR");
+        assert_eq!(
+            AppError::Internal(String::new()).error_code(),
+            "INTERNAL_ERROR"
+        );
     }
 
     #[test]

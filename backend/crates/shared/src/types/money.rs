@@ -74,6 +74,21 @@ impl std::fmt::Display for Currency {
     }
 }
 
+impl std::str::FromStr for Currency {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_uppercase().as_str() {
+            "USD" => Ok(Self::Usd),
+            "IDR" => Ok(Self::Idr),
+            "EUR" => Ok(Self::Eur),
+            "SGD" => Ok(Self::Sgd),
+            "JPY" => Ok(Self::Jpy),
+            _ => Err(format!("Unknown currency: {s}")),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -137,20 +152,5 @@ mod tests {
 
         assert!(Currency::from_str("XXX").is_err());
         assert!(Currency::from_str("").is_err());
-    }
-}
-
-impl std::str::FromStr for Currency {
-    type Err = String;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s.to_uppercase().as_str() {
-            "USD" => Ok(Self::Usd),
-            "IDR" => Ok(Self::Idr),
-            "EUR" => Ok(Self::Eur),
-            "SGD" => Ok(Self::Sgd),
-            "JPY" => Ok(Self::Jpy),
-            _ => Err(format!("Unknown currency: {s}")),
-        }
     }
 }
