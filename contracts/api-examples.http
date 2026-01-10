@@ -635,24 +635,49 @@ X-Organization-ID: {{orgId}}
 ### ============ SIMULATION ============
 
 ### Run Simulation/Projection
-POST {{baseUrl}}/simulation/project
+POST {{baseUrl}}/simulation/run
 Authorization: Bearer {{accessToken}}
 X-Organization-ID: {{orgId}}
 Content-Type: application/json
 
 {
-  "base_period_id": "period-uuid",
+  "base_period_start": "2025-01-01",
+  "base_period_end": "2025-12-31",
   "projection_months": 12,
-  "adjustments": [
-    {
-      "account_id": "revenue-account-uuid",
-      "adjustment_type": "percentage",
-      "value": "10"
-    },
-    {
-      "account_id": "expense-account-uuid",
-      "adjustment_type": "fixed",
-      "value": "5000.00"
-    }
-  ]
+  "revenue_growth_rate": "0.10",
+  "expense_growth_rate": "0.05",
+  "account_adjustments": {
+    "550e8400-e29b-41d4-a716-446655440000": "0.15",
+    "550e8400-e29b-41d4-a716-446655440001": "-0.05"
+  },
+  "dimension_filters": []
+}
+
+### Run Simulation - Simple (global rates only)
+POST {{baseUrl}}/simulation/run
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+Content-Type: application/json
+
+{
+  "base_period_start": "2025-01-01",
+  "base_period_end": "2025-12-31",
+  "projection_months": 6,
+  "revenue_growth_rate": "0.08",
+  "expense_growth_rate": "0.03"
+}
+
+### Run Simulation - With Dimension Filter
+POST {{baseUrl}}/simulation/run
+Authorization: Bearer {{accessToken}}
+X-Organization-ID: {{orgId}}
+Content-Type: application/json
+
+{
+  "base_period_start": "2025-01-01",
+  "base_period_end": "2025-12-31",
+  "projection_months": 12,
+  "revenue_growth_rate": "0.10",
+  "expense_growth_rate": "0.05",
+  "dimension_filters": ["department-uuid-engineering", "department-uuid-sales"]
 }

@@ -761,6 +761,178 @@ components:
           type: string
           format: date-time
 
+    # ============ Simulation ============
+    SimulationRequest:
+      type: object
+      required: [base_period_start, base_period_end, projection_months]
+      properties:
+        base_period_start:
+          type: string
+          format: date
+          description: "Start date of historical period for baseline calculation"
+          example: "2025-01-01"
+        base_period_end:
+          type: string
+          format: date
+          description: "End date of historical period for baseline calculation"
+          example: "2025-12-31"
+        projection_months:
+          type: integer
+          minimum: 1
+          maximum: 60
+          description: "Number of months to project into the future"
+          example: 12
+        revenue_growth_rate:
+          type: string
+          description: "Global growth rate for revenue accounts (decimal, e.g. '0.10' for 10%)"
+          example: "0.10"
+          default: "0"
+        expense_growth_rate:
+          type: string
+          description: "Global growth rate for expense accounts (decimal, e.g. '0.05' for 5%)"
+          example: "0.05"
+          default: "0"
+        account_adjustments:
+          type: object
+          additionalProperties:
+            type: string
+          description: "Per-account growth rate overrides. Key is account_id (UUID), value is growth rate (decimal)"
+          example:
+            "550e8400-e29b-41d4-a716-446655440000": "0.15"
+            "550e8400-e29b-41d4-a716-446655440001": "-0.05"
+        dimension_filters:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: "Filter historical data by dimension value IDs"
+
+    SimulationResult:
+      type: object
+      required:
+        [simulation_id, parameters_hash, projections, annual_summary, cached]
+      properties:
+        simulation_id:
+          type: string
+          format: uuid
+          description: "Unique identifier for this simulation run"
+        parameters_hash:
+          type: string
+          description: "Hash of simulation parameters for caching"
+        cached:
+          type: boolean
+          description: "Whether this result was returned from cache"
+        projections:
+          type: array
+          items:
+            $ref: "#/components/schemas/AccountProjection"
+        annual_summary:
+          $ref: "#/components/schemas/AnnualSummary"
+        monthly_summary:
+          type: array
+          description: "Aggregated monthly totals for charts"
+          items:
+            $ref: "#/components/schemas/MonthlySummary"
+
+    AccountProjection:
+      type: object
+      required:
+        [
+          period_name,
+          period_start,
+          period_end,
+          account_id,
+          account_code,
+          account_name,
+          account_type,
+          baseline_amount,
+          projected_amount,
+          change_percent,
+        ]
+      properties:
+        period_name:
+          type: string
+          description: "Period identifier (YYYY-MM format)"
+          example: "2026-01"
+        period_start:
+          type: string
+          format: date
+        period_end:
+          type: string
+          format: date
+        account_id:
+          type: string
+          format: uuid
+        account_code:
+          type: string
+          example: "4000"
+        account_name:
+          type: string
+          example: "Sales Revenue"
+        account_type:
+          $ref: "#/components/schemas/AccountType"
+        baseline_amount:
+          type: string
+          description: "Average monthly amount from historical period"
+          example: "50000.00"
+        projected_amount:
+          type: string
+          description: "Projected amount after applying growth rate"
+          example: "55000.00"
+        change_percent:
+          type: string
+          description: "Percentage change from baseline"
+          example: "10.00"
+
+    AnnualSummary:
+      type: object
+      required:
+        [
+          total_projected_revenue,
+          total_projected_expenses,
+          projected_net_income,
+        ]
+      properties:
+        total_projected_revenue:
+          type: string
+          description: "Sum of all projected revenue amounts"
+          example: "1200000.00"
+        total_projected_expenses:
+          type: string
+          description: "Sum of all projected expense amounts"
+          example: "900000.00"
+        projected_net_income:
+          type: string
+          description: "Revenue minus expenses"
+          example: "300000.00"
+        net_profit_margin:
+          type: string
+          description: "Net income / Revenue * 100"
+          example: "25.00"
+
+    MonthlySummary:
+      type: object
+      description: "Aggregated monthly totals for chart display"
+      required: [month, revenue, expenses, net_income]
+      properties:
+        month:
+          type: string
+          description: "Month label for chart"
+          example: "Jan"
+        period_name:
+          type: string
+          description: "Full period identifier"
+          example: "2026-01"
+        revenue:
+          type: string
+          example: "100000.00"
+        expenses:
+          type: string
+          example: "75000.00"
+        net_income:
+          type: string
+          example: "25000.00"
+
     # ============ Workflow Request/Response ============
     ApproveRequest:
       type: object
@@ -2979,7 +3151,7 @@ paths:
         "200":
           description: Budget vs actual summary for dashboard
 
-  /simulation/project:
+  /simulation/run:
     post:
       tags: [Simulation]
       summary: Run budget simulation

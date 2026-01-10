@@ -13,7 +13,8 @@ import {
   Briefcase,
   CheckSquare,
   PieChart,
-  FileText
+  FileText,
+  TrendingUp
 } from 'lucide-react'
 
 const navItems = [
@@ -22,6 +23,7 @@ const navItems = [
   { label: 'Transactions', href: '/dashboard/transactions', icon: ArrowRightLeft },
   { label: 'Approvals', href: '/dashboard/approvals', icon: CheckSquare },
   { label: 'Budgeting', href: '/dashboard/budgets', icon: PieChart },
+  { label: 'Simulation', href: '/dashboard/simulation', icon: TrendingUp },
   { label: 'Reports', href: '/dashboard/reports/trial-balance', icon: FileText },
   { label: 'Master Data', href: '/dashboard/master-data', icon: Briefcase },
   { label: 'Settings', href: '/dashboard/settings', icon: Settings },

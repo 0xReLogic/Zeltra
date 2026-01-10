@@ -636,6 +636,80 @@ export const handlers = [
       })
   }),
 
+  // Simulation
+  http.post('/api/v1/simulation/run', async ({ request }) => {
+    const body = await request.json() as { 
+        base_period_start: string, 
+        revenue_growth_rate: string, 
+        expense_growth_rate: string,
+        projection_months: number 
+    }
+    
+    const revenueGrowth = parseFloat(body.revenue_growth_rate || '0')
+    const expenseGrowth = parseFloat(body.expense_growth_rate || '0')
+    const months = body.projection_months || 12
+    const startYear = new Date(body.base_period_start).getFullYear() + 1 // Project for next year relative to base
+
+    // Mock baseline values (monthly average)
+    const BASE_REVENUE = 100000
+    const BASE_EXPENSE = 60000
+
+    const projections = Array.from({ length: months }, (_, i) => {
+        const monthIndex = i % 12
+        const yearOffset = Math.floor(i / 12)
+        const currentYear = startYear + yearOffset
+        const monthNum = monthIndex + 1
+        const monthName = new Date(currentYear, monthIndex).toLocaleString('default', { month: 'short' })
+        
+        // Compound growth per month for visual ramp-up (simplified)
+        // Or just flat growth applied to baseline:
+        const projectedRevenue = BASE_REVENUE * (1 + revenueGrowth)
+        const projectedExpense = BASE_EXPENSE * (1 + expenseGrowth)
+        const netIncome = projectedRevenue - projectedExpense
+
+        return {
+            period_name: `${currentYear}-${monthNum.toString().padStart(2, '0')}`,
+            period_start: `${currentYear}-${monthNum.toString().padStart(2, '0')}-01`,
+            period_end: `${currentYear}-${monthNum.toString().padStart(2, '0')}-28`, // simplified
+            account_id: 'acc_sim_01',
+            account_code: '0000',
+            account_name: 'Aggregated',
+            account_type: 'revenue',
+            baseline_amount: BASE_REVENUE.toFixed(4),
+            projected_amount: projectedRevenue.toFixed(4),
+            change_percent: (revenueGrowth * 100).toFixed(2),
+            revenue: projectedRevenue.toFixed(4), // Included for chart convenience
+            expenses: projectedExpense.toFixed(4),
+            net_income: netIncome.toFixed(4),
+            month: monthName
+        }
+    })
+
+    const totalRevenue = projections.reduce((sum, p) => sum + parseFloat(p.revenue), 0)
+    const totalExpense = projections.reduce((sum, p) => sum + parseFloat(p.expenses), 0)
+    const totalNet = totalRevenue - totalExpense
+
+    return HttpResponse.json({
+        simulation_id: `sim_${Date.now()}`,
+        parameters_hash: 'hash_xyz',
+        cached: false,
+        projections: projections, // Keeping detailed array
+        annual_summary: {
+            total_projected_revenue: totalRevenue.toFixed(4),
+            total_projected_expenses: totalExpense.toFixed(4),
+            projected_net_income: totalNet.toFixed(4),
+            net_profit_margin: ((totalNet / totalRevenue) * 100).toFixed(2)
+        },
+        monthly_summary: projections.map(p => ({
+            month: p.month,
+            period_name: p.period_name,
+            revenue: p.revenue,
+            expenses: p.expenses,
+            net_income: p.net_income
+        }))
+    })
+  }),
+
   // Organization Settings & Team
   http.get('/api/v1/organizations/:id', ({ params }) => {
     return HttpResponse.json({

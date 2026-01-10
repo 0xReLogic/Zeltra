@@ -444,7 +444,7 @@ tests/
 - [ ] `GET /reports/account-ledger/:account_id`
 - [ ] `GET /reports/dimensional`
 - [ ] `GET /reports/budget-vs-actual`
-- [ ] `POST /simulation/project`
+- [ ] `POST /simulation/run`
 
 ### Tests
 
@@ -709,7 +709,7 @@ NOW we start frontend, because backend is solid.
   - [x] Uses `GET /api/v1/dashboard/recent-activity` endpoint
   - [x] Activity type icons (created, approved, posted, voided, etc.)
   - [x] Relative timestamps ("2 hours ago")
-  - [ ] Click to navigate to transaction/budget detail
+  - [x] Click to navigate to transaction/budget detail
 
 ### Reports UI
 
@@ -750,10 +750,10 @@ NOW we start frontend, because backend is solid.
   - [x] Assign dimensions to budget lines (`budget_line_dimensions`)
   - [x] Lock/unlock budget
   - [x] Mock: `POST /budgets`, `POST /budgets/:id/lines`
-- [ ] Simulation/Forecasting UI (Phase 4 backend dependency) (API Spec Ready)
-  - [ ] Historical data selection
-  - [ ] Adjustment parameters
-  - [ ] Projection results
+- [x] Simulation/Forecasting UI (Phase 4 backend dependency) (API Spec Ready)
+  - [x] Historical data selection
+  - [x] Adjustment parameters
+  - [x] Projection results
 
 ### Mock Handlers Status
 
@@ -773,6 +773,7 @@ The following mock handlers have been implemented in `frontend/src/mocks/handler
   - [x] `POST /api/v1/budgets/:id/lines`
 - [x] Dashboard Metrics: `GET /api/v1/dashboard/metrics`
 - [x] Cash Flow: `GET /api/v1/dashboard/cash-flow`
+- [x] Simulation: `POST /api/v1/simulation/run`
 
 **Deliverable:** Complete frontend application.
 
