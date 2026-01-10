@@ -226,7 +226,7 @@ mod tests {
             .oneshot(
                 Request::builder()
                     .uri("/")
-                    .header(AUTHORIZATION, format!("Bearer {}", token))
+                    .header(AUTHORIZATION, format!("Bearer {token}"))
                     .body(Body::empty())
                     .unwrap(),
             )

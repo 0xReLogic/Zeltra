@@ -25,7 +25,7 @@ fn test_typed_id_default() {
 fn test_typed_id_display() {
     let uuid = Uuid::new_v4();
     let id = UserId::from_uuid(uuid);
-    assert_eq!(format!("{}", id), uuid.to_string());
+    assert_eq!(format!("{id}"), uuid.to_string());
 }
 
 #[test]
