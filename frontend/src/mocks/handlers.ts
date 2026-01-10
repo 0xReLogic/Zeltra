@@ -167,11 +167,69 @@ export const handlers = [
             ...e,
             account_name: 'Mock Account' 
         })),
+        source_currency: body.source_currency || 'USD',
+        exchange_rate: body.exchange_rate || '1.0'
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     MOCK_TRANSACTIONS.unshift(newTxn as any)
     
     return HttpResponse.json(newTxn)
+  }),
+
+  // Bulk Approve
+  http.post('/api/v1/organizations/:orgId/transactions/bulk-approve', async ({ request }) => {
+       const body = await request.json() as { transaction_ids: string[] }
+       const approvedIds = []
+       const failedIds = []
+
+       for (const id of body.transaction_ids) {
+           const tx = MOCK_TRANSACTIONS.find(t => t.id === id)
+           // eslint-disable-next-line @typescript-eslint/no-explicit-any
+           if (tx) {
+               (tx as any).status = 'approved';
+               (tx as any).approved_at = new Date().toISOString()
+               approvedIds.push({ id, status: 'approved' })
+           } else {
+               failedIds.push({ id, error: 'Not found' })
+           }
+       }
+
+       return HttpResponse.json({
+           approved: approvedIds,
+           failed: failedIds
+       })
+  }),
+
+  // Attachments
+  http.post('/api/v1/transactions/:id/attachments', async () => {
+      // Simulate upload delay
+      await new Promise(resolve => setTimeout(resolve, 500))
+      return HttpResponse.json({
+          id: crypto.randomUUID(),
+          file_name: 'invoice_scan.pdf',
+          file_size: 1024 * 500, // 500KB
+          content_type: 'application/pdf',
+          uploaded_at: new Date().toISOString()
+      })
+  }),
+
+  http.get('/api/v1/transactions/:id/attachments', () => {
+      return HttpResponse.json([
+          {
+              id: 'att_1',
+              file_name: 'receipt_001.jpg',
+              file_size: 1024 * 250, 
+              content_type: 'image/jpeg',
+              uploaded_at: '2025-01-10T08:00:00Z'
+          },
+           {
+              id: 'att_2',
+              file_name: 'contract_signed.pdf',
+              file_size: 1024 * 1024 * 2, 
+              content_type: 'application/pdf',
+              uploaded_at: '2025-01-09T14:30:00Z'
+          }
+      ])
   }),
 
   http.get('/api/v1/transactions/:id', ({ params }) => {

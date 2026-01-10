@@ -675,17 +675,17 @@ NOW we start frontend, because backend is solid.
   - [x] Multi-line journal entry (debit/credit)
   - [x] Account selector
   - [x] Dimension assignment per entry (`entry_dimensions`)
-  - [ ] Multi-currency support (source_currency, exchange_rate) (API Spec Ready)
-  - [ ] Attachment upload (API Spec Ready)
+  - [x] Multi-currency support (source_currency, exchange_rate) (API Spec Ready)
+  - [x] Attachment upload (API Spec Ready)
 - [x] Approval queue
   - [x] List pending transactions
   - [x] Approve/Reject actions
-  - [ ] Bulk approve (API Spec Ready)
+  - [x] Bulk approve (API Spec Ready)
 - [x] Transaction detail
   - [x] View entries with debit/credit
   - [x] View dimension assignments
-  - [ ] View attachments (API Spec Ready)
-  - [ ] Audit trail (submitted_by, approved_by, posted_by timestamps) (API Spec Ready)
+  - [x] View attachments (API Spec Ready)
+  - [x] Audit trail (submitted_by, approved_by, posted_by timestamps) (API Spec Ready)
 
 ### Dashboard
 

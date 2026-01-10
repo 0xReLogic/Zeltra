@@ -1,6 +1,7 @@
 'use client'
 
-import React from 'react'
+
+import React, { useRef, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { ArrowLeft, Loader2, CheckCircle, XCircle, Clock, FileText, Send } from 'lucide-react'
 import Link from 'next/link'
@@ -42,6 +43,27 @@ export default function TransactionDetailPage() {
   const { data: transaction, isLoading, isError } = useTransaction(transactionId)
   const approve = useApproveTransaction()
   const reject = useRejectTransaction()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [attachments, setAttachments] = useState<{name: string, id: string}[]>([])
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      // Mock upload process
+      const toastId = toast.loading("Uploading attachment...")
+      
+      // Simulate API call
+      setTimeout(() => {
+        setAttachments(prev => [...prev, { name: file.name, id: Math.random().toString() }])
+        toast.dismiss(toastId)
+        toast.success("File uploaded successfully")
+      }, 1000)
+    }
+  }
 
   if (isLoading) {
     return (
@@ -172,6 +194,89 @@ export default function TransactionDetailPage() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Attachments & Audit */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card>
+              <CardHeader>
+                  <CardTitle>Attachments</CardTitle>
+                  <CardDescription>Supporting documents</CardDescription>
+              </CardHeader>
+              <CardContent>
+                  <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    className="hidden" 
+                    onChange={handleFileChange}
+                  />
+                  <div 
+                    onClick={handleUploadClick}
+                    className="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-center hover:bg-muted/50 transition-colors cursor-pointer"
+                  >
+                      <FileText className="h-8 w-8 text-muted-foreground mb-2" />
+                      <p className="text-sm font-medium">Click to upload</p>
+                      <p className="text-xs text-muted-foreground">or drag and drop files here</p>
+                  </div>
+                  <div className="mt-4 space-y-2">
+                       {/* Mock list of attachments */}
+                       <div className="flex items-center justify-between p-3 border rounded-md">
+                           <div className="flex items-center space-x-3">
+                               <FileText className="h-4 w-4 text-blue-500" />
+                               <span className="text-sm font-medium">invoice_inv-2024-001.pdf</span>
+                           </div>
+                           <Button variant="ghost" size="sm">View</Button>
+                       </div>
+                       {attachments.map(file => (
+                          <div key={file.id} className="flex items-center justify-between p-3 border rounded-md">
+                              <div className="flex items-center space-x-3">
+                                  <FileText className="h-4 w-4 text-blue-500" />
+                                  <span className="text-sm font-medium">{file.name}</span>
+                              </div>
+                              <Button variant="ghost" size="sm">View</Button>
+                          </div>
+                       ))}
+                  </div>
+              </CardContent>
+          </Card>
+
+          <Card>
+              <CardHeader>
+                  <CardTitle>Audit Trail</CardTitle>
+                  <CardDescription>History of changes</CardDescription>
+              </CardHeader>
+              <CardContent>
+                  <div className="space-y-4">
+                      <div className="flex items-start gap-4">
+                          <div className="mt-1 bg-emerald-100 p-1 rounded-full dark:bg-emerald-900">
+                             <CheckCircle className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+                          </div>
+                          <div>
+                              <p className="text-sm font-medium">Approved by Manager</p>
+                              <p className="text-xs text-muted-foreground">Today at 10:30 AM</p>
+                          </div>
+                      </div>
+                      <div className="flex items-start gap-4">
+                          <div className="mt-1 bg-blue-100 p-1 rounded-full dark:bg-blue-900">
+                             <Send className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+                          </div>
+                          <div>
+                              <p className="text-sm font-medium">Submitted for Approval</p>
+                              <p className="text-xs text-muted-foreground">Yesterday at 4:15 PM</p>
+                          </div>
+                      </div>
+                      <div className="flex items-start gap-4">
+                          <div className="mt-1 bg-gray-100 p-1 rounded-full dark:bg-gray-800">
+                             <FileText className="h-3 w-3 text-gray-600 dark:text-gray-400" />
+                          </div>
+                          <div>
+                              <p className="text-sm font-medium">Created by User</p>
+                              <p className="text-xs text-muted-foreground">Yesterday at 4:00 PM</p>
+                          </div>
+                      </div>
+                  </div>
+              </CardContent>
+          </Card>
+      </div>
 
       {/* Actions */}
       {(transaction.status === 'draft' || transaction.status === 'pending') && (

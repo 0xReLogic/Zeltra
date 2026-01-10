@@ -30,6 +30,8 @@ export default function ApprovalsPage() {
   const approveMutation = useApproveTransaction()
   const rejectMutation = useRejectTransaction()
 
+  const [selectedIds, setSelectedIds] = React.useState<string[]>([])
+
   const handleApprove = (id: string) => {
     approveMutation.mutate(id, {
       onSuccess: () => {
@@ -38,6 +40,22 @@ export default function ApprovalsPage() {
         })
       }
     })
+  }
+
+  const handleBulkApprove = async () => {
+      // In a real app we'd use a mutation for this
+      try {
+          await fetch(`/api/v1/organizations/org_1/transactions/bulk-approve`, {
+              method: 'POST',
+              body: JSON.stringify({ transaction_ids: selectedIds })
+          })
+          toast.success(`Approved ${selectedIds.length} transactions`)
+          setSelectedIds([])
+          // Ideally invalidate queries here to refresh list
+          window.location.reload() // Simple refresh for now
+      } catch {
+          toast.error("Failed to approve transactions")
+      }
   }
 
   const handleReject = (id: string) => {
@@ -69,9 +87,40 @@ export default function ApprovalsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {/* Bulk Actions Toolbar */}
+          <div className="mb-4 flex items-center justify-between">
+             <div className="text-sm text-muted-foreground">
+                {selectedIds.length} selected
+             </div>
+             {selectedIds.length > 0 && (
+                 <Button 
+                    size="sm" 
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                    onClick={handleBulkApprove}
+                 >
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Approve Selected ({selectedIds.length})
+                 </Button>
+             )}
+          </div>
+
           <Table>
              <TableHeader>
                <TableRow>
+                 <TableHead className="w-[50px]">
+                    <input 
+                        type="checkbox" 
+                        className="translate-y-[2px]"
+                        onChange={(e) => {
+                            if (e.target.checked && data?.data) {
+                                setSelectedIds(data.data.map(t => t.id))
+                            } else {
+                                setSelectedIds([])
+                            }
+                        }}
+                        checked={data?.data?.length ? selectedIds.length === data.data.length && data.data.length > 0 : false}
+                    />
+                 </TableHead>
                  <TableHead>Date</TableHead>
                  <TableHead>Reference</TableHead>
                  <TableHead>Description</TableHead>
@@ -82,7 +131,7 @@ export default function ApprovalsPage() {
              <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center">
+                    <TableCell colSpan={6} className="h-24 text-center">
                       Loading...
                     </TableCell>
                   </TableRow>
@@ -91,9 +140,24 @@ export default function ApprovalsPage() {
                      const totalAmount = Math.max(
                         ...txn.entries.map(e => parseFloat(e.debit) || parseFloat(e.credit))
                      )
+                     const isSelected = selectedIds.includes(txn.id)
 
                      return (
-                       <TableRow key={txn.id}>
+                       <TableRow key={txn.id} data-state={isSelected ? "selected" : undefined}>
+                         <TableCell>
+                            <input 
+                                type="checkbox" 
+                                className="translate-y-[2px]"
+                                checked={isSelected}
+                                onChange={(e) => {
+                                    if (e.target.checked) {
+                                        setSelectedIds(curr => [...curr, txn.id])
+                                    } else {
+                                        setSelectedIds(curr => curr.filter(id => id !== txn.id))
+                                    }
+                                }}
+                            />
+                         </TableCell>
                          <TableCell className="font-medium">{txn.transaction_date}</TableCell>
                          <TableCell>
                             <Link href={`/dashboard/transactions/${txn.id}`} className="hover:underline text-primary">
@@ -131,7 +195,7 @@ export default function ApprovalsPage() {
                   })
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                    <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
                         <div className="flex flex-col items-center justify-center space-y-2">
                             <CheckCircle className="h-6 w-6 text-emerald-500" />
                             <span>All caught up! No pending transactions.</span>

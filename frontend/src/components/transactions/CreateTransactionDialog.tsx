@@ -55,8 +55,13 @@ const formSchema = z.object({
   }),
   main_account: z.string().min(1, 'Account is required'), // e.g. Bank
   contra_account: z.string().min(1, 'Category/Contra account is required'), // e.g. Expense
-  department: z.string().optional(),
-  project: z.string().optional(),
+  department: z.string().default(''),
+  project: z.string().default('none'),
+  currency: z.string().default('USD'),
+  exchange_rate: z.string().default('1.0'),
+  // File upload typically handled separately or via special validation, 
+  // simplified here as we just mock the upload call later
+  attachment: z.any().optional(), 
 })
 
 export function CreateTransactionDialog() {
@@ -65,15 +70,20 @@ export function CreateTransactionDialog() {
   const { data: accountsData } = useAccounts()
   const { data: dimensionsData } = useDimensions()
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       transaction_type: 'expense',
+      transaction_date: new Date(),
       reference_number: 'REF-NEW',
       description: '',
       amount: '',
+      main_account: '',
+      contra_account: '',
       department: '',
       project: 'none',
+      currency: 'USD',
+      exchange_rate: '1.0',
     },
   })
 
@@ -136,7 +146,7 @@ export function CreateTransactionDialog() {
       <DialogTrigger asChild>
         <Button>Create Transaction</Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create Transaction</DialogTitle>
           <DialogDescription>
@@ -348,6 +358,45 @@ export function CreateTransactionDialog() {
                 />
             </div>
 
+            <div className="grid grid-cols-2 gap-4">
+               <FormField
+                  control={form.control}
+                  name="currency"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Currency</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="USD">USD ($)</SelectItem>
+                          <SelectItem value="EUR">EUR (€)</SelectItem>
+                          <SelectItem value="IDR">IDR (Rp)</SelectItem>
+                          <SelectItem value="SGD">SGD (S$)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <FormField
+                  control={form.control}
+                  name="exchange_rate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Exchange Rate</FormLabel>
+                      <FormControl>
+                        <Input type="number" step="0.0001" placeholder="1.0000" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+            </div>
+
             <FormField
               control={form.control}
               name="amount"
@@ -361,6 +410,14 @@ export function CreateTransactionDialog() {
                 </FormItem>
               )}
             />
+
+            <FormItem>
+                <FormLabel>Attachment (Optional)</FormLabel>
+                <FormControl>
+                    <Input type="file" onChange={(e) => form.setValue('attachment', e.target.files?.[0])} />
+                </FormControl>
+                <FormMessage />
+            </FormItem>
 
             <DialogFooter>
               <Button type="submit" disabled={createMutation.isPending}>
