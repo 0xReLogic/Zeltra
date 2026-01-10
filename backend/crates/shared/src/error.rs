@@ -76,3 +76,92 @@ impl AppError {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_error_status_codes() {
+        assert_eq!(AppError::Unauthorized(String::new()).status_code(), 401);
+        assert_eq!(AppError::Forbidden(String::new()).status_code(), 403);
+        assert_eq!(AppError::NotFound(String::new()).status_code(), 404);
+        assert_eq!(AppError::Validation(String::new()).status_code(), 400);
+        assert_eq!(AppError::BusinessRule(String::new()).status_code(), 422);
+        assert_eq!(AppError::Conflict(String::new()).status_code(), 409);
+        assert_eq!(AppError::Database(String::new()).status_code(), 500);
+        assert_eq!(AppError::ExternalService(String::new()).status_code(), 500);
+        assert_eq!(AppError::Internal(String::new()).status_code(), 500);
+    }
+
+    #[test]
+    fn test_error_codes() {
+        assert_eq!(
+            AppError::Unauthorized(String::new()).error_code(),
+            "UNAUTHORIZED"
+        );
+        assert_eq!(AppError::Forbidden(String::new()).error_code(), "FORBIDDEN");
+        assert_eq!(AppError::NotFound(String::new()).error_code(), "NOT_FOUND");
+        assert_eq!(
+            AppError::Validation(String::new()).error_code(),
+            "VALIDATION_ERROR"
+        );
+        assert_eq!(
+            AppError::BusinessRule(String::new()).error_code(),
+            "BUSINESS_RULE_VIOLATION"
+        );
+        assert_eq!(AppError::Conflict(String::new()).error_code(), "CONFLICT");
+        assert_eq!(
+            AppError::Database(String::new()).error_code(),
+            "DATABASE_ERROR"
+        );
+        assert_eq!(
+            AppError::ExternalService(String::new()).error_code(),
+            "EXTERNAL_SERVICE_ERROR"
+        );
+        assert_eq!(
+            AppError::Internal(String::new()).error_code(),
+            "INTERNAL_ERROR"
+        );
+    }
+
+    #[test]
+    fn test_error_display() {
+        assert_eq!(
+            AppError::Unauthorized("msg".into()).to_string(),
+            "Authentication failed: msg"
+        );
+        assert_eq!(
+            AppError::Forbidden("msg".into()).to_string(),
+            "Access denied: msg"
+        );
+        assert_eq!(
+            AppError::NotFound("msg".into()).to_string(),
+            "Not found: msg"
+        );
+        assert_eq!(
+            AppError::Validation("msg".into()).to_string(),
+            "Validation error: msg"
+        );
+        assert_eq!(
+            AppError::BusinessRule("msg".into()).to_string(),
+            "Business rule violation: msg"
+        );
+        assert_eq!(
+            AppError::Conflict("msg".into()).to_string(),
+            "Conflict: msg"
+        );
+        assert_eq!(
+            AppError::Database("msg".into()).to_string(),
+            "Database error: msg"
+        );
+        assert_eq!(
+            AppError::ExternalService("msg".into()).to_string(),
+            "External service error: msg"
+        );
+        assert_eq!(
+            AppError::Internal("msg".into()).to_string(),
+            "Internal error: msg"
+        );
+    }
+}
