@@ -6,6 +6,7 @@ use crate::{AppState, middleware::auth::auth_middleware};
 
 pub mod accounts;
 pub mod approval_rules;
+pub mod attachments;
 pub mod auth;
 pub mod budgets;
 pub mod currencies;
@@ -41,6 +42,7 @@ pub fn api_routes_with_state(state: AppState) -> Router<AppState> {
         .merge(reports::routes())
         .merge(simulation::routes())
         .merge(dashboard::routes())
+        .merge(attachments::routes())
         .layer(middleware::from_fn_with_state(
             state.clone(),
             auth_middleware,

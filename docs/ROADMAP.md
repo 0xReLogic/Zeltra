@@ -478,24 +478,77 @@ tests/
 
 > **RESEARCH REQUIRED:**
 >
-> - Cloudflare R2: `Cloudflare R2 S3 compatible Rust SDK presigned URL`
+> - Apache OpenDAL: `opendal` crate - unified storage API for 40+ backends
 > - File upload: `Axum multipart file upload example`
 > - OpenAPI generation: `Rust OpenAPI utoipa Axum 0.8 swagger`
 > - Load testing: `k6 load testing REST API tutorial`
 
-### Attachments
+### Storage Architecture (Vendor-Agnostic with OpenDAL)
 
-- [ ] File upload to Cloudflare R2
-- [ ] Presigned URL generation
-- [ ] Link attachments to transactions
-- [ ] File type validation
-- [ ] Size limits
+> **Why OpenDAL?** Apache project, production-ready, zero vendor lock-in.
+> Switch storage backend via config only - no code changes needed.
+
+```
+┌─────────────────────────────────────────┐
+│           Apache OpenDAL                │
+│         (Unified Storage API)           │
+├─────────────────────────────────────────┤
+│ op.write("key", data)                   │
+│ op.read("key")                          │
+│ op.delete("key")                        │
+│ op.presign_read("key", duration)        │
+└─────────────────────────────────────────┘
+          ▲           ▲           ▲
+          │           │           │
+    ┌─────┴───┐ ┌─────┴───┐ ┌─────┴───┐
+    │  Azure  │ │   R2    │ │  Local  │
+    │  Blob   │ │  (S3)   │ │  Disk   │
+    │ (Free)  │ │ (10GB)  │ │ (Dev)   │
+    └─────────┘ └─────────┘ └─────────┘
+```
+
+**Supported Backends (via config):**
+- `azblob` - Azure Blob Storage (Student: Free 1yr, 5GB)
+- `s3` - Cloudflare R2, AWS S3, MinIO (R2: Free 10GB, needs CC)
+- `fs` - Local filesystem (development/testing)
+- `gcs` - Google Cloud Storage (future)
+
+**Config Example:**
+```env
+# Azure Blob (current - free student tier)
+STORAGE_TYPE=azblob
+AZURE_STORAGE_ACCOUNT=zeltradev
+AZURE_STORAGE_ACCESS_KEY=xxx
+AZURE_CONTAINER=attachments
+
+# Cloudflare R2 (future - when need more storage)
+# STORAGE_TYPE=s3
+# S3_ENDPOINT=https://xxx.r2.cloudflarestorage.com
+# S3_BUCKET=attachments
+# S3_ACCESS_KEY_ID=xxx
+# S3_SECRET_ACCESS_KEY=xxx
+# S3_REGION=auto
+
+# Local (development)
+# STORAGE_TYPE=fs
+# FS_ROOT=./storage/attachments
+```
+
+### Attachments Implementation
+
+- [ ] Add `opendal` dependency with features: `services-azblob`, `services-s3`, `services-fs`
+- [ ] Create `StorageService` wrapper around OpenDAL Operator
+- [ ] Config-based backend selection (env: `STORAGE_TYPE`)
+- [ ] Presigned URL generation for direct upload/download
+- [ ] Link attachments to transactions (`attachments` table)
+- [ ] File type validation (PDF, images, common docs)
+- [ ] Size limits (configurable, default 10MB)
 
 ### Attachment API Endpoints
 
-- [ ] `POST /attachments/upload` (get presigned URL)
+- [ ] `POST /attachments/upload` (get presigned URL for direct upload)
 - [ ] `POST /attachments` (confirm upload, link to transaction)
-- [ ] `GET /attachments/:id` (get download URL)
+- [ ] `GET /attachments/:id` (get presigned download URL)
 - [ ] `DELETE /attachments/:id`
 - [ ] `GET /transactions/:id/attachments`
 
@@ -542,7 +595,7 @@ tests/
   - Budget events (created, updated, locked)
   - User events (invited, role changed)
   - Pagination with cursor
-- [x] ~~Budget Summary API~~ (Frontend uses `GET /budgets` data directly for budget vs actual)
+- [ ] Budget Summary API: `GET /api/v1/dashboard/budget-vs-actual`
 - [ ] Frontend Integration: Replace mock data with real-time API responses
 
 ### API Polish
@@ -701,6 +754,7 @@ NOW we start frontend, because backend is solid.
   - [x] Department budget cards
   - [x] Progress bars (actual/budget)
   - [x] Variance highlighting (favorable/unfavorable)
+  - ⚠️ **OPTIMIZATION NOTE:** Currently fetches full budget data from `GET /budgets`. For better scalability (100+ departments), consider switching to dedicated `GET /dashboard/budget-vs-actual` endpoint which returns pre-aggregated summary data with smaller payload and server-side caching support.
 - [x] Charts (Recharts)
   - [x] Expense trend chart
   - [x] Cash flow chart
@@ -846,6 +900,456 @@ The following mock handlers have been implemented in `frontend/src/mocks/handler
 
 ---
 
+## Phase 9: AI-Enhanced OCR Integration (Months 1-3 Post-Launch)
+
+> **RESEARCH COMPLETED 2026:** Based on competitor analysis, AI-enhanced OCR represents significant market opportunity with 50% cost advantage over traditional OCR pricing.
+
+### AI-Enhanced OCR Strategy: LLM-Powered Intelligence
+
+> **Why AI-Enhanced OCR?** 80% OCR accuracy + 95% LLM intelligence = 99% effective accuracy, while maintaining 50% cost advantage over competitors.
+
+#### Market Gap Analysis (2025 Research):
+- **Expensify:** $0.20/receipt overage after 25 free
+- **Ramp:** Free unlimited scanning (but no AI enhancement)
+- **Xero:** $0.31/excess receipt (third-party apps)
+- **QuickBooks:** $0.08-0.15/receipt (third-party apps)
+- **Zeltra Opportunity:** AI-enhanced OCR at $0.10/receipt (50% cheaper)
+
+#### AI Enhancement Pipeline:
+```javascript
+// Frontend Processing Pipeline
+async function processReceipt(image) {
+    // 1. OCR Extraction (80-90% accuracy)
+    const ocrResult = await clientSideOCR(image);
+    
+    // 2. LLM Enhancement (95%+ accuracy)
+    const enhanced = await llmEnhance(ocrResult, {
+        userHistory,
+        vendorDatabase,
+        chartOfAccounts,
+        recentTransactions
+    });
+    
+    // 3. Rust Validation
+    return await validateWithRust(enhanced);
+}
+```
+
+#### LLM Enhancement Features:
+- **Error Correction:** Fix OCR typos ("Starbuck" → "Starbucks")
+- **Vendor Recognition:** Identify from partial text + context
+- **Smart Categorization:** Map to correct GL accounts
+- **Date Normalization:** Fix format issues automatically
+- **Contextual Intelligence:** Learn from user patterns
+
+#### OCR Library Integration
+
+- [ ] Add `client-side-ocr` dependency to frontend
+- [ ] Implement image preprocessing pipeline (grayscale, contrast, noise reduction)
+- [ ] Create OCR service wrapper around client-side library
+- [ ] Add fallback to Tesseract.js for browser compatibility
+
+#### AI-Enhanced Receipt Processing Workflow
+
+- [ ] Camera capture interface (mobile-optimized)
+- [ ] Image enhancement before OCR (boost accuracy to 95%+)
+- [ ] OCR text extraction with confidence scoring
+- [ ] **LLM Processing:** Error correction, vendor recognition, categorization
+- [ ] Structured data parsing (vendor, amount, date, line items)
+- [ ] Rust backend validation and journal entry creation
+
+#### AI-Enhanced OCR API Endpoints
+
+- [ ] `POST /ocr/process-receipt` (process image, return structured data)
+- [ ] `POST /ocr/ai-enhance` (LLM processing pipeline)
+- [ ] `POST /ocr/validate-result` (Rust validation layer)
+- [ ] `POST /ocr/submit-correction` (user feedback for learning)
+- [ ] `GET /ocr/accuracy-metrics` (track OCR performance)
+- [ ] `POST /ocr/learn-patterns` (continuous learning from corrections)
+
+#### Mobile Optimization
+
+- [ ] Responsive camera interface for mobile devices
+- [ ] Touch-friendly image cropping tools
+- [ ] Progressive Web App (PWA) camera permissions
+- [ ] Offline AI-OCR capability (cache models locally)
+
+### Tests
+
+```
+tests/
+├── ocr/
+│   ├── test_receipt_processing.rs
+│   ├── test_image_preprocessing.rs
+│   ├── test_llm_enhancement.rs
+│   ├── test_structured_extraction.rs
+│   └── test_accuracy_metrics.rs
+├── frontend/
+│   └── test_ai_ocr_ui.js
+├── ai/
+│   ├── test_llm_error_correction.rs
+│   ├── test_vendor_recognition.rs
+│   └── test_smart_categorization.rs
+```
+
+**Deliverable:** AI-enhanced OCR with 99% effective accuracy at 50% cost advantage.
+
+**Exit Criteria:**
+
+- OCR processes receipts in <3 seconds
+- Structured data extraction accuracy >90%
+- LLM enhancement accuracy >95%
+- Mobile camera interface working
+- User feedback loop implemented
+- 75+ tests passing
+- Cost per receipt: $0.10 (50% cheaper than competitors)
+
+---
+
+## Phase 10: Mobile App (Months 4-6 Post-Launch)
+
+> **RESEARCH COMPLETED 2026:** Based on competitor analysis, mobile app market is mature but AI-enhanced mobile features represent significant opportunity.
+
+> **RESEARCH REQUIRED:**
+> - React Native vs Flutter: `React Native vs Flutter 2025 performance comparison`
+> - Mobile authentication: `React Native biometric authentication secure storage`
+> - Offline sync: `React Native offline data synchronization SQLite`
+
+### Platform Choice: React Native (Updated 2025 Research)
+
+> **Why React Native?** Based on 2025 benchmarks: 95-98% native performance, mature ecosystem, enterprise-ready.
+
+#### 2025 Performance Research Findings:
+
+**Performance Comparison (2025 Benchmarks):**
+- **Frame Rate:** React Native 60 FPS vs Flutter 60-120 FPS
+- **CPU Usage:** React Native 52.92% vs Flutter 43.42%
+- **Memory Usage:** React Native higher variability (45MB delta on iOS)
+- **Dropped Frames:** React Native 15.5% on iOS, near-native on Android
+- **Startup Time:** Both under 50ms, React Native 32.96ms iOS
+
+**Enterprise App Considerations:**
+- **Business Apps:** React Native excels in dashboards/workflows
+- **Animation-Heavy:** Flutter better for complex animations
+- **Development Speed:** Cross-platform 46 days vs Native 92 days
+- **Ecosystem Maturity:** React Native larger talent pool
+
+#### Updated Recommendation: React Native with Optimizations
+
+**Why Still React Native for Zeltra:**
+- **Code Sharing:** 60% code reuse with web frontend
+- **Enterprise Features:** Mature biometric & secure storage libraries
+- **Offline Sync:** PowerSync SQLite integration proven
+- **Talent Pool:** Larger React developer community
+- **Business App Focus:** Zeltra = workflow app, not animation-heavy
+
+#### Core Mobile Features (2025 Best Practices)
+
+- [ ] React Native project setup (shared codebase with web)
+- [ ] **Biometric Authentication:** Use `react-native-biometrics` + Keychain/Keystore
+- [ ] **Offline Storage:** SQLite with PowerSync for enterprise sync
+- [ ] **Secure Storage:** iOS Keychain + Android Keystore integration
+- [ ] **Background Sync:** Delta sync with conflict resolution
+- [ ] **Push Notifications:** Firebase Cloud Messaging with token management
+
+#### 2025 Enterprise Mobile Architecture
+
+**Local-First Pattern:**
+```
+UI → SQLite (Local SSOT) → PowerSync → Backend API
+```
+
+**Key Components:**
+- **SQLite:** Local database as Single Source of Truth
+- **PowerSync:** Real-time sync engine with conflict detection
+- **Repository Pattern:** Centralized data access layer
+- **Sync Service:** Background upload when connectivity restored
+
+#### Biometric Authentication Implementation
+
+**iOS Integration:**
+- Face ID / Touch ID via LocalAuthentication
+- Secure token storage in Keychain
+- Biometric type detection (Face ID vs Touch ID)
+
+**Android Integration:**
+- Fingerprint via BiometricPrompt
+- Secure storage in Android Keystore
+- Fallback to PIN/pattern
+
+#### Offline Sync Strategy (2025)
+
+**Delta Sync Pattern:**
+- Track only changed records (not full sync)
+- Conflict resolution with last-write-wins
+- Background sync queue with retry logic
+- Real-time updates when online
+
+**Data Architecture:**
+```javascript
+// Repository pattern example
+class TransactionRepository {
+  async createTransaction(data) {
+    // 1. Save to SQLite immediately
+    await this.localDB.save(data);
+    
+    // 2. Queue for sync
+    await this.syncQueue.enqueue('create', data);
+    
+    // 3. Background sync when online
+    this.syncService.processQueue();
+  }
+}
+```
+
+#### Expense Capture Flow
+
+- [ ] Native camera integration with OCR
+- [ ] Receipt photo capture and enhancement
+- [ ] Quick expense entry (smart defaults)
+- [ ] Voice memo attachments for expense notes
+- [ ] GPS location for travel expenses
+
+#### Approval Workflow Mobile
+
+- [ ] Push notifications for pending approvals
+- [ ] Swipe-to-approve interface
+- [ ] Bulk approval with filters
+- [ ] Offline approval queue (sync when online)
+- [ ] Comment and rejection reasons
+
+#### Reports & Dashboard Mobile
+
+- [ ] Mobile-optimized dashboard view
+- [ ] Touch-friendly report navigation
+- [ ] Export to email/share functionality
+- [ ] Offline report viewing (cached data)
+- [ ] Custom date range selectors
+
+#### Mobile API Endpoints
+
+- [ ] `POST /mobile/register-device` (push notification tokens)
+- [ ] `POST /mobile/sync-data` (offline data sync)
+- [ ] `GET /mobile/dashboard-summary` (lightweight mobile data)
+- [ ] `POST /mobile/bulk-approve` (mobile-optimized bulk actions)
+
+### Tests
+
+```
+tests/
+├── mobile/
+│   ├── test_biometric_auth.rs
+│   ├── test_offline_sync.rs
+│   ├── test_push_notifications.rs
+│   └── test_mobile_api.rs
+├── frontend/
+│   └── test_mobile_ui.js
+```
+
+**Deliverable:** Full-featured mobile app with offline capability.
+
+**Exit Criteria:**
+
+- App approved in App Store and Google Play
+- Offline functionality working (24+ hours)
+- Push notifications reliable
+- Biometric authentication working
+- 100+ tests passing
+
+---
+
+## Phase 11: Agentic AI & Advanced ML (Months 7-12 Post-Launch) - KILLER FEATURES 2026
+
+> **RESEARCH COMPLETED 2026:** Based on latest AI trends research, focusing on **missing capabilities** and **agentic AI gaps** in financial automation.
+
+### 🎯 **2026 KILLER AI FEATURES (Market Gaps Identified):**
+
+#### **1. Agentic AI - Autonomous Finance Workflows**
+> **Missing in 2026:** End-to-end autonomous finance agents
+> **Opportunity:** First-to-market with true agentic AI
+
+**Current Market Gap:**
+- Only 11% of CFOs use AI, 35% experimenting (L.E.K. 2025 Survey)
+- Generic GenAI use only (PDF reading, summarization)
+- **Missing:** Goal-driven autonomous execution across finance stack
+
+**Zeltra's Agentic AI Features:**
+- [ ] **Autonomous Transaction Agent:** Categorize → Validate → Post → Reconcile
+- [ ] **Close Management Agent:** Month-end close with zero human intervention
+- [ ] **Cash Flow Agent:** Real-time forecasting + proactive recommendations
+- [ ] **Compliance Agent:** Continuous audit + fraud detection + regulatory reporting
+
+#### **2. Digital Employees - Finance Team Augmentation**
+> **Missing in 2026:** AI as digital team members, not just tools
+> **Opportunity:** AI colleagues that work alongside finance teams
+
+**Current Market Gap:**
+- AI tools require constant prompting
+- No autonomous decision-making capability
+- **Missing:** AI that can "do work" independently
+
+**Zeltra's Digital Employees:**
+- [ ] **AI Bookkeeper:** Full transaction lifecycle management
+- [ ] **AI Analyst:** Variance analysis + insight generation
+- [ ] **AI Controller:** Reporting + compliance + audit preparation
+- [ ] **AI CFO:** Strategic planning + scenario analysis
+
+#### **3. Real-Time Autonomous Reconciliation**
+> **Missing in 2026:** Instant, continuous reconciliation
+> **Opportunity:** Zero-day close capability
+
+**Current Market Gap:**
+- Month-end close still takes days/weeks
+- Manual reconciliation dominates
+- **Missing:** Real-time balance verification
+
+**Zeltra's Real-Time Features:**
+- [ ] **Continuous Reconciliation:** Every transaction balanced instantly
+- [ ] **Auto-Matching:** AI-powered vendor/invoice matching
+- [ ] **Dispute Resolution:** Autonomous discrepancy resolution
+- [ ] **Audit Trail:** Immutable real-time audit logs
+
+#### **4. Predictive Compliance & Risk Intelligence**
+> **Missing in 2026:** Proactive compliance, not reactive
+> **Opportunity:** AI that prevents violations before they happen
+
+**Current Market Gap:**
+- Compliance is retrospective (audit after the fact)
+- Risk detection is rule-based
+- **Missing:** Predictive risk intelligence
+
+**Zeltra's Predictive Features:**
+- [ ] **Risk Scoring:** ML models predict fraud/risk before posting
+- [ ] **Compliance Intelligence:** Real-time regulation checking
+- [ ] **Anomaly Detection:** Unusual pattern identification
+- [ ] **Auto-Remediation:** Suggest corrective actions automatically
+
+### 🚀 **Technical Strategy: Hybrid AI Architecture**
+
+#### **Browser-First ML + Backend Agentic AI**
+> **Why Hybrid?** Client-side for privacy + server-side for complex orchestration
+
+**Frontend (TensorFlow.js):**
+- [ ] **Smart Categorization:** Real-time transaction classification
+- [ ] **Anomaly Detection:** Client-side fraud pattern recognition
+- [ ] **Voice-to-Text:** Expense note processing
+- [ ] **Image Recognition:** Enhanced OCR with ML
+
+**Backend (Agentic AI Engine):**
+- [ ] **Workflow Orchestration:** Multi-step autonomous processes
+- [ ] **Decision Making:** Complex financial reasoning
+- [ ] **Learning Engine:** Continuous improvement from user feedback
+- [ ] **Integration Hub:** Connect to external systems (banks, ERP)
+
+#### **AI Models & Technologies:**
+
+**Machine Learning Stack:**
+```javascript
+// Frontend: TensorFlow.js
+const categorizationModel = await tf.loadLayersModel('/models/categorization.json');
+const anomalyModel = await tf.loadLayersModel('/models/anomaly.json');
+
+// Backend: Python/Rust AI Engine
+// - LLM for natural language processing
+// - Graph Neural Networks for transaction relationships
+// - Time series models for forecasting
+// - Reinforcement learning for decision optimization
+```
+
+**Agentic AI Framework:**
+```rust
+// Rust-based AI Agent System
+pub struct FinanceAgent {
+    name: String,
+    capabilities: Vec<Capability>,
+    goals: Vec<Goal>,
+    state: AgentState,
+}
+
+impl FinanceAgent {
+    pub async fn execute_autonomous_workflow(&mut self) -> Result<WorkflowResult> {
+        // 1. Analyze current state
+        // 2. Plan execution steps
+        // 3. Execute actions
+        // 4. Validate results
+        // 5. Learn and adapt
+    }
+}
+```
+
+#### Smart Transaction Categorization
+
+- [ ] TensorFlow.js model training on historical data
+- [ ] Real-time transaction categorization
+- [ ] Vendor recognition and auto-categorization
+- [ ] Learning from user corrections (feedback loop)
+- [ ] Custom category rules per organization
+
+#### Anomaly Detection Engine
+
+- [ ] Unusual expense pattern detection
+- [ ] Duplicate transaction identification
+- [ ] Fraud risk scoring based on behavior
+- [ ] Budget variance anomaly alerts
+- [ ] Suspicious vendor monitoring
+
+#### Predictive Analytics
+
+- [ ] Cash flow forecasting (LSTM neural networks)
+- [ ] Budget overrun predictions
+- [ ] Seasonal expense pattern analysis
+- [ ] Revenue trend forecasting
+- [ ] Burn rate optimization recommendations
+
+#### AI-Powered Insights
+
+- [ ] "What-if" scenario analysis with ML
+- [ ] Automated expense optimization suggestions
+- [ ] Vendor negotiation recommendations
+- [ ] Tax deduction optimization
+- [ ] Cash runway predictions with confidence intervals
+
+#### AI API Endpoints
+
+- [ ] `POST /ai/categorize-transaction` (ML categorization)
+- [ ] `POST /ai/detect-anomalies` (fraud/risk detection)
+- [ ] `POST /ai/forecast-cashflow` (predictive analytics)
+- [ ] `POST /ai/optimize-budget` (AI recommendations)
+- [ ] `POST /ai/train-model` (continuous learning)
+
+### Model Training Pipeline
+
+- [ ] Data collection from customer transactions (anonymized)
+- [ ] Feature engineering for ML models
+- [ ] Model training with TensorFlow.js
+- [ ] Model validation and accuracy testing
+- [ ] Continuous learning from user feedback
+
+### Tests
+
+```
+tests/
+├── ai/
+│   ├── test_categorization_model.rs
+│   ├── test_anomaly_detection.rs
+│   ├── test_cashflow_forecasting.rs
+│   └── test_model_training.rs
+├── ml/
+│   └── test_tensorflowjs_models.js
+```
+
+**Deliverable:** AI-powered financial intelligence platform.
+
+**Exit Criteria:**
+
+- Categorization accuracy >95%
+- Anomaly detection reduces fraud by 80%
+- Cash flow forecasts within 10% accuracy
+- AI recommendations adopted by 60% of users
+- 200+ tests passing
+
+---
+
 ## Timeline Summary (REVISED - Vertical Slice)
 
 | Phase                        | Duration | Focus                                   | End Date     |
@@ -859,12 +1363,18 @@ The following mock handlers have been implemented in `frontend/src/mocks/handler
 | Phase 6: Frontend Foundation | 2 weeks  | Next.js setup, auth UI                  | May 6, 2026  |
 | Phase 7: Frontend Features   | 3 weeks  | Full UI                                 | May 27, 2026 |
 | Phase 8: Polish & Launch     | 2 weeks  | Testing, deploy                         | Jun 10, 2026 |
+| Phase 9: OCR Integration     | 3 months | Client-side OCR + mobile optimization    | Sep 10, 2026 |
+| Phase 10: Mobile App         | 3 months | React Native app + offline sync         | Dec 10, 2026 |
+| Phase 11: AI/ML Deep Learning| 6 months | TensorFlow.js + predictive analytics   | Jun 10, 2027 |
 
-**Total: 22 weeks (~5.5 months)**
+**Total: 22 weeks core + 12 months post-launch**
 
 **Backend complete: Week 15 (Apr 22, 2026)**
 **Frontend starts: Week 16**
 **GO LIVE: June 10, 2026**
+**OCR Integration: September 10, 2026**
+**Mobile App: December 10, 2026**
+**AI/ML Platform: June 10, 2027**
 
 ---
 

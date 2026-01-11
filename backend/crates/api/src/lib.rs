@@ -15,6 +15,7 @@ use sea_orm::DatabaseConnection;
 use std::sync::Arc;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
+use zeltra_core::storage::StorageService;
 use zeltra_shared::{EmailService, JwtService};
 
 /// Application state shared across handlers.
@@ -26,6 +27,8 @@ pub struct AppState {
     pub jwt_service: Arc<JwtService>,
     /// Email service for sending emails.
     pub email_service: Arc<EmailService>,
+    /// Storage service for file attachments (optional).
+    pub storage: Option<Arc<StorageService>>,
 }
 
 /// Creates the main application router.

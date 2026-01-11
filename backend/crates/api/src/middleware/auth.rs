@@ -157,6 +157,7 @@ mod tests {
             db: Arc::new(db),
             jwt_service: Arc::new(jwt_service),
             email_service: Arc::new(email_service),
+            storage: None,
         }
     }
 

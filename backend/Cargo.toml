@@ -84,6 +84,13 @@ reqwest = { version = "0.12", default-features = false, features = [
     "rustls-tls", "json", "gzip"
 ]}
 
+# === Object Storage (OpenDAL - vendor agnostic) ===
+opendal = { version = "0.55", features = [
+    "services-s3",       # S3-compatible: Cloudflare R2, Supabase, AWS S3
+    "services-azblob",   # Azure Blob Storage
+    "services-fs",       # Local filesystem (dev)
+]}
+
 # === Parallel Processing (for simulation) ===
 rayon = "1.10"
 

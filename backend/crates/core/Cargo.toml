@@ -28,6 +28,12 @@ moka = { version = "0.12", default-features = false, features = ["sync"] }
 # JSON for metadata fields
 serde_json = { workspace = true }
 
+# Object Storage (OpenDAL - vendor agnostic)
+opendal = { workspace = true }
+
+# Async runtime for storage operations
+tokio = { workspace = true }
+
 # NO database deps, NO web deps - pure business logic
 
 [dev-dependencies]

@@ -151,7 +151,10 @@ mod tests {
         println!("\n=== BENCHMARK: WORST CASE - 1000 accounts, 60-month projection ===");
         println!("Duration: {:?}", duration);
         println!("Projections generated: {}", result.projections.len());
-        println!("Throughput: {:.0} projections/sec", result.projections.len() as f64 / duration.as_secs_f64());
+        println!(
+            "Throughput: {:.0} projections/sec",
+            result.projections.len() as f64 / duration.as_secs_f64()
+        );
 
         assert_eq!(result.projections.len(), 1000 * 60);
         // Worst case should still be under 5 seconds

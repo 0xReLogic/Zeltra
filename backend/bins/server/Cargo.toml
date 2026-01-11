@@ -12,6 +12,7 @@ path = "src/main.rs"
 
 [dependencies]
 zeltra-api = { path = "../../crates/api" }
+zeltra-core = { path = "../../crates/core" }
 zeltra-db = { path = "../../crates/db" }
 zeltra-shared = { path = "../../crates/shared" }
 

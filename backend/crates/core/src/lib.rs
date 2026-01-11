@@ -15,7 +15,10 @@
 //! - `workflow` - Transaction workflow and approval management
 //! - `reports` - Financial report generation
 //! - `dashboard` - Dashboard metrics and activity types
+//! - `storage` - File attachment storage (OpenDAL)
+//! - `attachment` - Attachment service and types
 
+pub mod attachment;
 pub mod auth;
 pub mod budget;
 pub mod currency;
@@ -25,4 +28,5 @@ pub mod fiscal;
 pub mod ledger;
 pub mod reports;
 pub mod simulation;
+pub mod storage;
 pub mod workflow;

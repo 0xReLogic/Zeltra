@@ -40,6 +40,7 @@ rust_decimal = { workspace = true }
 [dev-dependencies]
 rstest = { workspace = true }
 fake = { workspace = true }
+http-body-util = "0.1"
 
 [lints]
 workspace = true

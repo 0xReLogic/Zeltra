@@ -5,6 +5,7 @@
 
 pub mod account;
 pub mod approval_rule;
+pub mod attachment;
 pub mod budget;
 pub mod dashboard;
 pub mod dimension;
@@ -42,6 +43,7 @@ pub use account::{
 pub use approval_rule::{
     ApprovalRuleError, ApprovalRuleRepository, CreateApprovalRuleInput, UpdateApprovalRuleInput,
 };
+pub use attachment::AttachmentRepository;
 pub use budget::{
     ActualAmountResult, BudgetError, BudgetLineWithActual, BudgetLineWithDimensions,
     BudgetRepository, BudgetVsActualSummary, BudgetWithSummary, CreateBudgetInput,
