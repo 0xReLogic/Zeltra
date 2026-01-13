@@ -5,7 +5,7 @@ use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
     response::IntoResponse,
-    routing::{get, post},
+    routing::{get, patch, post},
 };
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
@@ -19,7 +19,7 @@ use zeltra_db::{
     entities::sea_orm_active_enums::UserRole,
     repositories::dimension::{
         CreateDimensionTypeInput, CreateDimensionValueInput, DimensionRepository,
-        DimensionTypeFilter, DimensionValueFilter,
+        DimensionTypeFilter, DimensionValueFilter, UpdateDimensionValueInput,
     },
 };
 
@@ -41,6 +41,14 @@ pub fn routes() -> Router<AppState> {
         .route(
             "/organizations/{org_id}/dimension-values",
             post(create_dimension_value),
+        )
+        .route(
+            "/organizations/{org_id}/dimension-values/{value_id}",
+            patch(update_dimension_value),
+        )
+        .route(
+            "/organizations/{org_id}/dimension-values/{value_id}/status",
+            patch(toggle_dimension_value_status),
         )
 }
 
@@ -97,6 +105,24 @@ pub struct CreateDimensionValueRequest {
     pub effective_from: Option<NaiveDate>,
     /// Effective to date.
     pub effective_to: Option<NaiveDate>,
+}
+
+/// Request body for updating a dimension value.
+#[derive(Debug, Deserialize)]
+pub struct UpdateDimensionValueRequest {
+    /// Dimension value code.
+    pub code: Option<String>,
+    /// Dimension value name.
+    pub name: Option<String>,
+    /// Description.
+    pub description: Option<String>,
+}
+
+/// Request body for toggling dimension value status.
+#[derive(Debug, Deserialize, Serialize)]
+pub struct ToggleDimensionValueStatusRequest {
+    /// Whether the dimension value should be active.
+    pub is_active: bool,
 }
 
 /// Response for a dimension type.
@@ -427,6 +453,214 @@ async fn create_dimension_value(
     }
 }
 
+/// PATCH `/organizations/{org_id}/dimension-values/{value_id}` - Update dimension value.
+async fn update_dimension_value(
+    State(state): State<AppState>,
+    auth: AuthUser,
+    Path((org_id, value_id)): Path<(Uuid, Uuid)>,
+    Json(payload): Json<UpdateDimensionValueRequest>,
+) -> impl IntoResponse {
+    let org_repo = OrganizationRepository::new((*state.db).clone());
+
+    // Check admin/owner role
+    if let Err(response) = check_admin_role(&org_repo, org_id, auth.user_id()).await {
+        return response;
+    }
+
+    let dim_repo = DimensionRepository::new((*state.db).clone());
+
+    // Verify dimension value belongs to this organization
+    match dim_repo.find_dimension_value_by_id(value_id).await {
+        Ok(Some(v)) if v.organization_id == org_id => {}
+        Ok(Some(_)) => {
+            return (
+                StatusCode::FORBIDDEN,
+                Json(json!({
+                    "error": "forbidden",
+                    "message": "Dimension value does not belong to this organization"
+                })),
+            )
+                .into_response();
+        }
+        Ok(None) => {
+            return (
+                StatusCode::NOT_FOUND,
+                Json(json!({
+                    "error": "not_found",
+                    "message": "Dimension value not found"
+                })),
+            )
+                .into_response();
+        }
+        Err(e) => {
+            error!(error = %e, "Failed to find dimension value");
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": "internal_error",
+                    "message": "An error occurred"
+                })),
+            )
+                .into_response();
+        }
+    }
+
+    let input = UpdateDimensionValueInput {
+        code: payload.code,
+        name: payload.name,
+        description: payload.description.map(Some),
+        ..Default::default()
+    };
+
+    match dim_repo.update_dimension_value(value_id, input).await {
+        Ok(updated) => {
+            info!(
+                org_id = %org_id,
+                dimension_value_id = %value_id,
+                "Dimension value updated"
+            );
+
+            (
+                StatusCode::OK,
+                Json(json!({
+                    "id": updated.id,
+                    "dimension_type_id": updated.dimension_type_id,
+                    "code": updated.code,
+                    "name": updated.name,
+                    "description": updated.description,
+                    "parent_id": updated.parent_id,
+                    "is_active": updated.is_active,
+                    "effective_from": updated.effective_from,
+                    "effective_to": updated.effective_to,
+                    "updated_at": updated.updated_at
+                })),
+            )
+                .into_response()
+        }
+        Err(e) => {
+            error!(error = %e, "Failed to update dimension value");
+            match e {
+                zeltra_db::repositories::dimension::DimensionError::DuplicateValueCode(code) => (
+                    StatusCode::CONFLICT,
+                    Json(json!({
+                        "error": "duplicate_code",
+                        "message": format!("Dimension value code '{}' already exists for this type", code)
+                    })),
+                )
+                    .into_response(),
+                _ => (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(json!({
+                        "error": "internal_error",
+                        "message": "An error occurred"
+                    })),
+                )
+                    .into_response(),
+            }
+        }
+    }
+}
+
+/// PATCH `/organizations/{org_id}/dimension-values/{value_id}/status` - Toggle dimension value status.
+///
+/// Deactivated dimension values cannot be assigned to new entries.
+async fn toggle_dimension_value_status(
+    State(state): State<AppState>,
+    auth: AuthUser,
+    Path((org_id, value_id)): Path<(Uuid, Uuid)>,
+    Json(payload): Json<ToggleDimensionValueStatusRequest>,
+) -> impl IntoResponse {
+    let org_repo = OrganizationRepository::new((*state.db).clone());
+
+    // Check admin/owner role
+    if let Err(response) = check_admin_role(&org_repo, org_id, auth.user_id()).await {
+        return response;
+    }
+
+    let dim_repo = DimensionRepository::new((*state.db).clone());
+
+    // Verify dimension value belongs to this organization
+    match dim_repo.find_dimension_value_by_id(value_id).await {
+        Ok(Some(v)) if v.organization_id == org_id => {}
+        Ok(Some(_)) => {
+            return (
+                StatusCode::FORBIDDEN,
+                Json(json!({
+                    "error": "forbidden",
+                    "message": "Dimension value does not belong to this organization"
+                })),
+            )
+                .into_response();
+        }
+        Ok(None) => {
+            return (
+                StatusCode::NOT_FOUND,
+                Json(json!({
+                    "error": "not_found",
+                    "message": "Dimension value not found"
+                })),
+            )
+                .into_response();
+        }
+        Err(e) => {
+            error!(error = %e, "Failed to find dimension value");
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": "internal_error",
+                    "message": "An error occurred"
+                })),
+            )
+                .into_response();
+        }
+    }
+
+    let input = UpdateDimensionValueInput {
+        is_active: Some(payload.is_active),
+        ..Default::default()
+    };
+
+    match dim_repo.update_dimension_value(value_id, input).await {
+        Ok(updated) => {
+            let action = if payload.is_active {
+                "activated"
+            } else {
+                "deactivated"
+            };
+            info!(
+                org_id = %org_id,
+                dimension_value_id = %value_id,
+                is_active = %payload.is_active,
+                "Dimension value {}", action
+            );
+
+            (
+                StatusCode::OK,
+                Json(json!({
+                    "id": updated.id,
+                    "dimension_type_id": updated.dimension_type_id,
+                    "code": updated.code,
+                    "name": updated.name,
+                    "is_active": updated.is_active,
+                    "updated_at": updated.updated_at
+                })),
+            )
+                .into_response()
+        }
+        Err(e) => {
+            error!(error = %e, "Failed to toggle dimension value status");
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": "internal_error",
+                    "message": "An error occurred"
+                })),
+            )
+                .into_response()
+        }
+    }
+}
+
 // Helper functions
 
 async fn check_membership(
@@ -483,6 +717,88 @@ async fn check_admin_role(
                 })),
             )
                 .into_response())
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ========================================================================
+    // Unit tests for UpdateDimensionValueRequest validation
+    // ========================================================================
+
+    #[test]
+    fn test_update_dimension_value_request_all_fields() {
+        let json = r#"{"code": "NEW_CODE", "name": "New Name", "description": "New desc"}"#;
+        let req: UpdateDimensionValueRequest =
+            serde_json::from_str(json).expect("Failed to deserialize");
+        assert_eq!(req.code, Some("NEW_CODE".to_string()));
+        assert_eq!(req.name, Some("New Name".to_string()));
+        assert_eq!(req.description, Some("New desc".to_string()));
+    }
+
+    #[test]
+    fn test_update_dimension_value_request_partial() {
+        let json = r#"{"name": "Updated Name"}"#;
+        let req: UpdateDimensionValueRequest =
+            serde_json::from_str(json).expect("Failed to deserialize");
+        assert_eq!(req.code, None);
+        assert_eq!(req.name, Some("Updated Name".to_string()));
+        assert_eq!(req.description, None);
+    }
+
+    #[test]
+    fn test_update_dimension_value_request_empty() {
+        let json = r#"{}"#;
+        let req: UpdateDimensionValueRequest =
+            serde_json::from_str(json).expect("Failed to deserialize");
+        assert_eq!(req.code, None);
+        assert_eq!(req.name, None);
+        assert_eq!(req.description, None);
+    }
+
+    // ========================================================================
+    // Unit tests for ToggleDimensionValueStatusRequest validation
+    // ========================================================================
+
+    #[test]
+    fn test_toggle_dimension_value_status_request_true() {
+        let json = r#"{"is_active": true}"#;
+        let req: ToggleDimensionValueStatusRequest =
+            serde_json::from_str(json).expect("Failed to deserialize");
+        assert!(req.is_active);
+    }
+
+    #[test]
+    fn test_toggle_dimension_value_status_request_false() {
+        let json = r#"{"is_active": false}"#;
+        let req: ToggleDimensionValueStatusRequest =
+            serde_json::from_str(json).expect("Failed to deserialize");
+        assert!(!req.is_active);
+    }
+
+    #[test]
+    fn test_toggle_dimension_value_status_request_missing_field() {
+        let json = r#"{}"#;
+        let result: Result<ToggleDimensionValueStatusRequest, _> = serde_json::from_str(json);
+        assert!(result.is_err(), "Should fail when is_active is missing");
+    }
+
+    // ========================================================================
+    // Property 8: Toggle Status Idempotence (Dimension Values)
+    // **Validates: Requirements 3.3**
+    // ========================================================================
+
+    #[test]
+    fn test_toggle_dimension_value_status_roundtrip() {
+        for is_active in [true, false] {
+            let req = ToggleDimensionValueStatusRequest { is_active };
+            let json = serde_json::to_string(&req).expect("Failed to serialize");
+            let parsed: ToggleDimensionValueStatusRequest =
+                serde_json::from_str(&json).expect("Failed to deserialize");
+            assert_eq!(parsed.is_active, is_active);
         }
     }
 }

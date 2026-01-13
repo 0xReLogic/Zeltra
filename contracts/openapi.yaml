@@ -19,6 +19,12 @@ tags:
     description: Chart of accounts
   - name: Transactions
     description: Ledger transactions
+  - name: Attachments
+    description: File attachments for transactions
+  - name: Currencies
+    description: Currency and exchange rate management
+  - name: Dimensions
+    description: Dimension types and values
   - name: Budgets
     description: Budget management
   - name: Reports
@@ -76,6 +82,301 @@ components:
       pattern: '^-?\d+\.\d{4}$'
       description: Decimal string with 4 decimal places
       example: "1000.0000"
+
+    ToggleStatusRequest:
+      type: object
+      required: [is_active]
+      properties:
+        is_active:
+          type: boolean
+          description: Whether the resource should be active
+          example: true
+
+    UpdateDimensionValueRequest:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Optional new code for the dimension value
+        name:
+          type: string
+          description: Optional new name for the dimension value
+        description:
+          type: string
+          description: Optional new description for the dimension value
+
+    # ============ Attachment Schemas (Phase 5) ============
+    RequestUploadRequest:
+      type: object
+      required: [filename, content_type, file_size]
+      properties:
+        filename:
+          type: string
+          description: Original filename
+          example: "receipt.pdf"
+        content_type:
+          type: string
+          description: MIME type of the file
+          example: "application/pdf"
+        file_size:
+          type: integer
+          format: int64
+          description: File size in bytes
+          example: 102400
+        attachment_type:
+          type: string
+          enum: [receipt, invoice, contract, supporting_document, other]
+          description: Type classification for the attachment
+
+    RequestUploadResponse:
+      type: object
+      required: [attachment_id, upload_url, upload_method, upload_headers, expires_at, storage_key]
+      properties:
+        attachment_id:
+          type: string
+          format: uuid
+          description: Generated attachment ID
+        upload_url:
+          type: string
+          format: uri
+          description: Presigned URL for direct upload
+        upload_method:
+          type: string
+          description: HTTP method to use (PUT)
+          example: "PUT"
+        upload_headers:
+          type: object
+          additionalProperties:
+            type: string
+          description: Required headers for the upload
+        expires_at:
+          type: string
+          format: date-time
+          description: When the upload URL expires
+        storage_key:
+          type: string
+          description: Storage key for confirmation step
+
+    ConfirmUploadRequest:
+      type: object
+      required: [attachment_id, filename, content_type, file_size, storage_key]
+      properties:
+        attachment_id:
+          type: string
+          format: uuid
+          description: Attachment ID from request_upload
+        filename:
+          type: string
+          description: Original filename
+        content_type:
+          type: string
+          description: MIME type
+        file_size:
+          type: integer
+          format: int64
+          description: File size in bytes
+        storage_key:
+          type: string
+          description: Storage key from request_upload
+        attachment_type:
+          type: string
+          enum: [receipt, invoice, contract, supporting_document, other]
+
+    AttachmentResponse:
+      type: object
+      required: [id, attachment_type, filename, file_size, mime_type, storage_provider, uploaded_by, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        transaction_id:
+          type: string
+          format: uuid
+          nullable: true
+        attachment_type:
+          type: string
+          enum: [receipt, invoice, contract, supporting_document, other]
+        filename:
+          type: string
+        file_size:
+          type: integer
+          format: int64
+        mime_type:
+          type: string
+        storage_provider:
+          type: string
+        uploaded_by:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        download_url:
+          type: string
+          format: uri
+          description: Presigned download URL (only included when fetching single attachment)
+        download_url_expires_at:
+          type: string
+          format: date-time
+          description: When the download URL expires
+
+    # ============ Exchange Rate Schemas (Phase 5) ============
+    ExchangeRateResponse:
+      type: object
+      required: [from_currency, to_currency, rate, effective_date, lookup_method]
+      properties:
+        from_currency:
+          type: string
+          example: "USD"
+        to_currency:
+          type: string
+          example: "EUR"
+        rate:
+          type: string
+          description: Exchange rate as decimal string
+          example: "0.9250"
+        effective_date:
+          type: string
+          format: date
+        lookup_method:
+          type: string
+          enum: [direct, inverse, triangulated]
+          description: How the rate was obtained
+
+    CreateExchangeRateRequest:
+      type: object
+      required: [from_currency, to_currency, rate, effective_date]
+      properties:
+        from_currency:
+          type: string
+          description: Source currency code
+          example: "USD"
+        to_currency:
+          type: string
+          description: Target currency code
+          example: "EUR"
+        rate:
+          type: number
+          description: Exchange rate (from_currency * rate = to_currency)
+          example: 0.925
+        effective_date:
+          type: string
+          format: date
+        source:
+          type: string
+          enum: [manual, api, bank_feed]
+          description: Source of the rate
+        source_reference:
+          type: string
+          description: Optional reference (e.g., API provider, bank name)
+
+    FetchRatesRequest:
+      type: object
+      required: [base_currency, target_currencies]
+      properties:
+        base_currency:
+          type: string
+          description: Base currency code (e.g., EUR)
+          example: "EUR"
+        target_currencies:
+          type: array
+          items:
+            type: string
+          description: Target currency codes to fetch rates for
+          example: ["USD", "GBP", "JPY"]
+        date:
+          type: string
+          format: date
+          description: Date for historical rates (defaults to today)
+
+    FetchRatesResponse:
+      type: object
+      required: [fetched_count, imported_count, updated_count, rates]
+      properties:
+        fetched_count:
+          type: integer
+          description: Number of rates fetched from API
+        imported_count:
+          type: integer
+          description: Number of new rates stored
+        updated_count:
+          type: integer
+          description: Number of existing rates updated
+        rates:
+          type: array
+          items:
+            $ref: "#/components/schemas/FetchedRateItem"
+
+    FetchedRateItem:
+      type: object
+      required: [from_currency, to_currency, rate, effective_date, source]
+      properties:
+        from_currency:
+          type: string
+        to_currency:
+          type: string
+        rate:
+          type: string
+        effective_date:
+          type: string
+          format: date
+        source:
+          type: string
+          example: "frankfurter"
+
+    BulkImportRequest:
+      type: object
+      required: [rates]
+      properties:
+        rates:
+          type: array
+          items:
+            $ref: "#/components/schemas/BulkRateItem"
+
+    BulkRateItem:
+      type: object
+      required: [from_currency, to_currency, rate, effective_date]
+      properties:
+        from_currency:
+          type: string
+        to_currency:
+          type: string
+        rate:
+          type: string
+          description: Exchange rate as string for precision
+        effective_date:
+          type: string
+          format: date
+
+    BulkImportResponse:
+      type: object
+      required: [imported_count, updated_count]
+      properties:
+        imported_count:
+          type: integer
+          description: Number of new rates imported
+        updated_count:
+          type: integer
+          description: Number of existing rates updated
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/BulkImportError"
+
+    BulkImportError:
+      type: object
+      required: [index, currency_pair, message]
+      properties:
+        index:
+          type: integer
+          description: Index of the rate in the input array
+        currency_pair:
+          type: string
+          description: Currency pair that failed
+          example: "USD/EUR"
+        message:
+          type: string
+          description: Error message
 
     # ============ Auth ============
     LoginRequest:
@@ -1466,9 +1767,11 @@ paths:
                   success:
                     type: boolean
 
+  /accounts/{id}/status:
     patch:
       tags: [Accounts]
       summary: Toggle account active status
+      description: Toggle the is_active status of an account. Accounts can be deactivated even if they have posted transactions.
       parameters:
         - name: id
           in: path
@@ -1481,12 +1784,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required: [status]
-              properties:
-                status:
-                  type: string
-                  enum: [active, inactive]
+              $ref: "#/components/schemas/ToggleStatusRequest"
       responses:
         "200":
           description: Account status updated
@@ -1494,6 +1792,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Account"
+        "404":
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
   # ============ Transactions ============
   /transactions:
@@ -2126,7 +2430,8 @@ paths:
   /transactions/{id}/attachments:
     get:
       tags: [Transactions]
-      summary: List transaction attachments
+      summary: List transaction attachments (DEPRECATED - use /organizations/{org_id}/transactions/{transaction_id}/attachments)
+      deprecated: true
       parameters:
         - name: id
           in: path
@@ -2146,11 +2451,22 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/Attachment"
+
+  /organizations/{org_id}/transactions/{transaction_id}/attachments/upload:
     post:
-      tags: [Transactions]
-      summary: Upload attachment to transaction
+      tags: [Attachments]
+      summary: Request presigned upload URL
+      description: |
+        Step 1 of 2-step upload flow. Returns a presigned URL for direct upload to storage.
+        After uploading the file, call POST /organizations/{org_id}/transactions/{transaction_id}/attachments to confirm.
       parameters:
-        - name: id
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: transaction_id
           in: path
           required: true
           schema:
@@ -2159,28 +2475,164 @@ paths:
       requestBody:
         required: true
         content:
-          multipart/form-data:
+          application/json:
             schema:
-              type: object
-              required: [file]
-              properties:
-                file:
-                  type: string
-                  format: binary
-                description:
-                  type: string
+              $ref: "#/components/schemas/RequestUploadRequest"
       responses:
-        "201":
-          description: Attachment uploaded
+        "200":
+          description: Upload URL generated
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Attachment"
+                $ref: "#/components/schemas/RequestUploadResponse"
+        "400":
+          description: Invalid file type or size
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Transaction not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "503":
+          description: Storage not configured
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /organizations/{org_id}/transactions/{transaction_id}/attachments:
+    get:
+      tags: [Attachments]
+      summary: List attachments for a transaction
+      parameters:
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: transaction_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: List of attachments
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  attachments:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AttachmentResponse"
+    post:
+      tags: [Attachments]
+      summary: Confirm upload and create attachment record
+      description: |
+        Step 2 of 2-step upload flow. Call this after uploading the file to the presigned URL.
+        Verifies the file exists in storage and creates the attachment record.
+      parameters:
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: transaction_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConfirmUploadRequest"
+      responses:
+        "201":
+          description: Attachment created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttachmentResponse"
+        "400":
+          description: Upload not verified or file size mismatch
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /organizations/{org_id}/attachments/{attachment_id}:
+    get:
+      tags: [Attachments]
+      summary: Get attachment with download URL
+      parameters:
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: attachment_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Attachment details with download URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttachmentResponse"
+        "404":
+          description: Attachment not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      tags: [Attachments]
+      summary: Delete attachment
+      parameters:
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: attachment_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Attachment deleted
+        "404":
+          description: Attachment not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
   /attachments/{id}:
     get:
       tags: [Transactions]
-      summary: Get attachment details
+      summary: Get attachment details (DEPRECATED - use /organizations/{org_id}/attachments/{attachment_id})
+      deprecated: true
       parameters:
         - name: id
           in: path
@@ -2197,7 +2649,8 @@ paths:
                 $ref: "#/components/schemas/Attachment"
     delete:
       tags: [Transactions]
-      summary: Delete attachment
+      summary: Delete attachment (DEPRECATED - use /organizations/{org_id}/attachments/{attachment_id})
+      deprecated: true
       parameters:
         - name: id
           in: path
@@ -2425,7 +2878,8 @@ paths:
   /exchange-rates:
     get:
       tags: [Currencies]
-      summary: Get exchange rate for currency pair
+      summary: Get exchange rate (DEPRECATED - use /organizations/{org_id}/exchange-rates)
+      deprecated: true
       parameters:
         - name: from
           in: query
@@ -2461,7 +2915,8 @@ paths:
                     format: date
     post:
       tags: [Currencies]
-      summary: Create or update exchange rate
+      summary: Create exchange rate (DEPRECATED - use /organizations/{org_id}/exchange-rates)
+      deprecated: true
       requestBody:
         required: true
         content:
@@ -2486,7 +2941,8 @@ paths:
   /exchange-rates/bulk:
     post:
       tags: [Currencies]
-      summary: Bulk import exchange rates
+      summary: Bulk import rates (DEPRECATED - use /organizations/{org_id}/exchange-rates/bulk)
+      deprecated: true
       requestBody:
         required: true
         content:
@@ -2521,6 +2977,148 @@ paths:
                     type: integer
                   failed:
                     type: integer
+
+  /organizations/{org_id}/exchange-rates:
+    get:
+      tags: [Currencies]
+      summary: Get exchange rate for currency pair
+      parameters:
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            description: Source currency code (e.g., USD)
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            description: Target currency code (e.g., EUR)
+        - name: date
+          in: query
+          schema:
+            type: string
+            format: date
+            description: Date for rate lookup (defaults to today)
+      responses:
+        "200":
+          description: Exchange rate
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExchangeRateResponse"
+        "404":
+          description: Rate not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      tags: [Currencies]
+      summary: Create or update exchange rate
+      parameters:
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateExchangeRateRequest"
+      responses:
+        "201":
+          description: Exchange rate created/updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExchangeRateResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /organizations/{org_id}/exchange-rates/fetch:
+    post:
+      tags: [Currencies]
+      summary: Fetch rates from Frankfurter API
+      description: Fetches exchange rates from the Frankfurter API and stores them in the database.
+      parameters:
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FetchRatesRequest"
+      responses:
+        "200":
+          description: Rates fetched and stored
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FetchRatesResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "502":
+          description: External API error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /organizations/{org_id}/exchange-rates/bulk:
+    post:
+      tags: [Currencies]
+      summary: Bulk import exchange rates
+      description: Import multiple exchange rates at once. All rates are validated before import (atomic operation).
+      parameters:
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BulkImportRequest"
+      responses:
+        "200":
+          description: Rates imported
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BulkImportResponse"
+        "400":
+          description: Validation errors
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
   # ============ Dimensions ============
   /dimension-types:
@@ -2623,6 +3221,7 @@ paths:
     patch:
       tags: [Dimensions]
       summary: Update dimension value
+      description: Update the code, name, or description of a dimension value.
       parameters:
         - name: id
           in: path
@@ -2635,14 +3234,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                code:
-                  type: string
-                name:
-                  type: string
-                description:
-                  type: string
+              $ref: "#/components/schemas/UpdateDimensionValueRequest"
       responses:
         "200":
           description: Dimension value updated
@@ -2650,11 +3242,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/DimensionValue"
+        "404":
+          description: Dimension value not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
   /dimension-values/{id}/status:
     patch:
       tags: [Dimensions]
       summary: Toggle dimension value active status
+      description: Toggle the is_active status of a dimension value.
       parameters:
         - name: id
           in: path
@@ -2667,12 +3266,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required: [status]
-              properties:
-                status:
-                  type: string
-                  enum: [active, inactive]
+              $ref: "#/components/schemas/ToggleStatusRequest"
       responses:
         "200":
           description: Dimension value status updated
@@ -2680,6 +3274,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/DimensionValue"
+        "404":
+          description: Dimension value not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
   # ============ Account Balance & Ledger ============
   /accounts/{id}/balance:

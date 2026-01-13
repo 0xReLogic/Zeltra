@@ -5488,6 +5488,7 @@ dependencies = [
  "proptest",
  "rand_core 0.9.3",
  "rayon",
+ "reqwest",
  "rstest",
  "rust_decimal",
  "rust_decimal_macros",
@@ -5495,6 +5496,7 @@ dependencies = [
  "serde_json",
  "thiserror",
  "tokio",
+ "tracing",
  "uuid",
  "zeltra-shared",
 ]

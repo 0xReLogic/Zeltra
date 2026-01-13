@@ -6,7 +6,7 @@ use chrono::NaiveDate;
 use rust_decimal::Decimal;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, DbErr, EntityTrait, QueryFilter, QueryOrder,
-    Set,
+    Set, TransactionTrait,
 };
 use uuid::Uuid;
 
@@ -351,6 +351,117 @@ impl ExchangeRateRepository {
             .await?;
 
         Ok(rates)
+    }
+
+    /// Bulk import exchange rates atomically.
+    ///
+    /// All rates are validated before any are inserted. If any rate fails
+    /// validation, no rates are inserted and the existing rates remain unchanged.
+    ///
+    /// Requirements: 2.4, 2.5
+    ///
+    /// # Arguments
+    ///
+    /// * `inputs` - List of rates to import.
+    ///
+    /// # Returns
+    ///
+    /// A tuple of (imported_count, updated_count) on success.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - Any rate fails validation (non-positive, same currency, invalid currency)
+    /// - Database transaction fails
+    pub async fn bulk_import(
+        &self,
+        inputs: Vec<CreateExchangeRateInput>,
+    ) -> Result<(usize, usize), ExchangeRateError> {
+        if inputs.is_empty() {
+            return Ok((0, 0));
+        }
+
+        // Pre-validate all rates before starting transaction
+        for input in &inputs {
+            if input.rate <= Decimal::ZERO {
+                return Err(ExchangeRateError::NonPositiveRate);
+            }
+            if input.from_currency == input.to_currency {
+                return Err(ExchangeRateError::SameCurrency);
+            }
+        }
+
+        // Collect unique currencies to validate
+        let mut currencies_to_check: std::collections::HashSet<&str> =
+            std::collections::HashSet::new();
+        for input in &inputs {
+            currencies_to_check.insert(&input.from_currency);
+            currencies_to_check.insert(&input.to_currency);
+        }
+
+        // Validate all currencies exist
+        for currency_code in currencies_to_check {
+            let currency = currencies::Entity::find_by_id(currency_code)
+                .one(&self.db)
+                .await?;
+            if currency.is_none() {
+                return Err(ExchangeRateError::CurrencyNotFound(
+                    currency_code.to_string(),
+                ));
+            }
+        }
+
+        // Start transaction for atomic operation
+        let txn = self.db.begin().await?;
+        let now = chrono::Utc::now().into();
+
+        let mut imported_count = 0;
+        let mut updated_count = 0;
+
+        for input in inputs {
+            // Check if rate already exists
+            let existing = exchange_rates::Entity::find()
+                .filter(exchange_rates::Column::OrganizationId.eq(input.organization_id))
+                .filter(exchange_rates::Column::FromCurrency.eq(&input.from_currency))
+                .filter(exchange_rates::Column::ToCurrency.eq(&input.to_currency))
+                .filter(exchange_rates::Column::EffectiveDate.eq(input.effective_date))
+                .one(&txn)
+                .await?;
+
+            if let Some(existing_rate) = existing {
+                // Update existing rate
+                let mut active: exchange_rates::ActiveModel = existing_rate.into();
+                active.rate = Set(input.rate);
+                active.source = Set(input.source);
+                active.source_reference = Set(input.source_reference);
+                if input.created_by.is_some() {
+                    active.created_by = Set(input.created_by);
+                }
+                active.update(&txn).await?;
+                updated_count += 1;
+            } else {
+                // Create new rate
+                let rate = exchange_rates::ActiveModel {
+                    id: Set(Uuid::new_v4()),
+                    organization_id: Set(input.organization_id),
+                    from_currency: Set(input.from_currency),
+                    to_currency: Set(input.to_currency),
+                    rate: Set(input.rate),
+                    effective_date: Set(input.effective_date),
+                    source: Set(input.source),
+                    source_reference: Set(input.source_reference),
+                    created_by: Set(input.created_by),
+                    created_at: Set(now),
+                };
+                rate.insert(&txn).await?;
+                imported_count += 1;
+            }
+        }
+
+        // Commit transaction
+        txn.commit().await?;
+
+        Ok((imported_count, updated_count))
     }
 }
 

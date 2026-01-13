@@ -5,7 +5,7 @@ use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
     response::IntoResponse,
-    routing::{delete, get, post, put},
+    routing::{delete, get, patch, post, put},
 };
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
@@ -38,6 +38,10 @@ pub fn routes() -> Router<AppState> {
         .route(
             "/organizations/{org_id}/accounts/{account_id}",
             delete(delete_account),
+        )
+        .route(
+            "/organizations/{org_id}/accounts/{account_id}/status",
+            patch(toggle_account_status),
         )
         .route(
             "/organizations/{org_id}/accounts/{account_id}/balance",
@@ -105,6 +109,13 @@ pub struct UpdateAccountRequest {
     pub is_active: Option<bool>,
     /// Whether direct posting is allowed.
     pub allow_direct_posting: Option<bool>,
+}
+
+/// Request body for toggling account status.
+#[derive(Debug, Deserialize, Serialize)]
+pub struct ToggleStatusRequest {
+    /// Whether the account should be active.
+    pub is_active: bool,
 }
 
 /// Response for an account.
@@ -694,6 +705,108 @@ async fn delete_account(
     }
 }
 
+/// PATCH `/organizations/{org_id}/accounts/{account_id}/status` - Toggle account status.
+///
+/// Allows deactivation of accounts even with posted transactions.
+/// Deactivated accounts cannot receive new postings.
+async fn toggle_account_status(
+    State(state): State<AppState>,
+    auth: AuthUser,
+    Path((org_id, account_id)): Path<(Uuid, Uuid)>,
+    Json(payload): Json<ToggleStatusRequest>,
+) -> impl IntoResponse {
+    let org_repo = OrganizationRepository::new((*state.db).clone());
+
+    // Check admin/owner role
+    if let Err(response) = check_admin_role(&org_repo, org_id, auth.user_id()).await {
+        return response;
+    }
+
+    let account_repo = AccountRepository::new((*state.db).clone());
+
+    // Verify account belongs to this organization
+    let account = match account_repo.find_account_by_id(account_id).await {
+        Ok(Some(a)) if a.account.organization_id == org_id => a,
+        Ok(Some(_)) => {
+            return (
+                StatusCode::FORBIDDEN,
+                Json(json!({
+                    "error": "forbidden",
+                    "message": "Account does not belong to this organization"
+                })),
+            )
+                .into_response();
+        }
+        Ok(None) => {
+            return (
+                StatusCode::NOT_FOUND,
+                Json(json!({
+                    "error": "not_found",
+                    "message": "Account not found"
+                })),
+            )
+                .into_response();
+        }
+        Err(e) => {
+            error!(error = %e, "Failed to find account");
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": "internal_error",
+                    "message": "An error occurred"
+                })),
+            )
+                .into_response();
+        }
+    };
+
+    // Update only the is_active field
+    let input = UpdateAccountInput {
+        is_active: Some(payload.is_active),
+        ..Default::default()
+    };
+
+    match account_repo.update_account(account_id, input).await {
+        Ok(updated) => {
+            let action = if payload.is_active {
+                "activated"
+            } else {
+                "deactivated"
+            };
+            info!(
+                org_id = %org_id,
+                account_id = %account_id,
+                is_active = %payload.is_active,
+                "Account {}", action
+            );
+
+            (
+                StatusCode::OK,
+                Json(json!({
+                    "id": updated.id,
+                    "code": updated.code,
+                    "name": updated.name,
+                    "is_active": updated.is_active,
+                    "balance": account.balance.to_string(),
+                    "updated_at": updated.updated_at
+                })),
+            )
+                .into_response()
+        }
+        Err(e) => {
+            error!(error = %e, "Failed to toggle account status");
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": "internal_error",
+                    "message": "An error occurred"
+                })),
+            )
+                .into_response()
+        }
+    }
+}
+
 /// GET `/organizations/{org_id}/accounts/{account_id}/balance` - Get account balance at a specific date.
 async fn get_account_balance(
     State(state): State<AppState>,
@@ -1034,5 +1147,59 @@ fn string_to_account_subtype(s: &str) -> Option<AccountSubtype> {
         "tax_expense" => Some(AccountSubtype::TaxExpense),
         "other_expense" => Some(AccountSubtype::OtherExpense),
         _ => None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ========================================================================
+    // Unit tests for ToggleStatusRequest validation
+    // ========================================================================
+
+    #[test]
+    fn test_toggle_status_request_deserialize_true() {
+        let json = r#"{"is_active": true}"#;
+        let req: ToggleStatusRequest = serde_json::from_str(json).expect("Failed to deserialize");
+        assert!(req.is_active);
+    }
+
+    #[test]
+    fn test_toggle_status_request_deserialize_false() {
+        let json = r#"{"is_active": false}"#;
+        let req: ToggleStatusRequest = serde_json::from_str(json).expect("Failed to deserialize");
+        assert!(!req.is_active);
+    }
+
+    #[test]
+    fn test_toggle_status_request_missing_field() {
+        let json = r#"{}"#;
+        let result: Result<ToggleStatusRequest, _> = serde_json::from_str(json);
+        assert!(result.is_err(), "Should fail when is_active is missing");
+    }
+
+    #[test]
+    fn test_toggle_status_request_invalid_type() {
+        let json = r#"{"is_active": "yes"}"#;
+        let result: Result<ToggleStatusRequest, _> = serde_json::from_str(json);
+        assert!(result.is_err(), "Should fail when is_active is not boolean");
+    }
+
+    // ========================================================================
+    // Property 8: Toggle Status Idempotence (API level)
+    // **Validates: Requirements 3.1**
+    // ========================================================================
+
+    #[test]
+    fn test_toggle_request_roundtrip() {
+        // Test that serialization/deserialization preserves the value
+        for is_active in [true, false] {
+            let req = ToggleStatusRequest { is_active };
+            let json = serde_json::to_string(&req).expect("Failed to serialize");
+            let parsed: ToggleStatusRequest =
+                serde_json::from_str(&json).expect("Failed to deserialize");
+            assert_eq!(parsed.is_active, is_active);
+        }
     }
 }

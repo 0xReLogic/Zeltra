@@ -87,37 +87,37 @@ This implementation plan covers Phase 5 of Zeltra Backend: file attachments with
   - If context is lost, re-read `.kiro/specs/api-polish-phase5/requirements.md` and `design.md`
   - Ask user if questions arise
 
-- [ ] 5. Implement Exchange Rate Fetcher
-  - [ ] 5.1 Create ExchangeRateFetcher service
+- [x] 5. Implement Exchange Rate Fetcher
+  - [x] 5.1 Create ExchangeRateFetcher service
     - Implement Frankfurter API client using reqwest
     - Parse JSON response to FetchedRate structs
     - Handle API errors gracefully
     - _Requirements: 2.1, 2.3_
-  - [ ] 5.2 Implement rate storage logic
+  - [x] 5.2 Implement rate storage logic
     - Store fetched rates with source='frankfurter'
     - Implement upsert logic for existing rates
     - _Requirements: 2.2, 2.5_
-  - [ ] 5.3 Implement bulk rate import
+  - [x] 5.3 Implement bulk rate import
     - Validate all rates before inserting (atomic)
     - Return detailed error report for invalid rates
     - _Requirements: 2.4_
-  - [ ] 5.4 Write property tests for exchange rate operations
+  - [x] 5.4 Write property tests for exchange rate operations
     - **Property 5: Bulk Rate Import Atomicity**
     - **Property 6: Rate Upsert Behavior**
     - **Property 7: External Service Failure Isolation**
     - **Validates: Requirements 2.3, 2.4, 2.5**
 
-- [ ] 6. Implement Exchange Rate API Routes
-  - [ ] 6.1 Create exchange rate routes
+- [x] 6. Implement Exchange Rate API Routes
+  - [x] 6.1 Create exchange rate routes
     - `POST /exchange-rates/fetch` - Trigger Frankfurter fetch
     - `POST /exchange-rates/bulk` - Bulk import rates
     - _Requirements: 2.1, 2.4_
-  - [ ] 6.2 Write integration tests for exchange rate endpoints
+  - [x] 6.2 Write integration tests for exchange rate endpoints
     - Test fetch with mock Frankfurter API
     - Test bulk import validation
     - _Requirements: 2.1, 2.4_
 
-- [ ] 7. Checkpoint - Exchange Rate System
+- [x] 7. Checkpoint - Exchange Rate System
   - Run `cargo fmt` to format code
   - Run `cargo clippy -- -D warnings` and fix all warnings (no `#[allow]` for fatal warnings)
   - Ensure all exchange rate tests pass
@@ -125,26 +125,26 @@ This implementation plan covers Phase 5 of Zeltra Backend: file attachments with
   - If context is lost, re-read `.kiro/specs/api-polish-phase5/requirements.md` and `design.md`
   - Ask user if questions arise
 
-- [ ] 8. Implement Missing Master Data APIs
-  - [ ] 8.1 Add account status toggle endpoint
+- [x] 8. Implement Missing Master Data APIs
+  - [x] 8.1 Add account status toggle endpoint
     - `PATCH /accounts/:id/status` - Toggle is_active
     - Validate account exists and belongs to org
     - _Requirements: 3.1_
-  - [ ] 8.2 Add dimension value update endpoints
+  - [x] 8.2 Add dimension value update endpoints
     - `PATCH /dimension-values/:id` - Update name/code
     - `PATCH /dimension-values/:id/status` - Toggle is_active
     - _Requirements: 3.2, 3.3_
-  - [ ] 8.3 Implement deactivation validation
+  - [x] 8.3 Implement deactivation validation
     - Allow deactivation of accounts with posted transactions
     - Prevent new postings to deactivated accounts
     - Prevent new assignments to deactivated dimension values
     - _Requirements: 3.4, 3.5_
-  - [ ] 8.4 Write property tests for master data operations
+  - [x] 8.4 Write property tests for master data operations
     - **Property 8: Toggle Status Idempotence**
     - **Property 9: Deactivated Entity Usage Prevention**
     - **Validates: Requirements 3.1, 3.3, 3.4, 3.5**
 
-- [ ] 9. Checkpoint - Master Data APIs
+- [x] 9. Checkpoint - Master Data APIs
   - Run `cargo fmt` to format code
   - Run `cargo clippy -- -D warnings` and fix all warnings (no `#[allow]` for fatal warnings)
   - Ensure all master data tests pass
@@ -253,18 +253,25 @@ This implementation plan covers Phase 5 of Zeltra Backend: file attachments with
     - **Property 19: Concurrent Transaction Balance Integrity**
     - **Validates: Requirements 6.5**
 
-- [ ] 17. Update OpenAPI Specification
-  - [ ] 17.1 Add attachment endpoints to openapi.yaml
-    - Document request/response schemas
-    - Add error responses
+- [x] 17. Update OpenAPI Specification
+  - [x] 17.1 Add attachment endpoints to openapi.yaml
+    - Added `/organizations/{org_id}/transactions/{transaction_id}/attachments/upload` POST
+    - Added `/organizations/{org_id}/transactions/{transaction_id}/attachments` GET/POST
+    - Added `/organizations/{org_id}/attachments/{attachment_id}` GET/DELETE
+    - Added schemas: `RequestUploadRequest`, `RequestUploadResponse`, `ConfirmUploadRequest`, `AttachmentResponse`
+    - Marked old endpoints as deprecated
     - _Requirements: 5.1_
-  - [ ] 17.2 Add exchange rate endpoints to openapi.yaml
-    - Document bulk import schema
-    - Document fetch endpoint
+  - [x] 17.2 Add exchange rate endpoints to openapi.yaml
+    - Added `/organizations/{org_id}/exchange-rates` GET/POST
+    - Added `/organizations/{org_id}/exchange-rates/fetch` POST
+    - Added `/organizations/{org_id}/exchange-rates/bulk` POST
+    - Added schemas: `ExchangeRateResponse`, `CreateExchangeRateRequest`, `FetchRatesRequest`, `FetchRatesResponse`, `BulkImportRequest`, `BulkImportResponse`
+    - Marked old endpoints as deprecated
     - _Requirements: 2.1, 2.4_
-  - [ ] 17.3 Add master data endpoints to openapi.yaml
-    - Document status toggle endpoints
-    - Document dimension value update
+  - [x] 17.3 Add master data endpoints to openapi.yaml
+    - Document status toggle endpoints (`/accounts/{id}/status`, `/dimension-values/{id}/status`)
+    - Document dimension value update (`/dimension-values/{id}`)
+    - Added `ToggleStatusRequest` and `UpdateDimensionValueRequest` schemas
     - _Requirements: 3.1, 3.2, 3.3_
   - [ ] 17.4 Add dashboard endpoints to openapi.yaml
     - Document metrics response schema
