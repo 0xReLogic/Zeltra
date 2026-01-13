@@ -47,10 +47,6 @@ pub fn routes() -> Router<AppState> {
             "/organizations/{org_id}/accounts/{account_id}/balance",
             get(get_account_balance),
         )
-        .route(
-            "/organizations/{org_id}/accounts/{account_id}/ledger",
-            get(get_account_ledger),
-        )
 }
 
 /// Query parameters for listing accounts.
@@ -158,57 +154,7 @@ pub struct BalanceQuery {
     pub as_of: Option<NaiveDate>,
 }
 
-/// Query parameters for listing ledger entries.
-#[derive(Debug, Deserialize, utoipa::IntoParams)]
-pub struct LedgerQuery {
-    /// Start date filter (inclusive, YYYY-MM-DD format).
-    pub from: Option<NaiveDate>,
-    /// End date filter (inclusive, YYYY-MM-DD format).
-    pub to: Option<NaiveDate>,
-    /// Page number (1-indexed, default: 1).
-    pub page: Option<u64>,
-    /// Number of entries per page (default: 50, max: 100).
-    pub limit: Option<u64>,
-}
 
-/// Response for a ledger entry.
-#[derive(Debug, Serialize, utoipa::ToSchema)]
-pub struct LedgerEntryResponse {
-    /// Entry ID.
-    pub id: Uuid,
-    /// Transaction ID.
-    pub transaction_id: Uuid,
-    /// Transaction date.
-    pub transaction_date: String,
-    /// Transaction reference number.
-    pub reference_number: Option<String>,
-    /// Transaction description.
-    pub description: String,
-    /// Transaction status.
-    pub status: String,
-    /// Source currency.
-    pub source_currency: String,
-    /// Source amount.
-    pub source_amount: String,
-    /// Exchange rate.
-    pub exchange_rate: String,
-    /// Functional currency.
-    pub functional_currency: String,
-    /// Functional amount.
-    pub functional_amount: String,
-    /// Debit amount.
-    pub debit: String,
-    /// Credit amount.
-    pub credit: String,
-    /// Entry memo.
-    pub memo: Option<String>,
-    /// Running balance before this entry.
-    pub previous_balance: String,
-    /// Running balance after this entry.
-    pub current_balance: String,
-    /// Entry timestamp.
-    pub created_at: String,
-}
 
 /// GET `/organizations/{org_id}/accounts` - List accounts with balances.
 #[utoipa::path(
@@ -1003,134 +949,6 @@ pub async fn get_account_balance(
     }
 }
 
-/// GET `/organizations/{org_id}/accounts/{account_id}/ledger` - Get ledger entries for an account.
-#[utoipa::path(
-    get,
-    path = "/organizations/{org_id}/accounts/{account_id}/ledger",
-    params(
-        ("org_id" = Uuid, Path, description = "Organization ID"),
-        ("account_id" = Uuid, Path, description = "Account ID"),
-        LedgerQuery
-    ),
-    responses(
-        (status = 200, description = "Ledger entries", body = [LedgerEntryResponse]),
-        (status = 403, description = "Forbidden"),
-        (status = 404, description = "Account not found")
-    ),
-    tag = "Accounts",
-    security(("bearerAuth" = []))
-)]
-pub async fn get_account_ledger(
-    State(state): State<AppState>,
-    auth: AuthUser,
-    Path((org_id, account_id)): Path<(Uuid, Uuid)>,
-    Query(query): Query<LedgerQuery>,
-) -> impl IntoResponse {
-    let org_repo = OrganizationRepository::new((*state.db).clone());
-
-    // Check membership
-    if let Err(response) = check_membership(&org_repo, org_id, auth.user_id()).await {
-        return response;
-    }
-
-    let account_repo = AccountRepository::new((*state.db).clone());
-
-    // Verify account belongs to this organization
-    match account_repo.find_account_by_id(account_id).await {
-        Ok(Some(a)) if a.account.organization_id == org_id => {}
-        Ok(Some(_)) => {
-            return (
-                StatusCode::FORBIDDEN,
-                Json(json!({
-                    "error": "forbidden",
-                    "message": "Account does not belong to this organization"
-                })),
-            )
-                .into_response();
-        }
-        Ok(None) => {
-            return (
-                StatusCode::NOT_FOUND,
-                Json(json!({
-                    "error": "not_found",
-                    "message": "Account not found"
-                })),
-            )
-                .into_response();
-        }
-        Err(e) => {
-            error!(error = %e, "Failed to find account");
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({
-                    "error": "internal_error",
-                    "message": "An error occurred"
-                })),
-            )
-                .into_response();
-        }
-    }
-
-    // Parse pagination with defaults and limits
-    let page = query.page.unwrap_or(1).max(1);
-    let limit = query.limit.unwrap_or(50).clamp(1, 100);
-
-    match account_repo
-        .get_ledger_entries(account_id, query.from, query.to, page, limit)
-        .await
-    {
-        Ok(result) => {
-            let entries: Vec<LedgerEntryResponse> = result
-                .entries
-                .into_iter()
-                .map(|e| LedgerEntryResponse {
-                    id: e.entry.id,
-                    transaction_id: e.entry.transaction_id,
-                    transaction_date: e.transaction_date.to_string(),
-                    reference_number: e.reference_number,
-                    description: e.description,
-                    status: format!("{:?}", e.status).to_lowercase(),
-                    source_currency: e.entry.source_currency,
-                    source_amount: e.entry.source_amount.to_string(),
-                    exchange_rate: e.entry.exchange_rate.to_string(),
-                    functional_currency: e.entry.functional_currency,
-                    functional_amount: e.entry.functional_amount.to_string(),
-                    debit: e.entry.debit.to_string(),
-                    credit: e.entry.credit.to_string(),
-                    memo: e.entry.memo,
-                    previous_balance: e.entry.account_previous_balance.to_string(),
-                    current_balance: e.entry.account_current_balance.to_string(),
-                    created_at: e.entry.created_at.to_rfc3339(),
-                })
-                .collect();
-
-            (
-                StatusCode::OK,
-                Json(json!({
-                    "entries": entries,
-                    "pagination": {
-                        "total": result.total,
-                        "page": result.page,
-                        "limit": result.limit,
-                        "total_pages": result.total_pages
-                    }
-                })),
-            )
-                .into_response()
-        }
-        Err(e) => {
-            error!(error = %e, "Failed to get ledger entries");
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({
-                    "error": "internal_error",
-                    "message": "An error occurred"
-                })),
-            )
-                .into_response()
-        }
-    }
-}
 
 // Helper functions
 

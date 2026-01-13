@@ -3207,6 +3207,7 @@ paths:
       - Accounts
   /organizations/{org_id}/accounts/{account_id}/ledger:
     get:
+      description: 'Requirement 14.4: Account ledger endpoint'
       operationId: get_account_ledger
       parameters:
       - description: Organization ID
@@ -3223,7 +3224,7 @@ paths:
         schema:
           format: uuid
           type: string
-      - description: Start date filter (inclusive, YYYY-MM-DD format).
+      - description: Start date.
         in: path
         name: from
         required: true
@@ -3232,7 +3233,7 @@ paths:
           type:
           - string
           - 'null'
-      - description: End date filter (inclusive, YYYY-MM-DD format).
+      - description: End date.
         in: path
         name: to
         required: true
@@ -3241,7 +3242,8 @@ paths:
           type:
           - string
           - 'null'
-      - description: 'Page number (1-indexed, default: 1).'
+      - description: Page number (0-indexed).
+        example: 0
         in: path
         name: page
         required: true
@@ -3251,7 +3253,8 @@ paths:
           type:
           - integer
           - 'null'
-      - description: 'Number of entries per page (default: 50, max: 100).'
+      - description: Items per page.
+        example: 50
         in: path
         name: limit
         required: true
@@ -3266,19 +3269,17 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/LedgerEntryResponse'
-                type: array
-          description: Ledger entries
+                $ref: '#/components/schemas/AccountLedgerResponse'
+          description: Account ledger report
         '403':
           description: Forbidden
         '404':
-          description: Account not found
+          description: Account or organization not found
       security:
       - bearerAuth: []
-      summary: GET `/organizations/{org_id}/accounts/{account_id}/ledger` - Get ledger entries for an account.
+      summary: GET /organizations/{org_id}/accounts/{account_id}/ledger
       tags:
-      - Accounts
+      - Reports
   /organizations/{org_id}/accounts/{account_id}/status:
     patch:
       operationId: toggle_account_status
@@ -3814,7 +3815,7 @@ paths:
   /organizations/{org_id}/dashboard/budget-vs-actual:
     get:
       description: 'Requirement 4.7: Budget vs actual summary'
-      operationId: get_budget_vs_actual
+      operationId: get_dashboard_budget_vs_actual
       parameters:
       - description: Organization ID
         in: path
