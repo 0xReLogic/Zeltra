@@ -26,7 +26,11 @@ import { useState } from 'react'
 
 export default function TransactionsPage() {
   const [filterDim, setFilterDim] = useState<string>('all')
-  const { data: transactions, isLoading, isError } = useTransactions(1, 50, filterDim)
+  const { data: transactions, isLoading, isError } = useTransactions({
+    page: 1,
+    limit: 50,
+    dimension_value_id: filterDim !== 'all' ? filterDim : undefined,
+  })
   const { data: dimensionsData } = useDimensions()
   
   // Ensure dimensionsData is an array

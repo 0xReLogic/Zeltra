@@ -1,51 +1,63 @@
+/**
+ * Transaction types - re-exported from OpenAPI generated types
+ * with backward compatibility aliases
+ */
+
+import type {
+  TransactionResponse,
+  TransactionListItem as ApiTransactionListItem,
+  CreateTransactionRequest as ApiCreateTransactionRequest,
+  UpdateTransactionRequest as ApiUpdateTransactionRequest,
+  CreateEntryRequest,
+  EntryResponse,
+  RejectRequest,
+  VoidRequest,
+  BulkApproveRequest,
+  BulkApproveResponse,
+} from './api-helpers'
+
+// Re-export OpenAPI types
+export type {
+  TransactionResponse,
+  CreateEntryRequest,
+  EntryResponse,
+  RejectRequest,
+  VoidRequest,
+  BulkApproveRequest,
+  BulkApproveResponse,
+}
+
+// Transaction status enum (for type safety)
 export type TransactionStatus = 'draft' | 'pending' | 'approved' | 'posted' | 'voided'
+
+// Transaction type enum
 export type TransactionType = 'expense' | 'revenue' | 'transfer' | 'journal'
 
-export interface TransactionEntry {
-  account_code: string
-  account_name: string
-  debit: string
-  credit: string
-  dimensions?: string[] // Array of dimension value IDs
-}
-
 // List item from GET /transactions (no entries)
-export interface TransactionListItem {
-  id: string
-  reference_number: string | null
-  type: string // 'expense' | 'revenue' | 'transfer' | 'journal'
-  transaction_date: string
-  description: string
-  status: string // 'draft' | 'pending' | 'approved' | 'posted' | 'voided'
-  created_at: string
-}
+export type TransactionListItem = ApiTransactionListItem
 
 // Full transaction detail from GET /transactions/{id}
-export interface Transaction {
-  id: string
-  reference_number: string | null
-  transaction_type: TransactionType
-  transaction_date: string
-  description: string
-  status: TransactionStatus
-  entries: TransactionEntry[]
-  created_at: string
-  created_by: string
-  fiscal_period_id: string
-}
+export type Transaction = TransactionResponse
+
+// Create transaction request
+export type CreateTransactionRequest = ApiCreateTransactionRequest
+
+// Update transaction request
+export type UpdateTransactionRequest = ApiUpdateTransactionRequest
 
 // Backend returns array directly, no pagination wrapper
 export type GetTransactionsResponse = TransactionListItem[]
 
-export interface CreateTransactionRequest {
-  reference_number: string
-  transaction_type: TransactionType
-  transaction_date: string
-  description: string
-  entries: {
-    account_code: string
-    debit: string
-    credit: string
-    dimensions?: string[]
-  }[]
+// Legacy alias for backward compatibility
+export interface TransactionEntry {
+  account_id: string
+  account_code: string
+  account_name: string
+  debit: string
+  credit: string
+  entry_type: string
+  source_amount: string
+  source_currency: string
+  dimensions?: string[]
+  memo?: string | null
 }

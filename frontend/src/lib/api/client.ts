@@ -1,4 +1,5 @@
 import { QueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { useAuthStore } from '../stores/authStore'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || ''
@@ -163,12 +164,42 @@ export async function apiClient<T>(
       const code = errorBody.error?.code
       const details = errorBody.error?.details
       
-      if (res.status === 403) {
-        throw new PermissionDeniedError(message)
-      }
-      
-      if (res.status === 401) {
-        throw new UnauthorizedError(message)
+      // Show toast notification based on status code
+      switch (res.status) {
+        case 400:
+          // Validation error - show the specific message
+          toast.error(message)
+          break
+        case 401:
+          toast.error('Session expired, please login again')
+          throw new UnauthorizedError(message)
+        case 403:
+          toast.error('Permission denied')
+          throw new PermissionDeniedError(message)
+        case 404:
+          toast.error('Resource not found')
+          break
+        case 409:
+          // Conflict error - show the specific message
+          toast.error(message)
+          break
+        case 422:
+          // Validation error with details
+          if (details) {
+            const detailMessages = Object.entries(details)
+              .map(([field, errors]) => `${field}: ${(errors as string[]).join(', ')}`)
+              .join('\n')
+            toast.error(detailMessages || message)
+          } else {
+            toast.error(message)
+          }
+          break
+        default:
+          if (res.status >= 500) {
+            toast.error('Server error, please try again')
+          } else {
+            toast.error(message)
+          }
       }
       
       throw new ApiError(message, res.status, code, details)
@@ -178,32 +209,38 @@ export async function apiClient<T>(
   } catch (error) {
     // Handle network errors
     if (error instanceof TypeError && error.message.includes('fetch')) {
-      throw new ApiError(
+      const networkError = new ApiError(
         'Unable to connect to server. Please check your internet connection.',
         0,
         'NETWORK_ERROR'
       )
+      toast.error(networkError.message)
+      throw networkError
     }
     
     // Handle timeout
     if (error instanceof DOMException && error.name === 'AbortError') {
-      throw new ApiError(
+      const timeoutError = new ApiError(
         'Request timed out. Please try again.',
         0,
         'TIMEOUT'
       )
+      toast.error(timeoutError.message)
+      throw timeoutError
     }
     
-    // Re-throw ApiError instances
+    // Re-throw ApiError instances (already handled with toast)
     if (error instanceof ApiError) {
       throw error
     }
     
     // Handle unknown errors
-    throw new ApiError(
+    const unknownError = new ApiError(
       error instanceof Error ? error.message : 'An unexpected error occurred',
       0,
       'UNKNOWN'
     )
+    toast.error(unknownError.message)
+    throw unknownError
   }
 }

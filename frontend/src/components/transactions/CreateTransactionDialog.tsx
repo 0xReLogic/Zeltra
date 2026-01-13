@@ -44,103 +44,138 @@ import { useCreateTransaction } from '@/lib/queries/transactions'
 import { useAccounts } from '@/lib/queries/accounts'
 import { useDimensions } from '@/lib/queries/dimensions'
 import { toast } from 'sonner'
+import type { CreateTransactionRequest, CreateEntryRequest } from '@/types/transactions'
 
 const formSchema = z.object({
-  transaction_type: z.enum(['expense', 'revenue', 'transfer', 'journal']),
+  type: z.enum(['expense', 'revenue', 'transfer', 'journal']),
   transaction_date: z.date(),
-  reference_number: z.string().min(1, 'Reference number is required'),
+  reference_number: z.string().optional(),
   description: z.string().min(1, 'Description is required'),
+  memo: z.string().optional(),
   amount: z.string().refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
     message: 'Amount must be a positive number',
   }),
-  main_account: z.string().min(1, 'Account is required'), // e.g. Bank
-  contra_account: z.string().min(1, 'Category/Contra account is required'), // e.g. Expense
-  department: z.string().default(''),
-  project: z.string().default('none'),
-  currency: z.string().default('USD'),
-  exchange_rate: z.string().default('1.0'),
-  // File upload typically handled separately or via special validation, 
-  // simplified here as we just mock the upload call later
-  attachment: z.any().optional(), 
+  main_account_id: z.string().min(1, 'Account is required'),
+  contra_account_id: z.string().min(1, 'Category/Contra account is required'),
+  department: z.string().optional(),
+  project: z.string().optional(),
+  currency: z.string(),
 })
+
+type FormValues = z.infer<typeof formSchema>
 
 export function CreateTransactionDialog() {
   const [open, setOpen] = useState(false)
   const createMutation = useCreateTransaction()
   const { data: accountsData } = useAccounts()
   const { data: dimensionsData } = useDimensions()
-  
-  // Ensure dimensionsData is an array
+
+  // Ensure data is arrays
+  const accounts = Array.isArray(accountsData) ? accountsData : []
   const dimensions = Array.isArray(dimensionsData) ? dimensionsData : []
 
-  const form = useForm({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      transaction_type: 'expense',
+      type: 'expense',
       transaction_date: new Date(),
-      reference_number: 'REF-NEW',
+      reference_number: '',
       description: '',
+      memo: '',
       amount: '',
-      main_account: '',
-      contra_account: '',
+      main_account_id: '',
+      contra_account_id: '',
       department: '',
-      project: 'none',
+      project: '',
       currency: 'USD',
-      exchange_rate: '1.0',
     },
   })
 
-
-
-
-  // Filter accounts based on logic if needed, for now show all or split by type
-  // Usually:
-  // Expense Txn: Credit Asset (Bank), Debit Expense
-  // Revenue Txn: Debit Asset (Bank), Credit Revenue
-  
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    // Construct entries based on type
+  function onSubmit(values: FormValues) {
     const amount = values.amount
-    let entries = []
+    const currency = values.currency
 
-    // Construct dimensions array
+    // Collect dimension IDs
     const dims: string[] = []
-    if (values.department) dims.push(values.department)
+    if (values.department && values.department !== 'none') dims.push(values.department)
     if (values.project && values.project !== 'none') dims.push(values.project)
 
-    if (values.transaction_type === 'expense') {
-        // Dr Expense (with Dims), Cr Asset
-        entries = [
-            { account_code: values.contra_account, debit: amount, credit: '0', dimensions: dims },
-            { account_code: values.main_account, debit: '0', credit: amount }
-        ]
-    } else if (values.transaction_type === 'revenue') {
-        // Dr Asset, Cr Revenue (with Dims)
-        entries = [
-            { account_code: values.main_account, debit: amount, credit: '0' },
-            { account_code: values.contra_account, debit: '0', credit: amount, dimensions: dims }
-        ]
+    // Build entries based on transaction type
+    // API expects: account_id, entry_type ("debit" | "credit"), source_amount, source_currency
+    let entries: CreateEntryRequest[] = []
+
+    if (values.type === 'expense') {
+      // Expense: Debit Expense account, Credit Asset account
+      entries = [
+        {
+          account_id: values.contra_account_id, // Expense account
+          entry_type: 'debit',
+          source_amount: amount,
+          source_currency: currency,
+          dimensions: dims.length > 0 ? dims : undefined,
+        },
+        {
+          account_id: values.main_account_id, // Asset/Bank account
+          entry_type: 'credit',
+          source_amount: amount,
+          source_currency: currency,
+        },
+      ]
+    } else if (values.type === 'revenue') {
+      // Revenue: Debit Asset account, Credit Revenue account
+      entries = [
+        {
+          account_id: values.main_account_id, // Asset/Bank account
+          entry_type: 'debit',
+          source_amount: amount,
+          source_currency: currency,
+        },
+        {
+          account_id: values.contra_account_id, // Revenue account
+          entry_type: 'credit',
+          source_amount: amount,
+          source_currency: currency,
+          dimensions: dims.length > 0 ? dims : undefined,
+        },
+      ]
     } else {
-        // Fallback for transfer/journal (simplified)
-        entries = [
-             { account_code: values.main_account, debit: amount, credit: '0' },
-             { account_code: values.contra_account, debit: '0', credit: amount, dimensions: dims }
-        ]
+      // Transfer/Journal: Simple debit/credit
+      entries = [
+        {
+          account_id: values.main_account_id,
+          entry_type: 'debit',
+          source_amount: amount,
+          source_currency: currency,
+          dimensions: dims.length > 0 ? dims : undefined,
+        },
+        {
+          account_id: values.contra_account_id,
+          entry_type: 'credit',
+          source_amount: amount,
+          source_currency: currency,
+        },
+      ]
     }
 
-    createMutation.mutate({
-        ...values,
-        transaction_date: format(values.transaction_date, 'yyyy-MM-dd'),
-        entries
-    }, {
-        onSuccess: () => {
-            toast.success('Transaction created successfully')
-            setOpen(false)
-            form.reset()
-        },
-        onError: (error) => {
-            toast.error(error.message || 'Failed to create transaction')
-        }
+    const request: CreateTransactionRequest = {
+      type: values.type,
+      transaction_date: format(values.transaction_date, 'yyyy-MM-dd'),
+      description: values.description,
+      entries,
+      reference_number: values.reference_number || undefined,
+      memo: values.memo || undefined,
+    }
+
+    createMutation.mutate(request, {
+      onSuccess: () => {
+        toast.success('Transaction created successfully')
+        setOpen(false)
+        form.reset()
+      },
+      onError: (error) => {
+        // Error toast is already shown by apiClient
+        console.error('Failed to create transaction:', error)
+      },
     })
   }
 
@@ -156,75 +191,69 @@ export function CreateTransactionDialog() {
             Record a new transaction. Entries will be automatically generated.
           </DialogDescription>
         </DialogHeader>
-        
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            
             <div className="grid grid-cols-2 gap-4">
-                <FormField
+              <FormField
                 control={form.control}
-                name="transaction_type"
+                name="type"
                 render={({ field }) => (
-                    <FormItem>
+                  <FormItem>
                     <FormLabel>Type</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
+                      <FormControl>
                         <SelectTrigger>
-                            <SelectValue placeholder="Select type" />
+                          <SelectValue placeholder="Select type" />
                         </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
+                      </FormControl>
+                      <SelectContent>
                         <SelectItem value="expense">Expense</SelectItem>
                         <SelectItem value="revenue">Revenue</SelectItem>
                         <SelectItem value="transfer">Transfer</SelectItem>
-                        </SelectContent>
+                        <SelectItem value="journal">Journal</SelectItem>
+                      </SelectContent>
                     </Select>
                     <FormMessage />
-                    </FormItem>
+                  </FormItem>
                 )}
-                />
+              />
 
-                <FormField
-                    control={form.control}
-                    name="transaction_date"
-                    render={({ field }) => (
-                        <FormItem className="flex flex-col mt-2.5">
-                        <FormLabel>Date</FormLabel>
-                        <Popover>
-                            <PopoverTrigger asChild>
-                            <FormControl>
-                                <Button
-                                variant={"outline"}
-                                className={cn(
-                                    "w-full pl-3 text-left font-normal",
-                                    !field.value && "text-muted-foreground"
-                                )}
-                                >
-                                {field.value ? (
-                                    format(field.value, "PPP")
-                                ) : (
-                                    <span>Pick a date</span>
-                                )}
-                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                </Button>
-                            </FormControl>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                                mode="single"
-                                selected={field.value}
-                                onSelect={field.onChange}
-                                disabled={(date) =>
-                                date > new Date() || date < new Date("1900-01-01")
-                                }
-                                initialFocus
-                            />
-                            </PopoverContent>
-                        </Popover>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
+              <FormField
+                control={form.control}
+                name="transaction_date"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col mt-2.5">
+                    <FormLabel>Date</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              'w-full pl-3 text-left font-normal',
+                              !field.value && 'text-muted-foreground'
+                            )}
+                          >
+                            {field.value ? format(field.value, 'PPP') : <span>Pick a date</span>}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          disabled={(date) => date > new Date() || date < new Date('1900-01-01')}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
 
             <FormField
@@ -232,7 +261,7 @@ export function CreateTransactionDialog() {
               name="reference_number"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Reference Number</FormLabel>
+                  <FormLabel>Reference Number (Optional)</FormLabel>
                   <FormControl>
                     <Input placeholder="REF-001" {...field} />
                   </FormControl>
@@ -248,7 +277,7 @@ export function CreateTransactionDialog() {
                 <FormItem>
                   <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. Server costs" {...field} />
+                    <Input placeholder="e.g. Monthly rent payment" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -257,177 +286,177 @@ export function CreateTransactionDialog() {
 
             {/* Dimensions Section */}
             <div className="grid grid-cols-2 gap-4">
-                 <FormField
-                    control={form.control}
-                    name="department"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Department</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select Dept" />
-                            </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                                {dimensions.find(d => d.code === 'DEPT')?.values.map((v) => (
-                                    <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                />
-
-                <FormField
-                    control={form.control}
-                    name="project"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Project (Optional)</FormLabel>
-                         <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select Project" />
-                            </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                                 <SelectItem value="none">None</SelectItem>
-                                {dimensions.find(d => d.code === 'PROJ')?.values.map((v) => (
-                                    <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-                <FormField
+              <FormField
                 control={form.control}
-                name="main_account"
+                name="department"
                 render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Paid From / To</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Select account" />
-                        </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                            {(Array.isArray(accountsData) ? accountsData : [])
-                                .filter(a => a.account_type === 'asset' || a.account_type === 'liability')
-                                .map((acc) => (
-                                <SelectItem key={acc.id} value={acc.code}>
-                                    {acc.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                    <FormMessage />
-                    </FormItem>
-                )}
-                />
-
-                <FormField
-                control={form.control}
-                name="contra_account"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Category (Account)</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Select category" />
-                        </SelectTrigger>
-                        </FormControl>
-                         <SelectContent>
-                            {(Array.isArray(accountsData) ? accountsData : [])
-                                .filter(a => a.account_type === 'expense' || a.account_type === 'revenue')
-                                .map((acc) => (
-                                <SelectItem key={acc.id} value={acc.code}>
-                                    {acc.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                    <FormMessage />
-                    </FormItem>
-                )}
-                />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-               <FormField
-                  control={form.control}
-                  name="currency"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Currency</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="USD">USD ($)</SelectItem>
-                          <SelectItem value="EUR">EUR (€)</SelectItem>
-                          <SelectItem value="IDR">IDR (Rp)</SelectItem>
-                          <SelectItem value="SGD">SGD (S$)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                 <FormField
-                  control={form.control}
-                  name="exchange_rate"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Exchange Rate</FormLabel>
+                  <FormItem>
+                    <FormLabel>Department (Optional)</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
-                        <Input type="number" step="0.0001" placeholder="1.0000" {...field} />
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select Dept" />
+                        </SelectTrigger>
                       </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                      <SelectContent>
+                        <SelectItem value="none">None</SelectItem>
+                        {dimensions
+                          .find((d) => d.code === 'DEPT')
+                          ?.values?.map((v) => (
+                            <SelectItem key={v.id} value={v.id}>
+                              {v.name}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="project"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Project (Optional)</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select Project" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="none">None</SelectItem>
+                        {dimensions
+                          .find((d) => d.code === 'PROJ')
+                          ?.values?.map((v) => (
+                            <SelectItem key={v.id} value={v.id}>
+                              {v.name}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="main_account_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Paid From / To</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select account" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {accounts
+                          .filter((a) => a.account_type === 'asset' || a.account_type === 'liability')
+                          .map((acc) => (
+                            <SelectItem key={acc.id} value={acc.id}>
+                              {acc.code} - {acc.name}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="contra_account_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Category (Account)</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {accounts
+                          .filter((a) => a.account_type === 'expense' || a.account_type === 'revenue')
+                          .map((acc) => (
+                            <SelectItem key={acc.id} value={acc.id}>
+                              {acc.code} - {acc.name}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="currency"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Currency</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="USD">USD ($)</SelectItem>
+                        <SelectItem value="EUR">EUR (€)</SelectItem>
+                        <SelectItem value="IDR">IDR (Rp)</SelectItem>
+                        <SelectItem value="SGD">SGD (S$)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="amount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Amount</FormLabel>
+                    <FormControl>
+                      <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
 
             <FormField
               control={form.control}
-              name="amount"
+              name="memo"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Amount</FormLabel>
+                  <FormLabel>Memo (Optional)</FormLabel>
                   <FormControl>
-                    <Input type="number" placeholder="0.00" {...field} />
+                    <Input placeholder="Additional notes..." {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            <FormItem>
-                <FormLabel>Attachment (Optional)</FormLabel>
-                <FormControl>
-                    <Input type="file" onChange={(e) => form.setValue('attachment', e.target.files?.[0])} />
-                </FormControl>
-                <FormMessage />
-            </FormItem>
-
             <DialogFooter>
               <Button type="submit" disabled={createMutation.isPending}>
-                {createMutation.isPending && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
-                Create transaction
+                {createMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Create Transaction
               </Button>
             </DialogFooter>
           </form>
