@@ -129,7 +129,7 @@ export default function AccountsPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {data?.data.map((account) => (
+        {(Array.isArray(data) ? data : []).map((account) => (
           <Link href={`/dashboard/accounts/${account.id}`} key={account.id}>
             <Card className="hover:bg-muted/50 transition-colors cursor-pointer h-full group relative">
               <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">

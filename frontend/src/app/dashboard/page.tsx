@@ -15,7 +15,7 @@ export default function DashboardPage() {
   const { data: budgets } = useBudgets()
 
   // Transform budgets data for the chart
-  const budgetUtilizationData = budgets?.data.map(b => {
+  const budgetUtilizationData = (Array.isArray(budgets) ? budgets : []).map(b => {
       const limit = parseFloat(b.budget_limit)
       const spent = parseFloat(b.actual_spent)
       const utilization = limit > 0 ? (spent / limit) * 100 : 0
@@ -25,7 +25,7 @@ export default function DashboardPage() {
           spent: spent,
           utilization: Math.round(utilization)
       }
-  }) || []
+  })
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">

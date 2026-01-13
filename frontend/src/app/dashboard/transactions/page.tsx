@@ -26,8 +26,13 @@ import { useState } from 'react'
 
 export default function TransactionsPage() {
   const [filterDim, setFilterDim] = useState<string>('all')
-  const { data, isLoading, isError } = useTransactions(1, 50, filterDim)
+  const { data: transactions, isLoading, isError } = useTransactions(1, 50, filterDim)
   const { data: dimensionsData } = useDimensions()
+  
+  // Ensure dimensionsData is an array
+  const dimensions = Array.isArray(dimensionsData) ? dimensionsData : []
+  // Backend returns array directly
+  const txnList = Array.isArray(transactions) ? transactions : []
 
   if (isLoading) {
     return (
@@ -68,10 +73,10 @@ export default function TransactionsPage() {
                 </SelectTrigger>
                 <SelectContent>
                     <SelectItem value="all">All Departments</SelectItem>
-                    {dimensionsData?.find(d => d.code === 'DEPT')?.values.map((v) => (
+                    {dimensions.find(d => d.code === 'DEPT')?.values.map((v) => (
                         <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>
                     ))}
-                     {dimensionsData?.find(d => d.code === 'PROJ')?.values.map((v) => (
+                     {dimensions.find(d => d.code === 'PROJ')?.values.map((v) => (
                         <SelectItem key={v.id} value={v.id}>Proj: {v.name}</SelectItem>
                     ))}
                 </SelectContent>
@@ -93,31 +98,29 @@ export default function TransactionsPage() {
                 <TableHead>Description</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data?.data.map((txn) => {
-                // Simple logic to find the main amount (max value in entries)
-                // In real accounting, we'd sum debits or display differently.
-                // For list view, we usually show the total transaction value.
-                const totalAmount = Math.max(
-                    ...txn.entries.map(e => parseFloat(e.debit) || parseFloat(e.credit))
-                )
-
-                return (
+              {txnList.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                    No transactions found. Create your first transaction to get started.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                txnList.map((txn) => (
                   <Link href={`/dashboard/transactions/${txn.id}`} key={txn.id} className="contents">
                   <TableRow className="cursor-pointer hover:bg-muted/50">
                     <TableCell className="font-medium">
                       {txn.transaction_date}
                     </TableCell>
-                    <TableCell>{txn.reference_number}</TableCell>
+                    <TableCell>{txn.reference_number || '-'}</TableCell>
                     <TableCell className="max-w-[300px] truncate">
                       {txn.description}
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className="capitalize">
-                        {txn.transaction_type}
+                        {txn.type}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -125,16 +128,10 @@ export default function TransactionsPage() {
                         {txn.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right font-bold">
-                       {totalAmount.toLocaleString('en-US', {
-                          style: 'currency',
-                          currency: 'USD',
-                        })}
-                    </TableCell>
                   </TableRow>
                   </Link>
-                )
-              })}
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>

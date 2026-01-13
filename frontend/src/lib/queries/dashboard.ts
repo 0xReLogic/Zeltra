@@ -31,11 +31,19 @@ export interface CashFlowDataPoint {
   outflow: number
 }
 
+export interface CashFlowResponse {
+  data: CashFlowDataPoint[]
+}
+
 // TODO: Add mock endpoint for this if not exists
 export function useCashFlowData() {
   return useQuery({
     queryKey: ['dashboard', 'cash-flow'],
-    queryFn: () => apiClient<CashFlowDataPoint[]>('/dashboard/cash-flow'),
+    queryFn: async () => {
+      const response = await apiClient<CashFlowResponse>('/dashboard/cash-flow')
+      // Return the data array directly for easier consumption
+      return response.data || []
+    },
   })
 }
 

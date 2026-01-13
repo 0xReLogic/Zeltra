@@ -1,13 +1,20 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '../api/client'
-import type { GetTransactionsResponse, CreateTransactionRequest, Transaction } from '@/types/transactions'
+import type { GetTransactionsResponse, CreateTransactionRequest, Transaction, TransactionListItem } from '@/types/transactions'
 
 export function useTransactions(page = 1, limit = 50, dimension?: string) {
   return useQuery({
     queryKey: ['transactions', { page, limit, dimension }],
-    queryFn: () => apiClient<GetTransactionsResponse>(
-      `/transactions?page=${page}&limit=${limit}&dimension=${dimension || 'all'}`
-    ),
+    queryFn: () => {
+      const params = new URLSearchParams()
+      params.set('page', page.toString())
+      params.set('limit', limit.toString())
+      if (dimension && dimension !== 'all') {
+        params.set('dimension_value_id', dimension)
+      }
+      // Backend returns array directly, not paginated object
+      return apiClient<GetTransactionsResponse>(`/transactions?${params.toString()}`)
+    },
   })
 }
 
@@ -38,14 +45,12 @@ export function usePendingTransactions() {
   return useQuery({
     queryKey: ['transactions', 'pending'],
     queryFn: async () => {
-      const res = await apiClient<GetTransactionsResponse>('/transactions')
-      console.log('raw txns:', res.data)
-      const pending = res.data.filter(t => t.status === 'pending')
+      // Backend returns array directly
+      const transactions = await apiClient<GetTransactionsResponse>('/transactions')
+      console.log('raw txns:', transactions)
+      const pending = transactions.filter(t => t.status === 'pending')
       console.log('pending txns:', pending)
-      return {
-        ...res,
-        data: pending
-      }
+      return pending
     }
   })
 }

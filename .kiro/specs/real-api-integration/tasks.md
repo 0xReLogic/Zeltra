@@ -241,11 +241,130 @@ This plan converts the Zeltra frontend from mock API to real backend integration
 
 1. **Team Management** - Shows "No users found" even when user exists (refresh issue)
 
+- [x] 11. Fix API Path Mismatch - Org-Scoped Endpoints
+  - [x] 11.1 Update API client to support org-scoped paths
+    - Modify `apiClient` function to auto-prefix org-scoped endpoints with `/organizations/{org_id}`
+    - Add helper function `orgScopedEndpoint(path)` that prepends org context
+    - Keep auth endpoints (`/auth/*`) without org prefix
+    - _Requirements: 5.2_
+  - [x] 11.2 Update dashboard queries
+    - Change `/dashboard/metrics` → `/organizations/{org_id}/dashboard/metrics`
+    - Change `/dashboard/cash-flow` → `/organizations/{org_id}/dashboard/cash-flow`
+    - Change `/dashboard/recent-activity` → `/organizations/{org_id}/dashboard/recent-activity`
+    - Update `frontend/src/lib/queries/dashboard.ts`
+    - _Requirements: 1.2_
+  - [x] 11.3 Update transactions queries
+    - Change `/transactions` → `/organizations/{org_id}/transactions`
+    - Change `/transactions/{id}` → `/organizations/{org_id}/transactions/{id}`
+    - Change `/transactions/{id}/approve` → `/organizations/{org_id}/transactions/{id}/approve`
+    - Change `/transactions/{id}/reject` → `/organizations/{org_id}/transactions/{id}/reject`
+    - Update `frontend/src/lib/queries/transactions.ts`
+    - _Requirements: 1.2_
+  - [x] 11.4 Update accounts queries
+    - Change `/accounts` → `/organizations/{org_id}/accounts`
+    - Change `/accounts/{id}` → `/organizations/{org_id}/accounts/{id}`
+    - Change `/accounts/{id}/ledger` → `/organizations/{org_id}/accounts/{id}/ledger`
+    - Change `/accounts/{id}/status` → `/organizations/{org_id}/accounts/{id}/status`
+    - Update `frontend/src/lib/queries/accounts.ts`
+    - _Requirements: 1.2_
+  - [x] 11.5 Update budgets queries
+    - Change `/budgets` → `/organizations/{org_id}/budgets`
+    - Change `/budgets/{id}` → `/organizations/{org_id}/budgets/{id}`
+    - Change `/budgets/{id}/lines` → `/organizations/{org_id}/budgets/{id}/lines`
+    - Change `/budgets/{id}/status` → `/organizations/{org_id}/budgets/{id}/status`
+    - Update `frontend/src/lib/queries/budgets.ts`
+    - _Requirements: 1.2_
+  - [x] 11.6 Update dimensions queries
+    - Change `/dimensions` → `/organizations/{org_id}/dimension-types` (with values)
+    - Change `/dimension-types` → `/organizations/{org_id}/dimension-types`
+    - Change `/dimensions/{typeId}/values` → `/organizations/{org_id}/dimension-values`
+    - Update `frontend/src/lib/queries/dimensions.ts`
+    - _Requirements: 1.2_
+  - [x] 11.7 Update reports queries
+    - Change `/reports/trial-balance` → `/organizations/{org_id}/reports/trial-balance`
+    - Change `/reports/income-statement` → `/organizations/{org_id}/reports/income-statement`
+    - Change `/reports/balance-sheet` → `/organizations/{org_id}/reports/balance-sheet`
+    - Change `/reports/dimensional` → `/organizations/{org_id}/reports/dimensional`
+    - Update `frontend/src/lib/queries/reports.ts`
+    - _Requirements: 1.2_
+  - [x] 11.8 Check problems and run lint
+    - Use getDiagnostics tool to check for TypeScript/lint problems in modified files FIRST
+    - Fix any type errors or problems found
+    - Then run `npm run lint` in frontend directory
+    - Ensure zero problems before proceeding
+
+- [x] 12. Self-Test Org-Scoped Endpoints with MCP Playwright
+  - [x] 12.1 Start backend and frontend servers
+    - Start PostgreSQL via Docker if not running
+    - Start backend: `cargo run` in backend directory
+    - Start frontend: `pnpm run dev` in frontend directory
+    - Verify both servers are healthy
+  - [x] 12.2 Test Dashboard with Real Data ✅
+    - Navigate to dashboard after login
+    - Verify metrics load without 404
+    - Verify cash flow chart loads
+    - Verify recent activity loads
+    - _Requirements: 1.2_
+  - [x] 12.3 Test Transactions Page ✅
+    - Navigate to transactions page
+    - Verify transaction list loads (shows "No transactions found")
+    - Fixed response type mismatch (backend returns array, not paginated object)
+    - _Requirements: 1.2_
+  - [x] 12.4 Test Accounts Page ✅
+    - Navigate to accounts page
+    - Verify accounts list loads (empty, shows "New Account" button)
+    - Fixed response type mismatch (backend returns array, not `{ data: [] }`)
+    - _Requirements: 1.2_
+  - [x] 12.5 Test Budgets Page ✅
+    - Navigate to budgets page
+    - Verify budgets list loads (shows $0 totals)
+    - Fixed response type mismatch (backend returns array, not `{ data: [] }`)
+    - _Requirements: 1.2_
+  - [x] 12.6 Test Dimensions Page ✅
+    - Navigate to dimensions page
+    - Verify dimension types load (shows "No dimensions defined yet")
+    - Added safe array check with useMemo
+    - _Requirements: 1.2_
+  - [x] 12.7 Test Reports Page ✅
+    - Navigate to reports page
+    - Verify trial balance loads (shows empty table with $0.00 totals)
+    - _Requirements: 1.2_
+  - [x] 12.8 Check problems and run lint ✅
+    - Lint passed (0 errors, 7 warnings - all unused imports)
+    - All pages load without crashes
+
+- [x] 13. Final Integration Checkpoint
+  - [x] Ensure all API calls use org-scoped paths
+  - [x] Ensure no 404 errors on any page
+  - [x] Verified via Playwright E2E testing (manual)
+  - [x] Update ROADMAP.md with Real API status (2026-01-13)
+
+## Response Type Fixes Applied
+
+During testing, discovered that backend returns arrays directly for list endpoints, not wrapped in `{ data: [] }`:
+
+1. **Transactions**: `GetTransactionsResponse` changed from `{ data: Transaction[], pagination: {...} }` to `TransactionListItem[]`
+2. **Accounts**: `GetAccountsResponse` changed from `{ data: Account[] }` to `Account[]`
+3. **Budgets**: `GetBudgetsResponse` changed from `{ data: Budget[] }` to `Budget[]`
+4. **CashFlow**: Added `CashFlowResponse` wrapper type and extract `data` array in query
+
+Files modified:
+- `frontend/src/types/transactions.ts`
+- `frontend/src/types/accounts.ts`
+- `frontend/src/lib/queries/transactions.ts`
+- `frontend/src/lib/queries/budgets.ts`
+- `frontend/src/lib/queries/dashboard.ts`
+- `frontend/src/app/dashboard/transactions/page.tsx`
+- `frontend/src/app/dashboard/accounts/page.tsx`
+- `frontend/src/app/dashboard/budgets/page.tsx`
+- `frontend/src/app/dashboard/page.tsx`
+- `frontend/src/app/dashboard/master-data/dimensions/page.tsx`
+- `frontend/src/components/transactions/CreateTransactionDialog.tsx`
+
 ## Notes
 
 - All tasks including property tests are required
 - Each task references specific requirements for traceability
 - Checkpoints ensure incremental validation
-- Backend must be running at http://localhost:8080 for testing
 - Every major task ends with lint check to ensure clean code
 - Use Exa/Tavily search for best practices if knowledge is insufficient

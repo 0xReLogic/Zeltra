@@ -19,9 +19,8 @@ export interface Budget {
   lines?: BudgetLine[]
 }
 
-export interface GetBudgetsResponse {
-  data: Budget[]
-}
+// Backend returns array directly, no wrapper
+export type GetBudgetsResponse = Budget[]
 
 export interface CreateBudgetRequest {
   department: string

@@ -76,6 +76,32 @@ async function refreshAccessToken(): Promise<boolean> {
 
 interface ApiClientOptions extends RequestInit {
   skipAuth?: boolean
+  /** Set to true to skip org prefix for non-org-scoped endpoints like /auth/* */
+  skipOrgPrefix?: boolean
+}
+
+/**
+ * Helper to build org-scoped endpoint path
+ * Endpoints that don't need org prefix: /auth/*, /organizations (root)
+ */
+export function orgScopedEndpoint(path: string, orgId: string | null): string {
+  // Skip org prefix for auth endpoints and organization management
+  const skipPrefixPatterns = [
+    /^\/auth\//,
+    /^\/organizations$/,
+    /^\/organizations\/[^/]+$/, // GET/PATCH single org
+  ]
+  
+  if (skipPrefixPatterns.some(pattern => pattern.test(path))) {
+    return path
+  }
+  
+  // If we have an orgId and path doesn't already have org prefix, add it
+  if (orgId && !path.startsWith('/organizations/')) {
+    return `/organizations/${orgId}${path}`
+  }
+  
+  return path
 }
 
 export async function apiClient<T>(
@@ -94,8 +120,13 @@ export async function apiClient<T>(
     orgId = state.currentOrgId
   }
   
+  // Build the final endpoint path with org prefix if needed
+  const finalEndpoint = options?.skipOrgPrefix 
+    ? endpoint 
+    : orgScopedEndpoint(endpoint, orgId)
+  
   const makeRequest = async (authToken: string | null): Promise<Response> => {
-    return fetch(`${baseUrl}${endpoint}`, {
+    return fetch(`${baseUrl}${finalEndpoint}`, {
       ...options,
       headers: {
         'Content-Type': 'application/json',

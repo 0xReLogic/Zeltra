@@ -69,6 +69,9 @@ export function CreateTransactionDialog() {
   const createMutation = useCreateTransaction()
   const { data: accountsData } = useAccounts()
   const { data: dimensionsData } = useDimensions()
+  
+  // Ensure dimensionsData is an array
+  const dimensions = Array.isArray(dimensionsData) ? dimensionsData : []
 
   const form = useForm({
     resolver: zodResolver(formSchema),
@@ -267,7 +270,7 @@ export function CreateTransactionDialog() {
                             </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                                {dimensionsData?.find(d => d.code === 'DEPT')?.values.map((v) => (
+                                {dimensions.find(d => d.code === 'DEPT')?.values.map((v) => (
                                     <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>
                                 ))}
                             </SelectContent>
@@ -291,7 +294,7 @@ export function CreateTransactionDialog() {
                             </FormControl>
                             <SelectContent>
                                  <SelectItem value="none">None</SelectItem>
-                                {dimensionsData?.find(d => d.code === 'PROJ')?.values.map((v) => (
+                                {dimensions.find(d => d.code === 'PROJ')?.values.map((v) => (
                                     <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>
                                 ))}
                             </SelectContent>
@@ -316,7 +319,7 @@ export function CreateTransactionDialog() {
                         </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                            {accountsData?.data
+                            {(Array.isArray(accountsData) ? accountsData : [])
                                 .filter(a => a.account_type === 'asset' || a.account_type === 'liability')
                                 .map((acc) => (
                                 <SelectItem key={acc.id} value={acc.code}>
@@ -343,7 +346,7 @@ export function CreateTransactionDialog() {
                         </SelectTrigger>
                         </FormControl>
                          <SelectContent>
-                            {accountsData?.data
+                            {(Array.isArray(accountsData) ? accountsData : [])
                                 .filter(a => a.account_type === 'expense' || a.account_type === 'revenue')
                                 .map((acc) => (
                                 <SelectItem key={acc.id} value={acc.code}>

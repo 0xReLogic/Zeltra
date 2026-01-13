@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -27,13 +28,36 @@ const TIMEZONES = [
 ]
 
 export default function CreateOrganizationPage() {
+  const router = useRouter()
   const user = useAuthStore((state) => state.user)
+  const accessToken = useAuthStore((state) => state.accessToken)
+  const [isChecking, setIsChecking] = useState(true)
   const [name, setName] = useState('')
   const [slug, setSlug] = useState('')
   const [baseCurrency, setBaseCurrency] = useState('USD')
   const [timezone, setTimezone] = useState('UTC')
 
   const createOrg = useCreateOrganization()
+
+  // Auth protection
+  useEffect(() => {
+    const checkAuth = () => {
+      const state = useAuthStore.getState()
+      if (!state.accessToken || !state.user) {
+        router.replace('/login')
+      } else {
+        setIsChecking(false)
+      }
+    }
+    const timer = setTimeout(checkAuth, 100)
+    return () => clearTimeout(timer)
+  }, [router])
+
+  useEffect(() => {
+    if (!isChecking && (!accessToken || !user)) {
+      router.replace('/login')
+    }
+  }, [accessToken, user, isChecking, router])
 
   const generateSlug = (orgName: string) => {
     return orgName
@@ -58,6 +82,18 @@ export default function CreateOrganizationPage() {
         },
       }
     )
+  }
+
+  if (isChecking) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  if (!accessToken || !user) {
+    return null
   }
 
   return (

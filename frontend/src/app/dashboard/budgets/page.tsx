@@ -56,7 +56,7 @@ export default function BudgetsPage() {
      })
   }
 
-  const budgets = data?.data || []
+  const budgets = Array.isArray(data) ? data : []
 
   // ... existing calculation logic ...
   const totalBudget = budgets.reduce((acc, curr) => acc + parseFloat(curr.budget_limit), 0)

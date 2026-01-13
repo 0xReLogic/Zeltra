@@ -7,9 +7,8 @@ export interface Account {
   is_active?: boolean
 }
 
-export interface GetAccountsResponse {
-  data: Account[]
-}
+// Backend returns array directly, no wrapper
+export type GetAccountsResponse = Account[]
 
 export type CreateAccountRequest = {
   code: string

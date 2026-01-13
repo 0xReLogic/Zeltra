@@ -89,7 +89,6 @@ export function DimensionValues({ dimension }: DimensionValuesProps) {
     const onSubmit = (values: z.infer<typeof valueSchema>) => {
         if (editingValue) {
             editDimension.mutate({
-                typeId: dimension.id,
                 id: editingValue.id,
                 ...values
             }, {
@@ -102,7 +101,7 @@ export function DimensionValues({ dimension }: DimensionValuesProps) {
             })
         } else {
             createDimension.mutate({
-                typeId: dimension.id,
+                dimension_type_id: dimension.id,
                 ...values
             }, {
                 onSuccess: () => {
@@ -116,7 +115,6 @@ export function DimensionValues({ dimension }: DimensionValuesProps) {
 
     const handleToggle = (val: DimensionValue) => {
         toggleDimension.mutate({
-            typeId: dimension.id,
             id: val.id,
             isActive: !(val.is_active ?? true)
         }, {

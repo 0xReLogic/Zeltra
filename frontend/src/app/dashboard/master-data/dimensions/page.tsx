@@ -10,13 +10,16 @@ import { DimensionTypeDialog } from './DimensionTypeDialog'
 export default function DimensionsPage() {
   const { data, isLoading } = useDimensions()
   const [activeTab, setActiveTab] = React.useState<string>('')
+  
+  // Ensure data is an array - memoize to avoid re-renders
+  const dimensions = React.useMemo(() => Array.isArray(data) ? data : [], [data])
 
   // Set initial tab when data loads
   React.useEffect(() => {
-    if (data && data.length > 0 && !activeTab) {
-      setActiveTab(data[0].code)
+    if (dimensions.length > 0 && !activeTab) {
+      setActiveTab(dimensions[0].code)
     }
-  }, [data, activeTab])
+  }, [dimensions, activeTab])
 
   if (isLoading) {
     return (
@@ -38,20 +41,20 @@ export default function DimensionsPage() {
         <DimensionTypeDialog />
       </div>
 
-      {(!data || data.length === 0) ? (
+      {dimensions.length === 0 ? (
         <div className="text-center py-10 border rounded-lg bg-muted/20">
           <p className="text-muted-foreground">No dimensions defined yet.</p>
         </div>
       ) : (
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
-            {data.map(dim => (
+            {dimensions.map(dim => (
               <TabsTrigger key={dim.id} value={dim.code}>
                 {dim.name}
               </TabsTrigger>
             ))}
           </TabsList>
-          {data.map(dim => (
+          {dimensions.map(dim => (
             <TabsContent key={dim.id} value={dim.code}>
               <DimensionValues dimension={dim} />
             </TabsContent>
