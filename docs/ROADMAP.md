@@ -846,27 +846,39 @@ NOW we start frontend, because backend is solid.
 
 ### Real API Integration Status (2026-01-13) - Updated via E2E Testing
 
-**✅ Verified Real API (Playwright E2E Tested):**
+**✅ Verified Real API (Playwright E2E Tested - 2026-01-13):**
 
 - Auth (login, register, logout, refresh)
 - Organization CRUD
 - User/Team management
 - Role management (6 roles)
 - Dashboard (metrics, cash flow, recent activity)
-- Transactions list (shows "No transactions found" for empty DB)
-- Accounts list (loads correctly)
-- Budgets list (shows $0 totals)
-- Dimensions list (shows "No dimensions defined yet")
+- Transactions list & CRUD (create, workflow actions)
+- Accounts list & CRUD (create, edit, delete, toggle status)
+- Budgets list & CRUD (create, add lines, lock, vs-actual)
+- Dimensions list & CRUD (create types, add values, edit, toggle status)
+- Fiscal periods (list, create year, change period status)
+- Exchange rates (list, add rate, bulk import)
 - Reports/Trial Balance (shows empty table with $0.00 totals)
 
-**⚠️ Need Further Verification (UI done, CRUD operations unverified):**
+**✅ OpenAPI Types Migration (2026-01-13):**
 
-- Transaction CRUD (create, edit, delete, workflow actions)
-- Account CRUD (create, edit, delete)
-- Budget CRUD (create lines, lock/unlock)
-- Dimension CRUD (create types, add values)
-- Fiscal period management
-- Exchange rate management
+- All frontend types now use auto-generated types from `api.generated.ts`
+- Type helper utilities in `types/api-helpers.ts`
+- Backward compatibility maintained with type aliases
+- Created dedicated type files: `transactions.ts`, `accounts.ts`, `budgets.ts`, `dimensions.ts`, `fiscal.ts`, `exchange-rates.ts`
+
+**✅ Query/Mutation Updates (2026-01-13):**
+
+- Transaction queries: CRUD + workflow mutations (submit, approve, reject, post, void, bulk-approve)
+- Account queries: CRUD + toggle status mutation
+- Budget queries: CRUD + lines + lock + vs-actual
+- Dimension queries: types + values CRUD + toggle status
+- Fiscal queries: years + periods + create year + update period status
+- Exchange rate queries: list + create + bulk import + fetch live rates
+
+**⚠️ Need Further Verification:**
+
 - Simulation
 - Attachments
 
@@ -888,16 +900,7 @@ NOW we start frontend, because backend is solid.
 
 **Deliverable:** Complete frontend application.
 
-**Status:** UI Complete | Real API Integration = ✅ Core Features Working (Auth + Org + Dashboard + Lists)eal API:\*\*
-
-- Auth (login, register, logout, refresh)
-- Organization CRUD
-- User/Team management
-- Role management (6 roles)
-
-**⚠️ Need Verification (UI done, API connection unverified):**
-
-- Master Data (accounts, fiscal periods, dimensions, exchange rates)
+**Status:** UI Complete | Real API Integration = ✅ Core Features Working (Auth + Org + Dashboard + Lists + CRUD Operations)
 - Transactions (CRUD + workflow)
 - Dashboard (metrics, cash flow, recent activity)
 - Reports (trial balance, balance sheet, income statement, dimensional)
