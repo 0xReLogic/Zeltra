@@ -212,7 +212,7 @@ export default function ExchangeRatesPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {(Array.isArray(data) ? data : []).sort((a, b) => b.effective_date.localeCompare(a.effective_date)).map((rate, index) => (
+                {(data?.data && Array.isArray(data.data) ? data.data : []).sort((a, b) => b.effective_date.localeCompare(a.effective_date)).map((rate, index) => (
                   <TableRow key={`${rate.from_currency}-${rate.to_currency}-${rate.effective_date}-${index}`}>
                     <TableCell>{rate.effective_date}</TableCell>
                     <TableCell className="font-medium">{rate.from_currency}</TableCell>

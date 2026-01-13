@@ -11,8 +11,8 @@
 use chrono::NaiveDate;
 use rust_decimal::Decimal;
 use sea_orm::{
-    ActiveModelTrait, ActiveValue::Set, ColumnTrait, Database, DatabaseConnection, EntityTrait,
-    QueryFilter, TransactionTrait,
+    ActiveModelTrait, ActiveValue::Set, ColumnTrait, ConnectionTrait, Database, DatabaseConnection,
+    EntityTrait, QueryFilter, TransactionTrait,
 };
 use std::env;
 use uuid::Uuid;
@@ -101,6 +101,7 @@ async fn setup_test_data(db: &DatabaseConnection) -> Result<TestData, sea_orm::D
     // Create fiscal period (OPEN)
     fiscal_periods::ActiveModel {
         id: Set(fiscal_period_id),
+        organization_id: Set(org_id),
         fiscal_year_id: Set(fiscal_year_id),
         period_number: Set(1),
         name: Set("January 2026".to_string()),
@@ -284,6 +285,170 @@ async fn test_audit_immutability() {
             "Error unexpected: {}", e
         );
     }
+
+    cleanup_test_data(&db, &data).await.expect("Cleanup failed");
+}
+
+#[tokio::test]
+async fn test_audit_truncate_protection() {
+    let db = match Database::connect(&get_database_url()).await {
+        Ok(db) => db,
+        Err(e) => {
+            eprintln!("Skipping test - db not available: {}", e);
+            return;
+        }
+    };
+
+    let data = match setup_test_data(&db).await {
+        Ok(d) => d,
+        Err(e) => {
+            eprintln!("Skipping setup: {}", e);
+            return;
+        }
+    };
+
+    // 1. Create Data
+    let tx_id = Uuid::new_v4();
+    transactions::ActiveModel {
+        id: Set(tx_id),
+        organization_id: Set(data.org_id),
+        fiscal_period_id: Set(data.fiscal_period_id),
+        transaction_type: Set(TransactionType::Journal),
+        transaction_date: Set(NaiveDate::from_ymd_opt(2026, 1, 1).unwrap()),
+        description: Set("Truncate Test".to_string()),
+        status: Set(TransactionStatus::Posted),
+        created_by: Set(data.user_id),
+        ..Default::default()
+    }
+    .insert(&db)
+    .await
+    .expect("Failed to create tx");
+
+    ledger_entries::ActiveModel {
+        id: Set(Uuid::new_v4()),
+        transaction_id: Set(tx_id),
+        account_id: Set(data.expense_account_id),
+        source_currency: Set("USD".to_string()),
+        source_amount: Set(Decimal::new(100, 2)),
+        exchange_rate: Set(Decimal::ONE),
+        functional_currency: Set("USD".to_string()),
+        functional_amount: Set(Decimal::new(100, 2)),
+        debit: Set(Decimal::new(100, 2)),
+        credit: Set(Decimal::ZERO),
+        ..Default::default()
+    }
+    .insert(&db)
+    .await
+    .expect("Failed to insert entry");
+
+    // 2. Attempt TRUNCATE (Should FAIL if protected, but likely PASS currently)
+    let truncate_result = db.execute(sea_orm::Statement::from_string(
+        sea_orm::DatabaseBackend::Postgres,
+        "TRUNCATE TABLE ledger_entries".to_string(),
+    ))
+    .await;
+
+    // Report vulnerability if successful
+    if truncate_result.is_ok() {
+         eprintln!("CRITICAL VULNERABILITY: TRUNCATE TABLE ledger_entries succeeded! Audit trail bypassed.");
+    }
+
+    match truncate_result {
+        Ok(_) => {
+             // We intentionally fail the test if TRUNCATE succeeds to vividly demonstrate the flaw.
+             panic!("VULNERABILITY CONFIRMED: TRUNCATE TABLE bypassed the audit trigger.");
+        }
+        Err(e) => {
+            println!("Protected: TRUNCATE failed as expected. Reason: {}", e);
+        }
+    }
+
+    cleanup_test_data(&db, &data).await.expect("Cleanup failed");
+}
+
+#[tokio::test]
+async fn test_concurrent_aggregation_integrity() {
+    let db = match Database::connect(&get_database_url()).await {
+        Ok(db) => db,
+        Err(e) => {
+            eprintln!("Skipping test - db not available: {}", e);
+            return;
+        }
+    };
+    let data = match setup_test_data(&db).await {
+        Ok(d) => d,
+        Err(e) => return,
+    };
+
+    // Spawn 10 concurrent tasks inserting entries
+    let mut handles = vec![];
+    for i in 0..10 {
+        let db = db.clone();
+        let org_id = data.org_id;
+        let period_id = data.fiscal_period_id;
+        let user_id = data.user_id;
+        let account_id = data.expense_account_id;
+
+        handles.push(tokio::spawn(async move {
+            let tx_id = Uuid::new_v4();
+            transactions::ActiveModel {
+                id: Set(tx_id),
+                organization_id: Set(org_id),
+                fiscal_period_id: Set(period_id),
+                transaction_type: Set(TransactionType::Journal),
+                transaction_date: Set(NaiveDate::from_ymd_opt(2026, 1, 1).unwrap()),
+                description: Set(format!("Concurrent {}", i)),
+                status: Set(TransactionStatus::Posted),
+                created_by: Set(user_id),
+                ..Default::default()
+            }
+            .insert(&db)
+            .await.unwrap();
+
+            ledger_entries::ActiveModel {
+                id: Set(Uuid::new_v4()),
+                transaction_id: Set(tx_id),
+                account_id: Set(account_id),
+                source_currency: Set("USD".to_string()),
+                source_amount: Set(Decimal::new(100, 2)), // 1.00
+                exchange_rate: Set(Decimal::ONE),
+                functional_currency: Set("USD".to_string()),
+                functional_amount: Set(Decimal::new(100, 2)),
+                debit: Set(Decimal::new(100, 2)),
+                credit: Set(Decimal::ZERO),
+                ..Default::default()
+            }
+            .insert(&db)
+            .await.unwrap();
+        }));
+    }
+
+    // Await all inserts
+    for handle in handles {
+        handle.await.unwrap();
+    }
+
+    // Verify Sum
+    // We expect 10 entries of 1.00 = 10.00
+    // If Phantom Reads occurred during partial transaction (not applicable here as we awaited, 
+    // but in a real stress test this would be interleaved), we want to ensure the final SUM is consistent.
+    
+    // Note: To test race conditions effectively, we would need to run the SUM *during* the inserts.
+    // However, verifying the final state is a basic integrity check.
+    
+    use sea_orm::{EntityTrait, QuerySelect, PaginatorTrait};
+    let sum_debit: Option<Decimal> = ledger_entries::Entity::find()
+        .filter(ledger_entries::Column::AccountId.eq(data.expense_account_id))
+        .select_only()
+        .column_as(ledger_entries::Column::Debit.sum(), "total_debit")
+        .into_tuple()
+        .one(&db)
+        .await
+        .unwrap()
+        .unwrap();
+
+    let total = sum_debit.unwrap_or(Decimal::ZERO);
+    assert_eq!(total, Decimal::new(1000, 2)); // 10.00
 
     cleanup_test_data(&db, &data).await.expect("Cleanup failed");
 }
