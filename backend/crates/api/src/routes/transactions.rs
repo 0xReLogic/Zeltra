@@ -19,12 +19,14 @@ use tracing::{error, info};
 use uuid::Uuid;
 
 use crate::{AppState, middleware::AuthUser};
+use zeltra_core::currency::calculate_forex_variance;
 use zeltra_db::{
     OrganizationRepository,
     entities::sea_orm_active_enums::{TransactionStatus, TransactionType},
     repositories::WorkflowRepository,
     repositories::transaction::{
         CreateLedgerEntryInput, CreateTransactionInput, TransactionFilter, TransactionRepository,
+        TransactionWithEntries,
     },
 };
 
@@ -79,6 +81,148 @@ pub fn routes() -> Router<AppState> {
             "/organizations/{org_id}/transactions/{transaction_id}/void",
             post(void_transaction),
         )
+        .route(
+            "/organizations/{org_id}/transactions/pay-invoice",
+            post(pay_invoice),
+        )
+}
+
+/// POST `/organizations/{org_id}/transactions/pay-invoice` - Pay an invoice with auto-forex variance.
+#[utoipa::path(
+    post,
+    path = "/organizations/{org_id}/transactions/pay-invoice",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID")
+    ),
+    request_body = PayInvoiceRequest,
+    responses(
+        (status = 201, description = "Payment transaction created", body = TransactionResponse),
+        (status = 400, description = "Invalid input or processing error"),
+        (status = 404, description = "Invoice not found")
+    ),
+    tag = "Transactions",
+    security(("bearerAuth" = []))
+)]
+async fn pay_invoice(
+    State(state): State<AppState>,
+    auth: AuthUser,
+    Path(org_id): Path<Uuid>,
+    Json(payload): Json<PayInvoiceRequest>,
+) -> impl IntoResponse {
+    let org_repo = OrganizationRepository::new((*state.db).clone());
+    let tx_repo = TransactionRepository::new((*state.db).clone());
+
+    // Check membership
+    if let Err(response) = check_membership(&org_repo, org_id, auth.user_id()).await {
+        return response;
+    }
+
+    // Get Organization for functional currency
+    let Ok(Some(org)) = org_repo.find_by_id(org_id).await else {
+        return (
+            StatusCode::NOT_FOUND,
+            Json(json!({"error": "org_not_found"})),
+        )
+            .into_response();
+    };
+    let functional_currency = org.base_currency;
+
+    // 1. Fetch Invoice Details
+    let (invoice, original_rate, original_currency, ar_ap_account_id): (TransactionWithEntries, Decimal, String, Uuid) =
+        match fetch_invoice_details(&tx_repo, org_id, payload.invoice_id, &functional_currency).await
+        {
+            Ok(details) => details,
+            Err(e) => return e.into_response(),
+        };
+
+    // 2. Calculate Variance
+    let variance = calculate_forex_variance(payload.amount, original_rate, payload.exchange_rate);
+
+    // 3. Construct Entries
+    let entries = construct_payment_entries(
+        &payload,
+        original_rate,
+        &original_currency,
+        ar_ap_account_id,
+        &functional_currency,
+        variance,
+    );
+
+    // 4. Create Transaction
+    let input = CreateTransactionInput {
+        organization_id: org_id,
+        transaction_type: TransactionType::Payment,
+        transaction_date: payload.payment_date,
+        description: payload
+            .description
+            .unwrap_or_else(|| "Invoice Payment".to_string()),
+        reference_number: invoice
+            .transaction
+            .reference_number
+            .map(|r| format!("{r}-PAY")),
+        memo: None,
+        entries,
+        created_by: auth.user_id(),
+        timezone: "UTC".to_string(), // Default
+    };
+
+    match tx_repo.create_transaction(input).await {
+        Ok(result) => {
+            // ... construct response (same as create_transaction) ...
+            // For brevity, I'll copy the response construction from create_transaction logic
+            // or reuse a helper function if I could. I'll just adapt the code here.
+
+            // (Copying response construction logic...)
+            let total_debit: Decimal = result.entries.iter().map(|e| e.entry.debit).sum();
+            let total_credit: Decimal = result.entries.iter().map(|e| e.entry.credit).sum();
+
+            let entry_responses: Vec<EntryResponse> = result
+                .entries
+                .into_iter()
+                .map(|e| EntryResponse {
+                    id: e.entry.id,
+                    account_id: e.entry.account_id,
+                    source_currency: e.entry.source_currency,
+                    source_amount: e.entry.source_amount.to_string(),
+                    exchange_rate: e.entry.exchange_rate.to_string(),
+                    functional_currency: e.entry.functional_currency,
+                    functional_amount: e.entry.functional_amount.to_string(),
+                    debit: e.entry.debit.to_string(),
+                    credit: e.entry.credit.to_string(),
+                    memo: e.entry.memo,
+                    dimensions: e.dimensions,
+                })
+                .collect();
+
+            let response = TransactionResponse {
+                id: result.transaction.id,
+                reference_number: result.transaction.reference_number,
+                transaction_type: tx_type_to_string(&result.transaction.transaction_type),
+                transaction_date: result.transaction.transaction_date.to_string(),
+                description: result.transaction.description,
+                memo: result.transaction.memo,
+                status: status_to_string(&result.transaction.status),
+                fiscal_period_id: result.transaction.fiscal_period_id,
+                created_by: result.transaction.created_by,
+                created_at: result.transaction.created_at.to_rfc3339(),
+                updated_at: result.transaction.updated_at.to_rfc3339(),
+                entries: entry_responses,
+                total_debit: total_debit.to_string(),
+                total_credit: total_credit.to_string(),
+                timezone: result.transaction.timezone,
+            };
+
+            (StatusCode::CREATED, Json(response)).into_response()
+        }
+        Err(e) => {
+            error!(error = %e, "Failed to create payment transaction");
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"error": "creation_failed"})),
+            )
+                .into_response()
+        }
+    }
 }
 
 // ============================================================================
@@ -159,6 +303,27 @@ pub struct UpdateTransactionRequest {
     pub memo: Option<String>,
     /// Reference number.
     pub reference_number: Option<String>,
+}
+
+/// Request body for paying an invoice.
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
+pub struct PayInvoiceRequest {
+    /// ID of the invoice (transaction) being paid.
+    pub invoice_id: Uuid,
+    /// Account ID to pay from (e.g., Bank).
+    pub payment_account_id: Uuid,
+    /// Amount to pay (in source currency).
+    #[schema(example = "100.00")]
+    pub amount: Decimal,
+    /// Exchange rate for the payment.
+    #[schema(example = "1.0850")]
+    pub exchange_rate: Decimal,
+    /// Payment date.
+    pub payment_date: NaiveDate,
+    /// Account ID for Realized Gain/Loss.
+    pub gain_loss_account_id: Uuid,
+    /// Optional description.
+    pub description: Option<String>,
 }
 
 /// Response for a transaction.
@@ -1650,4 +1815,106 @@ fn string_to_tx_type(s: &str) -> Option<TransactionType> {
         "reversal" => Some(TransactionType::Reversal),
         _ => None,
     }
+}
+
+/// Helper to construct payment ledger entries.
+fn construct_payment_entries(
+    payload: &PayInvoiceRequest,
+    original_rate: Decimal,
+    original_currency: &str,
+    ar_ap_account_id: Uuid,
+    functional_currency: &str,
+    variance: Decimal,
+) -> Vec<CreateLedgerEntryInput> {
+    let mut entries = Vec::new();
+
+    // A. Bank Entry (Payment)
+    let bank_functional = payload.amount * payload.exchange_rate;
+    entries.push(CreateLedgerEntryInput {
+        account_id: payload.payment_account_id,
+        source_currency: original_currency.to_string(),
+        source_amount: payload.amount,
+        exchange_rate: payload.exchange_rate,
+        functional_currency: functional_currency.to_string(),
+        functional_amount: bank_functional,
+        debit: Decimal::ZERO,
+        credit: bank_functional,
+        memo: Some("Payment".to_string()),
+        dimensions: vec![],
+    });
+
+    // B. AP/AR Clearing Entry
+    let clearing_functional = payload.amount * original_rate;
+    entries.push(CreateLedgerEntryInput {
+        account_id: ar_ap_account_id,
+        source_currency: original_currency.to_string(),
+        source_amount: payload.amount,
+        exchange_rate: original_rate,
+        functional_currency: functional_currency.to_string(),
+        functional_amount: clearing_functional,
+        debit: clearing_functional,
+        credit: Decimal::ZERO,
+        memo: Some("Clearing".to_string()),
+        dimensions: vec![],
+    });
+
+    // C. Variance Entry
+    if variance.abs() > Decimal::ZERO {
+        let (v_debit, v_credit) = if variance > Decimal::ZERO {
+            // Rate increased -> Loss -> Debit
+            (variance.abs(), Decimal::ZERO)
+        } else {
+            // Rate decreased -> Gain -> Credit
+            (Decimal::ZERO, variance.abs())
+        };
+
+        entries.push(CreateLedgerEntryInput {
+            account_id: payload.gain_loss_account_id,
+            source_currency: functional_currency.to_string(),
+            source_amount: variance.abs(),
+            exchange_rate: Decimal::ONE,
+            functional_currency: functional_currency.to_string(),
+            functional_amount: variance.abs(),
+            debit: v_debit,
+            credit: v_credit,
+            memo: Some("Realized Forex Gain/Loss".to_string()),
+            dimensions: vec![],
+        });
+    }
+
+    entries
+}
+
+/// Helper to fetch invoice and determine original rate details.
+async fn fetch_invoice_details(
+    tx_repo: &TransactionRepository,
+    org_id: Uuid,
+    invoice_id: Uuid,
+    functional_currency: &str,
+) -> Result<(TransactionWithEntries, Decimal, String, Uuid), (StatusCode, Json<serde_json::Value>)> {
+    let Ok(invoice) = tx_repo.get_transaction(org_id, invoice_id).await else {
+        return Err((
+            StatusCode::NOT_FOUND,
+            Json(json!({"error": "invoice_not_found"})),
+        ));
+    };
+
+    let original_entry = invoice
+        .entries
+        .iter()
+        .find(|e| e.entry.source_currency != functional_currency)
+        .or_else(|| invoice.entries.first())
+        .ok_or_else(|| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"error": "invalid_invoice_entries"})),
+            )
+        })?;
+
+    Ok((
+        invoice.clone(),
+        original_entry.entry.exchange_rate,
+        original_entry.entry.source_currency.clone(),
+        original_entry.entry.account_id,
+    ))
 }

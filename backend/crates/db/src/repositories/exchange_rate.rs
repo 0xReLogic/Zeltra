@@ -5,8 +5,8 @@
 use chrono::NaiveDate;
 use rust_decimal::Decimal;
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DatabaseConnection, DbErr, EntityTrait, QueryFilter, QueryOrder,
-    Set, TransactionTrait,
+    ActiveModelTrait, ColumnTrait, DatabaseConnection, DbErr, EntityTrait, PaginatorTrait,
+    QueryFilter, QueryOrder, QuerySelect, Set, TransactionTrait,
 };
 use uuid::Uuid;
 
@@ -83,6 +83,17 @@ pub enum RateLookupMethod {
 #[derive(Debug, Clone)]
 pub struct ExchangeRateRepository {
     db: DatabaseConnection,
+}
+
+/// Filter for listing exchange rates.
+#[derive(Debug, Clone, Default)]
+pub struct ListExchangeRatesFilter {
+    pub from_currency: Option<String>,
+    pub to_currency: Option<String>,
+    pub start_date: Option<NaiveDate>,
+    pub end_date: Option<NaiveDate>,
+    pub page: u64,
+    pub per_page: u64,
 }
 
 impl ExchangeRateRepository {
@@ -333,24 +344,49 @@ impl ExchangeRateRepository {
         Ok(None)
     }
 
-    /// Lists all exchange rates for an organization.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the database query fails.
+    /// Lists exchange rates with filtering and pagination.
     pub async fn list_rates(
         &self,
         organization_id: Uuid,
-    ) -> Result<Vec<exchange_rates::Model>, ExchangeRateError> {
-        let rates = exchange_rates::Entity::find()
-            .filter(exchange_rates::Column::OrganizationId.eq(organization_id))
+        filter: ListExchangeRatesFilter,
+    ) -> Result<(Vec<exchange_rates::Model>, u64), ExchangeRateError> {
+        let mut query = exchange_rates::Entity::find()
+            .filter(exchange_rates::Column::OrganizationId.eq(organization_id));
+
+        if let Some(from) = filter.from_currency {
+            query = query.filter(exchange_rates::Column::FromCurrency.eq(from));
+        }
+
+        if let Some(to) = filter.to_currency {
+            query = query.filter(exchange_rates::Column::ToCurrency.eq(to));
+        }
+
+        if let Some(start) = filter.start_date {
+            query = query.filter(exchange_rates::Column::EffectiveDate.gte(start));
+        }
+
+        if let Some(end) = filter.end_date {
+            query = query.filter(exchange_rates::Column::EffectiveDate.lte(end));
+        }
+
+        // Count total before pagination
+        let total = query
+            .clone()
+            .count(&self.db)
+            .await
+            .map_err(ExchangeRateError::Database)?;
+
+        // Apply pagination and sorting
+        let rates = query
             .order_by_desc(exchange_rates::Column::EffectiveDate)
             .order_by_asc(exchange_rates::Column::FromCurrency)
             .order_by_asc(exchange_rates::Column::ToCurrency)
+            .offset((filter.page - 1) * filter.per_page)
+            .limit(filter.per_page)
             .all(&self.db)
             .await?;
 
-        Ok(rates)
+        Ok((rates, total))
     }
 
     /// Bulk import exchange rates atomically.

@@ -27,12 +27,19 @@ use zeltra_db::{
     },
 };
 
+use zeltra_db::repositories::exchange_rate::ListExchangeRatesFilter;
+use zeltra_shared::types::pagination::{PageRequest, PageResponse};
+
 /// Creates the exchange rate routes (requires auth middleware to be applied externally).
 pub fn routes() -> Router<AppState> {
     Router::new()
         .route(
             "/organizations/{org_id}/exchange-rates",
             get(get_exchange_rate),
+        )
+        .route(
+            "/organizations/{org_id}/exchange-rates/list",
+            get(list_exchange_rates),
         )
         .route(
             "/organizations/{org_id}/exchange-rates",
@@ -46,6 +53,113 @@ pub fn routes() -> Router<AppState> {
             "/organizations/{org_id}/exchange-rates/bulk",
             post(bulk_import_rates),
         )
+}
+
+/// Query parameters for listing exchange rates.
+#[derive(Debug, Deserialize, utoipa::IntoParams)]
+pub struct ListExchangeRatesQuery {
+    /// Filter by source currency.
+    pub from: Option<String>,
+    /// Filter by target currency.
+    pub to: Option<String>,
+    /// Filter by start date (inclusive).
+    pub start_date: Option<NaiveDate>,
+    /// Filter by end date (inclusive).
+    pub end_date: Option<NaiveDate>,
+    /// Pagination parameters.
+    #[serde(flatten)]
+    pub page: PageRequest,
+}
+
+/// Response item for list endpoint.
+#[derive(Debug, Serialize, utoipa::ToSchema)]
+pub struct ExchangeRateListItem {
+    /// ID of the exchange rate.
+    pub id: Uuid,
+    /// Base currency code (e.g., USD).
+    pub from_currency: String,
+    /// Target currency code (e.g., IDR).
+    pub to_currency: String,
+    /// Exchange rate value.
+    pub rate: String,
+    /// Date the rate is effective.
+    pub effective_date: NaiveDate,
+    /// Source of the rate (e.g., Frankfurter).
+    pub source: String,
+    /// Date the rate was created.
+    pub created_at: chrono::DateTime<chrono::FixedOffset>,
+}
+
+/// GET `/organizations/{org_id}/exchange-rates/list` - List exchange rates.
+#[utoipa::path(
+    get,
+    path = "/organizations/{org_id}/exchange-rates/list",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        ListExchangeRatesQuery
+    ),
+    responses(
+        (status = 200, description = "List of exchange rates", body = PageResponse<ExchangeRateListItem>),
+        (status = 403, description = "Forbidden")
+    ),
+    tag = "Exchange Rates",
+    security(("bearerAuth" = []))
+)]
+async fn list_exchange_rates(
+    State(state): State<AppState>,
+    auth: AuthUser,
+    Path(org_id): Path<Uuid>,
+    Query(query): Query<ListExchangeRatesQuery>,
+) -> impl IntoResponse {
+    let org_repo = OrganizationRepository::new((*state.db).clone());
+
+    // Check membership
+    if let Err(response) = check_membership(&org_repo, org_id, auth.user_id()).await {
+        return response;
+    }
+
+    let rate_repo = ExchangeRateRepository::new((*state.db).clone());
+
+    let filter = ListExchangeRatesFilter {
+        from_currency: query.from,
+        to_currency: query.to,
+        start_date: query.start_date,
+        end_date: query.end_date,
+        page: u64::from(query.page.page),
+        per_page: u64::from(query.page.per_page),
+    };
+
+    match rate_repo.list_rates(org_id, filter).await {
+        Ok((rates, total)) => {
+            let items: Vec<ExchangeRateListItem> = rates
+                .into_iter()
+                .map(|r| ExchangeRateListItem {
+                    id: r.id,
+                    from_currency: r.from_currency,
+                    to_currency: r.to_currency,
+                    rate: r.rate.to_string(),
+                    effective_date: r.effective_date,
+                    source: rate_source_to_string(&r.source),
+                    created_at: r.created_at,
+                })
+                .collect();
+
+            let response = PageResponse::new(items, query.page.page, query.page.per_page, total);
+
+            (StatusCode::OK, Json(response)).into_response()
+        }
+        Err(e) => {
+            error!(error = %e, "Failed to list exchange rates");
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": "internal_error",
+                    "message": "An error occurred"
+                })),
+            )
+                .into_response()
+        }
+    }
 }
 
 /// Query parameters for getting an exchange rate.

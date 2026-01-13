@@ -712,6 +712,8 @@ NOW we start frontend, because backend is solid.
     - Tabel ledger sekarang dijamin punya `account_version` yang sekuensial (1, 2, 3...) tanpa bolong (no gaps).
     - Ini menjamin _Running Balance_ yang ditampilkan di UI akan selalu akurat saat ditarik dari history.
 6.  **Rounding Accuracy**: Total Debit/Credit di UI akan selalu balance sempurna karena BE sudah menggunakan _Residual Adjustment_ (pembulatan otomatis 0.01 error).
+7.  **Exchange Rate List**: Gunakan endpoint `GET /exchange-rates/list` untuk histori kurs.
+8.  **Auto Forex Gain/Loss**: Pakai `POST /transactions/pay-invoice` (BUKAN create transaction biasa) untuk pembayaran invoice mata uang asing. Selisih kurs dihitung otomatis.
 
 ---
 
@@ -901,6 +903,7 @@ NOW we start frontend, because backend is solid.
 **Deliverable:** Complete frontend application.
 
 **Status:** UI Complete | Real API Integration = ✅ Core Features Working (Auth + Org + Dashboard + Lists + CRUD Operations)
+
 - Transactions (CRUD + workflow)
 - Dashboard (metrics, cash flow, recent activity)
 - Reports (trial balance, balance sheet, income statement, dimensional)

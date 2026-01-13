@@ -11,6 +11,7 @@ pub mod allocation;
 pub mod conversion;
 pub mod exchange;
 pub mod fetcher;
+pub mod forex;
 pub mod rate_service;
 pub mod service;
 
@@ -24,6 +25,7 @@ pub use allocation::AllocationUtil;
 pub use conversion::convert_amount;
 pub use exchange::ExchangeRate;
 pub use fetcher::{ExchangeRateFetcher, FetchedRate, FetcherError, RateSource};
+pub use forex::calculate_forex_variance;
 pub use rate_service::{
     BulkImportResult, BulkRateImportInput, ExchangeRateService, RateImportError, RateImportItem,
     RateServiceError,
