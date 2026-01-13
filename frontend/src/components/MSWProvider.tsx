@@ -1,26 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-
+/**
+ * MSWProvider - Previously used for Mock Service Worker
+ * 
+ * MSW has been disabled as the frontend now uses real backend API.
+ * This component is kept as a passthrough for backward compatibility.
+ */
 export function MSWProvider({ children }: { children: React.ReactNode }) {
-  const [mockingEnabled, setMockingEnabled] = useState(false)
-
-  useEffect(() => {
-    async function enableMocking() {
-      if (process.env.NEXT_PUBLIC_API_MOCK === 'true') {
-        if (typeof window !== 'undefined') {
-          const { worker } = await import('@/mocks/browser')
-          await worker.start()
-        }
-      }
-      setMockingEnabled(true)
-    }
-    enableMocking()
-  }, [])
-
-  if (!mockingEnabled && process.env.NEXT_PUBLIC_API_MOCK === 'true') {
-    return null
-  }
-
+  // MSW disabled - always render children directly
   return <>{children}</>
 }

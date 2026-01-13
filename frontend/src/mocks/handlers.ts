@@ -190,10 +190,9 @@ export const handlers = [
 
        for (const id of body.transaction_ids) {
            const tx = MOCK_TRANSACTIONS.find(t => t.id === id)
-           // eslint-disable-next-line @typescript-eslint/no-explicit-any
            if (tx) {
-               (tx as any).status = 'approved';
-               (tx as any).approved_at = new Date().toISOString()
+               (tx as { status: string }).status = 'approved';
+               (tx as { approved_at?: string }).approved_at = new Date().toISOString()
                approvedIds.push({ id, status: 'approved' })
            } else {
                failedIds.push({ id, error: 'Not found' })
