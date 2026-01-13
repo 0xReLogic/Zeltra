@@ -8,14 +8,24 @@ export interface Organization {
   subscription_tier: string
 }
 
+// All 6 roles as defined in backend OpenAPI spec
+export type UserRole = 'owner' | 'admin' | 'approver' | 'accountant' | 'viewer' | 'submitter'
+
 export interface OrganizationUser {
   id: string
   full_name: string
   email: string
-  role: 'owner' | 'admin' | 'accountant' | 'approver' | 'viewer'
+  role: UserRole
   status: 'active' | 'invited' | 'disabled'
   joined_at: string | null
   approval_limit?: string
+}
+
+export interface CreateOrganizationRequest {
+  name: string
+  slug: string
+  base_currency: string
+  timezone?: string
 }
 
 export interface UpdateOrganizationRequest {
@@ -25,10 +35,10 @@ export interface UpdateOrganizationRequest {
 
 export interface InviteUserRequest {
   email: string
-  role: OrganizationUser['role']
+  role: UserRole
 }
 
 export interface UpdateUserRoleRequest {
-  role: OrganizationUser['role']
+  role: UserRole
   approval_limit?: number
 }

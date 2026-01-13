@@ -56,7 +56,7 @@ import { OrganizationUser } from '@/types/organizations'
 
 const inviteUserSchema = z.object({
   email: z.string().email('Invalid email address'),
-  role: z.enum(['owner', 'admin', 'accountant', 'approver', 'viewer']),
+  role: z.enum(['owner', 'admin', 'approver', 'accountant', 'viewer', 'submitter']),
 })
 
 type InviteUserValues = z.infer<typeof inviteUserSchema>
@@ -182,11 +182,12 @@ export default function TeamManagementPage() {
                           <SelectItem value="admin">Admin</SelectItem>
                           <SelectItem value="accountant">Accountant</SelectItem>
                           <SelectItem value="approver">Approver</SelectItem>
+                          <SelectItem value="submitter">Submitter</SelectItem>
                           <SelectItem value="viewer">Viewer</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormDescription>
-                        Admins have full access. Accountants can manage books. Viewers are read-only.
+                        Admins have full access. Accountants can manage books. Submitters can create transactions. Viewers are read-only.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -255,6 +256,12 @@ export default function TeamManagementPage() {
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => onRoleChange(user.id, 'accountant')}>
                         <Shield className="mr-2 h-4 w-4" /> Make Accountant
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => onRoleChange(user.id, 'approver')}>
+                        <Shield className="mr-2 h-4 w-4" /> Make Approver
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => onRoleChange(user.id, 'submitter')}>
+                        <Shield className="mr-2 h-4 w-4" /> Make Submitter
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => onRoleChange(user.id, 'viewer')}>
                          <Shield className="mr-2 h-4 w-4" /> Make Viewer
