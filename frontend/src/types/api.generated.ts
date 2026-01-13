@@ -617,6 +617,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/organizations/{org_id}/exchange-rates/list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** GET `/organizations/{org_id}/exchange-rates/list` - List exchange rates. */
+        get: operations["list_exchange_rates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/organizations/{org_id}/fiscal-periods/{period_id}/status": {
         parameters: {
             query?: never;
@@ -781,6 +798,23 @@ export interface paths {
         put?: never;
         /** POST `/organizations/{org_id}/transactions/bulk-approve` - Bulk approve transactions. */
         post: operations["bulk_approve_transactions"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/transactions/pay-invoice": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** POST `/organizations/{org_id}/transactions/pay-invoice` - Pay an invoice with auto-forex variance. */
+        post: operations["pay_invoice"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1996,6 +2030,32 @@ export interface components {
             /** @description Source currency. */
             source_currency: string;
         };
+        /** @description Response item for list endpoint. */
+        ExchangeRateListItem: {
+            /**
+             * Format: date-time
+             * @description Date the rate was created.
+             */
+            created_at: string;
+            /**
+             * Format: date
+             * @description Date the rate is effective.
+             */
+            effective_date: string;
+            /** @description Base currency code (e.g., USD). */
+            from_currency: string;
+            /**
+             * Format: uuid
+             * @description ID of the exchange rate.
+             */
+            id: string;
+            /** @description Exchange rate value. */
+            rate: string;
+            /** @description Source of the rate (e.g., Frankfurter). */
+            source: string;
+            /** @description Target currency code (e.g., IDR). */
+            to_currency: string;
+        };
         /** @description Response for an exchange rate lookup. */
         ExchangeRateResponse: {
             /**
@@ -2323,6 +2383,81 @@ export interface components {
             /** @description Timezone for reports. */
             timezone: string;
         };
+        /** @description Pagination metadata. */
+        PageMeta: {
+            /**
+             * Format: int32
+             * @description Current page number.
+             * @example 1
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description Items per page.
+             * @example 20
+             */
+            per_page: number;
+            /**
+             * Format: int64
+             * @description Total number of items across all pages.
+             * @example 100
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description Total number of pages.
+             * @example 5
+             */
+            total_pages: number;
+        };
+        /** @description Request parameters for paginated queries. */
+        PageRequest: {
+            /**
+             * Format: int32
+             * @description Page number (1-indexed).
+             * @default 1
+             * @example 1
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description Number of items per page.
+             * @default 20
+             * @example 10
+             */
+            per_page: number;
+        };
+        /** @description Response wrapper for paginated data. */
+        PageResponse_ExchangeRateListItem: {
+            /** @description The items in the current page. */
+            data: {
+                /**
+                 * Format: date-time
+                 * @description Date the rate was created.
+                 */
+                created_at: string;
+                /**
+                 * Format: date
+                 * @description Date the rate is effective.
+                 */
+                effective_date: string;
+                /** @description Base currency code (e.g., USD). */
+                from_currency: string;
+                /**
+                 * Format: uuid
+                 * @description ID of the exchange rate.
+                 */
+                id: string;
+                /** @description Exchange rate value. */
+                rate: string;
+                /** @description Source of the rate (e.g., Frankfurter). */
+                source: string;
+                /** @description Target currency code (e.g., IDR). */
+                to_currency: string;
+            }[];
+            /** @description Pagination metadata. */
+            meta: components["schemas"]["PageMeta"];
+        };
         /** @description Pagination info. */
         PaginationInfo: {
             /** @description Has more results. */
@@ -2357,6 +2492,41 @@ export interface components {
              * @description Total pages.
              */
             total_pages: number;
+        };
+        /** @description Request body for paying an invoice. */
+        PayInvoiceRequest: {
+            /**
+             * @description Amount to pay (in source currency).
+             * @example 100.00
+             */
+            amount: string;
+            /** @description Optional description. */
+            description?: string | null;
+            /**
+             * @description Exchange rate for the payment.
+             * @example 1.0850
+             */
+            exchange_rate: string;
+            /**
+             * Format: uuid
+             * @description Account ID for Realized Gain/Loss.
+             */
+            gain_loss_account_id: string;
+            /**
+             * Format: uuid
+             * @description ID of the invoice (transaction) being paid.
+             */
+            invoice_id: string;
+            /**
+             * Format: uuid
+             * @description Account ID to pay from (e.g., Bank).
+             */
+            payment_account_id: string;
+            /**
+             * Format: date
+             * @description Payment date.
+             */
+            payment_date: string;
         };
         /** @description Pending approvals response. */
         PendingApprovalsResponse: {
@@ -4623,6 +4793,46 @@ export interface operations {
             };
         };
     };
+    list_exchange_rates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: string;
+                /** @description Filter by source currency. */
+                from: string | null;
+                /** @description Filter by target currency. */
+                to: string | null;
+                /** @description Filter by start date (inclusive). */
+                start_date: string | null;
+                /** @description Filter by end date (inclusive). */
+                end_date: string | null;
+                /** @description Pagination parameters. */
+                page: components["schemas"]["PageRequest"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of exchange rates */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageResponse_ExchangeRateListItem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     update_period_status: {
         parameters: {
             query?: never;
@@ -5086,6 +5296,47 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    pay_invoice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PayInvoiceRequest"];
+            };
+        };
+        responses: {
+            /** @description Payment transaction created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransactionResponse"];
+                };
+            };
+            /** @description Invalid input or processing error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invoice not found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

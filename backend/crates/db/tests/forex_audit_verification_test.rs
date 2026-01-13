@@ -324,22 +324,38 @@ async fn test_audit_truncate_protection() {
     .await
     .expect("Failed to create tx");
 
-    ledger_entries::ActiveModel {
-        id: Set(Uuid::new_v4()),
-        transaction_id: Set(tx_id),
-        account_id: Set(data.expense_account_id),
-        source_currency: Set("USD".to_string()),
-        source_amount: Set(Decimal::new(100, 2)),
-        exchange_rate: Set(Decimal::ONE),
-        functional_currency: Set("USD".to_string()),
-        functional_amount: Set(Decimal::new(100, 2)),
-        debit: Set(Decimal::new(100, 2)),
-        credit: Set(Decimal::ZERO),
-        ..Default::default()
-    }
-    .insert(&db)
+    // Insert BALANCED entries
+    ledger_entries::Entity::insert_many(vec![
+        ledger_entries::ActiveModel {
+            id: Set(Uuid::new_v4()),
+            transaction_id: Set(tx_id),
+            account_id: Set(data.expense_account_id),
+            source_currency: Set("USD".to_string()),
+            source_amount: Set(Decimal::new(100, 2)),
+            exchange_rate: Set(Decimal::ONE),
+            functional_currency: Set("USD".to_string()),
+            functional_amount: Set(Decimal::new(100, 2)),
+            debit: Set(Decimal::new(100, 2)),
+            credit: Set(Decimal::ZERO),
+            ..Default::default()
+        },
+        ledger_entries::ActiveModel {
+            id: Set(Uuid::new_v4()),
+            transaction_id: Set(tx_id),
+            account_id: Set(data.asset_account_id),
+            source_currency: Set("USD".to_string()),
+            source_amount: Set(Decimal::new(100, 2)),
+            exchange_rate: Set(Decimal::ONE),
+            functional_currency: Set("USD".to_string()),
+            functional_amount: Set(Decimal::new(100, 2)),
+            debit: Set(Decimal::ZERO),
+            credit: Set(Decimal::new(100, 2)),
+            ..Default::default()
+        }
+    ])
+    .exec(&db)
     .await
-    .expect("Failed to insert entry");
+    .expect("Failed to insert balanced entries");
 
     // 2. Attempt TRUNCATE (Should FAIL if protected, but likely PASS currently)
     let truncate_result = db.execute(sea_orm::Statement::from_string(
@@ -387,7 +403,8 @@ async fn test_concurrent_aggregation_integrity() {
         let org_id = data.org_id;
         let period_id = data.fiscal_period_id;
         let user_id = data.user_id;
-        let account_id = data.expense_account_id;
+        let expense_id = data.expense_account_id;
+        let asset_id = data.asset_account_id;
 
         handles.push(tokio::spawn(async move {
             let tx_id = Uuid::new_v4();
@@ -405,21 +422,38 @@ async fn test_concurrent_aggregation_integrity() {
             .insert(&db)
             .await.unwrap();
 
-            ledger_entries::ActiveModel {
-                id: Set(Uuid::new_v4()),
-                transaction_id: Set(tx_id),
-                account_id: Set(account_id),
-                source_currency: Set("USD".to_string()),
-                source_amount: Set(Decimal::new(100, 2)), // 1.00
-                exchange_rate: Set(Decimal::ONE),
-                functional_currency: Set("USD".to_string()),
-                functional_amount: Set(Decimal::new(100, 2)),
-                debit: Set(Decimal::new(100, 2)),
-                credit: Set(Decimal::ZERO),
-                ..Default::default()
-            }
-            .insert(&db)
-            .await.unwrap();
+            // Insert BALANCED entries
+            ledger_entries::Entity::insert_many(vec![
+                ledger_entries::ActiveModel {
+                    id: Set(Uuid::new_v4()),
+                    transaction_id: Set(tx_id),
+                    account_id: Set(expense_id),
+                    source_currency: Set("USD".to_string()),
+                    source_amount: Set(Decimal::new(100, 2)), // 1.00
+                    exchange_rate: Set(Decimal::ONE),
+                    functional_currency: Set("USD".to_string()),
+                    functional_amount: Set(Decimal::new(100, 2)),
+                    debit: Set(Decimal::new(100, 2)),
+                    credit: Set(Decimal::ZERO),
+                    ..Default::default()
+                },
+                ledger_entries::ActiveModel {
+                    id: Set(Uuid::new_v4()),
+                    transaction_id: Set(tx_id),
+                    account_id: Set(asset_id),
+                    source_currency: Set("USD".to_string()),
+                    source_amount: Set(Decimal::new(100, 2)), // 1.00
+                    exchange_rate: Set(Decimal::ONE),
+                    functional_currency: Set("USD".to_string()),
+                    functional_amount: Set(Decimal::new(100, 2)),
+                    debit: Set(Decimal::ZERO),
+                    credit: Set(Decimal::new(100, 2)),
+                    ..Default::default()
+                }
+            ])
+            .exec(&db)
+            .await
+            .unwrap();
         }));
     }
 
@@ -430,13 +464,8 @@ async fn test_concurrent_aggregation_integrity() {
 
     // Verify Sum
     // We expect 10 entries of 1.00 = 10.00
-    // If Phantom Reads occurred during partial transaction (not applicable here as we awaited, 
-    // but in a real stress test this would be interleaved), we want to ensure the final SUM is consistent.
     
-    // Note: To test race conditions effectively, we would need to run the SUM *during* the inserts.
-    // However, verifying the final state is a basic integrity check.
-    
-    use sea_orm::{EntityTrait, QuerySelect, PaginatorTrait};
+    use sea_orm::{EntityTrait, QuerySelect};
     let sum_debit: Option<Decimal> = ledger_entries::Entity::find()
         .filter(ledger_entries::Column::AccountId.eq(data.expense_account_id))
         .select_only()
@@ -510,62 +539,56 @@ async fn test_forex_gain_loss_logic_simulation() {
     .await
     .expect("Failed to create payment tx");
 
-    // Credit Bank (Asset)
-    ledger_entries::ActiveModel {
-        id: Set(Uuid::new_v4()),
-        transaction_id: Set(tx_id),
-        account_id: Set(data.asset_account_id),
-        source_currency: Set("EUR".to_string()),
-        source_amount: Set(invoice_amount_eur),
-        exchange_rate: Set(payment_rate),
-        functional_currency: Set("USD".to_string()),
-        functional_amount: Set(bank_functional),
-        debit: Set(Decimal::ZERO),
-        credit: Set(bank_functional), // 120
-        memo: Set(Some("Payment".to_string())),
-        ..Default::default()
-    }
-    .insert(&db)
+    ledger_entries::Entity::insert_many(vec![
+        // Credit Bank (Asset)
+        ledger_entries::ActiveModel {
+            id: Set(Uuid::new_v4()),
+            transaction_id: Set(tx_id),
+            account_id: Set(data.asset_account_id),
+            source_currency: Set("EUR".to_string()),
+            source_amount: Set(invoice_amount_eur),
+            exchange_rate: Set(payment_rate),
+            functional_currency: Set("USD".to_string()),
+            functional_amount: Set(bank_functional),
+            debit: Set(Decimal::ZERO),
+            credit: Set(bank_functional), // 120
+            memo: Set(Some("Payment".to_string())),
+            ..Default::default()
+        },
+        // Debit AP (Expense/Liability - mocking as expense for simplicity)
+        ledger_entries::ActiveModel {
+            id: Set(Uuid::new_v4()),
+            transaction_id: Set(tx_id),
+            account_id: Set(data.expense_account_id), // Mocking AP account
+            source_currency: Set("EUR".to_string()),
+            source_amount: Set(invoice_amount_eur),
+            exchange_rate: Set(original_rate),
+            functional_currency: Set("USD".to_string()),
+            functional_amount: Set(clearing_functional),
+            debit: Set(clearing_functional), // 110
+            credit: Set(Decimal::ZERO),
+            memo: Set(Some("Clearing".to_string())),
+            ..Default::default()
+        },
+        // Debit Variance (Loss)
+        ledger_entries::ActiveModel {
+            id: Set(Uuid::new_v4()),
+            transaction_id: Set(tx_id),
+            account_id: Set(data.gain_loss_account_id),
+            source_currency: Set("USD".to_string()),
+            source_amount: Set(variance),
+            exchange_rate: Set(Decimal::ONE),
+            functional_currency: Set("USD".to_string()),
+            functional_amount: Set(variance),
+            debit: Set(variance), // 10
+            credit: Set(Decimal::ZERO),
+            memo: Set(Some("Realized Loss".to_string())),
+            ..Default::default()
+        }
+    ])
+    .exec(&db)
     .await
-    .expect("Failed Bank Entry");
-
-    // Debit AP (Expense/Liability - mocking as expense for simplicity)
-    ledger_entries::ActiveModel {
-        id: Set(Uuid::new_v4()),
-        transaction_id: Set(tx_id),
-        account_id: Set(data.expense_account_id), // Mocking AP account
-        source_currency: Set("EUR".to_string()),
-        source_amount: Set(invoice_amount_eur),
-        exchange_rate: Set(original_rate),
-        functional_currency: Set("USD".to_string()),
-        functional_amount: Set(clearing_functional),
-        debit: Set(clearing_functional), // 110
-        credit: Set(Decimal::ZERO),
-        memo: Set(Some("Clearing".to_string())),
-        ..Default::default()
-    }
-    .insert(&db)
-    .await
-    .expect("Failed Clearing Entry");
-
-    // Debit Variance (Loss)
-    ledger_entries::ActiveModel {
-        id: Set(Uuid::new_v4()),
-        transaction_id: Set(tx_id),
-        account_id: Set(data.gain_loss_account_id),
-        source_currency: Set("USD".to_string()),
-        source_amount: Set(variance),
-        exchange_rate: Set(Decimal::ONE),
-        functional_currency: Set("USD".to_string()),
-        functional_amount: Set(variance),
-        debit: Set(variance), // 10
-        credit: Set(Decimal::ZERO),
-        memo: Set(Some("Realized Loss".to_string())),
-        ..Default::default()
-    }
-    .insert(&db)
-    .await
-    .expect("Failed Variance Entry");
+    .expect("Failed to insert balanced batch");
 
     // Pass implies DB accepted the transaction (balanced).
     
