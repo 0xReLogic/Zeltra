@@ -127,29 +127,21 @@ pub async fn login(
         }
     };
 
-    // Get default organization for token (first one)
-    let (default_org, default_membership) = match orgs.first() {
-        Some((org, membership)) => (org.clone(), membership.clone()),
+    // Get default organization for token (first one, or nil if no orgs)
+    let (default_org_id, default_role) = match orgs.first() {
+        Some((org, membership)) => (org.id, role_to_string(&membership.role)),
         None => {
-            // User has no organizations - this shouldn't happen normally
-            // but we handle it gracefully
-            return (
-                StatusCode::FORBIDDEN,
-                Json(json!({
-                    "error": "no_organization",
-                    "message": "User is not a member of any organization"
-                })),
-            )
-                .into_response();
+            // User has no organizations - allow login but with nil org_id
+            // Frontend should redirect to create organization page
+            (uuid::Uuid::nil(), "none".to_string())
         }
     };
 
     // Generate tokens
-    let role_str = role_to_string(&default_membership.role);
     let access_token =
         match state
             .jwt_service
-            .generate_access_token(user.id, default_org.id, &role_str)
+            .generate_access_token(user.id, default_org_id, &default_role)
         {
             Ok(t) => t,
             Err(e) => {
@@ -168,7 +160,7 @@ pub async fn login(
     let refresh_token =
         match state
             .jwt_service
-            .generate_refresh_token(user.id, default_org.id, &role_str)
+            .generate_refresh_token(user.id, default_org_id, &default_role)
         {
             Ok(t) => t,
             Err(e) => {
@@ -184,22 +176,24 @@ pub async fn login(
             }
         };
 
-    // Store session in database
-    let expires_at =
-        chrono::Utc::now() + chrono::Duration::days(state.jwt_service.refresh_token_expires_days());
-    if let Err(e) = session_repo
-        .create(
-            user.id,
-            default_org.id,
-            &refresh_token,
-            expires_at,
-            None, // TODO: Extract user agent from request headers
-            None, // TODO: Extract IP from request
-        )
-        .await
-    {
-        error!(error = %e, "Failed to create session");
-        // Don't fail login if session creation fails - tokens are still valid
+    // Store session in database (only if user has an org)
+    if !default_org_id.is_nil() {
+        let expires_at =
+            chrono::Utc::now() + chrono::Duration::days(state.jwt_service.refresh_token_expires_days());
+        if let Err(e) = session_repo
+            .create(
+                user.id,
+                default_org_id,
+                &refresh_token,
+                expires_at,
+                None, // TODO: Extract user agent from request headers
+                None, // TODO: Extract IP from request
+            )
+            .await
+        {
+            error!(error = %e, "Failed to create session");
+            // Don't fail login if session creation fails - tokens are still valid
+        }
     }
 
     info!(user_id = %user.id, "User logged in successfully");
