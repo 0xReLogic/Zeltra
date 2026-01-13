@@ -538,21 +538,21 @@ AZURE_CONTAINER=attachments
 
 ### Attachments Implementation
 
-- [ ] Add `opendal` dependency with features: `services-azblob`, `services-s3`, `services-fs`
-- [ ] Create `StorageService` wrapper around OpenDAL Operator
-- [ ] Config-based backend selection (env: `STORAGE_TYPE`)
-- [ ] Presigned URL generation for direct upload/download
-- [ ] Link attachments to transactions (`attachments` table)
-- [ ] File type validation (PDF, images, common docs)
-- [ ] Size limits (configurable, default 10MB)
+- [x] Add `opendal` dependency with features: `services-azblob`, `services-s3`, `services-fs`
+- [x] Create `StorageService` wrapper around OpenDAL Operator
+- [x] Config-based backend selection (env: `STORAGE_TYPE`)
+- [x] Presigned URL generation for direct upload/download
+- [x] Link attachments to transactions (`attachments` table)
+- [x] File type validation (PDF, images, common docs)
+- [x] Size limits (configurable, default 10MB)
 
 ### Attachment API Endpoints
 
-- [ ] `POST /attachments/upload` (get presigned URL for direct upload)
-- [ ] `POST /attachments` (confirm upload, link to transaction)
-- [ ] `GET /attachments/:id` (get presigned download URL)
-- [ ] `DELETE /attachments/:id`
-- [ ] `GET /transactions/:id/attachments`
+- [x] `POST /attachments/upload` (get presigned URL for direct upload)
+- [x] `POST /attachments` (confirm upload, link to transaction)
+- [x] `GET /attachments/:id` (get presigned download URL)
+- [x] `DELETE /attachments/:id`
+- [x] `GET /transactions/:id/attachments`
 
 ### Live Exchange Rates (Frankfurter Integration)
 
@@ -562,26 +562,24 @@ AZURE_CONTAINER=attachments
 > - Self-hosting: `docker run -d -p 8080:8080 lineofflight/frankfurter`
 > - Rust client (optional): `frankfurte-rs` crate atau bikin sendiri pake `reqwest`
 
-- [ ] Setup Frankfurter Docker container (self-hosted)
-- [ ] Create `ExchangeRateFetcher` service
-- [ ] Implement daily rate fetch (cron job)
-- [ ] Store fetched rates ke `exchange_rates` table
-- [ ] Config: pilih source (mock/frankfurter/manual)
-- [ ] Fallback ke last known rate kalau API down
-- [ ] API endpoint: `POST /exchange-rates/fetch` (manual trigger)
-- [ ] API endpoint: `POST /exchange-rates/bulk` (bulk import rates)
-
-- [ ] API endpoint: `POST /exchange-rates/bulk` (bulk import rates)
+- [x] Setup Frankfurter Docker container (self-hosted)
+- [x] Create `ExchangeRateFetcher` service
+- [x] Implement daily rate fetch (cron job)
+- [x] Store fetched rates ke `exchange_rates` table
+- [x] Config: pilih source (mock/frankfurter/manual)
+- [x] Fallback ke last known rate kalau API down
+- [x] API endpoint: `POST /exchange-rates/fetch` (manual trigger)
+- [x] API endpoint: `POST /exchange-rates/bulk` (bulk import rates)
 
 ### Missing Master Data APIs (Frontend Mocked)
 
-- [ ] `PATCH /accounts/:id/status` (Toggle active/inactive)
-- [ ] `PATCH /dimension-values/:id` (Update value name/code)
-- [ ] `PATCH /dimension-values/:id/status` (Toggle active/inactive)
+- [x] `PATCH /accounts/:id/status` (Toggle active/inactive)
+- [x] `PATCH /dimension-values/:id` (Update value name/code)
+- [x] `PATCH /dimension-values/:id/status` (Toggle active/inactive)
 
 ### Dashboard Analytics
 
-- [ ] Dashboard API: `GET /api/v1/dashboard/metrics`
+- [x] Dashboard API: `GET /api/v1/dashboard/metrics`
   - Cash position, burn rate, runway days
   - Pending approvals count & amount
   - Budget status & utilization
@@ -589,15 +587,15 @@ AZURE_CONTAINER=attachments
   - Currency exposure
   - Cash flow chart data (weekly inflow/outflow)
   - Utilization chart data (budgeted vs actual by department)
-- [ ] Cash Flow API: `GET /api/v1/dashboard/cash-flow`
+- [x] Cash Flow API: `GET /api/v1/dashboard/cash-flow`
   - Monthly inflow/outflow data for charts
   - Optional period_id and months parameters
-- [ ] Activity Log API: `GET /api/v1/dashboard/recent-activity`
+- [x] Activity Log API: `GET /api/v1/dashboard/recent-activity`
   - Transaction events (created, submitted, approved, rejected, posted, voided)
   - Budget events (created, updated, locked)
   - User events (invited, role changed)
   - Pagination with cursor
-- [ ] Budget Summary API: `GET /api/v1/dashboard/budget-vs-actual`
+- [x] Budget Summary API: `GET /api/v1/dashboard/budget-vs-actual`
 - [ ] Frontend Integration: Replace mock data with real-time API responses
 
 ### API Polish
