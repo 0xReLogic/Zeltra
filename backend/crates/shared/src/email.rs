@@ -45,12 +45,22 @@ impl EmailService {
             self.config.smtp_password.clone(),
         );
 
-        AsyncSmtpTransport::<Tokio1Executor>::relay(&self.config.smtp_host)
-            .map_err(|e| EmailError::SendError(e.to_string()))?
-            .port(self.config.smtp_port)
-            .credentials(creds)
-            .build()
-            .pipe(Ok)
+        if self.config.smtp_tls {
+            // Use TLS (for production SMTP servers)
+            AsyncSmtpTransport::<Tokio1Executor>::relay(&self.config.smtp_host)
+                .map_err(|e| EmailError::SendError(e.to_string()))?
+                .port(self.config.smtp_port)
+                .credentials(creds)
+                .build()
+                .pipe(Ok)
+        } else {
+            // No TLS (for local dev like MailHog)
+            AsyncSmtpTransport::<Tokio1Executor>::builder_dangerous(&self.config.smtp_host)
+                .port(self.config.smtp_port)
+                .credentials(creds)
+                .build()
+                .pipe(Ok)
+        }
     }
 
     /// Sends an email verification email.

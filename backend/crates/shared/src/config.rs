@@ -101,6 +101,13 @@ pub struct EmailConfig {
     /// Frontend URL for verification links.
     #[serde(default = "default_frontend_url")]
     pub frontend_url: String,
+    /// Use TLS for SMTP connection (disable for local dev like MailHog).
+    #[serde(default = "default_smtp_tls")]
+    pub smtp_tls: bool,
+}
+
+fn default_smtp_tls() -> bool {
+    false // Default to false for development (MailHog)
 }
 
 fn default_smtp_host() -> String {
@@ -133,6 +140,7 @@ impl Default for EmailConfig {
             from_email: default_from_email(),
             from_name: default_from_name(),
             frontend_url: default_frontend_url(),
+            smtp_tls: default_smtp_tls(),
         }
     }
 }

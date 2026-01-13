@@ -1,7 +1,7 @@
 # Development configuration for Zeltra
 
 [server]
-host = "127.0.0.1"
+host = "0.0.0.0"
 port = 8080
 
 [database]
@@ -19,6 +19,7 @@ smtp_host = "localhost"
 smtp_port = 1025                    # MailHog default port
 smtp_username = ""
 smtp_password = ""
+smtp_tls = false                    # Disable TLS for MailHog
 from_email = "noreply@zeltra.app"
 from_name = "Zeltra"
 frontend_url = "http://localhost:3000"
