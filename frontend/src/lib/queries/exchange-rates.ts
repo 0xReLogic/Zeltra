@@ -20,13 +20,16 @@ const EXCHANGE_RATE_KEYS = {
 }
 
 interface ExchangeRateFilters {
-  from_currency?: string
-  to_currency?: string
-  effective_date?: string
+  from_currency?: string | null
+  to_currency?: string | null
+  start_date?: string | null
+  end_date?: string | null
+  page?: number
+  per_page?: number
 }
 
 /**
- * GET /organizations/{org_id}/exchange-rates
+ * GET /organizations/{org_id}/exchange-rates/list
  * List exchange rates with optional filters
  */
 export function useExchangeRates(filters?: ExchangeRateFilters) {
@@ -34,11 +37,15 @@ export function useExchangeRates(filters?: ExchangeRateFilters) {
     queryKey: EXCHANGE_RATE_KEYS.list(filters),
     queryFn: () => {
       const params = new URLSearchParams()
-      if (filters?.from_currency) params.set('from_currency', filters.from_currency)
-      if (filters?.to_currency) params.set('to_currency', filters.to_currency)
-      if (filters?.effective_date) params.set('effective_date', filters.effective_date)
+      // All params are nullable - send empty string for null
+      if (filters?.from_currency) params.set('from', filters.from_currency)
+      if (filters?.to_currency) params.set('to', filters.to_currency)
+      if (filters?.start_date) params.set('start_date', filters.start_date)
+      if (filters?.end_date) params.set('end_date', filters.end_date)
+      if (filters?.page) params.set('page', String(filters.page))
+      if (filters?.per_page) params.set('per_page', String(filters.per_page))
       const queryString = params.toString()
-      return apiClient<GetExchangeRatesResponse>(`/exchange-rates${queryString ? `?${queryString}` : ''}`)
+      return apiClient<GetExchangeRatesResponse>(`/exchange-rates/list${queryString ? `?${queryString}` : ''}`)
     },
   })
 }
