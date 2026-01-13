@@ -1486,6 +1486,42 @@ components:
       - credit
       - dimensions
       type: object
+    ExchangeRateListItem:
+      description: Response item for list endpoint.
+      properties:
+        created_at:
+          description: Date the rate was created.
+          format: date-time
+          type: string
+        effective_date:
+          description: Date the rate is effective.
+          format: date
+          type: string
+        from_currency:
+          description: Base currency code (e.g., USD).
+          type: string
+        id:
+          description: ID of the exchange rate.
+          format: uuid
+          type: string
+        rate:
+          description: Exchange rate value.
+          type: string
+        source:
+          description: Source of the rate (e.g., Frankfurter).
+          type: string
+        to_currency:
+          description: Target currency code (e.g., IDR).
+          type: string
+      required:
+      - id
+      - from_currency
+      - to_currency
+      - rate
+      - effective_date
+      - source
+      - created_at
+      type: object
     ExchangeRateResponse:
       description: Response for an exchange rate lookup.
       properties:
@@ -1973,6 +2009,106 @@ components:
       - subscription_status
       - created_at
       type: object
+    PageMeta:
+      description: Pagination metadata.
+      properties:
+        page:
+          description: Current page number.
+          example: 1
+          format: int32
+          minimum: 0
+          type: integer
+        per_page:
+          description: Items per page.
+          example: 20
+          format: int32
+          minimum: 0
+          type: integer
+        total:
+          description: Total number of items across all pages.
+          example: 100
+          format: int64
+          minimum: 0
+          type: integer
+        total_pages:
+          description: Total number of pages.
+          example: 5
+          format: int32
+          minimum: 0
+          type: integer
+      required:
+      - page
+      - per_page
+      - total
+      - total_pages
+      type: object
+    PageRequest:
+      description: Request parameters for paginated queries.
+      properties:
+        page:
+          default: 1
+          description: Page number (1-indexed).
+          example: 1
+          format: int32
+          minimum: 0
+          type: integer
+        per_page:
+          default: 20
+          description: Number of items per page.
+          example: 10
+          format: int32
+          minimum: 0
+          type: integer
+      type: object
+    PageResponse_ExchangeRateListItem:
+      description: Response wrapper for paginated data.
+      properties:
+        data:
+          description: The items in the current page.
+          items:
+            description: Response item for list endpoint.
+            properties:
+              created_at:
+                description: Date the rate was created.
+                format: date-time
+                type: string
+              effective_date:
+                description: Date the rate is effective.
+                format: date
+                type: string
+              from_currency:
+                description: Base currency code (e.g., USD).
+                type: string
+              id:
+                description: ID of the exchange rate.
+                format: uuid
+                type: string
+              rate:
+                description: Exchange rate value.
+                type: string
+              source:
+                description: Source of the rate (e.g., Frankfurter).
+                type: string
+              to_currency:
+                description: Target currency code (e.g., IDR).
+                type: string
+            required:
+            - id
+            - from_currency
+            - to_currency
+            - rate
+            - effective_date
+            - source
+            - created_at
+            type: object
+          type: array
+        meta:
+          $ref: '#/components/schemas/PageMeta'
+          description: Pagination metadata.
+      required:
+      - data
+      - meta
+      type: object
     PaginationInfo:
       description: Pagination info.
       properties:
@@ -2021,6 +2157,46 @@ components:
       - limit
       - total
       - total_pages
+      type: object
+    PayInvoiceRequest:
+      description: Request body for paying an invoice.
+      properties:
+        amount:
+          description: Amount to pay (in source currency).
+          example: '100.00'
+          type: string
+        description:
+          description: Optional description.
+          type:
+          - string
+          - 'null'
+        exchange_rate:
+          description: Exchange rate for the payment.
+          example: '1.0850'
+          type: string
+        gain_loss_account_id:
+          description: Account ID for Realized Gain/Loss.
+          format: uuid
+          type: string
+        invoice_id:
+          description: ID of the invoice (transaction) being paid.
+          format: uuid
+          type: string
+        payment_account_id:
+          description: Account ID to pay from (e.g., Bank).
+          format: uuid
+          type: string
+        payment_date:
+          description: Payment date.
+          format: date
+          type: string
+      required:
+      - invoice_id
+      - payment_account_id
+      - amount
+      - exchange_rate
+      - payment_date
+      - gain_loss_account_id
       type: object
     PendingApprovalsResponse:
       description: Pending approvals response.
@@ -4349,6 +4525,71 @@ paths:
       summary: POST `/organizations/{org_id}/exchange-rates/fetch` - Fetch rates from external API.
       tags:
       - Exchange Rates
+  /organizations/{org_id}/exchange-rates/list:
+    get:
+      operationId: list_exchange_rates
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Filter by source currency.
+        in: path
+        name: from
+        required: true
+        schema:
+          type:
+          - string
+          - 'null'
+      - description: Filter by target currency.
+        in: path
+        name: to
+        required: true
+        schema:
+          type:
+          - string
+          - 'null'
+      - description: Filter by start date (inclusive).
+        in: path
+        name: start_date
+        required: true
+        schema:
+          format: date
+          type:
+          - string
+          - 'null'
+      - description: Filter by end date (inclusive).
+        in: path
+        name: end_date
+        required: true
+        schema:
+          format: date
+          type:
+          - string
+          - 'null'
+      - description: Pagination parameters.
+        in: path
+        name: page
+        required: true
+        schema:
+          $ref: '#/components/schemas/PageRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageResponse_ExchangeRateListItem'
+          description: List of exchange rates
+        '403':
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: GET `/organizations/{org_id}/exchange-rates/list` - List exchange rates.
+      tags:
+      - Exchange Rates
   /organizations/{org_id}/fiscal-periods/{period_id}/status:
     patch:
       operationId: update_period_status
@@ -4845,6 +5086,39 @@ paths:
       security:
       - bearerAuth: []
       summary: POST `/organizations/{org_id}/transactions/bulk-approve` - Bulk approve transactions.
+      tags:
+      - Transactions
+  /organizations/{org_id}/transactions/pay-invoice:
+    post:
+      operationId: pay_invoice
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayInvoiceRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionResponse'
+          description: Payment transaction created
+        '400':
+          description: Invalid input or processing error
+        '404':
+          description: Invoice not found
+      security:
+      - bearerAuth: []
+      summary: POST `/organizations/{org_id}/transactions/pay-invoice` - Pay an invoice with auto-forex variance.
       tags:
       - Transactions
   /organizations/{org_id}/transactions/pending:
