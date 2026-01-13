@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 /// Represents a monetary amount with currency.
 ///
 /// Uses `Decimal` internally to avoid floating-point precision errors.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct Money {
     /// The amount in the smallest currency unit (e.g., cents).
     pub amount: Decimal,
@@ -18,7 +18,7 @@ pub struct Money {
 }
 
 /// ISO 4217 currency codes supported by the system.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, utoipa::ToSchema)]
 #[serde(rename_all = "UPPERCASE")]
 pub enum Currency {
     /// US Dollar

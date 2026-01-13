@@ -38,60 +38,82 @@ pub fn routes() -> Router<AppState> {
 }
 
 /// Request body for creating a fiscal year.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct CreateFiscalYearRequest {
     /// Fiscal year name (e.g., "FY 2026").
+    #[schema(example = "FY 2026")]
     pub name: String,
     /// Start date (YYYY-MM-DD).
+    #[schema(example = "2026-01-01")]
     pub start_date: NaiveDate,
     /// End date (YYYY-MM-DD).
+    #[schema(example = "2026-12-31")]
     pub end_date: NaiveDate,
 }
 
 /// Request body for updating period status.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct UpdatePeriodStatusRequest {
     /// New status: "open", "soft_close", or "closed".
+    #[schema(example = "closed")]
     pub status: String,
 }
 
 /// Response for a fiscal period.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct FiscalPeriodResponse {
     /// Period ID.
     pub id: Uuid,
     /// Period name.
+    #[schema(example = "January 2026")]
     pub name: String,
     /// Period number within the fiscal year.
+    #[schema(example = 1)]
     pub period_number: i16,
     /// Start date.
     pub start_date: NaiveDate,
     /// End date.
     pub end_date: NaiveDate,
     /// Status: open, soft_close, or closed.
+    #[schema(example = "open")]
     pub status: String,
     /// Whether this is an adjustment period.
     pub is_adjustment_period: bool,
 }
 
 /// Response for a fiscal year with periods.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct FiscalYearResponse {
     /// Fiscal year ID.
     pub id: Uuid,
     /// Fiscal year name.
+    #[schema(example = "FY 2026")]
     pub name: String,
     /// Start date.
     pub start_date: NaiveDate,
     /// End date.
     pub end_date: NaiveDate,
     /// Status: open or closed.
+    #[schema(example = "open")]
     pub status: String,
     /// Nested periods.
     pub periods: Vec<FiscalPeriodResponse>,
 }
 
 /// GET `/organizations/{org_id}/fiscal-years` - List fiscal years with nested periods.
+#[utoipa::path(
+    get,
+    path = "/organizations/{org_id}/fiscal-years",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID")
+    ),
+    responses(
+        (status = 200, description = "List of fiscal years", body = [FiscalYearResponse]),
+        (status = 403, description = "Forbidden")
+    ),
+    tag = "Fiscal",
+    security(("bearerAuth" = []))
+)]
 async fn list_fiscal_years(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -149,6 +171,22 @@ async fn list_fiscal_years(
 }
 
 /// POST `/organizations/{org_id}/fiscal-years` - Create a fiscal year with auto-generated periods.
+#[utoipa::path(
+    post,
+    path = "/organizations/{org_id}/fiscal-years",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID")
+    ),
+    request_body = CreateFiscalYearRequest,
+    responses(
+        (status = 201, description = "Fiscal year created successfully", body = FiscalYearResponse),
+        (status = 400, description = "Invalid date range"),
+        (status = 409, description = "Overlapping fiscal year"),
+        (status = 403, description = "Forbidden")
+    ),
+    tag = "Fiscal",
+    security(("bearerAuth" = []))
+)]
 async fn create_fiscal_year(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -235,6 +273,23 @@ async fn create_fiscal_year(
 }
 
 /// PATCH `/organizations/{org_id}/fiscal-periods/{period_id}/status` - Update period status.
+#[utoipa::path(
+    patch,
+    path = "/organizations/{org_id}/fiscal-periods/{period_id}/status",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        ("period_id" = Uuid, Path, description = "Fiscal Period ID")
+    ),
+    request_body = UpdatePeriodStatusRequest,
+    responses(
+        (status = 200, description = "Period status updated successfully", body = FiscalPeriodResponse),
+        (status = 400, description = "Invalid status or transition"),
+        (status = 403, description = "Forbidden"),
+        (status = 409, description = "Earlier periods must be closed first")
+    ),
+    tag = "Fiscal",
+    security(("bearerAuth" = []))
+)]
 #[allow(clippy::too_many_lines)]
 async fn update_period_status(
     State(state): State<AppState>,

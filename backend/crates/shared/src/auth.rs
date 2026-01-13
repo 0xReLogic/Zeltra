@@ -70,16 +70,18 @@ impl TokenPair {
 }
 
 /// Login request payload.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, utoipa::ToSchema)]
 pub struct LoginRequest {
     /// User email.
+    #[schema(example = "user@example.com")]
     pub email: String,
     /// User password.
+    #[schema(example = "password123")]
     pub password: String,
 }
 
 /// Registration request payload.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, utoipa::ToSchema)]
 pub struct RegisterRequest {
     /// User email.
     pub email: String,
@@ -90,7 +92,7 @@ pub struct RegisterRequest {
 }
 
 /// Login response payload.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
 pub struct LoginResponse {
     /// Authenticated user info.
     pub user: UserInfo,
@@ -103,7 +105,7 @@ pub struct LoginResponse {
 }
 
 /// User info returned in auth responses.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
 pub struct UserInfo {
     /// User ID.
     pub id: Uuid,
@@ -116,7 +118,7 @@ pub struct UserInfo {
 }
 
 /// Organization info for a user.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
 pub struct UserOrganization {
     /// Organization ID.
     pub id: Uuid,
@@ -129,21 +131,21 @@ pub struct UserOrganization {
 }
 
 /// Refresh token request.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, utoipa::ToSchema)]
 pub struct RefreshRequest {
     /// The refresh token.
     pub refresh_token: String,
 }
 
 /// Logout request.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, utoipa::ToSchema)]
 pub struct LogoutRequest {
     /// The refresh token to invalidate.
     pub refresh_token: String,
 }
 
 /// Create organization request.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, utoipa::ToSchema)]
 pub struct CreateOrganizationRequest {
     /// Organization name.
     pub name: String,
@@ -161,7 +163,7 @@ fn default_timezone() -> String {
 }
 
 /// Add user to organization request.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, utoipa::ToSchema)]
 pub struct AddUserRequest {
     /// User email to add.
     pub email: String,
@@ -172,7 +174,7 @@ pub struct AddUserRequest {
 }
 
 /// Update organization request.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, utoipa::ToSchema)]
 pub struct UpdateOrganizationRequest {
     /// Organization name (optional).
     pub name: Option<String>,
@@ -183,21 +185,21 @@ pub struct UpdateOrganizationRequest {
 }
 
 /// Email verification request.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, utoipa::ToSchema)]
 pub struct VerifyEmailRequest {
     /// The verification token from the email link.
     pub token: String,
 }
 
 /// Resend verification email request.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, utoipa::ToSchema)]
 pub struct ResendVerificationRequest {
     /// User email to resend verification to.
     pub email: String,
 }
 
 /// Email verification response.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
 pub struct VerifyEmailResponse {
     /// Success message.
     pub message: String,
@@ -206,7 +208,7 @@ pub struct VerifyEmailResponse {
 }
 
 /// Update organization member request.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, utoipa::ToSchema)]
 pub struct UpdateMemberRequest {
     /// New role (optional).
     pub role: Option<String>,

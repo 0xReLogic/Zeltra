@@ -79,10 +79,13 @@ uuid = { version = "1.11", features = ["v4", "v7", "serde"] }
 config = { version = "0.15", features = ["toml"] }
 dotenvy = "0.15"
 
-# === HTTP Client (for exchange rates, etc) ===
 reqwest = { version = "0.12", default-features = false, features = [
     "rustls-tls", "json", "gzip"
 ]}
+
+# === Documentation (OpenAPI) ===
+utoipa = { version = "5.3", features = ["uuid", "chrono", "decimal"] }
+utoipa-swagger-ui = { version = "9.0", features = ["axum"] }
 
 # === Object Storage (OpenDAL - vendor agnostic) ===
 opendal = { version = "0.55", features = [

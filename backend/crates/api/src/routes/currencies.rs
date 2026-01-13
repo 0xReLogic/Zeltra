@@ -15,19 +15,33 @@ pub fn routes() -> Router<AppState> {
 }
 
 /// Response for a currency.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct CurrencyResponse {
     /// Currency code (ISO 4217).
+    #[schema(example = "USD")]
     pub code: String,
     /// Currency name.
+    #[schema(example = "US Dollar")]
     pub name: String,
     /// Currency symbol.
+    #[schema(example = "$")]
     pub symbol: String,
     /// Number of decimal places.
+    #[schema(example = 2)]
     pub decimal_places: i16,
 }
 
 /// GET `/currencies` - List all currencies.
+#[utoipa::path(
+    get,
+    path = "/currencies",
+    responses(
+        (status = 200, description = "List of currencies", body = [CurrencyResponse]),
+        (status = 401, description = "Unauthorized")
+    ),
+    tag = "Currencies",
+    security(("bearerAuth" = []))
+)]
 async fn list_currencies(State(state): State<AppState>, _auth: AuthUser) -> impl IntoResponse {
     match currencies::Entity::find().all(&*state.db).await {
         Ok(currencies) => {

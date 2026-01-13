@@ -44,35 +44,38 @@ pub fn routes() -> Router<AppState> {
 // ============================================================================
 
 /// Query parameters for dashboard metrics.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::IntoParams)]
 pub struct DashboardMetricsQuery {
     /// Fiscal period ID for budget status.
     pub period_id: Option<Uuid>,
 }
 
 /// Query parameters for recent activity.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::IntoParams)]
 pub struct RecentActivityQuery {
     /// Maximum number of items to return.
+    #[param(example = 10)]
     pub limit: Option<u64>,
     /// Activity type filter.
     #[serde(rename = "type")]
+    #[param(example = "transaction")]
     pub activity_type: Option<String>,
     /// Cursor for pagination.
     pub cursor: Option<String>,
 }
 
 /// Query parameters for cash flow.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::IntoParams)]
 pub struct CashFlowQuery {
     /// Number of months to include.
+    #[param(example = 6)]
     pub months: Option<u32>,
     /// Fiscal period ID.
     pub period_id: Option<Uuid>,
 }
 
 /// Query parameters for budget vs actual.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::IntoParams)]
 pub struct BudgetVsActualQuery {
     /// Budget ID (optional, uses first active budget if not provided).
     pub budget_id: Option<Uuid>,
@@ -83,7 +86,7 @@ pub struct BudgetVsActualQuery {
 // ============================================================================
 
 /// Response for dashboard metrics.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct DashboardMetricsResponse {
     /// Period info.
     pub period: Option<PeriodInfo>,
@@ -92,53 +95,63 @@ pub struct DashboardMetricsResponse {
     /// Burn rate.
     pub burn_rate: BurnRateResponse,
     /// Runway days.
+    #[schema(example = 180)]
     pub runway_days: i32,
     /// Pending approvals.
     pub pending_approvals: PendingApprovalsResponse,
 }
 
 /// Period info.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct PeriodInfo {
     /// Period ID.
     pub id: Uuid,
     /// Period name.
+    #[schema(example = "December 2023")]
     pub name: String,
 }
 
 /// Cash position response.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct CashPositionResponse {
     /// Current balance.
+    #[schema(example = "50000.0000")]
     pub balance: String,
     /// Currency.
+    #[schema(example = "USD")]
     pub currency: String,
     /// Change from last period.
+    #[schema(example = "5000.0000")]
     pub change_from_last_period: String,
     /// Change percentage.
+    #[schema(example = 11.11)]
     pub change_percent: f64,
 }
 
 /// Burn rate response.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct BurnRateResponse {
     /// Daily burn rate.
+    #[schema(example = "100.0000")]
     pub daily: String,
     /// Monthly burn rate.
+    #[schema(example = "3000.0000")]
     pub monthly: String,
 }
 
 /// Pending approvals response.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct PendingApprovalsResponse {
     /// Number of pending items.
+    #[schema(example = 5)]
     pub count: i32,
     /// Total amount.
+    #[schema(example = "1250.0000")]
     pub total_amount: String,
 }
 
 /// Response for recent activity.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct RecentActivityResponse {
     /// Activity items.
     pub activities: Vec<ActivityItemResponse>,
@@ -147,20 +160,24 @@ pub struct RecentActivityResponse {
 }
 
 /// Activity item response.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct ActivityItemResponse {
     /// Activity ID.
     pub id: Uuid,
     /// Activity type.
     #[serde(rename = "type")]
+    #[schema(example = "transaction_create")]
     pub activity_type: String,
     /// Action performed.
+    #[schema(example = "create")]
     pub action: String,
     /// Entity type.
+    #[schema(example = "transaction")]
     pub entity_type: String,
     /// Entity ID.
     pub entity_id: Uuid,
     /// Description.
+    #[schema(example = "New transaction created for 120.00 USD")]
     pub description: String,
     /// Amount (if applicable).
     pub amount: Option<String>,
@@ -173,16 +190,17 @@ pub struct ActivityItemResponse {
 }
 
 /// User info.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct UserInfo {
     /// User ID.
     pub id: Uuid,
     /// Full name.
+    #[schema(example = "John Doe")]
     pub full_name: String,
 }
 
 /// Pagination info.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct PaginationInfo {
     /// Limit.
     pub limit: u64,
@@ -238,6 +256,20 @@ fn format_money(amount: Decimal) -> String {
 /// GET /organizations/{org_id}/dashboard/metrics
 ///
 /// Requirement 16.1: Dashboard metrics endpoint
+#[utoipa::path(
+    get,
+    path = "/organizations/{org_id}/dashboard/metrics",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        DashboardMetricsQuery
+    ),
+    responses(
+        (status = 200, description = "Dashboard metrics", body = DashboardMetricsResponse),
+        (status = 403, description = "Forbidden")
+    ),
+    tag = "Dashboard",
+    security(("bearerAuth" = []))
+)]
 #[axum::debug_handler]
 async fn get_dashboard_metrics(
     State(state): State<AppState>,
@@ -343,6 +375,20 @@ async fn get_dashboard_metrics(
 /// GET /organizations/{org_id}/dashboard/recent-activity
 ///
 /// Requirement 17.1: Recent activity endpoint
+#[utoipa::path(
+    get,
+    path = "/organizations/{org_id}/dashboard/recent-activity",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        RecentActivityQuery
+    ),
+    responses(
+        (status = 200, description = "Recent activity logs", body = RecentActivityResponse),
+        (status = 403, description = "Forbidden")
+    ),
+    tag = "Dashboard",
+    security(("bearerAuth" = []))
+)]
 #[axum::debug_handler]
 async fn get_recent_activity(
     State(state): State<AppState>,
@@ -427,18 +473,20 @@ async fn get_recent_activity(
 // ============================================================================
 
 /// Response for cash flow data.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct CashFlowResponse {
     /// Cash flow data points.
     pub data: Vec<CashFlowDataPoint>,
 }
 
 /// Cash flow data point.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct CashFlowDataPoint {
     /// Month label (e.g., "Jan").
+    #[schema(example = "Jan")]
     pub month: String,
     /// Period name (e.g., "2026-01").
+    #[schema(example = "2026-01")]
     pub period_name: String,
     /// Total inflow.
     pub inflow: String,
@@ -453,11 +501,12 @@ pub struct CashFlowDataPoint {
 // ============================================================================
 
 /// Response for budget vs actual data.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct BudgetVsActualResponse {
     /// Budget ID.
     pub budget_id: Option<Uuid>,
     /// Budget name.
+    #[schema(example = "Annual Budget 2023")]
     pub budget_name: Option<String>,
     /// Summary.
     pub summary: BudgetSummary,
@@ -466,7 +515,7 @@ pub struct BudgetVsActualResponse {
 }
 
 /// Budget summary.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct BudgetSummary {
     /// Total budgeted.
     pub total_budgeted: String,
@@ -479,13 +528,15 @@ pub struct BudgetSummary {
 }
 
 /// Budget line item response.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct BudgetLineItemResponse {
     /// Account ID.
     pub account_id: Uuid,
     /// Account code.
+    #[schema(example = "6001")]
     pub account_code: String,
     /// Account name.
+    #[schema(example = "Office Expenses")]
     pub account_name: String,
     /// Budgeted amount.
     pub budgeted: String,
@@ -504,6 +555,20 @@ pub struct BudgetLineItemResponse {
 /// GET /organizations/{org_id}/dashboard/cash-flow
 ///
 /// Requirement 4.5: Cash flow chart data
+#[utoipa::path(
+    get,
+    path = "/organizations/{org_id}/dashboard/cash-flow",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        CashFlowQuery
+    ),
+    responses(
+        (status = 200, description = "Cash flow historical data", body = CashFlowResponse),
+        (status = 403, description = "Forbidden")
+    ),
+    tag = "Dashboard",
+    security(("bearerAuth" = []))
+)]
 #[axum::debug_handler]
 async fn get_cash_flow(
     State(state): State<AppState>,
@@ -566,6 +631,20 @@ async fn get_cash_flow(
 /// GET /organizations/{org_id}/dashboard/budget-vs-actual
 ///
 /// Requirement 4.7: Budget vs actual summary
+#[utoipa::path(
+    get,
+    path = "/organizations/{org_id}/dashboard/budget-vs-actual",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        BudgetVsActualQuery
+    ),
+    responses(
+        (status = 200, description = "Budget vs actual performance data", body = BudgetVsActualResponse),
+        (status = 403, description = "Forbidden")
+    ),
+    tag = "Dashboard",
+    security(("bearerAuth" = []))
+)]
 #[axum::debug_handler]
 async fn get_budget_vs_actual(
     State(state): State<AppState>,

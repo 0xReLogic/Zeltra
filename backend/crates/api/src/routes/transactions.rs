@@ -86,7 +86,7 @@ pub fn routes() -> Router<AppState> {
 // ============================================================================
 
 /// Query parameters for listing transactions.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::IntoParams)]
 pub struct ListTransactionsQuery {
     /// Filter by status.
     pub status: Option<String>,
@@ -106,16 +106,19 @@ pub struct ListTransactionsQuery {
 }
 
 /// Request body for creating a transaction.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct CreateTransactionRequest {
     /// Transaction type.
     #[serde(rename = "type")]
+    #[schema(example = "journal")]
     pub transaction_type: String,
     /// Transaction date (YYYY-MM-DD).
     pub transaction_date: NaiveDate,
     /// Description.
+    #[schema(example = "Monthly rent payment")]
     pub description: String,
     /// Optional reference number.
+    #[schema(example = "TX-1001")]
     pub reference_number: Option<String>,
     /// Optional memo.
     pub memo: Option<String>,
@@ -124,15 +127,18 @@ pub struct CreateTransactionRequest {
 }
 
 /// Request body for a single ledger entry.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct CreateEntryRequest {
     /// Account ID.
     pub account_id: Uuid,
     /// Source currency code.
+    #[schema(example = "USD")]
     pub source_currency: String,
     /// Source amount (positive).
+    #[schema(example = "100.00")]
     pub source_amount: String,
     /// Entry type: "debit" or "credit".
+    #[schema(example = "debit")]
     pub entry_type: String,
     /// Optional memo.
     pub memo: Option<String>,
@@ -142,7 +148,7 @@ pub struct CreateEntryRequest {
 }
 
 /// Request body for updating a transaction.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct UpdateTransactionRequest {
     /// Description.
     pub description: Option<String>,
@@ -153,7 +159,7 @@ pub struct UpdateTransactionRequest {
 }
 
 /// Response for a transaction.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct TransactionResponse {
     /// Transaction ID.
     pub id: Uuid,
@@ -187,7 +193,7 @@ pub struct TransactionResponse {
 }
 
 /// Response for a ledger entry.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct EntryResponse {
     /// Entry ID.
     pub id: Uuid,
@@ -214,7 +220,7 @@ pub struct EntryResponse {
 }
 
 /// Response for transaction list item (without entries).
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct TransactionListItem {
     /// Transaction ID.
     pub id: Uuid,
@@ -238,28 +244,28 @@ pub struct TransactionListItem {
 // ============================================================================
 
 /// Request body for approving a transaction.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct ApproveRequest {
     /// Optional approval notes.
     pub approval_notes: Option<String>,
 }
 
 /// Request body for rejecting a transaction.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct RejectRequest {
     /// Rejection reason (required).
     pub reason: String,
 }
 
 /// Request body for voiding a transaction.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct VoidRequest {
     /// Void reason (required).
     pub reason: String,
 }
 
 /// Request body for bulk approval.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct BulkApproveRequest {
     /// Transaction IDs to approve.
     pub transaction_ids: Vec<Uuid>,
@@ -268,7 +274,7 @@ pub struct BulkApproveRequest {
 }
 
 /// Response for void operation.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct VoidResponse {
     /// Original transaction (now voided).
     pub original_transaction: TransactionResponse,
@@ -277,7 +283,7 @@ pub struct VoidResponse {
 }
 
 /// Response for bulk approval.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct BulkApproveResponse {
     /// Results for each transaction.
     pub results: Vec<BulkApproveItemResponse>,
@@ -288,7 +294,7 @@ pub struct BulkApproveResponse {
 }
 
 /// Response for a single bulk approval item.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct BulkApproveItemResponse {
     /// Transaction ID.
     pub transaction_id: Uuid,
@@ -299,7 +305,7 @@ pub struct BulkApproveItemResponse {
 }
 
 /// Response for pending transaction in approval queue.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct PendingTransactionResponse {
     /// Transaction ID.
     pub id: Uuid,
@@ -327,8 +333,20 @@ pub struct PendingTransactionResponse {
 // ============================================================================
 
 /// GET `/organizations/{org_id}/transactions` - List transactions with filters.
-///
-/// Requirements: 10.2
+#[utoipa::path(
+    get,
+    path = "/organizations/{org_id}/transactions",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        ListTransactionsQuery
+    ),
+    responses(
+        (status = 200, description = "List of transactions", body = [TransactionListItem]),
+        (status = 403, description = "Forbidden")
+    ),
+    tag = "Transactions",
+    security(("bearerAuth" = []))
+)]
 async fn list_transactions(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -388,8 +406,21 @@ async fn list_transactions(
 }
 
 /// POST `/organizations/{org_id}/transactions` - Create a new transaction.
-///
-/// Requirements: 10.1
+#[utoipa::path(
+    post,
+    path = "/organizations/{org_id}/transactions",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID")
+    ),
+    request_body = CreateTransactionRequest,
+    responses(
+        (status = 201, description = "Transaction created successfully", body = TransactionResponse),
+        (status = 400, description = "Invalid input or unbalanced transaction"),
+        (status = 403, description = "Forbidden")
+    ),
+    tag = "Transactions",
+    security(("bearerAuth" = []))
+)]
 #[allow(clippy::too_many_lines)]
 async fn create_transaction(
     State(state): State<AppState>,
@@ -650,8 +681,21 @@ async fn create_transaction(
 }
 
 /// GET `/organizations/{org_id}/transactions/{transaction_id}` - Get transaction with entries.
-///
-/// Requirements: 10.3
+#[utoipa::path(
+    get,
+    path = "/organizations/{org_id}/transactions/{transaction_id}",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        ("transaction_id" = Uuid, Path, description = "Transaction ID")
+    ),
+    responses(
+        (status = 200, description = "Transaction details", body = TransactionResponse),
+        (status = 403, description = "Forbidden"),
+        (status = 404, description = "Transaction not found")
+    ),
+    tag = "Transactions",
+    security(("bearerAuth" = []))
+)]
 async fn get_transaction(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -734,8 +778,23 @@ async fn get_transaction(
 }
 
 /// PATCH `/organizations/{org_id}/transactions/{transaction_id}` - Update draft transaction.
-///
-/// Requirements: 10.4, 10.5
+#[utoipa::path(
+    patch,
+    path = "/organizations/{org_id}/transactions/{transaction_id}",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        ("transaction_id" = Uuid, Path, description = "Transaction ID")
+    ),
+    request_body = UpdateTransactionRequest,
+    responses(
+        (status = 200, description = "Transaction updated successfully"),
+        (status = 400, description = "Cannot modify posted transaction"),
+        (status = 403, description = "Forbidden"),
+        (status = 404, description = "Transaction not found")
+    ),
+    tag = "Transactions",
+    security(("bearerAuth" = []))
+)]
 async fn update_transaction(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -824,8 +883,22 @@ async fn update_transaction(
 }
 
 /// DELETE `/organizations/{org_id}/transactions/{transaction_id}` - Delete draft transaction.
-///
-/// Requirements: 10.6, 10.7
+#[utoipa::path(
+    delete,
+    path = "/organizations/{org_id}/transactions/{transaction_id}",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        ("transaction_id" = Uuid, Path, description = "Transaction ID")
+    ),
+    responses(
+        (status = 204, description = "Transaction deleted successfully"),
+        (status = 400, description = "Cannot delete posted transaction"),
+        (status = 403, description = "Forbidden"),
+        (status = 404, description = "Transaction not found")
+    ),
+    tag = "Transactions",
+    security(("bearerAuth" = []))
+)]
 async fn delete_transaction(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -887,8 +960,22 @@ async fn delete_transaction(
 // ============================================================================
 
 /// POST `/organizations/{org_id}/transactions/{transaction_id}/submit` - Submit for approval.
-///
-/// Requirements: 6.1
+#[utoipa::path(
+    post,
+    path = "/organizations/{org_id}/transactions/{transaction_id}/submit",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        ("transaction_id" = Uuid, Path, description = "Transaction ID")
+    ),
+    responses(
+        (status = 200, description = "Transaction submitted successfully"),
+        (status = 400, description = "Invalid status for submission"),
+        (status = 403, description = "Forbidden"),
+        (status = 404, description = "Transaction not found")
+    ),
+    tag = "Transactions",
+    security(("bearerAuth" = []))
+)]
 async fn submit_transaction(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -937,8 +1024,23 @@ async fn submit_transaction(
 }
 
 /// POST `/organizations/{org_id}/transactions/{transaction_id}/approve` - Approve transaction.
-///
-/// Requirements: 6.2
+#[utoipa::path(
+    post,
+    path = "/organizations/{org_id}/transactions/{transaction_id}/approve",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        ("transaction_id" = Uuid, Path, description = "Transaction ID")
+    ),
+    request_body = ApproveRequest,
+    responses(
+        (status = 200, description = "Transaction approved successfully"),
+        (status = 400, description = "Invalid status for approval"),
+        (status = 403, description = "Forbidden"),
+        (status = 404, description = "Transaction not found")
+    ),
+    tag = "Transactions",
+    security(("bearerAuth" = []))
+)]
 async fn approve_transaction(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -990,8 +1092,23 @@ async fn approve_transaction(
 }
 
 /// POST `/organizations/{org_id}/transactions/{transaction_id}/reject` - Reject transaction.
-///
-/// Requirements: 6.3
+#[utoipa::path(
+    post,
+    path = "/organizations/{org_id}/transactions/{transaction_id}/reject",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        ("transaction_id" = Uuid, Path, description = "Transaction ID")
+    ),
+    request_body = RejectRequest,
+    responses(
+        (status = 200, description = "Transaction rejected successfully"),
+        (status = 400, description = "Invalid status for rejection"),
+        (status = 403, description = "Forbidden"),
+        (status = 404, description = "Transaction not found")
+    ),
+    tag = "Transactions",
+    security(("bearerAuth" = []))
+)]
 async fn reject_transaction(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -1046,8 +1163,22 @@ async fn reject_transaction(
 }
 
 /// POST `/organizations/{org_id}/transactions/{transaction_id}/post` - Post to ledger.
-///
-/// Requirements: 6.4
+#[utoipa::path(
+    post,
+    path = "/organizations/{org_id}/transactions/{transaction_id}/post",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        ("transaction_id" = Uuid, Path, description = "Transaction ID")
+    ),
+    responses(
+        (status = 200, description = "Transaction posted successfully"),
+        (status = 400, description = "Invalid status for posting"),
+        (status = 403, description = "Forbidden"),
+        (status = 404, description = "Transaction not found")
+    ),
+    tag = "Transactions",
+    security(("bearerAuth" = []))
+)]
 async fn post_transaction(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -1096,8 +1227,23 @@ async fn post_transaction(
 }
 
 /// POST `/organizations/{org_id}/transactions/{transaction_id}/void` - Void transaction.
-///
-/// Requirements: 6.5
+#[utoipa::path(
+    post,
+    path = "/organizations/{org_id}/transactions/{transaction_id}/void",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        ("transaction_id" = Uuid, Path, description = "Transaction ID")
+    ),
+    request_body = VoidRequest,
+    responses(
+        (status = 200, description = "Transaction voided successfully", body = VoidResponse),
+        (status = 400, description = "Invalid status for voiding"),
+        (status = 403, description = "Forbidden"),
+        (status = 404, description = "Transaction not found")
+    ),
+    tag = "Transactions",
+    security(("bearerAuth" = []))
+)]
 async fn void_transaction(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -1170,8 +1316,19 @@ async fn void_transaction(
 }
 
 /// GET `/organizations/{org_id}/transactions/pending` - Get pending transactions.
-///
-/// Requirements: 6.6
+#[utoipa::path(
+    get,
+    path = "/organizations/{org_id}/transactions/pending",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID")
+    ),
+    responses(
+        (status = 200, description = "List of pending transactions", body = [PendingTransactionResponse]),
+        (status = 403, description = "Forbidden")
+    ),
+    tag = "Transactions",
+    security(("bearerAuth" = []))
+)]
 async fn get_pending_transactions(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -1222,8 +1379,20 @@ async fn get_pending_transactions(
 }
 
 /// POST `/organizations/{org_id}/transactions/bulk-approve` - Bulk approve transactions.
-///
-/// Requirements: 6.7
+#[utoipa::path(
+    post,
+    path = "/organizations/{org_id}/transactions/bulk-approve",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID")
+    ),
+    request_body = BulkApproveRequest,
+    responses(
+        (status = 200, description = "Bulk approval results", body = BulkApproveResponse),
+        (status = 403, description = "Forbidden")
+    ),
+    tag = "Transactions",
+    security(("bearerAuth" = []))
+)]
 async fn bulk_approve_transactions(
     State(state): State<AppState>,
     auth: AuthUser,

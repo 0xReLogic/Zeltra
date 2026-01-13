@@ -60,20 +60,22 @@ pub fn routes() -> Router<AppState> {
 // ============================================================================
 
 /// Request body for creating a budget.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct CreateBudgetRequest {
     /// Budget name.
+    #[schema(example = "FY2026 Operations")]
     pub name: String,
     /// Budget description.
     pub description: Option<String>,
     /// Fiscal year ID.
     pub fiscal_year_id: Uuid,
     /// Budget type: annual, quarterly, monthly, project.
+    #[schema(example = "annual")]
     pub budget_type: String,
 }
 
 /// Request body for updating a budget.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct UpdateBudgetRequest {
     /// Budget name.
     pub name: Option<String>,
@@ -84,20 +86,21 @@ pub struct UpdateBudgetRequest {
 }
 
 /// Request body for creating budget lines in bulk.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct CreateBudgetLinesRequest {
     /// Budget lines to create.
     pub lines: Vec<BudgetLineInput>,
 }
 
 /// Input for a single budget line.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct BudgetLineInput {
     /// Account ID.
     pub account_id: Uuid,
     /// Fiscal period ID.
     pub fiscal_period_id: Uuid,
     /// Budgeted amount.
+    #[schema(example = "5000.00")]
     pub amount: Decimal,
     /// Notes.
     pub notes: Option<String>,
@@ -106,7 +109,7 @@ pub struct BudgetLineInput {
 }
 
 /// Response for a budget.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct BudgetResponse {
     /// Budget ID.
     pub id: Uuid,
@@ -226,8 +229,19 @@ fn budget_type_to_string(bt: &zeltra_db::entities::sea_orm_active_enums::BudgetT
 // ============================================================================
 
 /// GET `/organizations/{org_id}/budgets` - List budgets with summary totals.
-///
-/// Requirements: 13.2
+#[utoipa::path(
+    get,
+    path = "/organizations/{org_id}/budgets",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID")
+    ),
+    responses(
+        (status = 200, description = "List of budgets", body = [BudgetResponse]),
+        (status = 403, description = "Forbidden")
+    ),
+    tag = "Budgets",
+    security(("bearerAuth" = []))
+)]
 async fn list_budgets(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -279,8 +293,21 @@ async fn list_budgets(
 }
 
 /// POST `/organizations/{org_id}/budgets` - Create a new budget.
-///
-/// Requirements: 13.1
+#[utoipa::path(
+    post,
+    path = "/organizations/{org_id}/budgets",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID")
+    ),
+    request_body = CreateBudgetRequest,
+    responses(
+        (status = 201, description = "Budget created successfully"),
+        (status = 400, description = "Invalid input"),
+        (status = 403, description = "Forbidden")
+    ),
+    tag = "Budgets",
+    security(("bearerAuth" = []))
+)]
 async fn create_budget(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -378,8 +405,21 @@ async fn create_budget(
 }
 
 /// GET `/organizations/{org_id}/budgets/{budget_id}` - Get budget with all lines.
-///
-/// Requirements: 13.3
+#[utoipa::path(
+    get,
+    path = "/organizations/{org_id}/budgets/{budget_id}",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        ("budget_id" = Uuid, Path, description = "Budget ID")
+    ),
+    responses(
+        (status = 200, description = "Budget details with lines"),
+        (status = 403, description = "Forbidden"),
+        (status = 404, description = "Budget not found")
+    ),
+    tag = "Budgets",
+    security(("bearerAuth" = []))
+)]
 async fn get_budget(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -467,6 +507,22 @@ async fn get_budget(
 }
 
 /// PUT `/organizations/{org_id}/budgets/{budget_id}` - Update budget.
+#[utoipa::path(
+    put,
+    path = "/organizations/{org_id}/budgets/{budget_id}",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        ("budget_id" = Uuid, Path, description = "Budget ID")
+    ),
+    request_body = UpdateBudgetRequest,
+    responses(
+        (status = 200, description = "Budget updated successfully"),
+        (status = 403, description = "Forbidden"),
+        (status = 404, description = "Budget not found")
+    ),
+    tag = "Budgets",
+    security(("bearerAuth" = []))
+)]
 async fn update_budget(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -520,8 +576,21 @@ async fn update_budget(
 }
 
 /// GET `/organizations/{org_id}/budgets/{budget_id}/lines` - Get budget lines.
-///
-/// Requirements: 13.5
+#[utoipa::path(
+    get,
+    path = "/organizations/{org_id}/budgets/{budget_id}/lines",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        ("budget_id" = Uuid, Path, description = "Budget ID")
+    ),
+    responses(
+        (status = 200, description = "List of budget lines"),
+        (status = 403, description = "Forbidden"),
+        (status = 404, description = "Budget not found")
+    ),
+    tag = "Budgets",
+    security(("bearerAuth" = []))
+)]
 async fn list_budget_lines(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -592,8 +661,22 @@ async fn list_budget_lines(
 }
 
 /// POST `/organizations/{org_id}/budgets/{budget_id}/lines` - Create budget lines in bulk.
-///
-/// Requirements: 13.4
+#[utoipa::path(
+    post,
+    path = "/organizations/{org_id}/budgets/{budget_id}/lines",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        ("budget_id" = Uuid, Path, description = "Budget ID")
+    ),
+    request_body = CreateBudgetLinesRequest,
+    responses(
+        (status = 201, description = "Budget lines created successfully"),
+        (status = 403, description = "Forbidden"),
+        (status = 404, description = "Budget not found")
+    ),
+    tag = "Budgets",
+    security(("bearerAuth" = []))
+)]
 async fn create_budget_lines(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -658,8 +741,21 @@ async fn create_budget_lines(
 }
 
 /// POST `/organizations/{org_id}/budgets/{budget_id}/lock` - Lock budget.
-///
-/// Requirements: 13.6
+#[utoipa::path(
+    post,
+    path = "/organizations/{org_id}/budgets/{budget_id}/lock",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        ("budget_id" = Uuid, Path, description = "Budget ID")
+    ),
+    responses(
+        (status = 200, description = "Budget locked successfully"),
+        (status = 403, description = "Forbidden"),
+        (status = 404, description = "Budget not found")
+    ),
+    tag = "Budgets",
+    security(("bearerAuth" = []))
+)]
 async fn lock_budget(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -701,7 +797,7 @@ async fn lock_budget(
 }
 
 /// Query parameters for budget vs actual.
-#[derive(Debug, serde::Deserialize)]
+#[derive(Debug, serde::Deserialize, utoipa::IntoParams)]
 pub struct BudgetVsActualQuery {
     /// Filter by fiscal period ID.
     pub fiscal_period_id: Option<Uuid>,
@@ -710,8 +806,22 @@ pub struct BudgetVsActualQuery {
 }
 
 /// GET `/organizations/{org_id}/budgets/{budget_id}/vs-actual` - Get budget vs actual comparison.
-///
-/// Requirements: 13.7
+#[utoipa::path(
+    get,
+    path = "/organizations/{org_id}/budgets/{budget_id}/vs-actual",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        ("budget_id" = Uuid, Path, description = "Budget ID"),
+        BudgetVsActualQuery
+    ),
+    responses(
+        (status = 200, description = "Budget vs actual comparison"),
+        (status = 403, description = "Forbidden"),
+        (status = 404, description = "Budget not found")
+    ),
+    tag = "Budgets",
+    security(("bearerAuth" = []))
+)]
 async fn get_budget_vs_actual(
     State(state): State<AppState>,
     auth: AuthUser,

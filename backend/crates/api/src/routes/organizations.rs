@@ -20,6 +20,59 @@ use zeltra_shared::auth::{
     AddUserRequest, CreateOrganizationRequest, UpdateMemberRequest, UpdateOrganizationRequest,
 };
 
+/// Organization details response.
+#[derive(serde::Serialize, utoipa::ToSchema)]
+pub struct OrganizationResponse {
+    /// Organization ID.
+    pub id: uuid::Uuid,
+    /// Organization name.
+    pub name: String,
+    /// Organization slug.
+    pub slug: String,
+    /// Base currency for accounting.
+    pub base_currency: String,
+    /// Timezone for reports.
+    pub timezone: String,
+    /// Subscription tier.
+    pub subscription_tier: String,
+    /// Subscription status.
+    pub subscription_status: String,
+    /// Creation timestamp.
+    pub created_at: chrono::DateTime<chrono::Utc>,
+}
+
+/// Organization user session response.
+#[derive(serde::Serialize, utoipa::ToSchema)]
+pub struct OrgUserResponse {
+    /// User ID.
+    pub id: uuid::Uuid,
+    /// User email.
+    pub email: String,
+    /// User's full name.
+    pub full_name: String,
+    /// Role within the organization.
+    pub role: String,
+    /// Individual approval limit.
+    pub approval_limit: Option<rust_decimal::Decimal>,
+    /// Creation timestamp.
+    pub created_at: chrono::DateTime<chrono::Utc>,
+}
+
+/// Membership update response.
+#[derive(serde::Serialize, utoipa::ToSchema)]
+pub struct MembershipResponse {
+    /// User ID.
+    pub user_id: uuid::Uuid,
+    /// Organization ID.
+    pub organization_id: uuid::Uuid,
+    /// Membership role.
+    pub role: String,
+    /// Individual approval limit.
+    pub approval_limit: Option<rust_decimal::Decimal>,
+    /// Creation timestamp.
+    pub created_at: chrono::DateTime<chrono::Utc>,
+}
+
 /// Creates the organizations router (requires auth middleware to be applied externally).
 pub fn routes() -> Router<AppState> {
     Router::new()
@@ -39,6 +92,17 @@ pub fn routes() -> Router<AppState> {
 }
 
 /// POST /organizations - Create a new organization.
+#[utoipa::path(
+    post,
+    path = "/organizations",
+    request_body = CreateOrganizationRequest,
+    responses(
+        (status = 201, description = "Organization created successfully", body = OrganizationResponse),
+        (status = 409, description = "Slug already exists")
+    ),
+    tag = "Organizations",
+    security(("bearerAuth" = []))
+)]
 async fn create_organization(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -121,6 +185,20 @@ async fn create_organization(
 }
 
 /// GET `/organizations/{org_id}` - Get organization details.
+#[utoipa::path(
+    get,
+    path = "/organizations/{org_id}",
+    params(
+        ("org_id" = uuid::Uuid, Path, description = "Organization ID")
+    ),
+    responses(
+        (status = 200, description = "Organization found", body = OrganizationResponse),
+        (status = 403, description = "Forbidden"),
+        (status = 404, description = "Organization not found")
+    ),
+    tag = "Organizations",
+    security(("bearerAuth" = []))
+)]
 async fn get_organization(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -197,6 +275,21 @@ async fn get_organization(
 }
 
 /// PATCH `/organizations/{org_id}` - Update organization settings.
+#[utoipa::path(
+    patch,
+    path = "/organizations/{org_id}",
+    params(
+        ("org_id" = uuid::Uuid, Path, description = "Organization ID")
+    ),
+    request_body = UpdateOrganizationRequest,
+    responses(
+        (status = 200, description = "Organization updated successfully", body = OrganizationResponse),
+        (status = 403, description = "Forbidden"),
+        (status = 404, description = "Organization not found")
+    ),
+    tag = "Organizations",
+    security(("bearerAuth" = []))
+)]
 #[allow(clippy::too_many_lines)]
 async fn update_organization(
     State(state): State<AppState>,
@@ -338,6 +431,19 @@ async fn update_organization(
 }
 
 /// GET `/organizations/{org_id}/users` - List organization users.
+#[utoipa::path(
+    get,
+    path = "/organizations/{org_id}/users",
+    params(
+        ("org_id" = uuid::Uuid, Path, description = "Organization ID")
+    ),
+    responses(
+        (status = 200, description = "Users listed", body = [OrgUserResponse]),
+        (status = 403, description = "Forbidden")
+    ),
+    tag = "Organizations",
+    security(("bearerAuth" = []))
+)]
 async fn list_users(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -405,6 +511,22 @@ async fn list_users(
 }
 
 /// POST `/organizations/{org_id}/users` - Add user to organization.
+#[utoipa::path(
+    post,
+    path = "/organizations/{org_id}/users",
+    params(
+        ("org_id" = uuid::Uuid, Path, description = "Organization ID")
+    ),
+    request_body = AddUserRequest,
+    responses(
+        (status = 201, description = "User added successfully", body = MembershipResponse),
+        (status = 403, description = "Forbidden"),
+        (status = 404, description = "User not found"),
+        (status = 409, description = "User is already a member")
+    ),
+    tag = "Organizations",
+    security(("bearerAuth" = []))
+)]
 #[allow(clippy::too_many_lines)]
 async fn add_user(
     State(state): State<AppState>,
@@ -576,6 +698,21 @@ fn string_to_role(s: &str) -> Option<UserRole> {
 }
 
 /// DELETE `/organizations/{org_id}/users/{user_id}` - Remove user from organization.
+#[utoipa::path(
+    delete,
+    path = "/organizations/{org_id}/users/{user_id}",
+    params(
+        ("org_id" = uuid::Uuid, Path, description = "Organization ID"),
+        ("user_id" = uuid::Uuid, Path, description = "User ID")
+    ),
+    responses(
+        (status = 204, description = "User removed successfully"),
+        (status = 403, description = "Forbidden"),
+        (status = 404, description = "Organization or user not found")
+    ),
+    tag = "Organizations",
+    security(("bearerAuth" = []))
+)]
 #[allow(clippy::too_many_lines)]
 async fn remove_user(
     State(state): State<AppState>,
@@ -699,6 +836,22 @@ async fn remove_user(
 }
 
 /// PATCH `/organizations/{org_id}/users/{user_id}` - Update user's role and/or approval limit.
+#[utoipa::path(
+    patch,
+    path = "/organizations/{org_id}/users/{user_id}",
+    params(
+        ("org_id" = uuid::Uuid, Path, description = "Organization ID"),
+        ("user_id" = uuid::Uuid, Path, description = "User ID")
+    ),
+    request_body = UpdateMemberRequest,
+    responses(
+        (status = 200, description = "Member updated successfully", body = MembershipResponse),
+        (status = 403, description = "Forbidden"),
+        (status = 404, description = "Organization or user not found")
+    ),
+    tag = "Organizations",
+    security(("bearerAuth" = []))
+)]
 #[allow(clippy::too_many_lines)]
 async fn update_member(
     State(state): State<AppState>,

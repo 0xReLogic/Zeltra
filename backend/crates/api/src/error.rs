@@ -11,11 +11,13 @@ use serde::Serialize;
 use uuid::Uuid;
 
 /// Standard API error response.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct ApiError {
     /// Error code (e.g., "validation_error", "not_found").
+    #[schema(example = "not_found")]
     pub error: String,
     /// Human-readable error message.
+    #[schema(example = "Resource not found")]
     pub message: String,
     /// Request ID for tracing.
     #[serde(skip_serializing_if = "Option::is_none")]

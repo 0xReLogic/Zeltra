@@ -54,26 +54,31 @@ pub fn routes() -> Router<AppState> {
 // ============================================================================
 
 /// Request body for creating an approval rule.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct CreateApprovalRuleRequest {
     /// Name of the approval rule.
+    #[schema(example = "High Value Bills")]
     pub name: String,
     /// Optional description.
     pub description: Option<String>,
     /// Minimum amount threshold (inclusive).
+    #[schema(example = "1000.00")]
     pub min_amount: Option<String>,
     /// Maximum amount threshold (inclusive).
     pub max_amount: Option<String>,
     /// Transaction types this rule applies to.
+    #[schema(example = "[\"bill\"]")]
     pub transaction_types: Vec<String>,
     /// Required role to approve (viewer, submitter, approver, accountant, admin, owner).
+    #[schema(example = "approver")]
     pub required_role: String,
     /// Priority (lower = higher priority).
+    #[schema(example = 1)]
     pub priority: i16,
 }
 
 /// Request body for updating an approval rule.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct UpdateApprovalRuleRequest {
     /// New name.
     pub name: Option<String>,
@@ -94,7 +99,7 @@ pub struct UpdateApprovalRuleRequest {
 }
 
 /// Response for an approval rule.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct ApprovalRuleResponse {
     /// Rule ID.
     pub id: Uuid,
@@ -127,8 +132,19 @@ pub struct ApprovalRuleResponse {
 // ============================================================================
 
 /// GET `/organizations/{org_id}/approval-rules` - List approval rules.
-///
-/// Requirements: 6.9
+#[utoipa::path(
+    get,
+    path = "/organizations/{org_id}/approval-rules",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID")
+    ),
+    responses(
+        (status = 200, description = "List of approval rules", body = [ApprovalRuleResponse]),
+        (status = 403, description = "Forbidden")
+    ),
+    tag = "Approval Rules",
+    security(("bearerAuth" = []))
+)]
 async fn list_approval_rules(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -157,8 +173,21 @@ async fn list_approval_rules(
 }
 
 /// POST `/organizations/{org_id}/approval-rules` - Create approval rule.
-///
-/// Requirements: 6.8
+#[utoipa::path(
+    post,
+    path = "/organizations/{org_id}/approval-rules",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID")
+    ),
+    request_body = CreateApprovalRuleRequest,
+    responses(
+        (status = 201, description = "Approval rule created successfully", body = ApprovalRuleResponse),
+        (status = 400, description = "Invalid input or amount format"),
+        (status = 403, description = "Forbidden")
+    ),
+    tag = "Approval Rules",
+    security(("bearerAuth" = []))
+)]
 async fn create_approval_rule(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -251,6 +280,21 @@ async fn create_approval_rule(
 }
 
 /// GET `/organizations/{org_id}/approval-rules/{rule_id}` - Get approval rule.
+#[utoipa::path(
+    get,
+    path = "/organizations/{org_id}/approval-rules/{rule_id}",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        ("rule_id" = Uuid, Path, description = "Approval Rule ID")
+    ),
+    responses(
+        (status = 200, description = "Approval rule details", body = ApprovalRuleResponse),
+        (status = 403, description = "Forbidden"),
+        (status = 404, description = "Approval rule not found")
+    ),
+    tag = "Approval Rules",
+    security(("bearerAuth" = []))
+)]
 async fn get_approval_rule(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -274,6 +318,23 @@ async fn get_approval_rule(
 }
 
 /// PATCH `/organizations/{org_id}/approval-rules/{rule_id}` - Update approval rule.
+#[utoipa::path(
+    patch,
+    path = "/organizations/{org_id}/approval-rules/{rule_id}",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        ("rule_id" = Uuid, Path, description = "Approval Rule ID")
+    ),
+    request_body = UpdateApprovalRuleRequest,
+    responses(
+        (status = 200, description = "Approval rule updated successfully", body = ApprovalRuleResponse),
+        (status = 400, description = "Invalid input or amount format"),
+        (status = 403, description = "Forbidden"),
+        (status = 404, description = "Approval rule not found")
+    ),
+    tag = "Approval Rules",
+    security(("bearerAuth" = []))
+)]
 async fn update_approval_rule(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -335,6 +396,21 @@ async fn update_approval_rule(
 }
 
 /// DELETE `/organizations/{org_id}/approval-rules/{rule_id}` - Delete approval rule.
+#[utoipa::path(
+    delete,
+    path = "/organizations/{org_id}/approval-rules/{rule_id}",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        ("rule_id" = Uuid, Path, description = "Approval Rule ID")
+    ),
+    responses(
+        (status = 204, description = "Approval rule deleted successfully"),
+        (status = 403, description = "Forbidden"),
+        (status = 404, description = "Approval rule not found")
+    ),
+    tag = "Approval Rules",
+    security(("bearerAuth" = []))
+)]
 async fn delete_approval_rule(
     State(state): State<AppState>,
     auth: AuthUser,

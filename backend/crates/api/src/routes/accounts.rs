@@ -54,7 +54,7 @@ pub fn routes() -> Router<AppState> {
 }
 
 /// Query parameters for listing accounts.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::IntoParams)]
 pub struct ListAccountsQuery {
     /// Filter by account type.
     #[serde(rename = "type")]
@@ -66,22 +66,27 @@ pub struct ListAccountsQuery {
 }
 
 /// Request body for creating an account.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct CreateAccountRequest {
     /// Account code (must be unique within organization).
+    #[schema(example = "1000")]
     pub code: String,
     /// Account name.
+    #[schema(example = "Petty Cash")]
     pub name: String,
     /// Account description.
     pub description: Option<String>,
     /// Account type: asset, liability, equity, revenue, expense.
     #[serde(rename = "type")]
+    #[schema(example = "asset")]
     pub account_type: String,
     /// Account subtype for more specific categorization.
+    #[schema(example = "cash")]
     pub subtype: Option<String>,
     /// Parent account ID for hierarchical structure.
     pub parent_id: Option<Uuid>,
     /// Currency code.
+    #[schema(example = "USD")]
     pub currency: String,
     /// Whether the account is active (default: true).
     pub is_active: Option<bool>,
@@ -90,7 +95,7 @@ pub struct CreateAccountRequest {
 }
 
 /// Request body for updating an account.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct UpdateAccountRequest {
     /// Account code.
     pub code: Option<String>,
@@ -112,14 +117,14 @@ pub struct UpdateAccountRequest {
 }
 
 /// Request body for toggling account status.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, utoipa::ToSchema)]
 pub struct ToggleStatusRequest {
     /// Whether the account should be active.
     pub is_active: bool,
 }
 
 /// Response for an account.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct AccountResponse {
     /// Account ID.
     pub id: Uuid,
@@ -147,14 +152,14 @@ pub struct AccountResponse {
 }
 
 /// Query parameters for getting account balance at a specific date.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::IntoParams)]
 pub struct BalanceQuery {
     /// Date to get balance as of (YYYY-MM-DD format). Defaults to today.
     pub as_of: Option<NaiveDate>,
 }
 
 /// Query parameters for listing ledger entries.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::IntoParams)]
 pub struct LedgerQuery {
     /// Start date filter (inclusive, YYYY-MM-DD format).
     pub from: Option<NaiveDate>,
@@ -167,7 +172,7 @@ pub struct LedgerQuery {
 }
 
 /// Response for a ledger entry.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct LedgerEntryResponse {
     /// Entry ID.
     pub id: Uuid,
@@ -206,7 +211,21 @@ pub struct LedgerEntryResponse {
 }
 
 /// GET `/organizations/{org_id}/accounts` - List accounts with balances.
-async fn list_accounts(
+#[utoipa::path(
+    get,
+    path = "/organizations/{org_id}/accounts",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        ListAccountsQuery
+    ),
+    responses(
+        (status = 200, description = "List of accounts", body = [AccountResponse]),
+        (status = 403, description = "Forbidden")
+    ),
+    tag = "Accounts",
+    security(("bearerAuth" = []))
+)]
+pub async fn list_accounts(
     State(state): State<AppState>,
     auth: AuthUser,
     Path(org_id): Path<Uuid>,
@@ -270,8 +289,24 @@ async fn list_accounts(
 }
 
 /// POST `/organizations/{org_id}/accounts` - Create an account.
+#[utoipa::path(
+    post,
+    path = "/organizations/{org_id}/accounts",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID")
+    ),
+    request_body = CreateAccountRequest,
+    responses(
+        (status = 201, description = "Account created successfully", body = AccountResponse),
+        (status = 400, description = "Invalid input"),
+        (status = 403, description = "Forbidden"),
+        (status = 409, description = "Duplicate account code")
+    ),
+    tag = "Accounts",
+    security(("bearerAuth" = []))
+)]
 #[allow(clippy::too_many_lines)]
-async fn create_account(
+pub async fn create_account(
     State(state): State<AppState>,
     auth: AuthUser,
     Path(org_id): Path<Uuid>,
@@ -394,7 +429,22 @@ async fn create_account(
 }
 
 /// GET `/organizations/{org_id}/accounts/{account_id}` - Get account detail.
-async fn get_account(
+#[utoipa::path(
+    get,
+    path = "/organizations/{org_id}/accounts/{account_id}",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        ("account_id" = Uuid, Path, description = "Account ID")
+    ),
+    responses(
+        (status = 200, description = "Account details", body = AccountResponse),
+        (status = 403, description = "Forbidden"),
+        (status = 404, description = "Account not found")
+    ),
+    tag = "Accounts",
+    security(("bearerAuth" = []))
+)]
+pub async fn get_account(
     State(state): State<AppState>,
     auth: AuthUser,
     Path((org_id, account_id)): Path<(Uuid, Uuid)>,
@@ -462,8 +512,25 @@ async fn get_account(
 }
 
 /// PUT `/organizations/{org_id}/accounts/{account_id}` - Update account.
+#[utoipa::path(
+    put,
+    path = "/organizations/{org_id}/accounts/{account_id}",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        ("account_id" = Uuid, Path, description = "Account ID")
+    ),
+    request_body = UpdateAccountRequest,
+    responses(
+        (status = 200, description = "Account updated successfully", body = AccountResponse),
+        (status = 400, description = "Invalid input"),
+        (status = 403, description = "Forbidden"),
+        (status = 404, description = "Account not found")
+    ),
+    tag = "Accounts",
+    security(("bearerAuth" = []))
+)]
 #[allow(clippy::too_many_lines)]
-async fn update_account(
+pub async fn update_account(
     State(state): State<AppState>,
     auth: AuthUser,
     Path((org_id, account_id)): Path<(Uuid, Uuid)>,
@@ -621,7 +688,23 @@ async fn update_account(
 }
 
 /// DELETE `/organizations/{org_id}/accounts/{account_id}` - Delete (deactivate) account.
-async fn delete_account(
+#[utoipa::path(
+    delete,
+    path = "/organizations/{org_id}/accounts/{account_id}",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        ("account_id" = Uuid, Path, description = "Account ID")
+    ),
+    responses(
+        (status = 204, description = "Account deleted (deactivated)"),
+        (status = 403, description = "Forbidden"),
+        (status = 404, description = "Account not found"),
+        (status = 409, description = "Cannot delete account with transactions")
+    ),
+    tag = "Accounts",
+    security(("bearerAuth" = []))
+)]
+pub async fn delete_account(
     State(state): State<AppState>,
     auth: AuthUser,
     Path((org_id, account_id)): Path<(Uuid, Uuid)>,
@@ -706,10 +789,23 @@ async fn delete_account(
 }
 
 /// PATCH `/organizations/{org_id}/accounts/{account_id}/status` - Toggle account status.
-///
-/// Allows deactivation of accounts even with posted transactions.
-/// Deactivated accounts cannot receive new postings.
-async fn toggle_account_status(
+#[utoipa::path(
+    patch,
+    path = "/organizations/{org_id}/accounts/{account_id}/status",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        ("account_id" = Uuid, Path, description = "Account ID")
+    ),
+    request_body = ToggleStatusRequest,
+    responses(
+        (status = 200, description = "Status toggled successfully"),
+        (status = 403, description = "Forbidden"),
+        (status = 404, description = "Account not found")
+    ),
+    tag = "Accounts",
+    security(("bearerAuth" = []))
+)]
+pub async fn toggle_account_status(
     State(state): State<AppState>,
     auth: AuthUser,
     Path((org_id, account_id)): Path<(Uuid, Uuid)>,
@@ -808,7 +904,23 @@ async fn toggle_account_status(
 }
 
 /// GET `/organizations/{org_id}/accounts/{account_id}/balance` - Get account balance at a specific date.
-async fn get_account_balance(
+#[utoipa::path(
+    get,
+    path = "/organizations/{org_id}/accounts/{account_id}/balance",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        ("account_id" = Uuid, Path, description = "Account ID"),
+        BalanceQuery
+    ),
+    responses(
+        (status = 200, description = "Account balance"),
+        (status = 403, description = "Forbidden"),
+        (status = 404, description = "Account not found")
+    ),
+    tag = "Accounts",
+    security(("bearerAuth" = []))
+)]
+pub async fn get_account_balance(
     State(state): State<AppState>,
     auth: AuthUser,
     Path((org_id, account_id)): Path<(Uuid, Uuid)>,
@@ -892,7 +1004,23 @@ async fn get_account_balance(
 }
 
 /// GET `/organizations/{org_id}/accounts/{account_id}/ledger` - Get ledger entries for an account.
-async fn get_account_ledger(
+#[utoipa::path(
+    get,
+    path = "/organizations/{org_id}/accounts/{account_id}/ledger",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        ("account_id" = Uuid, Path, description = "Account ID"),
+        LedgerQuery
+    ),
+    responses(
+        (status = 200, description = "Ledger entries", body = [LedgerEntryResponse]),
+        (status = 403, description = "Forbidden"),
+        (status = 404, description = "Account not found")
+    ),
+    tag = "Accounts",
+    security(("bearerAuth" = []))
+)]
+pub async fn get_account_ledger(
     State(state): State<AppState>,
     auth: AuthUser,
     Path((org_id, account_id)): Path<(Uuid, Uuid)>,

@@ -6,16 +6,26 @@ use serde::Serialize;
 use crate::AppState;
 
 /// Health check response.
-#[derive(Serialize)]
+#[derive(Serialize, utoipa::ToSchema)]
 pub struct HealthResponse {
     /// Service status.
+    #[schema(example = "healthy")]
     pub status: &'static str,
     /// Service version.
+    #[schema(example = "0.1.0")]
     pub version: &'static str,
 }
 
 /// Health check handler.
-async fn health_check() -> Json<HealthResponse> {
+#[utoipa::path(
+    get,
+    path = "/health",
+    responses(
+        (status = 200, description = "Service is healthy", body = HealthResponse)
+    ),
+    tag = "Health"
+)]
+pub async fn health_check() -> Json<HealthResponse> {
     Json(HealthResponse {
         status: "healthy",
         version: env!("CARGO_PKG_VERSION"),

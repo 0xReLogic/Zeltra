@@ -27,8 +27,18 @@ pub fn routes() -> Router<AppState> {
 }
 
 /// POST /auth/login - Authenticate user and return tokens.
+#[utoipa::path(
+    post,
+    path = "/auth/login",
+    request_body = LoginRequest,
+    responses(
+        (status = 200, description = "Login successful", body = LoginResponse),
+        (status = 401, description = "Invalid credentials")
+    ),
+    tag = "Auth"
+)]
 #[allow(clippy::too_many_lines)]
-async fn login(
+pub async fn login(
     State(state): State<AppState>,
     Json(payload): Json<LoginRequest>,
 ) -> impl IntoResponse {
@@ -219,7 +229,17 @@ async fn login(
 }
 
 /// POST /auth/register - Register a new user.
-async fn register(
+#[utoipa::path(
+    post,
+    path = "/auth/register",
+    request_body = RegisterRequest,
+    responses(
+        (status = 201, description = "User registered successfully"),
+        (status = 409, description = "Email already exists")
+    ),
+    tag = "Auth"
+)]
+pub async fn register(
     State(state): State<AppState>,
     Json(payload): Json<RegisterRequest>,
 ) -> impl IntoResponse {
@@ -325,7 +345,17 @@ async fn register(
 }
 
 /// POST /auth/refresh - Refresh access token using refresh token.
-async fn refresh(
+#[utoipa::path(
+    post,
+    path = "/auth/refresh",
+    request_body = RefreshRequest,
+    responses(
+        (status = 200, description = "Token refreshed successfully"),
+        (status = 401, description = "Invalid or expired refresh token")
+    ),
+    tag = "Auth"
+)]
+pub async fn refresh(
     State(state): State<AppState>,
     Json(payload): Json<RefreshRequest>,
 ) -> impl IntoResponse {
@@ -416,7 +446,16 @@ async fn refresh(
 }
 
 /// POST /auth/logout - Logout and invalidate refresh token.
-async fn logout(
+#[utoipa::path(
+    post,
+    path = "/auth/logout",
+    request_body = LogoutRequest,
+    responses(
+        (status = 200, description = "Logged out successfully")
+    ),
+    tag = "Auth"
+)]
+pub async fn logout(
     State(state): State<AppState>,
     Json(payload): Json<LogoutRequest>,
 ) -> impl IntoResponse {
@@ -471,7 +510,17 @@ fn role_to_string(role: &UserRole) -> String {
 }
 
 /// POST /auth/verify-email - Verify user's email with token.
-async fn verify_email(
+#[utoipa::path(
+    post,
+    path = "/auth/verify-email",
+    request_body = VerifyEmailRequest,
+    responses(
+        (status = 200, description = "Email verified successfully", body = VerifyEmailResponse),
+        (status = 400, description = "Invalid or expired token")
+    ),
+    tag = "Auth"
+)]
+pub async fn verify_email(
     State(state): State<AppState>,
     Json(payload): Json<VerifyEmailRequest>,
 ) -> impl IntoResponse {
@@ -516,7 +565,16 @@ async fn verify_email(
 }
 
 /// POST /auth/resend-verification - Resend verification email.
-async fn resend_verification(
+#[utoipa::path(
+    post,
+    path = "/auth/resend-verification",
+    request_body = ResendVerificationRequest,
+    responses(
+        (status = 200, description = "Verification email sent if account exists")
+    ),
+    tag = "Auth"
+)]
+pub async fn resend_verification(
     State(state): State<AppState>,
     Json(payload): Json<ResendVerificationRequest>,
 ) -> impl IntoResponse {

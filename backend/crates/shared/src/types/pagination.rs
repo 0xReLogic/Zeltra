@@ -3,13 +3,15 @@
 use serde::{Deserialize, Serialize};
 
 /// Request parameters for paginated queries.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::IntoParams)]
 pub struct PageRequest {
     /// Page number (1-indexed).
     #[serde(default = "default_page")]
+    #[param(default = 1, example = 1)]
     pub page: u32,
     /// Number of items per page.
     #[serde(default = "default_per_page")]
+    #[param(default = 20, example = 10)]
     pub per_page: u32,
 }
 
@@ -54,15 +56,19 @@ pub struct PageResponse<T> {
 }
 
 /// Pagination metadata.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct PageMeta {
     /// Current page number.
+    #[schema(example = 1)]
     pub page: u32,
     /// Items per page.
+    #[schema(example = 20)]
     pub per_page: u32,
     /// Total number of items across all pages.
+    #[schema(example = 100)]
     pub total: u64,
     /// Total number of pages.
+    #[schema(example = 5)]
     pub total_pages: u32,
 }
 

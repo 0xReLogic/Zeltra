@@ -37,19 +37,24 @@ pub fn routes() -> Router<AppState> {
 // ============================================================================
 
 /// Request body for running a simulation.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct RunSimulationRequest {
     /// Start date of historical period for baseline calculation.
+    #[schema(example = "2023-01-01")]
     pub base_period_start: NaiveDate,
     /// End date of historical period for baseline calculation.
+    #[schema(example = "2023-12-31")]
     pub base_period_end: NaiveDate,
     /// Number of months to project into the future (1-60).
+    #[schema(example = 12)]
     pub projection_months: u32,
     /// Global growth rate for revenue accounts (decimal, e.g. "0.10" for 10%).
     #[serde(default)]
+    #[schema(example = "0.10")]
     pub revenue_growth_rate: Option<String>,
     /// Global growth rate for expense accounts (decimal, e.g. "0.05" for 5%).
     #[serde(default)]
+    #[schema(example = "0.05")]
     pub expense_growth_rate: Option<String>,
     /// Per-account growth rate overrides. Key is account_id (UUID), value is growth rate.
     #[serde(default)]
@@ -60,7 +65,7 @@ pub struct RunSimulationRequest {
 }
 
 /// Response for simulation result.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct SimulationResponse {
     /// Unique identifier for this simulation run.
     pub simulation_id: Uuid,
@@ -77,9 +82,10 @@ pub struct SimulationResponse {
 }
 
 /// Account projection response.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct AccountProjectionResponse {
     /// Period identifier (YYYY-MM format).
+    #[schema(example = "2024-01")]
     pub period_name: String,
     /// Period start date.
     pub period_start: String,
@@ -102,7 +108,7 @@ pub struct AccountProjectionResponse {
 }
 
 /// Annual summary response.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct AnnualSummaryResponse {
     /// Sum of all projected revenue amounts.
     pub total_projected_revenue: String,
@@ -115,11 +121,13 @@ pub struct AnnualSummaryResponse {
 }
 
 /// Monthly summary response for charts.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct MonthlySummaryResponse {
     /// Month label for chart.
+    #[schema(example = "Jan")]
     pub month: String,
     /// Full period identifier.
+    #[schema(example = "2024-01")]
     pub period_name: String,
     /// Total revenue.
     pub revenue: String,
@@ -224,6 +232,21 @@ fn get_month_abbrev(period_name: &str) -> String {
 /// POST /organizations/{org_id}/simulation/run
 ///
 /// Requirements 15.1-15.4: Run simulation endpoint
+#[utoipa::path(
+    post,
+    path = "/organizations/{org_id}/simulation/run",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID")
+    ),
+    request_body = RunSimulationRequest,
+    responses(
+        (status = 200, description = "Simulation run successfully", body = SimulationResponse),
+        (status = 400, description = "Invalid parameters or growth rates"),
+        (status = 403, description = "Forbidden")
+    ),
+    tag = "Simulation",
+    security(("bearerAuth" = []))
+)]
 #[allow(clippy::too_many_lines)]
 #[axum::debug_handler]
 async fn run_simulation(

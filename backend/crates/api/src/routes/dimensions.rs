@@ -53,14 +53,14 @@ pub fn routes() -> Router<AppState> {
 }
 
 /// Query parameters for listing dimension types.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::IntoParams)]
 pub struct ListDimensionTypesQuery {
     /// Filter by active status.
     pub active: Option<bool>,
 }
 
 /// Query parameters for listing dimension values.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::IntoParams)]
 pub struct ListDimensionValuesQuery {
     /// Filter by dimension type ID.
     #[serde(rename = "type")]
@@ -70,11 +70,13 @@ pub struct ListDimensionValuesQuery {
 }
 
 /// Request body for creating a dimension type.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct CreateDimensionTypeRequest {
     /// Dimension type code (must be unique within organization).
+    #[schema(example = "DEPT")]
     pub code: String,
     /// Dimension type name.
+    #[schema(example = "Department")]
     pub name: String,
     /// Description.
     pub description: Option<String>,
@@ -87,13 +89,15 @@ pub struct CreateDimensionTypeRequest {
 }
 
 /// Request body for creating a dimension value.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct CreateDimensionValueRequest {
     /// Dimension type ID.
     pub dimension_type_id: Uuid,
     /// Dimension value code (must be unique within type).
+    #[schema(example = "MARKETING")]
     pub code: String,
     /// Dimension value name.
+    #[schema(example = "Marketing Department")]
     pub name: String,
     /// Description.
     pub description: Option<String>,
@@ -108,7 +112,7 @@ pub struct CreateDimensionValueRequest {
 }
 
 /// Request body for updating a dimension value.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct UpdateDimensionValueRequest {
     /// Dimension value code.
     pub code: Option<String>,
@@ -119,14 +123,14 @@ pub struct UpdateDimensionValueRequest {
 }
 
 /// Request body for toggling dimension value status.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, utoipa::ToSchema)]
 pub struct ToggleDimensionValueStatusRequest {
     /// Whether the dimension value should be active.
     pub is_active: bool,
 }
 
 /// Response for a dimension type.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct DimensionTypeResponse {
     /// Dimension type ID.
     pub id: Uuid,
@@ -145,7 +149,7 @@ pub struct DimensionTypeResponse {
 }
 
 /// Response for a dimension value.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct DimensionValueResponse {
     /// Dimension value ID.
     pub id: Uuid,
@@ -168,6 +172,20 @@ pub struct DimensionValueResponse {
 }
 
 /// GET `/organizations/{org_id}/dimension-types` - List dimension types.
+#[utoipa::path(
+    get,
+    path = "/organizations/{org_id}/dimension-types",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        ListDimensionTypesQuery
+    ),
+    responses(
+        (status = 200, description = "List of dimension types", body = [DimensionTypeResponse]),
+        (status = 403, description = "Forbidden")
+    ),
+    tag = "Dimensions",
+    security(("bearerAuth" = []))
+)]
 async fn list_dimension_types(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -219,6 +237,21 @@ async fn list_dimension_types(
 }
 
 /// POST `/organizations/{org_id}/dimension-types` - Create a dimension type.
+#[utoipa::path(
+    post,
+    path = "/organizations/{org_id}/dimension-types",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID")
+    ),
+    request_body = CreateDimensionTypeRequest,
+    responses(
+        (status = 201, description = "Dimension type created successfully"),
+        (status = 409, description = "Duplicate code"),
+        (status = 403, description = "Forbidden")
+    ),
+    tag = "Dimensions",
+    security(("bearerAuth" = []))
+)]
 async fn create_dimension_type(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -293,6 +326,20 @@ async fn create_dimension_type(
 }
 
 /// GET `/organizations/{org_id}/dimension-values` - List dimension values.
+#[utoipa::path(
+    get,
+    path = "/organizations/{org_id}/dimension-values",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        ListDimensionValuesQuery
+    ),
+    responses(
+        (status = 200, description = "List of dimension values", body = [DimensionValueResponse]),
+        (status = 403, description = "Forbidden")
+    ),
+    tag = "Dimensions",
+    security(("bearerAuth" = []))
+)]
 async fn list_dimension_values(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -352,6 +399,22 @@ async fn list_dimension_values(
 }
 
 /// POST `/organizations/{org_id}/dimension-values` - Create a dimension value.
+#[utoipa::path(
+    post,
+    path = "/organizations/{org_id}/dimension-values",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID")
+    ),
+    request_body = CreateDimensionValueRequest,
+    responses(
+        (status = 201, description = "Dimension value created successfully"),
+        (status = 400, description = "Invalid input or parent/type not found"),
+        (status = 409, description = "Duplicate code"),
+        (status = 403, description = "Forbidden")
+    ),
+    tag = "Dimensions",
+    security(("bearerAuth" = []))
+)]
 async fn create_dimension_value(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -454,6 +517,23 @@ async fn create_dimension_value(
 }
 
 /// PATCH `/organizations/{org_id}/dimension-values/{value_id}` - Update dimension value.
+#[utoipa::path(
+    patch,
+    path = "/organizations/{org_id}/dimension-values/{value_id}",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        ("value_id" = Uuid, Path, description = "Dimension Value ID")
+    ),
+    request_body = UpdateDimensionValueRequest,
+    responses(
+        (status = 200, description = "Dimension value updated successfully"),
+        (status = 403, description = "Forbidden"),
+        (status = 404, description = "Dimension value not found"),
+        (status = 409, description = "Duplicate code")
+    ),
+    tag = "Dimensions",
+    security(("bearerAuth" = []))
+)]
 async fn update_dimension_value(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -562,8 +642,22 @@ async fn update_dimension_value(
 }
 
 /// PATCH `/organizations/{org_id}/dimension-values/{value_id}/status` - Toggle dimension value status.
-///
-/// Deactivated dimension values cannot be assigned to new entries.
+#[utoipa::path(
+    patch,
+    path = "/organizations/{org_id}/dimension-values/{value_id}/status",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        ("value_id" = Uuid, Path, description = "Dimension Value ID")
+    ),
+    request_body = ToggleDimensionValueStatusRequest,
+    responses(
+        (status = 200, description = "Dimension value status toggled successfully"),
+        (status = 403, description = "Forbidden"),
+        (status = 404, description = "Dimension value not found")
+    ),
+    tag = "Dimensions",
+    security(("bearerAuth" = []))
+)]
 async fn toggle_dimension_value_status(
     State(state): State<AppState>,
     auth: AuthUser,

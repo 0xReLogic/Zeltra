@@ -53,27 +53,32 @@ pub fn routes() -> Router<AppState> {
 // ============================================================================
 
 /// Request body for requesting an upload URL.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct RequestUploadRequest {
     /// Original filename.
+    #[schema(example = "invoice.pdf")]
     pub filename: String,
     /// MIME type of the file.
+    #[schema(example = "application/pdf")]
     pub content_type: String,
     /// File size in bytes.
+    #[schema(example = 1024)]
     pub file_size: u64,
     /// Attachment type classification.
     #[serde(default)]
+    #[schema(example = "invoice")]
     pub attachment_type: Option<String>,
 }
 
 /// Response for upload URL request.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct RequestUploadResponse {
     /// Generated attachment ID.
     pub attachment_id: Uuid,
     /// Presigned upload URL.
     pub upload_url: String,
     /// HTTP method to use (PUT).
+    #[schema(example = "PUT")]
     pub upload_method: String,
     /// Required headers for the upload.
     pub upload_headers: std::collections::HashMap<String, String>,
@@ -84,39 +89,48 @@ pub struct RequestUploadResponse {
 }
 
 /// Request body for confirming an upload.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct ConfirmUploadRequest {
     /// Attachment ID from request_upload.
     pub attachment_id: Uuid,
     /// Original filename.
+    #[schema(example = "invoice.pdf")]
     pub filename: String,
     /// MIME type.
+    #[schema(example = "application/pdf")]
     pub content_type: String,
     /// File size in bytes.
+    #[schema(example = 1024)]
     pub file_size: i64,
     /// Storage key from request_upload.
     pub storage_key: String,
     /// Attachment type classification.
     #[serde(default)]
+    #[schema(example = "invoice")]
     pub attachment_type: Option<String>,
 }
 
 /// Response for an attachment.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct AttachmentResponse {
     /// Attachment ID.
     pub id: Uuid,
     /// Transaction ID.
     pub transaction_id: Option<Uuid>,
     /// Attachment type.
+    #[schema(example = "invoice")]
     pub attachment_type: String,
     /// Original filename.
+    #[schema(example = "invoice.pdf")]
     pub filename: String,
     /// File size in bytes.
+    #[schema(example = 1024)]
     pub file_size: i64,
     /// MIME type.
+    #[schema(example = "application/pdf")]
     pub mime_type: String,
     /// Storage provider.
+    #[schema(example = "s3")]
     pub storage_provider: String,
     /// Uploaded by user ID.
     pub uploaded_by: Uuid,
@@ -192,8 +206,24 @@ async fn check_membership(
 
 /// POST `/organizations/{org_id}/transactions/{transaction_id}/attachments/upload`
 /// Request a presigned upload URL.
-///
-/// Requirements: 1.1
+#[utoipa::path(
+    post,
+    path = "/organizations/{org_id}/transactions/{transaction_id}/attachments/upload",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        ("transaction_id" = Uuid, Path, description = "Transaction ID")
+    ),
+    request_body = RequestUploadRequest,
+    responses(
+        (status = 200, description = "Upload URL generated successfully", body = RequestUploadResponse),
+        (status = 400, description = "Invalid request or file too large"),
+        (status = 403, description = "Forbidden"),
+        (status = 404, description = "Transaction not found"),
+        (status = 503, description = "Storage service not available")
+    ),
+    tag = "Attachments",
+    security(("bearerAuth" = []))
+)]
 async fn request_upload(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -310,8 +340,23 @@ async fn request_upload(
 
 /// POST `/organizations/{org_id}/transactions/{transaction_id}/attachments`
 /// Confirm an upload and create the attachment record.
-///
-/// Requirements: 1.2
+#[utoipa::path(
+    post,
+    path = "/organizations/{org_id}/transactions/{transaction_id}/attachments",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        ("transaction_id" = Uuid, Path, description = "Transaction ID")
+    ),
+    request_body = ConfirmUploadRequest,
+    responses(
+        (status = 201, description = "Attachment confirmed and created", body = AttachmentResponse),
+        (status = 400, description = "Invalid request or file size mismatch"),
+        (status = 403, description = "Forbidden"),
+        (status = 503, description = "Storage service not available")
+    ),
+    tag = "Attachments",
+    security(("bearerAuth" = []))
+)]
 async fn confirm_upload(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -411,8 +456,20 @@ async fn confirm_upload(
 
 /// GET `/organizations/{org_id}/transactions/{transaction_id}/attachments`
 /// List attachments for a transaction.
-///
-/// Requirements: 1.4
+#[utoipa::path(
+    get,
+    path = "/organizations/{org_id}/transactions/{transaction_id}/attachments",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        ("transaction_id" = Uuid, Path, description = "Transaction ID")
+    ),
+    responses(
+        (status = 200, description = "List of attachments for transaction", body = [AttachmentResponse]),
+        (status = 403, description = "Forbidden")
+    ),
+    tag = "Attachments",
+    security(("bearerAuth" = []))
+)]
 async fn list_attachments(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -467,8 +524,22 @@ async fn list_attachments(
 
 /// GET `/organizations/{org_id}/attachments/{attachment_id}`
 /// Get attachment with download URL.
-///
-/// Requirements: 1.3
+#[utoipa::path(
+    get,
+    path = "/organizations/{org_id}/attachments/{attachment_id}",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        ("attachment_id" = Uuid, Path, description = "Attachment ID")
+    ),
+    responses(
+        (status = 200, description = "Attachment details and download URL", body = AttachmentResponse),
+        (status = 403, description = "Forbidden"),
+        (status = 404, description = "Attachment not found"),
+        (status = 503, description = "Storage service not available")
+    ),
+    tag = "Attachments",
+    security(("bearerAuth" = []))
+)]
 async fn get_attachment(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -551,8 +622,22 @@ async fn get_attachment(
 
 /// DELETE `/organizations/{org_id}/attachments/{attachment_id}`
 /// Delete an attachment.
-///
-/// Requirements: 1.4
+#[utoipa::path(
+    delete,
+    path = "/organizations/{org_id}/attachments/{attachment_id}",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        ("attachment_id" = Uuid, Path, description = "Attachment ID")
+    ),
+    responses(
+        (status = 204, description = "Attachment deleted successfully"),
+        (status = 403, description = "Forbidden"),
+        (status = 404, description = "Attachment not found"),
+        (status = 503, description = "Storage service not available")
+    ),
+    tag = "Attachments",
+    security(("bearerAuth" = []))
+)]
 async fn delete_attachment(
     State(state): State<AppState>,
     auth: AuthUser,

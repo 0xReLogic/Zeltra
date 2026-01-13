@@ -54,57 +54,63 @@ pub fn routes() -> Router<AppState> {
 // ============================================================================
 
 /// Query parameters for trial balance report.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::IntoParams)]
 pub struct TrialBalanceQuery {
     /// As of date (defaults to today).
     pub as_of: Option<NaiveDate>,
     /// Dimension value IDs to filter by (comma-separated).
+    #[param(example = "550e8400-e29b-41d4-a716-446655440000")]
     pub dimensions: Option<String>,
 }
 
 /// Query parameters for balance sheet report.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::IntoParams)]
 pub struct BalanceSheetQuery {
     /// As of date (defaults to today).
     pub as_of: Option<NaiveDate>,
 }
 
 /// Query parameters for income statement report.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::IntoParams)]
 pub struct IncomeStatementQuery {
     /// Start date.
     pub from: Option<NaiveDate>,
     /// End date.
     pub to: Option<NaiveDate>,
     /// Dimension value IDs to filter by (comma-separated).
+    #[param(example = "550e8400-e29b-41d4-a716-446655440000")]
     pub dimensions: Option<String>,
 }
 
 /// Query parameters for dimensional report.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::IntoParams)]
 pub struct DimensionalReportQuery {
     /// Start date.
     pub from: Option<NaiveDate>,
     /// End date.
     pub to: Option<NaiveDate>,
     /// Dimension types to group by (comma-separated).
+    #[param(example = "department,location")]
     pub group_by: String,
     /// Account type filter.
+    #[param(example = "expense")]
     pub account_type: Option<String>,
     /// Dimension value IDs to filter by (comma-separated).
     pub dimensions: Option<String>,
 }
 
 /// Query parameters for account ledger.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::IntoParams)]
 pub struct AccountLedgerQuery {
     /// Start date.
     pub from: Option<NaiveDate>,
     /// End date.
     pub to: Option<NaiveDate>,
     /// Page number (0-indexed).
+    #[param(example = 0)]
     pub page: Option<u64>,
     /// Items per page.
+    #[param(example = 50)]
     pub limit: Option<u64>,
 }
 
@@ -113,13 +119,16 @@ pub struct AccountLedgerQuery {
 // ============================================================================
 
 /// Response for trial balance report.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct TrialBalanceResponse {
     /// Report type.
+    #[schema(example = "trial_balance")]
     pub report_type: String,
     /// As of date.
+    #[schema(example = "2023-12-31")]
     pub as_of: String,
     /// Currency.
+    #[schema(example = "USD")]
     pub currency: String,
     /// Account balances.
     pub accounts: Vec<AccountBalanceResponse>,
@@ -128,15 +137,18 @@ pub struct TrialBalanceResponse {
 }
 
 /// Account balance in response.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct AccountBalanceResponse {
     /// Account ID.
     pub account_id: Uuid,
     /// Account code.
+    #[schema(example = "1001")]
     pub code: String,
     /// Account name.
+    #[schema(example = "Main Bank Account")]
     pub name: String,
     /// Account type.
+    #[schema(example = "asset")]
     pub account_type: String,
     /// Debit amount.
     pub debit: String,
@@ -147,7 +159,7 @@ pub struct AccountBalanceResponse {
 }
 
 /// Trial balance totals.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct TrialBalanceTotals {
     /// Total debit.
     pub total_debit: String,
@@ -158,9 +170,10 @@ pub struct TrialBalanceTotals {
 }
 
 /// Response for balance sheet report.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct BalanceSheetResponse {
     /// Report type.
+    #[schema(example = "balance_sheet")]
     pub report_type: String,
     /// As of date.
     pub as_of: String,
@@ -181,7 +194,7 @@ pub struct BalanceSheetResponse {
 }
 
 /// Balance sheet section response.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct BalanceSheetSectionResponse {
     /// Section accounts.
     pub accounts: Vec<AccountBalanceResponse>,
@@ -190,9 +203,10 @@ pub struct BalanceSheetSectionResponse {
 }
 
 /// Response for income statement report.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct IncomeStatementResponse {
     /// Report type.
+    #[schema(example = "income_statement")]
     pub report_type: String,
     /// Period start.
     pub period_start: String,
@@ -217,7 +231,7 @@ pub struct IncomeStatementResponse {
 }
 
 /// Income statement section response.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct IncomeStatementSectionResponse {
     /// Section accounts.
     pub accounts: Vec<AccountBalanceResponse>,
@@ -226,9 +240,10 @@ pub struct IncomeStatementSectionResponse {
 }
 
 /// Response for dimensional report.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct DimensionalReportResponse {
     /// Report type.
+    #[schema(example = "dimensional")]
     pub report_type: String,
     /// Period start.
     pub period_start: String,
@@ -245,7 +260,7 @@ pub struct DimensionalReportResponse {
 }
 
 /// Dimensional report row response.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct DimensionalReportRowResponse {
     /// Dimension values.
     pub dimensions: Vec<DimensionValueResponse>,
@@ -258,24 +273,29 @@ pub struct DimensionalReportRowResponse {
 }
 
 /// Dimension value in response.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct DimensionValueResponse {
     /// Dimension type.
+    #[schema(example = "department")]
     pub dimension_type: String,
     /// Code.
+    #[schema(example = "SALES")]
     pub code: String,
     /// Name.
+    #[schema(example = "Sales Department")]
     pub name: String,
 }
 
 /// Response for account ledger.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct AccountLedgerResponse {
     /// Account ID.
     pub account_id: Uuid,
     /// Account code.
+    #[schema(example = "1001")]
     pub code: String,
     /// Account name.
+    #[schema(example = "Main Bank Account")]
     pub name: String,
     /// Entries.
     pub entries: Vec<LedgerEntryResponse>,
@@ -284,7 +304,7 @@ pub struct AccountLedgerResponse {
 }
 
 /// Ledger entry response.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct LedgerEntryResponse {
     /// Entry ID.
     pub id: Uuid,
@@ -313,7 +333,7 @@ pub struct LedgerEntryResponse {
 }
 
 /// Pagination response.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct PaginationResponse {
     /// Current page.
     pub page: u64,
@@ -456,6 +476,21 @@ fn income_statement_section_to_response(
 /// GET /organizations/{org_id}/reports/trial-balance
 ///
 /// Requirement 14.1: Trial balance report endpoint
+#[utoipa::path(
+    get,
+    path = "/organizations/{org_id}/reports/trial-balance",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        TrialBalanceQuery
+    ),
+    responses(
+        (status = 200, description = "Trial balance report", body = TrialBalanceResponse),
+        (status = 403, description = "Forbidden"),
+        (status = 404, description = "Organization not found")
+    ),
+    tag = "Reports",
+    security(("bearerAuth" = []))
+)]
 #[axum::debug_handler]
 async fn get_trial_balance(
     State(state): State<AppState>,
@@ -561,6 +596,21 @@ async fn get_trial_balance(
 /// GET /organizations/{org_id}/reports/balance-sheet
 ///
 /// Requirement 14.2: Balance sheet report endpoint
+#[utoipa::path(
+    get,
+    path = "/organizations/{org_id}/reports/balance-sheet",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        BalanceSheetQuery
+    ),
+    responses(
+        (status = 200, description = "Balance sheet report", body = BalanceSheetResponse),
+        (status = 403, description = "Forbidden"),
+        (status = 404, description = "Organization not found")
+    ),
+    tag = "Reports",
+    security(("bearerAuth" = []))
+)]
 #[axum::debug_handler]
 async fn get_balance_sheet(
     State(state): State<AppState>,
@@ -658,6 +708,22 @@ async fn get_balance_sheet(
 /// GET /organizations/{org_id}/reports/income-statement
 ///
 /// Requirement 14.3: Income statement report endpoint
+#[utoipa::path(
+    get,
+    path = "/organizations/{org_id}/reports/income-statement",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        IncomeStatementQuery
+    ),
+    responses(
+        (status = 200, description = "Income statement report", body = IncomeStatementResponse),
+        (status = 400, description = "Invalid date range"),
+        (status = 403, description = "Forbidden"),
+        (status = 404, description = "Organization not found")
+    ),
+    tag = "Reports",
+    security(("bearerAuth" = []))
+)]
 #[axum::debug_handler]
 async fn get_income_statement(
     State(state): State<AppState>,
@@ -783,6 +849,20 @@ use chrono::Datelike;
 /// GET /organizations/{org_id}/reports/dimensional
 ///
 /// Requirement 14.5: Dimensional report endpoint
+#[utoipa::path(
+    get,
+    path = "/organizations/{org_id}/reports/dimensional",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        DimensionalReportQuery
+    ),
+    responses(
+        (status = 200, description = "Dimensional report", body = DimensionalReportResponse),
+        (status = 403, description = "Forbidden")
+    ),
+    tag = "Reports",
+    security(("bearerAuth" = []))
+)]
 #[allow(clippy::too_many_lines)]
 #[axum::debug_handler]
 async fn get_dimensional_report(
@@ -932,6 +1012,22 @@ async fn get_dimensional_report(
 /// GET /organizations/{org_id}/accounts/{account_id}/ledger
 ///
 /// Requirement 14.4: Account ledger endpoint
+#[utoipa::path(
+    get,
+    path = "/organizations/{org_id}/accounts/{account_id}/ledger",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        ("account_id" = Uuid, Path, description = "Account ID"),
+        AccountLedgerQuery
+    ),
+    responses(
+        (status = 200, description = "Account ledger report", body = AccountLedgerResponse),
+        (status = 403, description = "Forbidden"),
+        (status = 404, description = "Account or organization not found")
+    ),
+    tag = "Reports",
+    security(("bearerAuth" = []))
+)]
 #[allow(clippy::too_many_lines)]
 #[axum::debug_handler]
 async fn get_account_ledger(

@@ -49,24 +49,29 @@ pub fn routes() -> Router<AppState> {
 }
 
 /// Query parameters for getting an exchange rate.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::IntoParams)]
 pub struct GetExchangeRateQuery {
     /// Source currency code.
+    #[param(example = "EUR")]
     pub from: String,
     /// Target currency code.
+    #[param(example = "USD")]
     pub to: String,
     /// Date for the rate lookup (defaults to today).
     pub date: Option<NaiveDate>,
 }
 
 /// Request body for creating/updating an exchange rate.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct CreateExchangeRateRequest {
     /// Source currency code.
+    #[schema(example = "EUR")]
     pub from_currency: String,
     /// Target currency code.
+    #[schema(example = "USD")]
     pub to_currency: String,
     /// Exchange rate (from_currency * rate = to_currency).
+    #[schema(example = "1.0850")]
     pub rate: Decimal,
     /// Effective date for this rate.
     pub effective_date: NaiveDate,
@@ -77,7 +82,7 @@ pub struct CreateExchangeRateRequest {
 }
 
 /// Response for an exchange rate lookup.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct ExchangeRateResponse {
     /// Source currency code.
     pub from_currency: String,
@@ -96,18 +101,20 @@ pub struct ExchangeRateResponse {
 // ============================================================================
 
 /// Request body for fetching rates from external API.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct FetchRatesRequest {
     /// Base currency code (e.g., "EUR").
+    #[schema(example = "EUR")]
     pub base_currency: String,
     /// Target currency codes to fetch rates for.
+    #[schema(example = "[\"USD\", \"GBP\"]")]
     pub target_currencies: Vec<String>,
     /// Optional date for historical rates (defaults to today).
     pub date: Option<NaiveDate>,
 }
 
 /// Response for fetch rates operation.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct FetchRatesResponse {
     /// Number of rates fetched.
     pub fetched_count: usize,
@@ -120,7 +127,7 @@ pub struct FetchRatesResponse {
 }
 
 /// A single fetched rate item.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct FetchedRateItem {
     /// Source currency code.
     pub from_currency: String,
@@ -139,27 +146,28 @@ pub struct FetchedRateItem {
 // ============================================================================
 
 /// Request body for bulk rate import.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct BulkImportRequest {
     /// Rates to import.
     pub rates: Vec<BulkRateItem>,
 }
 
 /// A single rate item for bulk import.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct BulkRateItem {
     /// Source currency code.
     pub from_currency: String,
     /// Target currency code.
     pub to_currency: String,
     /// Exchange rate (as string for precision).
+    #[schema(example = "1.0850")]
     pub rate: String,
     /// Effective date.
     pub effective_date: NaiveDate,
 }
 
 /// Response for bulk import operation.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct BulkImportResponse {
     /// Number of rates imported (new).
     pub imported_count: usize,
@@ -171,7 +179,7 @@ pub struct BulkImportResponse {
 }
 
 /// Error for a single rate in bulk import.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct BulkImportError {
     /// Index of the rate in the input.
     pub index: usize,
@@ -182,6 +190,21 @@ pub struct BulkImportError {
 }
 
 /// GET `/organizations/{org_id}/exchange-rates` - Get exchange rate for currency pair.
+#[utoipa::path(
+    get,
+    path = "/organizations/{org_id}/exchange-rates",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        GetExchangeRateQuery
+    ),
+    responses(
+        (status = 200, description = "Exchange rate details", body = ExchangeRateResponse),
+        (status = 403, description = "Forbidden"),
+        (status = 404, description = "Rate not found")
+    ),
+    tag = "Exchange Rates",
+    security(("bearerAuth" = []))
+)]
 async fn get_exchange_rate(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -241,6 +264,21 @@ async fn get_exchange_rate(
 }
 
 /// POST `/organizations/{org_id}/exchange-rates` - Create or update an exchange rate.
+#[utoipa::path(
+    post,
+    path = "/organizations/{org_id}/exchange-rates",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID")
+    ),
+    request_body = CreateExchangeRateRequest,
+    responses(
+        (status = 201, description = "Exchange rate created or updated successfully"),
+        (status = 400, description = "Invalid input or non-positive rate"),
+        (status = 403, description = "Forbidden")
+    ),
+    tag = "Exchange Rates",
+    security(("bearerAuth" = []))
+)]
 async fn create_exchange_rate(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -463,8 +501,22 @@ async fn store_and_respond(
 }
 
 /// POST `/organizations/{org_id}/exchange-rates/fetch` - Fetch rates from external API.
-///
-/// Requirements: 2.1
+#[utoipa::path(
+    post,
+    path = "/organizations/{org_id}/exchange-rates/fetch",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID")
+    ),
+    request_body = FetchRatesRequest,
+    responses(
+        (status = 200, description = "Rates fetched and stored successfully", body = FetchRatesResponse),
+        (status = 400, description = "Invalid request or validation error"),
+        (status = 403, description = "Forbidden"),
+        (status = 502, description = "Bad gateway - external API error")
+    ),
+    tag = "Exchange Rates",
+    security(("bearerAuth" = []))
+)]
 async fn fetch_exchange_rates(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -649,8 +701,21 @@ fn validate_rate_item(
 }
 
 /// POST `/organizations/{org_id}/exchange-rates/bulk` - Bulk import exchange rates.
-///
-/// Requirements: 2.4
+#[utoipa::path(
+    post,
+    path = "/organizations/{org_id}/exchange-rates/bulk",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID")
+    ),
+    request_body = BulkImportRequest,
+    responses(
+        (status = 200, description = "Bulk import completed", body = BulkImportResponse),
+        (status = 400, description = "Validation errors or input issue"),
+        (status = 403, description = "Forbidden")
+    ),
+    tag = "Exchange Rates",
+    security(("bearerAuth" = []))
+)]
 async fn bulk_import_rates(
     State(state): State<AppState>,
     auth: AuthUser,
