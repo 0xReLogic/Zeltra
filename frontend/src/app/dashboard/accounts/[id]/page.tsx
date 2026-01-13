@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { ArrowLeft, Calendar as CalendarIcon, Download, Loader2 } from 'lucide-react'
+import { ArrowLeft, Calendar as CalendarIcon, Download, Loader2, Pencil, Trash2, Power } from 'lucide-react'
+import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -15,8 +16,26 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { useAccount, useAccountLedger } from '@/lib/queries/accounts'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { useAccount, useAccountLedger, useDeleteAccount, useToggleAccountActive, useUpdateAccount } from '@/lib/queries/accounts'
 import { formatCurrency } from '@/lib/utils/format'
+import { AccountForm } from '@/components/accounts/AccountForm'
 
 export default function AccountDetailPage() {
   const params = useParams()
@@ -25,9 +44,35 @@ export default function AccountDetailPage() {
 
   // Query State
   const [page] = useState(1)
+  const [isEditOpen, setIsEditOpen] = useState(false)
   
   const { data: account, isLoading: isLoadingAccount } = useAccount(id)
   const { data: ledger, isLoading: isLoadingLedger } = useAccountLedger(id, { page, limit: 50 })
+  
+  // Mutations
+  const deleteAccount = useDeleteAccount()
+  const toggleActive = useToggleAccountActive()
+  const updateAccount = useUpdateAccount()
+
+  const handleDelete = async () => {
+    try {
+      await deleteAccount.mutateAsync(id)
+      toast.success('Account deleted successfully')
+      router.push('/dashboard/accounts')
+    } catch {
+      toast.error('Failed to delete account. It may have transactions.')
+    }
+  }
+
+  const handleToggleActive = async () => {
+    if (!account) return
+    try {
+      await toggleActive.mutateAsync({ id, isActive: !account.is_active })
+      toast.success(account.is_active ? 'Account deactivated' : 'Account activated')
+    } catch {
+      toast.error('Failed to update account status')
+    }
+  }
 
   if (isLoadingAccount || isLoadingLedger) {
     return (
@@ -60,12 +105,43 @@ export default function AccountDetailPage() {
            <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-2xl font-bold tracking-tight">{account.code} - {account.name}</h2>
-                <Badge variant="outline">{account.account_type.toUpperCase()}</Badge>
+                <Badge variant="outline">{(account.type ?? account.account_type ?? 'unknown').toUpperCase()}</Badge>
               </div>
               <p className="text-muted-foreground">General Ledger</p>
            </div>
         </div>
         <div className="flex items-center gap-2">
+           <Button variant="outline" onClick={() => setIsEditOpen(true)}>
+              <Pencil className="mr-2 h-4 w-4" /> Edit
+           </Button>
+           <Button 
+             variant="outline" 
+             onClick={handleToggleActive}
+             disabled={toggleActive.isPending}
+           >
+              <Power className="mr-2 h-4 w-4" /> 
+              {account.is_active ? 'Deactivate' : 'Activate'}
+           </Button>
+           <AlertDialog>
+             <AlertDialogTrigger asChild>
+               <Button variant="destructive" disabled={deleteAccount.isPending}>
+                 <Trash2 className="mr-2 h-4 w-4" /> Delete
+               </Button>
+             </AlertDialogTrigger>
+             <AlertDialogContent>
+               <AlertDialogHeader>
+                 <AlertDialogTitle>Delete Account</AlertDialogTitle>
+                 <AlertDialogDescription>
+                   Are you sure you want to delete this account? This action cannot be undone.
+                   Accounts with transactions cannot be deleted.
+                 </AlertDialogDescription>
+               </AlertDialogHeader>
+               <AlertDialogFooter>
+                 <AlertDialogCancel>Cancel</AlertDialogCancel>
+                 <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+               </AlertDialogFooter>
+             </AlertDialogContent>
+           </AlertDialog>
            <Button variant="outline">
               <CalendarIcon className="mr-2 h-4 w-4" /> Jan 2026
            </Button>
@@ -139,6 +215,35 @@ export default function AccountDetailPage() {
             </div>
          </CardContent>
       </Card>
+
+      {/* Edit Account Dialog */}
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Account</DialogTitle>
+          </DialogHeader>
+          <AccountForm
+            mode="edit"
+            defaultValues={{
+              code: account.code,
+              name: account.name,
+              type: account.type ?? account.account_type,
+              currency: account.currency,
+              description: account.description ?? '',
+            }}
+            onSubmit={async (data) => {
+              try {
+                await updateAccount.mutateAsync({ id, ...data })
+                toast.success('Account updated successfully')
+                setIsEditOpen(false)
+              } catch {
+                toast.error('Failed to update account')
+              }
+            }}
+            isLoading={updateAccount.isPending}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

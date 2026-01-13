@@ -120,7 +120,8 @@ export default function AccountsPage() {
               defaultValues={editingAccount ? {
                 code: editingAccount.code,
                 name: editingAccount.name,
-                account_type: editingAccount.account_type
+                type: editingAccount.type,
+                currency: editingAccount.currency
               } : undefined}
               isSubmitting={createAccount.isPending || updateAccount.isPending}
             />
@@ -129,7 +130,7 @@ export default function AccountsPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {(Array.isArray(data) ? data : []).map((account) => (
+        {(data?.accounts ?? []).map((account) => (
           <Link href={`/dashboard/accounts/${account.id}`} key={account.id}>
             <Card className="hover:bg-muted/50 transition-colors cursor-pointer h-full group relative">
               <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -178,7 +179,7 @@ export default function AccountsPage() {
                   {account.name}
                 </CardTitle>
                 <Badge variant="outline" className="uppercase text-[10px]">
-                  {account.account_type}
+                  {account.type}
                 </Badge>
               </CardHeader>
               <CardContent>

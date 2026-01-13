@@ -1,17 +1,31 @@
+export type AccountType = 'asset' | 'liability' | 'equity' | 'revenue' | 'expense'
+
 export interface Account {
   id: string
   code: string
   name: string
-  account_type: 'asset' | 'liability' | 'equity' | 'revenue' | 'expense'
-  balance: string // money type usually string from backend
-  is_active?: boolean
+  type: AccountType
+  account_type?: AccountType // alias for backward compatibility
+  subtype: string | null
+  currency: string
+  balance: string
+  is_active: boolean
+  allow_direct_posting: boolean
+  parent_id: string | null
+  description: string | null
 }
 
-// Backend returns array directly, no wrapper
-export type GetAccountsResponse = Account[]
+// Backend returns { accounts: [...] } wrapper
+export interface GetAccountsResponse {
+  accounts: Account[]
+}
 
 export type CreateAccountRequest = {
   code: string
   name: string
-  account_type: Account['account_type']
+  type: AccountType
+  currency: string
+  subtype?: string
+  parent_id?: string
+  description?: string
 }

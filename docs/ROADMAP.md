@@ -508,12 +508,14 @@ tests/
 ```
 
 **Supported Backends (via config):**
+
 - `azblob` - Azure Blob Storage (Student: Free 1yr, 5GB)
 - `s3` - Cloudflare R2, AWS S3, MinIO (R2: Free 10GB, needs CC)
 - `fs` - Local filesystem (development/testing)
 - `gcs` - Google Cloud Storage (future)
 
 **Config Example:**
+
 ```env
 # Azure Blob (current - free student tier)
 STORAGE_TYPE=azblob
@@ -691,6 +693,18 @@ NOW we start frontend, because backend is solid.
 
 **Status:** Auth & Organization = Real API ✅ | Other features = Need verification
 
+### Backend Fixes Impact (Internal Handover) 🟢 NEW
+
+> **PENTING UNTUK FE:** Hasil bug-fix di backend (Januari 2026) memerlukan penyesuaian di UI:
+
+1.  **Field Timezone Wajib**: API `POST /transactions` sekarang butuh field `timezone`. FE wajib ambil timezone user (browser/settings) dan kirim ke BE.
+2.  **Budget Dimension Validation**: Jika API balikin error 400 saat simpan transaksi, cek body response. BE akan kasih tau dimensi apa yang kurang (misal: "Dimension 'Department' is required"). Tampilkan ini sebagai validasi form.
+3.  **UI Button Protection**:
+    - **Void Button**: Disable tombol Void jika status transaksi adalah `Reversal`. Transaksi pembatalan tidak boleh dibatalkan lagi.
+    - **Approve Button**: Jika `approval_limit` user di DB adalah `NULL`, user dianggap memiliki limit $0. Disable tombol approve jika amount transaksi > limit user.
+4.  **Audit Trail Consistency**: Tabel ledger sekarang dijamin punya `account_version` yang sekuensial (1, 2, 3...) tanpa bolong, bahkan jika ada transaksi yang gagal di tengah.
+5.  **Rounding Accuracy**: Total Debit/Credit di UI akan selalu balance sempurna karena BE sudah menggunakan _Residual Adjustment_ (pembulatan otomatis 0.01 error).
+
 ---
 
 ## Phase 7: Frontend Features (Week 18-20) 🟡 IN PROGRESS
@@ -825,6 +839,7 @@ NOW we start frontend, because backend is solid.
 ### Real API Integration Status (2026-01-13) - Updated via E2E Testing
 
 **✅ Verified Real API (Playwright E2E Tested):**
+
 - Auth (login, register, logout, refresh)
 - Organization CRUD
 - User/Team management
@@ -837,6 +852,7 @@ NOW we start frontend, because backend is solid.
 - Reports/Trial Balance (shows empty table with $0.00 totals)
 
 **⚠️ Need Further Verification (UI done, CRUD operations unverified):**
+
 - Transaction CRUD (create, edit, delete, workflow actions)
 - Account CRUD (create, edit, delete)
 - Budget CRUD (create lines, lock/unlock)
@@ -847,12 +863,14 @@ NOW we start frontend, because backend is solid.
 - Attachments
 
 **🔧 Response Type Fixes Applied (2026-01-13):**
+
 - Transactions: Changed from `{ data: [], pagination: {} }` to `TransactionListItem[]`
 - Accounts: Changed from `{ data: [] }` to `Account[]`
 - Budgets: Changed from `{ data: [] }` to `Budget[]`
 - CashFlow: Added wrapper type to extract `data` array
 
 **✅ All Org-Scoped Endpoints Updated:**
+
 - Dashboard: `/organizations/{org_id}/dashboard/*`
 - Transactions: `/organizations/{org_id}/transactions`
 - Accounts: `/organizations/{org_id}/accounts`
@@ -862,13 +880,15 @@ NOW we start frontend, because backend is solid.
 
 **Deliverable:** Complete frontend application.
 
-**Status:** UI Complete | Real API Integration = ✅ Core Features Working (Auth + Org + Dashboard + Lists)eal API:**
+**Status:** UI Complete | Real API Integration = ✅ Core Features Working (Auth + Org + Dashboard + Lists)eal API:\*\*
+
 - Auth (login, register, logout, refresh)
 - Organization CRUD
 - User/Team management
 - Role management (6 roles)
 
 **⚠️ Need Verification (UI done, API connection unverified):**
+
 - Master Data (accounts, fiscal periods, dimensions, exchange rates)
 - Transactions (CRUD + workflow)
 - Dashboard (metrics, cash flow, recent activity)
@@ -958,6 +978,7 @@ NOW we start frontend, because backend is solid.
 > **Why AI-Enhanced OCR?** 80% OCR accuracy + 95% LLM intelligence = 99% effective accuracy, while maintaining 50% cost advantage over competitors.
 
 #### Market Gap Analysis (2025 Research):
+
 - **Expensify:** $0.20/receipt overage after 25 free
 - **Ramp:** Free unlimited scanning (but no AI enhancement)
 - **Xero:** $0.31/excess receipt (third-party apps)
@@ -965,26 +986,28 @@ NOW we start frontend, because backend is solid.
 - **Zeltra Opportunity:** AI-enhanced OCR at $0.10/receipt (50% cheaper)
 
 #### AI Enhancement Pipeline:
+
 ```javascript
 // Frontend Processing Pipeline
 async function processReceipt(image) {
-    // 1. OCR Extraction (80-90% accuracy)
-    const ocrResult = await clientSideOCR(image);
-    
-    // 2. LLM Enhancement (95%+ accuracy)
-    const enhanced = await llmEnhance(ocrResult, {
-        userHistory,
-        vendorDatabase,
-        chartOfAccounts,
-        recentTransactions
-    });
-    
-    // 3. Rust Validation
-    return await validateWithRust(enhanced);
+  // 1. OCR Extraction (80-90% accuracy)
+  const ocrResult = await clientSideOCR(image);
+
+  // 2. LLM Enhancement (95%+ accuracy)
+  const enhanced = await llmEnhance(ocrResult, {
+    userHistory,
+    vendorDatabase,
+    chartOfAccounts,
+    recentTransactions,
+  });
+
+  // 3. Rust Validation
+  return await validateWithRust(enhanced);
 }
 ```
 
 #### LLM Enhancement Features:
+
 - **Error Correction:** Fix OCR typos ("Starbuck" → "Starbucks")
 - **Vendor Recognition:** Identify from partial text + context
 - **Smart Categorization:** Map to correct GL accounts
@@ -1060,6 +1083,7 @@ tests/
 > **RESEARCH COMPLETED 2026:** Based on competitor analysis, mobile app market is mature but AI-enhanced mobile features represent significant opportunity.
 
 > **RESEARCH REQUIRED:**
+>
 > - React Native vs Flutter: `React Native vs Flutter 2025 performance comparison`
 > - Mobile authentication: `React Native biometric authentication secure storage`
 > - Offline sync: `React Native offline data synchronization SQLite`
@@ -1071,6 +1095,7 @@ tests/
 #### 2025 Performance Research Findings:
 
 **Performance Comparison (2025 Benchmarks):**
+
 - **Frame Rate:** React Native 60 FPS vs Flutter 60-120 FPS
 - **CPU Usage:** React Native 52.92% vs Flutter 43.42%
 - **Memory Usage:** React Native higher variability (45MB delta on iOS)
@@ -1078,6 +1103,7 @@ tests/
 - **Startup Time:** Both under 50ms, React Native 32.96ms iOS
 
 **Enterprise App Considerations:**
+
 - **Business Apps:** React Native excels in dashboards/workflows
 - **Animation-Heavy:** Flutter better for complex animations
 - **Development Speed:** Cross-platform 46 days vs Native 92 days
@@ -1086,6 +1112,7 @@ tests/
 #### Updated Recommendation: React Native with Optimizations
 
 **Why Still React Native for Zeltra:**
+
 - **Code Sharing:** 60% code reuse with web frontend
 - **Enterprise Features:** Mature biometric & secure storage libraries
 - **Offline Sync:** PowerSync SQLite integration proven
@@ -1104,11 +1131,13 @@ tests/
 #### 2025 Enterprise Mobile Architecture
 
 **Local-First Pattern:**
+
 ```
 UI → SQLite (Local SSOT) → PowerSync → Backend API
 ```
 
 **Key Components:**
+
 - **SQLite:** Local database as Single Source of Truth
 - **PowerSync:** Real-time sync engine with conflict detection
 - **Repository Pattern:** Centralized data access layer
@@ -1117,11 +1146,13 @@ UI → SQLite (Local SSOT) → PowerSync → Backend API
 #### Biometric Authentication Implementation
 
 **iOS Integration:**
+
 - Face ID / Touch ID via LocalAuthentication
 - Secure token storage in Keychain
 - Biometric type detection (Face ID vs Touch ID)
 
 **Android Integration:**
+
 - Fingerprint via BiometricPrompt
 - Secure storage in Android Keystore
 - Fallback to PIN/pattern
@@ -1129,22 +1160,24 @@ UI → SQLite (Local SSOT) → PowerSync → Backend API
 #### Offline Sync Strategy (2025)
 
 **Delta Sync Pattern:**
+
 - Track only changed records (not full sync)
 - Conflict resolution with last-write-wins
 - Background sync queue with retry logic
 - Real-time updates when online
 
 **Data Architecture:**
+
 ```javascript
 // Repository pattern example
 class TransactionRepository {
   async createTransaction(data) {
     // 1. Save to SQLite immediately
     await this.localDB.save(data);
-    
+
     // 2. Queue for sync
-    await this.syncQueue.enqueue('create', data);
-    
+    await this.syncQueue.enqueue("create", data);
+
     // 3. Background sync when online
     this.syncService.processQueue();
   }
@@ -1214,60 +1247,72 @@ tests/
 ### 🎯 **2026 KILLER AI FEATURES (Market Gaps Identified):**
 
 #### **1. Agentic AI - Autonomous Finance Workflows**
+
 > **Missing in 2026:** End-to-end autonomous finance agents
 > **Opportunity:** First-to-market with true agentic AI
 
 **Current Market Gap:**
+
 - Only 11% of CFOs use AI, 35% experimenting (L.E.K. 2025 Survey)
 - Generic GenAI use only (PDF reading, summarization)
 - **Missing:** Goal-driven autonomous execution across finance stack
 
 **Zeltra's Agentic AI Features:**
+
 - [ ] **Autonomous Transaction Agent:** Categorize → Validate → Post → Reconcile
 - [ ] **Close Management Agent:** Month-end close with zero human intervention
 - [ ] **Cash Flow Agent:** Real-time forecasting + proactive recommendations
 - [ ] **Compliance Agent:** Continuous audit + fraud detection + regulatory reporting
 
 #### **2. Digital Employees - Finance Team Augmentation**
+
 > **Missing in 2026:** AI as digital team members, not just tools
 > **Opportunity:** AI colleagues that work alongside finance teams
 
 **Current Market Gap:**
+
 - AI tools require constant prompting
 - No autonomous decision-making capability
 - **Missing:** AI that can "do work" independently
 
 **Zeltra's Digital Employees:**
+
 - [ ] **AI Bookkeeper:** Full transaction lifecycle management
 - [ ] **AI Analyst:** Variance analysis + insight generation
 - [ ] **AI Controller:** Reporting + compliance + audit preparation
 - [ ] **AI CFO:** Strategic planning + scenario analysis
 
 #### **3. Real-Time Autonomous Reconciliation**
+
 > **Missing in 2026:** Instant, continuous reconciliation
 > **Opportunity:** Zero-day close capability
 
 **Current Market Gap:**
+
 - Month-end close still takes days/weeks
 - Manual reconciliation dominates
 - **Missing:** Real-time balance verification
 
 **Zeltra's Real-Time Features:**
+
 - [ ] **Continuous Reconciliation:** Every transaction balanced instantly
 - [ ] **Auto-Matching:** AI-powered vendor/invoice matching
 - [ ] **Dispute Resolution:** Autonomous discrepancy resolution
 - [ ] **Audit Trail:** Immutable real-time audit logs
 
 #### **4. Predictive Compliance & Risk Intelligence**
+
 > **Missing in 2026:** Proactive compliance, not reactive
 > **Opportunity:** AI that prevents violations before they happen
 
 **Current Market Gap:**
+
 - Compliance is retrospective (audit after the fact)
 - Risk detection is rule-based
 - **Missing:** Predictive risk intelligence
 
 **Zeltra's Predictive Features:**
+
 - [ ] **Risk Scoring:** ML models predict fraud/risk before posting
 - [ ] **Compliance Intelligence:** Real-time regulation checking
 - [ ] **Anomaly Detection:** Unusual pattern identification
@@ -1276,15 +1321,18 @@ tests/
 ### 🚀 **Technical Strategy: Hybrid AI Architecture**
 
 #### **Browser-First ML + Backend Agentic AI**
+
 > **Why Hybrid?** Client-side for privacy + server-side for complex orchestration
 
 **Frontend (TensorFlow.js):**
+
 - [ ] **Smart Categorization:** Real-time transaction classification
 - [ ] **Anomaly Detection:** Client-side fraud pattern recognition
 - [ ] **Voice-to-Text:** Expense note processing
 - [ ] **Image Recognition:** Enhanced OCR with ML
 
 **Backend (Agentic AI Engine):**
+
 - [ ] **Workflow Orchestration:** Multi-step autonomous processes
 - [ ] **Decision Making:** Complex financial reasoning
 - [ ] **Learning Engine:** Continuous improvement from user feedback
@@ -1293,10 +1341,13 @@ tests/
 #### **AI Models & Technologies:**
 
 **Machine Learning Stack:**
+
 ```javascript
 // Frontend: TensorFlow.js
-const categorizationModel = await tf.loadLayersModel('/models/categorization.json');
-const anomalyModel = await tf.loadLayersModel('/models/anomaly.json');
+const categorizationModel = await tf.loadLayersModel(
+  "/models/categorization.json"
+);
+const anomalyModel = await tf.loadLayersModel("/models/anomaly.json");
 
 // Backend: Python/Rust AI Engine
 // - LLM for natural language processing
@@ -1306,6 +1357,7 @@ const anomalyModel = await tf.loadLayersModel('/models/anomaly.json');
 ```
 
 **Agentic AI Framework:**
+
 ```rust
 // Rust-based AI Agent System
 pub struct FinanceAgent {
@@ -1401,20 +1453,20 @@ tests/
 
 ## Timeline Summary (REVISED - Vertical Slice)
 
-| Phase                        | Duration | Focus                                   | End Date     |
-| ---------------------------- | -------- | --------------------------------------- | ------------ |
-| Phase 0: Foundation          | 2 weeks  | Infra + DB + **Seeders**                | Jan 21, 2026 |
-| Phase 1: Auth & Org          | 2 weeks  | **Auth FIRST** + API                    | Feb 4, 2026  |
-| Phase 2: Ledger Core         | 4 weeks  | Double-entry + Multi-currency + **API** | Mar 4, 2026  |
-| Phase 3: Workflow            | 2 weeks  | Transaction lifecycle + **API**         | Mar 18, 2026 |
-| Phase 4: Reports             | 3 weeks  | Financial reports, simulation + **API** | Apr 8, 2026  |
-| Phase 5: Attachments         | 2 weeks  | File storage + API polish               | Apr 22, 2026 |
-| Phase 6: Frontend Foundation | 2 weeks  | Next.js setup, auth UI                  | May 6, 2026  |
-| Phase 7: Frontend Features   | 3 weeks  | Full UI                                 | May 27, 2026 |
-| Phase 8: Polish & Launch     | 2 weeks  | Testing, deploy                         | Jun 10, 2026 |
-| Phase 9: OCR Integration     | 3 months | Client-side OCR + mobile optimization    | Sep 10, 2026 |
-| Phase 10: Mobile App         | 3 months | React Native app + offline sync         | Dec 10, 2026 |
-| Phase 11: AI/ML Deep Learning| 6 months | TensorFlow.js + predictive analytics   | Jun 10, 2027 |
+| Phase                         | Duration | Focus                                   | End Date     |
+| ----------------------------- | -------- | --------------------------------------- | ------------ |
+| Phase 0: Foundation           | 2 weeks  | Infra + DB + **Seeders**                | Jan 21, 2026 |
+| Phase 1: Auth & Org           | 2 weeks  | **Auth FIRST** + API                    | Feb 4, 2026  |
+| Phase 2: Ledger Core          | 4 weeks  | Double-entry + Multi-currency + **API** | Mar 4, 2026  |
+| Phase 3: Workflow             | 2 weeks  | Transaction lifecycle + **API**         | Mar 18, 2026 |
+| Phase 4: Reports              | 3 weeks  | Financial reports, simulation + **API** | Apr 8, 2026  |
+| Phase 5: Attachments          | 2 weeks  | File storage + API polish               | Apr 22, 2026 |
+| Phase 6: Frontend Foundation  | 2 weeks  | Next.js setup, auth UI                  | May 6, 2026  |
+| Phase 7: Frontend Features    | 3 weeks  | Full UI                                 | May 27, 2026 |
+| Phase 8: Polish & Launch      | 2 weeks  | Testing, deploy                         | Jun 10, 2026 |
+| Phase 9: OCR Integration      | 3 months | Client-side OCR + mobile optimization   | Sep 10, 2026 |
+| Phase 10: Mobile App          | 3 months | React Native app + offline sync         | Dec 10, 2026 |
+| Phase 11: AI/ML Deep Learning | 6 months | TensorFlow.js + predictive analytics    | Jun 10, 2027 |
 
 **Total: 22 weeks core + 12 months post-launch**
 

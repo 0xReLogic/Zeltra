@@ -25,25 +25,31 @@ import { CreateAccountRequest } from '@/types/accounts'
 const formSchema = z.object({
   code: z.string().min(1, 'Code is required'),
   name: z.string().min(2, 'Name must be at least 2 characters'),
-  account_type: z.enum(['asset', 'liability', 'equity', 'revenue', 'expense']),
+  type: z.enum(['asset', 'liability', 'equity', 'revenue', 'expense']),
+  currency: z.string().min(1, 'Currency is required'),
 })
 
 interface AccountFormProps {
+  mode?: 'create' | 'edit'
   defaultValues?: Partial<CreateAccountRequest>
   onSubmit: (values: CreateAccountRequest) => void
   isSubmitting?: boolean
+  isLoading?: boolean
 }
 
-export function AccountForm({ defaultValues, onSubmit, isSubmitting }: AccountFormProps) {
+export function AccountForm({ mode = 'create', defaultValues, onSubmit, isSubmitting, isLoading }: AccountFormProps) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       code: '',
       name: '',
-      account_type: 'asset',
+      type: 'asset',
+      currency: 'USD',
       ...defaultValues,
     },
   })
+
+  const loading = isSubmitting || isLoading
 
   return (
     <Form {...form}>
@@ -78,7 +84,7 @@ export function AccountForm({ defaultValues, onSubmit, isSubmitting }: AccountFo
 
         <FormField
           control={form.control}
-          name="account_type"
+          name="type"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Type</FormLabel>
@@ -101,9 +107,33 @@ export function AccountForm({ defaultValues, onSubmit, isSubmitting }: AccountFo
           )}
         />
 
+        <FormField
+          control={form.control}
+          name="currency"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Currency</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select currency" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="USD">USD ($)</SelectItem>
+                  <SelectItem value="EUR">EUR (€)</SelectItem>
+                  <SelectItem value="IDR">IDR (Rp)</SelectItem>
+                  <SelectItem value="SGD">SGD (S$)</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <div className="flex justify-end pt-4">
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Saving...' : 'Save Account'}
+          <Button type="submit" disabled={loading}>
+            {loading ? 'Saving...' : mode === 'edit' ? 'Update Account' : 'Save Account'}
           </Button>
         </div>
       </form>

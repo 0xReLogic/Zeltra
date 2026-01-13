@@ -70,8 +70,8 @@ export function CreateTransactionDialog() {
   const { data: accountsData } = useAccounts()
   const { data: dimensionsData } = useDimensions()
 
-  // Ensure data is arrays
-  const accounts = Array.isArray(accountsData) ? accountsData : []
+  // Ensure data is arrays - handle wrapper objects
+  const accounts = accountsData?.accounts ?? []
   const dimensions = Array.isArray(dimensionsData) ? dimensionsData : []
 
   const form = useForm<FormValues>({
@@ -358,7 +358,7 @@ export function CreateTransactionDialog() {
                       </FormControl>
                       <SelectContent>
                         {accounts
-                          .filter((a) => a.account_type === 'asset' || a.account_type === 'liability')
+                          .filter((a) => a.type === 'asset' || a.type === 'liability')
                           .map((acc) => (
                             <SelectItem key={acc.id} value={acc.id}>
                               {acc.code} - {acc.name}
@@ -385,7 +385,7 @@ export function CreateTransactionDialog() {
                       </FormControl>
                       <SelectContent>
                         {accounts
-                          .filter((a) => a.account_type === 'expense' || a.account_type === 'revenue')
+                          .filter((a) => a.type === 'expense' || a.type === 'revenue')
                           .map((acc) => (
                             <SelectItem key={acc.id} value={acc.id}>
                               {acc.code} - {acc.name}

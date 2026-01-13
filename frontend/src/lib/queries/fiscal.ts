@@ -23,7 +23,18 @@ export interface FiscalYear {
 export function useFiscalYears() {
   return useQuery({
     queryKey: ['fiscal-years'],
-    queryFn: () => apiClient<{ data: FiscalYear[] }>('/fiscal-years'),
+    queryFn: () => apiClient<FiscalYear[]>('/fiscal-years'),
+  })
+}
+
+export function useFiscalPeriods(fiscalYearId?: string) {
+  return useQuery({
+    queryKey: ['fiscal-periods', fiscalYearId],
+    queryFn: () => {
+      const params = fiscalYearId ? `?fiscal_year_id=${fiscalYearId}` : ''
+      return apiClient<FiscalPeriod[]>(`/fiscal-periods${params}`)
+    },
+    enabled: !!fiscalYearId,
   })
 }
 

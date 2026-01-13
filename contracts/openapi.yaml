@@ -1241,6 +1241,10 @@ components:
           type:
           - string
           - 'null'
+        timezone:
+          description: Timezone for the transaction (e.g., "UTC", "Asia/Jakarta").
+          example: UTC
+          type: string
         transaction_date:
           description: Transaction date (YYYY-MM-DD).
           format: date
@@ -1254,6 +1258,7 @@ components:
       - transaction_date
       - description
       - entries
+      - timezone
       type: object
     CurrencyResponse:
       description: Response for a currency.
@@ -2393,6 +2398,10 @@ components:
         status:
           description: Status.
           type: string
+        timezone:
+          description: Timezone for the transaction.
+          example: UTC
+          type: string
         total_credit:
           description: Total credits in functional currency.
           type: string
@@ -2421,6 +2430,7 @@ components:
       - entries
       - total_debit
       - total_credit
+      - timezone
       type: object
     TrialBalanceResponse:
       description: Response for trial balance report.
@@ -4798,7 +4808,7 @@ paths:
                 $ref: '#/components/schemas/TransactionResponse'
           description: Transaction created successfully
         '400':
-          description: Invalid input or unbalanced transaction
+          description: Invalid input, unbalanced transaction, or missing required budget dimensions
         '403':
           description: Forbidden
       security:
