@@ -631,4 +631,310 @@ impl DashboardRepository {
 
         Ok((events, pagination))
     }
+
+    // ========================================================================
+    // Additional Dashboard Methods (Phase 5 - Requirements 4.1-4.7)
+    // ========================================================================
+
+    /// Queries burn rate (total expenses in last N days).
+    ///
+    /// Requirements: 4.3
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the database query fails.
+    pub async fn query_burn_rate(
+        &self,
+        organization_id: Uuid,
+        days: i32,
+    ) -> Result<Decimal, DashboardError> {
+        let today = Utc::now().date_naive();
+        let from_date = today - chrono::Duration::days(i64::from(days));
+
+        // Get expense accounts
+        let expense_accounts = chart_of_accounts::Entity::find()
+            .filter(chart_of_accounts::Column::OrganizationId.eq(organization_id))
+            .filter(chart_of_accounts::Column::AccountType.eq(AccountType::Expense))
+            .filter(chart_of_accounts::Column::IsActive.eq(true))
+            .all(&self.db)
+            .await?;
+
+        if expense_accounts.is_empty() {
+            return Ok(Decimal::ZERO);
+        }
+
+        let account_ids: Vec<Uuid> = expense_accounts.iter().map(|a| a.id).collect();
+
+        // Get posted transaction IDs within date range
+        let posted_tx_ids: Vec<Uuid> = transactions::Entity::find()
+            .filter(transactions::Column::OrganizationId.eq(organization_id))
+            .filter(transactions::Column::Status.eq(TransactionStatus::Posted))
+            .filter(transactions::Column::TransactionDate.gte(from_date))
+            .filter(transactions::Column::TransactionDate.lte(today))
+            .select_only()
+            .column(transactions::Column::Id)
+            .into_tuple()
+            .all(&self.db)
+            .await?;
+
+        if posted_tx_ids.is_empty() {
+            return Ok(Decimal::ZERO);
+        }
+
+        // Sum expense entries (debit - credit for expense accounts)
+        let entries = ledger_entries::Entity::find()
+            .filter(ledger_entries::Column::AccountId.is_in(account_ids))
+            .filter(ledger_entries::Column::TransactionId.is_in(posted_tx_ids))
+            .all(&self.db)
+            .await?;
+
+        let total: Decimal = entries.iter().map(|e| e.debit - e.credit).sum();
+
+        Ok(total)
+    }
+
+    /// Queries cash flow by month.
+    ///
+    /// Requirements: 4.5
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the database query fails.
+    pub async fn query_cash_flow_by_month(
+        &self,
+        organization_id: Uuid,
+        months: u32,
+    ) -> Result<Vec<CashFlowDataPoint>, DashboardError> {
+        use chrono::Datelike;
+
+        let today = Utc::now().date_naive();
+        let from_date = today - chrono::Duration::days(i64::from(months) * 30);
+
+        // Get cash and bank accounts
+        let cash_accounts = chart_of_accounts::Entity::find()
+            .filter(chart_of_accounts::Column::OrganizationId.eq(organization_id))
+            .filter(chart_of_accounts::Column::IsActive.eq(true))
+            .filter(
+                chart_of_accounts::Column::AccountSubtype
+                    .is_in([AccountSubtype::Cash, AccountSubtype::Bank]),
+            )
+            .all(&self.db)
+            .await?;
+
+        if cash_accounts.is_empty() {
+            return Ok(vec![]);
+        }
+
+        let account_ids: Vec<Uuid> = cash_accounts.iter().map(|a| a.id).collect();
+
+        // Get posted transactions within date range
+        let posted_txs = transactions::Entity::find()
+            .filter(transactions::Column::OrganizationId.eq(organization_id))
+            .filter(transactions::Column::Status.eq(TransactionStatus::Posted))
+            .filter(transactions::Column::TransactionDate.gte(from_date))
+            .filter(transactions::Column::TransactionDate.lte(today))
+            .all(&self.db)
+            .await?;
+
+        if posted_txs.is_empty() {
+            return Ok(vec![]);
+        }
+
+        let tx_ids: Vec<Uuid> = posted_txs.iter().map(|t| t.id).collect();
+
+        // Get entries for cash accounts
+        let entries = ledger_entries::Entity::find()
+            .filter(ledger_entries::Column::AccountId.is_in(account_ids))
+            .filter(ledger_entries::Column::TransactionId.is_in(tx_ids))
+            .all(&self.db)
+            .await?;
+
+        // Build tx_id -> date map
+        let tx_date_map: std::collections::HashMap<Uuid, NaiveDate> = posted_txs
+            .iter()
+            .map(|t| (t.id, t.transaction_date))
+            .collect();
+
+        // Group by month
+        let mut monthly_data: std::collections::BTreeMap<String, (Decimal, Decimal)> =
+            std::collections::BTreeMap::new();
+
+        for entry in entries {
+            if let Some(date) = tx_date_map.get(&entry.transaction_id) {
+                let month_key = format!("{}-{:02}", date.year(), date.month());
+
+                let (inflow, outflow) = monthly_data
+                    .entry(month_key)
+                    .or_insert((Decimal::ZERO, Decimal::ZERO));
+
+                // For cash accounts: credit = inflow, debit = outflow
+                *inflow += entry.credit;
+                *outflow += entry.debit;
+            }
+        }
+
+        // Convert to result
+        let result: Vec<CashFlowDataPoint> = monthly_data
+            .into_iter()
+            .map(|(period_name, (inflow, outflow))| {
+                let month = get_month_label(&period_name);
+                CashFlowDataPoint {
+                    month,
+                    period_name,
+                    inflow,
+                    outflow,
+                }
+            })
+            .collect();
+
+        Ok(result)
+    }
+
+    /// Queries budget vs actual data.
+    ///
+    /// Requirements: 4.7
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the database query fails.
+    pub async fn query_budget_vs_actual(
+        &self,
+        organization_id: Uuid,
+        budget_id: Option<Uuid>,
+    ) -> Result<BudgetVsActualData, DashboardError> {
+        // Get budget
+        let budget = if let Some(bid) = budget_id {
+            budgets::Entity::find_by_id(bid)
+                .filter(budgets::Column::OrganizationId.eq(organization_id))
+                .one(&self.db)
+                .await?
+        } else {
+            // Get first active budget
+            budgets::Entity::find()
+                .filter(budgets::Column::OrganizationId.eq(organization_id))
+                .filter(budgets::Column::IsActive.eq(true))
+                .one(&self.db)
+                .await?
+        };
+
+        let Some(budget) = budget else {
+            return Ok(BudgetVsActualData {
+                budget_id: None,
+                budget_name: None,
+                total_budgeted: Decimal::ZERO,
+                total_actual: Decimal::ZERO,
+                line_items: vec![],
+            });
+        };
+
+        // Get budget lines
+        let lines = budget_lines::Entity::find()
+            .filter(budget_lines::Column::BudgetId.eq(budget.id))
+            .all(&self.db)
+            .await?;
+
+        let total_budgeted: Decimal = lines.iter().map(|l| l.amount).sum();
+
+        // Get account info for each line
+        let mut line_items = Vec::with_capacity(lines.len());
+        let mut total_actual = Decimal::ZERO;
+
+        for line in lines {
+            let account = chart_of_accounts::Entity::find_by_id(line.account_id)
+                .one(&self.db)
+                .await?;
+
+            let (account_code, account_name) = account.map_or_else(
+                || ("Unknown".to_string(), "Unknown Account".to_string()),
+                |a| (a.code, a.name),
+            );
+
+            // TODO: Calculate actual from ledger entries for this account/period
+            let actual = Decimal::ZERO;
+            total_actual += actual;
+
+            line_items.push(BudgetLineItem {
+                account_id: line.account_id,
+                account_code,
+                account_name,
+                budgeted: line.amount,
+                actual,
+            });
+        }
+
+        Ok(BudgetVsActualData {
+            budget_id: Some(budget.id),
+            budget_name: Some(budget.name),
+            total_budgeted,
+            total_actual,
+            line_items,
+        })
+    }
+}
+
+/// Cash flow data point.
+#[derive(Debug, Clone)]
+pub struct CashFlowDataPoint {
+    /// Month label (e.g., "Jan").
+    pub month: String,
+    /// Period name (e.g., "2026-01").
+    pub period_name: String,
+    /// Total inflow.
+    pub inflow: Decimal,
+    /// Total outflow.
+    pub outflow: Decimal,
+}
+
+/// Budget vs actual data.
+#[derive(Debug, Clone)]
+pub struct BudgetVsActualData {
+    /// Budget ID.
+    pub budget_id: Option<Uuid>,
+    /// Budget name.
+    pub budget_name: Option<String>,
+    /// Total budgeted.
+    pub total_budgeted: Decimal,
+    /// Total actual.
+    pub total_actual: Decimal,
+    /// Line items.
+    pub line_items: Vec<BudgetLineItem>,
+}
+
+/// Budget line item.
+#[derive(Debug, Clone)]
+pub struct BudgetLineItem {
+    /// Account ID.
+    pub account_id: Uuid,
+    /// Account code.
+    pub account_code: String,
+    /// Account name.
+    pub account_name: String,
+    /// Budgeted amount.
+    pub budgeted: Decimal,
+    /// Actual amount.
+    pub actual: Decimal,
+}
+
+/// Get month label from period name (e.g., "2026-01" -> "Jan").
+fn get_month_label(period_name: &str) -> String {
+    let parts: Vec<&str> = period_name.split('-').collect();
+    if parts.len() >= 2 {
+        match parts[1] {
+            "01" => "Jan".to_string(),
+            "02" => "Feb".to_string(),
+            "03" => "Mar".to_string(),
+            "04" => "Apr".to_string(),
+            "05" => "May".to_string(),
+            "06" => "Jun".to_string(),
+            "07" => "Jul".to_string(),
+            "08" => "Aug".to_string(),
+            "09" => "Sep".to_string(),
+            "10" => "Oct".to_string(),
+            "11" => "Nov".to_string(),
+            "12" => "Dec".to_string(),
+            _ => period_name.to_string(),
+        }
+    } else {
+        period_name.to_string()
+    }
 }

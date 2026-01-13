@@ -7,9 +7,9 @@ use axum::{
     middleware::Next,
     response::{IntoResponse, Response},
 };
-use serde_json::json;
 
 use crate::AppState;
+use crate::error::ApiError;
 use zeltra_shared::Claims;
 
 /// Extracts the bearer token from the Authorization header.
@@ -37,14 +37,9 @@ pub async fn auth_middleware(
         .and_then(|h| h.to_str().ok());
 
     let Some(token) = auth_header.and_then(extract_bearer_token) else {
-        return (
-            StatusCode::UNAUTHORIZED,
-            Json(json!({
-                "error": "missing_token",
-                "message": "Authorization header with Bearer token is required"
-            })),
-        )
-            .into_response();
+        let (status, error) =
+            ApiError::unauthorized("Authorization header with Bearer token is required");
+        return (status, Json(error)).into_response();
     };
 
     // Validate token
@@ -55,20 +50,24 @@ pub async fn auth_middleware(
             next.run(request).await
         }
         Err(e) => {
-            let (status, error, message) = match e {
-                zeltra_shared::JwtError::Expired => (
-                    StatusCode::UNAUTHORIZED,
+            let error = match e {
+                zeltra_shared::JwtError::Expired => ApiError::new(
                     "token_expired",
-                    "Token has expired",
+                    "Token has expired. Please refresh your authentication.",
                 ),
-                _ => (
-                    StatusCode::UNAUTHORIZED,
+                zeltra_shared::JwtError::Invalid => {
+                    ApiError::new("invalid_token", "Token is invalid or malformed.")
+                }
+                zeltra_shared::JwtError::DecodingError(_) => ApiError::new(
                     "invalid_token",
-                    "Invalid or malformed token",
+                    "Invalid or malformed authentication token.",
                 ),
+                zeltra_shared::JwtError::EncodingError(_) => {
+                    ApiError::new("internal_error", "An unexpected error occurred.")
+                }
             };
 
-            (status, Json(json!({ "error": error, "message": message }))).into_response()
+            (StatusCode::UNAUTHORIZED, Json(error)).into_response()
         }
     }
 }
@@ -105,6 +104,35 @@ impl AuthUser {
         &self.0.role
     }
 
+    /// Checks if the user has the admin role.
+    #[must_use]
+    pub fn is_admin(&self) -> bool {
+        self.0.role == "admin"
+    }
+
+    /// Checks if the user has at least the specified role level.
+    /// Role hierarchy: admin > accountant > viewer
+    #[must_use]
+    pub fn has_role(&self, required_role: &str) -> bool {
+        match required_role {
+            "viewer" => true, // Everyone has at least viewer access
+            "accountant" => self.0.role == "accountant" || self.0.role == "admin",
+            "admin" => self.0.role == "admin",
+            _ => false,
+        }
+    }
+
+    /// Requires the user to have at least the specified role.
+    /// Returns an error response if the user doesn't have sufficient permissions.
+    pub fn require_role(&self, required_role: &str) -> Result<(), (StatusCode, Json<ApiError>)> {
+        if self.has_role(required_role) {
+            Ok(())
+        } else {
+            let (status, error) = ApiError::insufficient_role(required_role);
+            Err((status, Json(error)))
+        }
+    }
+
     /// Returns the inner claims.
     #[must_use]
     pub fn claims(&self) -> &Claims {
@@ -116,7 +144,7 @@ impl<S> FromRequestParts<S> for AuthUser
 where
     S: Send + Sync,
 {
-    type Rejection = (StatusCode, Json<serde_json::Value>);
+    type Rejection = (StatusCode, Json<ApiError>);
 
     async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
         parts
@@ -125,13 +153,8 @@ where
             .cloned()
             .map(AuthUser)
             .ok_or_else(|| {
-                (
-                    StatusCode::UNAUTHORIZED,
-                    Json(json!({
-                        "error": "unauthorized",
-                        "message": "Authentication required"
-                    })),
-                )
+                let (status, error) = ApiError::unauthorized("Authentication required");
+                (status, Json(error))
             })
     }
 }
@@ -256,5 +279,106 @@ mod tests {
             .unwrap();
 
         assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+    }
+
+    #[test]
+    fn test_is_admin() {
+        let user_id = Uuid::new_v4();
+        let org_id = Uuid::new_v4();
+
+        let admin_claims = Claims::new(
+            user_id,
+            org_id,
+            "admin",
+            chrono::Utc::now() + chrono::Duration::hours(1),
+        );
+        let admin_user = AuthUser(admin_claims);
+        assert!(admin_user.is_admin());
+
+        let viewer_claims = Claims::new(
+            user_id,
+            org_id,
+            "viewer",
+            chrono::Utc::now() + chrono::Duration::hours(1),
+        );
+        let viewer_user = AuthUser(viewer_claims);
+        assert!(!viewer_user.is_admin());
+    }
+
+    #[test]
+    fn test_has_role_hierarchy() {
+        let user_id = Uuid::new_v4();
+        let org_id = Uuid::new_v4();
+
+        // Admin has all roles
+        let admin_claims = Claims::new(
+            user_id,
+            org_id,
+            "admin",
+            chrono::Utc::now() + chrono::Duration::hours(1),
+        );
+        let admin_user = AuthUser(admin_claims);
+        assert!(admin_user.has_role("admin"));
+        assert!(admin_user.has_role("accountant"));
+        assert!(admin_user.has_role("viewer"));
+
+        // Accountant has accountant and viewer
+        let accountant_claims = Claims::new(
+            user_id,
+            org_id,
+            "accountant",
+            chrono::Utc::now() + chrono::Duration::hours(1),
+        );
+        let accountant_user = AuthUser(accountant_claims);
+        assert!(!accountant_user.has_role("admin"));
+        assert!(accountant_user.has_role("accountant"));
+        assert!(accountant_user.has_role("viewer"));
+
+        // Viewer only has viewer
+        let viewer_claims = Claims::new(
+            user_id,
+            org_id,
+            "viewer",
+            chrono::Utc::now() + chrono::Duration::hours(1),
+        );
+        let viewer_user = AuthUser(viewer_claims);
+        assert!(!viewer_user.has_role("admin"));
+        assert!(!viewer_user.has_role("accountant"));
+        assert!(viewer_user.has_role("viewer"));
+    }
+
+    #[test]
+    fn test_require_role_success() {
+        let user_id = Uuid::new_v4();
+        let org_id = Uuid::new_v4();
+        let claims = Claims::new(
+            user_id,
+            org_id,
+            "admin",
+            chrono::Utc::now() + chrono::Duration::hours(1),
+        );
+        let auth_user = AuthUser(claims);
+
+        assert!(auth_user.require_role("admin").is_ok());
+        assert!(auth_user.require_role("accountant").is_ok());
+        assert!(auth_user.require_role("viewer").is_ok());
+    }
+
+    #[test]
+    fn test_require_role_failure() {
+        let user_id = Uuid::new_v4();
+        let org_id = Uuid::new_v4();
+        let claims = Claims::new(
+            user_id,
+            org_id,
+            "viewer",
+            chrono::Utc::now() + chrono::Duration::hours(1),
+        );
+        let auth_user = AuthUser(claims);
+
+        let result = auth_user.require_role("admin");
+        assert!(result.is_err());
+        let (status, _) = result.unwrap_err();
+        assert_eq!(status, StatusCode::FORBIDDEN);
     }
 }

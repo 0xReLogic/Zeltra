@@ -5,10 +5,17 @@
 //! - Authentication middleware
 //! - Request extractors
 //! - Response types
+//! - Standardized error handling
 
+pub mod error;
 pub mod extractors;
 pub mod middleware;
 pub mod routes;
+
+#[cfg(test)]
+mod security_tests;
+
+pub use error::ApiError;
 
 use axum::Router;
 use sea_orm::DatabaseConnection;

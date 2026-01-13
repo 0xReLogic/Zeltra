@@ -37,10 +37,15 @@ uuid = { workspace = true }
 chrono = { workspace = true }
 rust_decimal = { workspace = true }
 
+# Rate limiting
+governor = "0.10.4"
+tower_governor = "0.8.0"
+
 [dev-dependencies]
 rstest = { workspace = true }
 fake = { workspace = true }
 http-body-util = "0.1"
+proptest = { workspace = true }
 
 [lints]
 workspace = true

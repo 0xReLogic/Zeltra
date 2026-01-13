@@ -965,6 +965,164 @@ components:
             total_amount:
               $ref: "#/components/schemas/Money"
 
+    # Dashboard Response Types (Phase 5)
+    DashboardMetricsResponse:
+      type: object
+      properties:
+        period:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: string
+              format: uuid
+            name:
+              type: string
+        cash_position:
+          type: object
+          properties:
+            balance:
+              type: string
+              description: Formatted decimal amount
+            currency:
+              type: string
+            change_from_last_period:
+              type: string
+            change_percent:
+              type: number
+        burn_rate:
+          type: object
+          properties:
+            daily:
+              type: string
+            monthly:
+              type: string
+        runway_days:
+          type: integer
+        pending_approvals:
+          type: object
+          properties:
+            count:
+              type: integer
+            total_amount:
+              type: string
+
+    CashFlowResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              month:
+                type: string
+                description: Month label (e.g., "Jan")
+              period_name:
+                type: string
+                description: Period name (e.g., "2026-01")
+              inflow:
+                type: string
+                description: Total inflow amount
+              outflow:
+                type: string
+                description: Total outflow amount
+              net:
+                type: string
+                description: Net cash flow (inflow - outflow)
+
+    RecentActivityResponse:
+      type: object
+      properties:
+        activities:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              type:
+                type: string
+              action:
+                type: string
+              entity_type:
+                type: string
+              entity_id:
+                type: string
+                format: uuid
+              description:
+                type: string
+              amount:
+                type: string
+                nullable: true
+              currency:
+                type: string
+                nullable: true
+              user:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  full_name:
+                    type: string
+              timestamp:
+                type: string
+                format: date-time
+        pagination:
+          type: object
+          properties:
+            limit:
+              type: integer
+            has_more:
+              type: boolean
+            next_cursor:
+              type: string
+              nullable: true
+
+    BudgetVsActualResponse:
+      type: object
+      properties:
+        budget_id:
+          type: string
+          format: uuid
+          nullable: true
+        budget_name:
+          type: string
+          nullable: true
+        summary:
+          type: object
+          properties:
+            total_budgeted:
+              type: string
+            total_actual:
+              type: string
+            variance:
+              type: string
+            variance_percent:
+              type: number
+        line_items:
+          type: array
+          items:
+            type: object
+            properties:
+              account_id:
+                type: string
+                format: uuid
+              account_code:
+                type: string
+              account_name:
+                type: string
+              budgeted:
+                type: string
+              actual:
+                type: string
+              variance:
+                type: string
+              variance_percent:
+                type: number
+
     CashFlowDataPoint:
       type: object
       required: [month, inflow, outflow]
@@ -2681,11 +2839,149 @@ paths:
               schema:
                 $ref: "#/components/schemas/TrialBalance"
 
-  # ============ Dashboard ============
+  # ============ Dashboard (Phase 5) ============
+  /organizations/{org_id}/dashboard/metrics:
+    get:
+      tags: [Dashboard]
+      summary: Get dashboard metrics
+      description: Returns cash position, burn rate, runway days, and pending approvals
+      operationId: getDashboardMetrics
+      parameters:
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: period_id
+          in: query
+          description: Fiscal period ID for budget status
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Dashboard metrics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardMetricsResponse"
+        "403":
+          description: Not a member of this organization
+
+  /organizations/{org_id}/dashboard/cash-flow:
+    get:
+      tags: [Dashboard]
+      summary: Get cash flow chart data
+      description: Returns monthly inflow/outflow data for charts
+      operationId: getCashFlow
+      parameters:
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: months
+          in: query
+          description: Number of months to include (max 12)
+          schema:
+            type: integer
+            default: 6
+            maximum: 12
+        - name: period_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Cash flow data points
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CashFlowResponse"
+        "403":
+          description: Not a member of this organization
+
+  /organizations/{org_id}/dashboard/recent-activity:
+    get:
+      tags: [Dashboard]
+      summary: Get recent activity log
+      description: Returns recent transactions and events with cursor pagination
+      operationId: getRecentActivity
+      parameters:
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          description: Maximum number of items (max 50)
+          schema:
+            type: integer
+            default: 10
+            maximum: 50
+        - name: type
+          in: query
+          description: Activity type filter
+          schema:
+            type: string
+            enum: [all, transaction, budget, approval]
+            default: all
+        - name: cursor
+          in: query
+          description: Cursor for pagination
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Recent activity list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecentActivityResponse"
+        "403":
+          description: Not a member of this organization
+
+  /organizations/{org_id}/dashboard/budget-vs-actual:
+    get:
+      tags: [Dashboard]
+      summary: Get budget vs actual summary
+      description: Returns budget variance data with line items
+      operationId: getBudgetVsActual
+      parameters:
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: budget_id
+          in: query
+          description: Budget ID (uses first active budget if not provided)
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Budget vs actual summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BudgetVsActualResponse"
+        "403":
+          description: Not a member of this organization
+
+  # ============ Dashboard (Deprecated) ============
   /dashboard/metrics:
     get:
       tags: [Reports]
       summary: Dashboard metrics
+      deprecated: true
+      description: "DEPRECATED: Use /organizations/{org_id}/dashboard/metrics instead"
       parameters:
         - name: period_id
           in: query
@@ -2704,6 +3000,8 @@ paths:
     get:
       tags: [Reports]
       summary: Cash flow data for charts
+      deprecated: true
+      description: "DEPRECATED: Use /organizations/{org_id}/dashboard/cash-flow instead"
       parameters:
         - name: period_id
           in: query
@@ -2730,6 +3028,8 @@ paths:
     get:
       tags: [Reports]
       summary: Recent activity log
+      deprecated: true
+      description: "DEPRECATED: Use /organizations/{org_id}/dashboard/recent-activity instead"
       parameters:
         - name: limit
           in: query

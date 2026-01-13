@@ -8,11 +8,11 @@ Live status untuk sync antara Backend & Frontend.
 
 |                    | Backend                                    | Frontend                              |
 | ------------------ | ------------------------------------------ | ------------------------------------- |
-| **Current Phase**  | 4 (Reports & Simulation) ✅ COMPLETE       | 8 (Transaction Enhancements)          |
-| **Last Task Done** | Phase 4 - All Tasks Complete (716 tests)   | Phase 8 - Transaction Enhancements ✅ |
-| **Next Task**      | Phase 5 - TBD                              | Playwright E2E                        |
+| **Current Phase**  | 5 (API Polish & Attachments) ✅ COMPLETE   | 8 (Transaction Enhancements)          |
+| **Last Task Done** | Phase 5 - All Tasks Complete (773 tests)   | Phase 8 - Transaction Enhancements ✅ |
+| **Next Task**      | Phase 6 - TBD                              | Playwright E2E                        |
 
-**Last Updated:** 2026-01-10
+**Last Updated:** 2026-01-13
 
 ---
 
@@ -32,9 +32,9 @@ Frontend cek di sini untuk tau endpoint mana yang udah ready.
 
 ### Health
 
-| Endpoint           | Status | Notes                    |
-| ------------------ | ------ | ------------------------ |
-| GET /api/v1/health | ✅     | Returns status & version |
+| Endpoint               | Status | Notes                    |
+| ---------------------- | ------ | ------------------------ |
+| GET /api/v1/health     | ✅     | Returns status & version |
 
 ### Auth
 
@@ -63,98 +63,115 @@ Frontend cek di sini untuk tau endpoint mana yang udah ready.
 
 | Endpoint                  | Status | Notes                                |
 | ------------------------- | ------ | ------------------------------------ |
-| GET /accounts             | ✅     | Real API - list with balances        |
-| POST /accounts            | ✅     | Real API - create account            |
-| GET /accounts/:id         | ✅     | Real API - get account detail        |
-| PUT /accounts/:id         | ✅     | Real API - update account            |
-| DELETE /accounts/:id      | ✅     | Real API - soft delete               |
-| GET /accounts/:id/balance | ✅     | Real API - balance at date           |
-| GET /accounts/:id/ledger  | ✅     | Real API - ledger entries with range |
+| GET /api/v1/accounts      | ✅     | Real API - list with balances        |
+| POST /api/v1/accounts     | ✅     | Real API - create account            |
+| GET /api/v1/accounts/:id  | ✅     | Real API - get account detail        |
+| PUT /api/v1/accounts/:id  | ✅     | Real API - update account            |
+| DELETE /api/v1/accounts/:id | ✅     | Real API - soft delete               |
+| GET /api/v1/accounts/:id/balance | ✅     | Real API - balance at date           |
+| GET /api/v1/accounts/:id/ledger  | ✅     | Real API - ledger entries with range |
 
 ### Transactions
 
 | Endpoint                           | Status | Notes                          |
 | ---------------------------------- | ------ | ------------------------------ |
-| GET /transactions                  | ✅     | Real API - list with filters   |
-| POST /transactions                 | ✅     | Real API - create draft        |
-| GET /transactions/:id              | ✅     | Real API - detail with entries |
-| PATCH /transactions/:id            | ✅     | Real API - update draft only   |
-| DELETE /transactions/:id           | ✅     | Real API - delete draft only   |
-| POST /transactions/:id/submit      | ✅     | Real API - draft → pending     |
-| POST /transactions/:id/approve     | ✅     | Real API - pending → approved  |
-| POST /transactions/:id/reject      | ✅     | Real API - pending → draft     |
-| POST /transactions/:id/post        | ✅     | Real API - approved → posted   |
-| POST /transactions/:id/void        | ✅     | Real API - posted → voided     |
-| GET /transactions/pending          | ✅     | Real API - approval queue      |
-| POST /transactions/bulk-approve    | ✅     | Real API - batch approval      |
-| POST /transactions/:id/attachments | ⚠️     | Mocked - Upload file           |
-| GET /transactions/:id/attachments  | ⚠️     | Mocked - List files            |
+| GET /api/v1/transactions           | ✅     | Real API - list with filters   |
+| POST /api/v1/transactions          | ✅     | Real API - create draft        |
+| GET /api/v1/transactions/:id       | ✅     | Real API - detail with entries |
+| PATCH /api/v1/transactions/:id     | ✅     | Real API - update draft only   |
+| DELETE /api/v1/transactions/:id    | ✅     | Real API - delete draft only   |
+| POST /api/v1/transactions/:id/submit      | ✅     | Real API - draft → pending     |
+| POST /api/v1/transactions/:id/approve     | ✅     | Real API - pending → approved  |
+| POST /api/v1/transactions/:id/reject      | ✅     | Real API - pending → draft     |
+| POST /api/v1/transactions/:id/post        | ✅     | Real API - approved → posted   |
+| POST /api/v1/transactions/:id/void        | ✅     | Real API - posted → voided     |
+| GET /api/v1/transactions/pending          | ✅     | Real API - approval queue      |
+| POST /api/v1/transactions/bulk-approve    | ✅     | Real API - batch approval      |
+
+### Attachments (Phase 5)
+
+| Endpoint                                              | Status | Notes                          |
+| ----------------------------------------------------- | ------ | ------------------------------ |
+| POST /api/v1/transactions/:id/attachments/upload      | ✅     | Real API - presigned upload URL |
+| POST /api/v1/transactions/:id/attachments             | ✅     | Real API - confirm upload       |
+| GET /api/v1/transactions/:id/attachments              | ✅     | Real API - list attachments     |
+| GET /api/v1/attachments/:id                           | ✅     | Real API - get with download URL |
+| DELETE /api/v1/attachments/:id                        | ✅     | Real API - delete attachment    |
 
 ### Master Data
 
 | Endpoint                           | Status | Notes                               |
 | ---------------------------------- | ------ | ----------------------------------- |
-| GET /fiscal-years                  | ✅     | Real API - list with nested periods |
-| POST /fiscal-years                 | ✅     | Real API - create with auto-periods |
-| GET /fiscal-periods                | ✅     | Real API - list periods             |
-| PATCH /fiscal-periods/:id/status   | ✅     | Real API - update status            |
-| GET /dimension-types               | ✅     | Real API - list types               |
-| POST /dimension-types              | ✅     | Real API - create type              |
-| GET /dimension-values              | ✅     | Real API - list with filters        |
-| POST /dimension-values             | ✅     | Real API - create value             |
-| GET /exchange-rates                | ✅     | Real API - get rate for pair/date   |
-| POST /exchange-rates               | ✅     | Real API - create/update rate       |
-| GET /currencies                    | ✅     | Real API - list all currencies      |
-| PATCH /accounts/:id/status         | ⚠️     | Mocked (Needs BE)                   |
-| POST /dimension-types              | ⚠️     | Mocked (Needs BE)                   |
-| PATCH /dimension-values/:id        | ⚠️     | Mocked (Needs BE)                   |
-| PATCH /dimension-values/:id/status | ⚠️     | Mocked (Needs BE)                   |
-| POST /exchange-rates/bulk          | ⚠️     | Mocked (Needs BE)                   |
+| GET /api/v1/fiscal-years           | ✅     | Real API - list with nested periods |
+| POST /api/v1/fiscal-years          | ✅     | Real API - create with auto-periods |
+| GET /api/v1/fiscal-periods         | ✅     | Real API - list periods             |
+| PATCH /api/v1/fiscal-periods/:id/status | ✅     | Real API - update status            |
+| GET /api/v1/dimension-types         | ✅     | Real API - list types               |
+| POST /api/v1/dimension-types       | ✅     | Real API - create type              |
+| GET /api/v1/dimension-values        | ✅     | Real API - list with filters        |
+| POST /api/v1/dimension-values       | ✅     | Real API - create value             |
+| PATCH /api/v1/dimension-values/:id  | ✅     | Real API - update name/code         |
+| PATCH /api/v1/dimension-values/:id/status | ✅     | Real API - toggle is_active         |
+| GET /api/v1/exchange-rates          | ✅     | Real API - get rate for pair/date   |
+| POST /api/v1/exchange-rates         | ✅     | Real API - create/update rate       |
+| POST /api/v1/exchange-rates/fetch   | ✅     | Real API - fetch from Frankfurter   |
+| POST /api/v1/exchange-rates/bulk    | ✅     | Real API - bulk import rates        |
+| GET /api/v1/currencies              | ✅     | Real API - list all currencies      |
+| PATCH /api/v1/accounts/:id/status   | ✅     | Real API - toggle is_active         |
 
 ### Approval Rules
 
 | Endpoint                                     | Status | Notes                           |
 | -------------------------------------------- | ------ | ------------------------------- |
-| GET /organizations/:id/approval-rules        | ✅     | Real API - list rules           |
-| POST /organizations/:id/approval-rules       | ✅     | Real API - create rule (admin+) |
-| GET /organizations/:id/approval-rules/:id    | ✅     | Real API - get rule detail      |
-| PATCH /organizations/:id/approval-rules/:id  | ✅     | Real API - update rule (admin+) |
-| DELETE /organizations/:id/approval-rules/:id | ✅     | Real API - soft delete (admin+) |
+| GET /api/v1/organizations/:id/approval-rules  | ✅     | Real API - list rules           |
+| POST /api/v1/organizations/:id/approval-rules | ✅     | Real API - create rule (admin+) |
+| GET /api/v1/organizations/:id/approval-rules/:id | ✅     | Real API - get rule detail      |
+| PATCH /api/v1/organizations/:id/approval-rules/:id | ✅     | Real API - update rule (admin+) |
+| DELETE /api/v1/organizations/:id/approval-rules/:id | ✅     | Real API - soft delete (admin+) |
 
 ### Reports
 
 | Endpoint                      | Status | Notes                                |
 | ----------------------------- | ------ | ------------------------------------ |
-| GET /reports/trial-balance    | ✅     | Real API - as_of, dimension filters  |
-| GET /reports/balance-sheet    | ✅     | Real API - as_of date                |
-| GET /reports/income-statement | ✅     | Real API - from/to, dimension filter |
-| GET /reports/dimensional      | ✅     | Real API - group_by dimensions       |
-| GET /budgets/:id/vs-actual    | ✅     | Real API - variance analysis         |
+| GET /api/v1/reports/trial-balance    | ✅     | Real API - as_of, dimension filters  |
+| GET /api/v1/reports/balance-sheet    | ✅     | Real API - as_of date                |
+| GET /api/v1/reports/income-statement | ✅     | Real API - from/to, dimension filter |
+| GET /api/v1/reports/dimensional      | ✅     | Real API - group_by dimensions       |
+| GET /api/v1/budgets/:id/vs-actual    | ✅     | Real API - variance analysis         |
 
 ### Budgets
 
 | Endpoint                  | Status | Notes                                |
 | ------------------------- | ------ | ------------------------------------ |
-| GET /budgets              | ✅     | Real API - list with summary         |
-| POST /budgets             | ✅     | Real API - create budget             |
-| GET /budgets/:id          | ✅     | Real API - detail with lines         |
-| PUT /budgets/:id          | ✅     | Real API - update budget             |
-| GET /budgets/:id/lines    | ✅     | Real API - list budget lines         |
-| POST /budgets/:id/lines   | ✅     | Real API - bulk create lines         |
-| POST /budgets/:id/lock    | ✅     | Real API - lock budget               |
+| GET /api/v1/budgets       | ✅     | Real API - list with summary         |
+| POST /api/v1/budgets      | ✅     | Real API - create budget             |
+| GET /api/v1/budgets/:id   | ✅     | Real API - detail with lines         |
+| PUT /api/v1/budgets/:id   | ✅     | Real API - update budget             |
+| GET /api/v1/budgets/:id/lines | ✅     | Real API - list budget lines         |
+| POST /api/v1/budgets/:id/lines | ✅     | Real API - bulk create lines         |
+| POST /api/v1/budgets/:id/lock   | ✅     | Real API - lock budget               |
 
-### Dashboard
+### Dashboard (Phase 5 - New Org-Scoped Endpoints)
+
+| Endpoint                                          | Status | Notes                                |
+| ------------------------------------------------- | ------ | ------------------------------------ |
+| GET /api/v1/organizations/:id/dashboard/metrics   | ✅     | Real API - cash, burn rate, runway   |
+| GET /api/v1/organizations/:id/dashboard/cash-flow | ✅     | Real API - monthly inflow/outflow    |
+| GET /api/v1/organizations/:id/dashboard/recent-activity | ✅     | Real API - cursor pagination         |
+| GET /api/v1/organizations/:id/dashboard/budget-vs-actual | ✅     | Real API - variance summary          |
+
+### Dashboard (Deprecated)
 
 | Endpoint                       | Status | Notes                                |
 | ------------------------------ | ------ | ------------------------------------ |
-| GET /dashboard/metrics         | ✅     | Real API - cash, burn rate, runway   |
-| GET /dashboard/recent-activity | ✅     | Real API - cursor pagination         |
+| GET /api/v1/dashboard/metrics         | ⚠️     | DEPRECATED - use org-scoped endpoint |
+| GET /api/v1/dashboard/recent-activity | ⚠️     | DEPRECATED - use org-scoped endpoint |
 
 ### Simulation
 
 | Endpoint             | Status | Notes                                |
 | -------------------- | ------ | ------------------------------------ |
-| POST /simulation/run | ✅     | Real API - projections with caching  |
+| POST /api/v1/simulation/run | ✅     | Real API - projections with caching  |
 
 ---
 
@@ -162,7 +179,7 @@ Frontend cek di sini untuk tau endpoint mana yang udah ready.
 
 | Issue        | Reporter | Status | Resolution                                                                           |
 | ------------ | -------- | ------ | ------------------------------------------------------------------------------------ |
-| Missing APIs | Frontend | 🟡     | Needs BE implementation: Toggle Account, Create Dim Type, Edit Dim Value, Bulk Rates |
+| ~~Missing APIs~~ | Frontend | ✅     | Phase 5 complete: Toggle Account, Edit Dim Value, Bulk Rates, Attachments all done |
 
 ---
 

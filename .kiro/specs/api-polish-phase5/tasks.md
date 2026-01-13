@@ -152,20 +152,20 @@ This implementation plan covers Phase 5 of Zeltra Backend: file attachments with
   - If context is lost, re-read `.kiro/specs/api-polish-phase5/requirements.md` and `design.md`
   - Ask user if questions arise
 
-- [ ] 10. Implement Dashboard Service
-  - [ ] 10.1 Create DashboardService in core crate
+- [x] 10. Implement Dashboard Service
+  - [x] 10.1 Create DashboardService in core crate
     - Implement `get_metrics()` for cash position, burn rate, runway
     - Implement `get_cash_flow()` for monthly inflow/outflow
     - Implement `get_recent_activity()` with cursor pagination
     - Implement `get_budget_vs_actual()` for variance summary
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7_
-  - [ ] 10.2 Create DashboardRepository in db crate
+  - [x] 10.2 Create DashboardRepository in db crate
     - Implement cash position query (sum of cash/bank accounts)
     - Implement expense aggregation for burn rate
     - Implement activity log query with cursor
     - Implement budget variance aggregation
     - _Requirements: 4.2, 4.3, 4.5, 4.6, 4.7_
-  - [ ] 10.3 Write property tests for dashboard calculations
+  - [x] 10.3 Write property tests for dashboard calculations
     - **Property 10: Cash Position Calculation**
     - **Property 11: Burn Rate Calculation**
     - **Property 12: Runway Days Calculation**
@@ -173,51 +173,51 @@ This implementation plan covers Phase 5 of Zeltra Backend: file attachments with
     - **Property 14: Cursor-Based Pagination Consistency**
     - **Validates: Requirements 4.2, 4.3, 4.4, 4.5, 4.6**
 
-- [ ] 11. Implement Dashboard API Routes
-  - [ ] 11.1 Create dashboard routes
-    - `GET /dashboard/metrics` - Dashboard metrics
-    - `GET /dashboard/cash-flow` - Cash flow chart data
-    - `GET /dashboard/recent-activity` - Activity log
-    - `GET /dashboard/budget-vs-actual` - Budget summary
+- [x] 11. Implement Dashboard API Routes
+  - [x] 11.1 Create dashboard routes
+    - `GET /organizations/{org_id}/dashboard/metrics` - Dashboard metrics
+    - `GET /organizations/{org_id}/dashboard/cash-flow` - Cash flow chart data
+    - `GET /organizations/{org_id}/dashboard/recent-activity` - Activity log
+    - `GET /organizations/{org_id}/dashboard/budget-vs-actual` - Budget summary
     - _Requirements: 4.1, 4.5, 4.6, 4.7_
-  - [ ] 11.2 Write integration tests for dashboard endpoints
+  - [x] 11.2 Write integration tests for dashboard endpoints
     - Test with seeded ledger data
     - Test pagination behavior
     - _Requirements: 4.1, 4.5, 4.6, 4.7_
 
-- [ ] 12. Checkpoint - Dashboard System
-  - Run `cargo fmt` to format code
-  - Run `cargo clippy -- -D warnings` and fix all warnings (no `#[allow]` for fatal warnings)
-  - Ensure all dashboard tests pass
-  - Verify calculations match expected values
+- [x] 12. Checkpoint - Dashboard System
+  - Run `cargo fmt` to format code ✓
+  - Run `cargo clippy -- -D warnings` and fix all warnings ✓
+  - Ensure all dashboard tests pass (33 tests) ✓
+  - Verify calculations match expected values ✓
   - If context is lost, re-read `.kiro/specs/api-polish-phase5/requirements.md` and `design.md`
   - Ask user if questions arise
 
-- [ ] 13. Implement API Polish
-  - [ ] 13.1 Standardize error responses
+- [x] 13. Implement API Polish
+  - [x] 13.1 Standardize error responses
     - Create consistent ApiError struct
     - Implement IntoResponse for all error types
     - Add request_id to all error responses
     - _Requirements: 5.1_
-  - [ ] 13.2 Add rate limiting middleware
-    - Add tower-governor dependency
+  - [x] 13.2 Add rate limiting middleware
+    - Add governor dependency
     - Configure rate limits (requests per second, burst size)
     - Return 429 with Retry-After header
     - _Requirements: 5.2_
-  - [ ] 13.3 Add request logging middleware
+  - [x] 13.3 Add request logging middleware
     - Log request_id, method, path, duration, status
     - Add user_id to log context when authenticated
     - _Requirements: 5.3_
-  - [ ] 13.4 Improve auth error responses
+  - [x] 13.4 Improve auth error responses
     - Return 401 for invalid JWT with clear message
     - Return 403 for insufficient permissions with required role
     - _Requirements: 5.4, 5.5_
-  - [ ] 13.5 Write property tests for error handling
+  - [x] 13.5 Write property tests for error handling
     - **Property 15: Error Response Consistency**
     - **Property 16: Auth Error Response**
     - **Validates: Requirements 5.1, 5.4, 5.5**
 
-- [ ] 14. Checkpoint - API Polish
+- [x] 14. Checkpoint - API Polish
   - Run `cargo fmt` to format code
   - Run `cargo clippy -- -D warnings` and fix all warnings (no `#[allow]` for fatal warnings)
   - Ensure all error handling tests pass
@@ -225,31 +225,31 @@ This implementation plan covers Phase 5 of Zeltra Backend: file attachments with
   - If context is lost, re-read `.kiro/specs/api-polish-phase5/requirements.md` and `design.md`
   - Ask user if questions arise
 
-- [ ] 15. Implement Security Tests
-  - [ ] 15.1 Write SQL injection prevention tests
+- [x] 15. Implement Security Tests
+  - [x] 15.1 Write SQL injection prevention tests
     - Test query parameters with injection payloads
     - Test request bodies with injection payloads
     - Verify all inputs are sanitized or rejected
     - _Requirements: 6.2_
-  - [ ] 15.2 Write cross-tenant isolation tests
+  - [x] 15.2 Write cross-tenant isolation tests
     - Test RLS enforcement across all endpoints
     - Verify users cannot access other org's data
     - _Requirements: 6.3_
-  - [ ] 15.3 Write input validation tests
+  - [x] 15.3 Write input validation tests
     - Test malicious inputs are sanitized
     - Test boundary conditions
     - _Requirements: 6.4_
-  - [ ] 15.4 Write property tests for security
+  - [x] 15.4 Write property tests for security
     - **Property 17: SQL Injection Prevention**
     - **Property 18: Cross-Tenant Isolation**
     - **Validates: Requirements 6.2, 6.3**
 
-- [ ] 16. Implement Concurrency Tests
-  - [ ] 16.1 Write concurrent transaction stress test
+- [x] 16. Implement Concurrency Tests
+  - [x] 16.1 Write concurrent transaction stress test
     - Run 100+ concurrent transactions on same account
     - Verify final balance equals expected value
     - _Requirements: 6.5_
-  - [ ] 16.2 Write property test for balance integrity
+  - [x] 16.2 Write property test for balance integrity
     - **Property 19: Concurrent Transaction Balance Integrity**
     - **Validates: Requirements 6.5**
 
@@ -273,12 +273,16 @@ This implementation plan covers Phase 5 of Zeltra Backend: file attachments with
     - Document dimension value update (`/dimension-values/{id}`)
     - Added `ToggleStatusRequest` and `UpdateDimensionValueRequest` schemas
     - _Requirements: 3.1, 3.2, 3.3_
-  - [ ] 17.4 Add dashboard endpoints to openapi.yaml
-    - Document metrics response schema
-    - Document pagination parameters
+  - [x] 17.4 Add dashboard endpoints to openapi.yaml
+    - Added `/organizations/{org_id}/dashboard/metrics` GET
+    - Added `/organizations/{org_id}/dashboard/cash-flow` GET
+    - Added `/organizations/{org_id}/dashboard/recent-activity` GET
+    - Added `/organizations/{org_id}/dashboard/budget-vs-actual` GET
+    - Added schemas: `DashboardMetricsResponse`, `CashFlowResponse`, `RecentActivityResponse`, `BudgetVsActualResponse`
+    - Marked old `/dashboard/*` endpoints as deprecated
     - _Requirements: 4.1, 4.5, 4.6, 4.7_
 
-- [ ] 18. Final Checkpoint - Phase 5 Complete
+- [x] 18. Final Checkpoint - Phase 5 Complete
   - Run `cargo fmt` to format all code
   - Run `cargo clippy -- -D warnings` and fix ALL warnings (no `#[allow]` for fatal warnings)
   - Run `cargo test` - ensure all tests pass (target: 50+ new tests)

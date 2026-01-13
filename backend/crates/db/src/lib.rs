@@ -11,6 +11,9 @@ pub mod migration;
 pub mod repositories;
 pub mod rls;
 
+#[cfg(test)]
+mod concurrency_tests;
+
 pub use repositories::{
     EmailVerificationRepository, OrganizationRepository, SessionRepository, UserRepository,
 };

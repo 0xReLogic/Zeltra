@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 7142bfb865b2a7e7af08b1e804e9d82b27343c8fb23ab39f036100aaddd1c515 # shrinks to cash_balance = 1.00, daily_burn = 2.00

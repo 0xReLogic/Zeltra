@@ -36,10 +36,13 @@ services:
       RUST_LOG: info
       SERVER_HOST: 0.0.0.0
       SERVER_PORT: 8080
+      FRANKFURTER_API_URL: http://frankfurter:8080
     ports:
       - "8080:8080"
     depends_on:
       postgres:
+        condition: service_healthy
+      frankfurter:
         condition: service_healthy
     networks:
       - zeltra-network
@@ -79,6 +82,23 @@ services:
       - zeltra-network
     profiles:
       - migrate
+
+  # ============================================================
+  # Frankfurter - Exchange Rate API (self-hosted)
+  # ============================================================
+  frankfurter:
+    image: hakanensari/frankfurter:latest
+    container_name: zeltra-frankfurter
+    ports:
+      - "8081:8080"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/latest"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - zeltra-network
 
 networks:
   zeltra-network:

@@ -51,8 +51,9 @@ pub use budget::{
     calculate_actual_by_account_type, is_debit_normal_account,
 };
 pub use dashboard::{
-    ActivityEvent, ActivityPagination, BudgetStatus, BurnRate, CashPosition, CurrencyExposure,
-    DashboardError, DashboardRepository, DepartmentExpense, PendingApprovals,
+    ActivityEvent, ActivityPagination, BudgetLineItem, BudgetStatus, BudgetVsActualData, BurnRate,
+    CashFlowDataPoint, CashPosition, CurrencyExposure, DashboardError, DashboardRepository,
+    DepartmentExpense, PendingApprovals,
 };
 pub use dimension::{
     CreateDimensionTypeInput, CreateDimensionValueInput, DimensionError, DimensionRepository,

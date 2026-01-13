@@ -26,8 +26,16 @@ pub fn routes() -> Router<AppState> {
             get(get_dashboard_metrics),
         )
         .route(
+            "/organizations/{org_id}/dashboard/cash-flow",
+            get(get_cash_flow),
+        )
+        .route(
             "/organizations/{org_id}/dashboard/recent-activity",
             get(get_recent_activity),
+        )
+        .route(
+            "/organizations/{org_id}/dashboard/budget-vs-actual",
+            get(get_budget_vs_actual),
         )
 }
 
@@ -52,6 +60,22 @@ pub struct RecentActivityQuery {
     pub activity_type: Option<String>,
     /// Cursor for pagination.
     pub cursor: Option<String>,
+}
+
+/// Query parameters for cash flow.
+#[derive(Debug, Deserialize)]
+pub struct CashFlowQuery {
+    /// Number of months to include.
+    pub months: Option<u32>,
+    /// Fiscal period ID.
+    pub period_id: Option<Uuid>,
+}
+
+/// Query parameters for budget vs actual.
+#[derive(Debug, Deserialize)]
+pub struct BudgetVsActualQuery {
+    /// Budget ID (optional, uses first active budget if not provided).
+    pub budget_id: Option<Uuid>,
 }
 
 // ============================================================================
@@ -263,19 +287,25 @@ async fn get_dashboard_metrics(
         }
     };
 
-    // Calculate burn rate (simplified: monthly expenses / 30)
-    // In a real implementation, this would query actual expense data
-    let monthly_burn = Decimal::ZERO; // TODO: Calculate from actual expenses
-    let daily_burn = monthly_burn / Decimal::from(30);
+    // Calculate burn rate from actual expenses (last 30 days)
+    let total_expenses_30d = match dashboard_repo.query_burn_rate(org_id, 30).await {
+        Ok(total) => total,
+        Err(e) => {
+            error!(error = %e, "Failed to query burn rate");
+            Decimal::ZERO
+        }
+    };
+    let daily_burn = (total_expenses_30d / Decimal::from(30)).round_dp(4);
+    let monthly_burn = (daily_burn * Decimal::from(30)).round_dp(4);
 
     // Calculate runway (cash / daily burn)
     let runway_days = if daily_burn.is_zero() {
         999 // Infinite runway if no burn
     } else {
-        (cash_position.balance / daily_burn)
-            .to_string()
-            .parse::<i32>()
+        let runway = cash_position.balance / daily_burn;
+        i32::try_from(runway.to_string().parse::<i64>().unwrap_or(999))
             .unwrap_or(999)
+            .min(999)
     };
 
     // Get period info if provided
@@ -387,6 +417,238 @@ async fn get_recent_activity(
             has_more: pagination.has_more,
             next_cursor: pagination.next_cursor,
         },
+    };
+
+    (StatusCode::OK, Json(response)).into_response()
+}
+
+// ============================================================================
+// Cash Flow Response Types
+// ============================================================================
+
+/// Response for cash flow data.
+#[derive(Debug, Serialize)]
+pub struct CashFlowResponse {
+    /// Cash flow data points.
+    pub data: Vec<CashFlowDataPoint>,
+}
+
+/// Cash flow data point.
+#[derive(Debug, Serialize)]
+pub struct CashFlowDataPoint {
+    /// Month label (e.g., "Jan").
+    pub month: String,
+    /// Period name (e.g., "2026-01").
+    pub period_name: String,
+    /// Total inflow.
+    pub inflow: String,
+    /// Total outflow.
+    pub outflow: String,
+    /// Net cash flow.
+    pub net: String,
+}
+
+// ============================================================================
+// Budget vs Actual Response Types
+// ============================================================================
+
+/// Response for budget vs actual data.
+#[derive(Debug, Serialize)]
+pub struct BudgetVsActualResponse {
+    /// Budget ID.
+    pub budget_id: Option<Uuid>,
+    /// Budget name.
+    pub budget_name: Option<String>,
+    /// Summary.
+    pub summary: BudgetSummary,
+    /// Line items.
+    pub line_items: Vec<BudgetLineItemResponse>,
+}
+
+/// Budget summary.
+#[derive(Debug, Serialize)]
+pub struct BudgetSummary {
+    /// Total budgeted.
+    pub total_budgeted: String,
+    /// Total actual.
+    pub total_actual: String,
+    /// Variance (budgeted - actual).
+    pub variance: String,
+    /// Variance percentage.
+    pub variance_percent: f64,
+}
+
+/// Budget line item response.
+#[derive(Debug, Serialize)]
+pub struct BudgetLineItemResponse {
+    /// Account ID.
+    pub account_id: Uuid,
+    /// Account code.
+    pub account_code: String,
+    /// Account name.
+    pub account_name: String,
+    /// Budgeted amount.
+    pub budgeted: String,
+    /// Actual amount.
+    pub actual: String,
+    /// Variance.
+    pub variance: String,
+    /// Variance percentage.
+    pub variance_percent: f64,
+}
+
+// ============================================================================
+// Cash Flow Handler
+// ============================================================================
+
+/// GET /organizations/{org_id}/dashboard/cash-flow
+///
+/// Requirement 4.5: Cash flow chart data
+#[axum::debug_handler]
+async fn get_cash_flow(
+    State(state): State<AppState>,
+    Path(org_id): Path<Uuid>,
+    Query(query): Query<CashFlowQuery>,
+    auth_user: AuthUser,
+) -> impl IntoResponse {
+    let org_repo = OrganizationRepository::new((*state.db).clone());
+
+    // Check membership
+    if let Err(response) = check_membership(&org_repo, org_id, auth_user.user_id()).await {
+        return response;
+    }
+
+    let dashboard_repo = DashboardRepository::new((*state.db).clone());
+    let months = query.months.unwrap_or(6).min(12);
+
+    // Query cash flow by month
+    let cash_flow_data = match dashboard_repo
+        .query_cash_flow_by_month(org_id, months)
+        .await
+    {
+        Ok(data) => data,
+        Err(e) => {
+            error!(error = %e, "Failed to query cash flow");
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": "internal_error",
+                    "message": "Failed to get cash flow data"
+                })),
+            )
+                .into_response();
+        }
+    };
+
+    let data: Vec<CashFlowDataPoint> = cash_flow_data
+        .into_iter()
+        .map(|d| {
+            let net = d.inflow - d.outflow;
+            CashFlowDataPoint {
+                month: d.month,
+                period_name: d.period_name,
+                inflow: format_money(d.inflow),
+                outflow: format_money(d.outflow),
+                net: format_money(net),
+            }
+        })
+        .collect();
+
+    let response = CashFlowResponse { data };
+
+    (StatusCode::OK, Json(response)).into_response()
+}
+
+// ============================================================================
+// Budget vs Actual Handler
+// ============================================================================
+
+/// GET /organizations/{org_id}/dashboard/budget-vs-actual
+///
+/// Requirement 4.7: Budget vs actual summary
+#[axum::debug_handler]
+async fn get_budget_vs_actual(
+    State(state): State<AppState>,
+    Path(org_id): Path<Uuid>,
+    Query(query): Query<BudgetVsActualQuery>,
+    auth_user: AuthUser,
+) -> impl IntoResponse {
+    let org_repo = OrganizationRepository::new((*state.db).clone());
+
+    // Check membership
+    if let Err(response) = check_membership(&org_repo, org_id, auth_user.user_id()).await {
+        return response;
+    }
+
+    let dashboard_repo = DashboardRepository::new((*state.db).clone());
+
+    // Query budget vs actual
+    let budget_data = match dashboard_repo
+        .query_budget_vs_actual(org_id, query.budget_id)
+        .await
+    {
+        Ok(data) => data,
+        Err(e) => {
+            error!(error = %e, "Failed to query budget vs actual");
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": "internal_error",
+                    "message": "Failed to get budget vs actual data"
+                })),
+            )
+                .into_response();
+        }
+    };
+
+    let variance = budget_data.total_budgeted - budget_data.total_actual;
+    let variance_percent = if budget_data.total_budgeted.is_zero() {
+        0.0
+    } else {
+        (variance / budget_data.total_budgeted * Decimal::from(100))
+            .round_dp(2)
+            .to_string()
+            .parse::<f64>()
+            .unwrap_or(0.0)
+    };
+
+    let line_items: Vec<BudgetLineItemResponse> = budget_data
+        .line_items
+        .into_iter()
+        .map(|l| {
+            let line_variance = l.budgeted - l.actual;
+            let line_variance_percent = if l.budgeted.is_zero() {
+                0.0
+            } else {
+                (line_variance / l.budgeted * Decimal::from(100))
+                    .round_dp(2)
+                    .to_string()
+                    .parse::<f64>()
+                    .unwrap_or(0.0)
+            };
+
+            BudgetLineItemResponse {
+                account_id: l.account_id,
+                account_code: l.account_code,
+                account_name: l.account_name,
+                budgeted: format_money(l.budgeted),
+                actual: format_money(l.actual),
+                variance: format_money(line_variance),
+                variance_percent: line_variance_percent,
+            }
+        })
+        .collect();
+
+    let response = BudgetVsActualResponse {
+        budget_id: budget_data.budget_id,
+        budget_name: budget_data.budget_name,
+        summary: BudgetSummary {
+            total_budgeted: format_money(budget_data.total_budgeted),
+            total_actual: format_money(budget_data.total_actual),
+            variance: format_money(variance),
+            variance_percent,
+        },
+        line_items,
     };
 
     (StatusCode::OK, Json(response)).into_response()

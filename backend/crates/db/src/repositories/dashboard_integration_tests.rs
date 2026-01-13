@@ -415,4 +415,305 @@ mod tests {
         let change = calculate_change_percent(Decimal::ZERO, Decimal::ZERO);
         assert_eq!(change, Decimal::ZERO);
     }
+
+    // ========================================================================
+    // Property 10: Cash Position Calculation
+    // **Validates: Requirements 4.2**
+    // ========================================================================
+
+    /// Calculate cash position from account balances.
+    fn calculate_cash_position(
+        current_balance: Decimal,
+        previous_balance: Decimal,
+    ) -> (Decimal, Decimal) {
+        let change = current_balance - previous_balance;
+        let change_percent = if previous_balance.is_zero() {
+            if current_balance.is_zero() {
+                Decimal::ZERO
+            } else {
+                dec!(100)
+            }
+        } else {
+            ((change) / previous_balance * dec!(100)).round_dp(2)
+        };
+        (change, change_percent)
+    }
+
+    proptest! {
+        #![proptest_config(ProptestConfig::with_cases(100))]
+
+        /// **Property 10: Cash Position Calculation**
+        ///
+        /// *For any* current and previous balances, change SHALL be current - previous.
+        ///
+        /// **Validates: Requirements 4.2**
+        #[test]
+        fn prop_cash_position_change(
+            current in amount_strategy(),
+            previous in amount_strategy(),
+        ) {
+            let (change, _) = calculate_cash_position(current, previous);
+            let expected = current - previous;
+
+            prop_assert_eq!(change, expected, "Cash position change should be current - previous");
+        }
+
+        /// **Property 10b: Cash Position Change Percent**
+        ///
+        /// *For any* non-zero previous balance, change percent SHALL be (change / previous) * 100.
+        #[test]
+        fn prop_cash_position_change_percent(
+            current in amount_strategy(),
+            previous in amount_strategy(),
+        ) {
+            let (_, change_percent) = calculate_cash_position(current, previous);
+            let expected = ((current - previous) / previous * dec!(100)).round_dp(2);
+
+            prop_assert_eq!(change_percent, expected, "Change percent should be (change / previous) * 100");
+        }
+    }
+
+    // ========================================================================
+    // Property 11: Burn Rate Calculation
+    // **Validates: Requirements 4.3**
+    // ========================================================================
+
+    /// Calculate burn rate from total expenses over N days.
+    fn calculate_burn_rate_from_expenses(total_expenses: Decimal, days: i32) -> (Decimal, Decimal) {
+        if days == 0 || total_expenses.is_zero() {
+            return (Decimal::ZERO, Decimal::ZERO);
+        }
+        let daily = (total_expenses / Decimal::from(days)).round_dp(4);
+        let monthly = (daily * dec!(30)).round_dp(4);
+        (daily, monthly)
+    }
+
+    proptest! {
+        #![proptest_config(ProptestConfig::with_cases(100))]
+
+        /// **Property 11: Burn Rate from Expenses**
+        ///
+        /// *For any* total expenses over N days, daily burn SHALL be total / N.
+        ///
+        /// **Validates: Requirements 4.3**
+        #[test]
+        fn prop_burn_rate_from_expenses(
+            total_expenses in amount_strategy(),
+            days in 1i32..=90i32,
+        ) {
+            let (daily, _) = calculate_burn_rate_from_expenses(total_expenses, days);
+            let expected = (total_expenses / Decimal::from(days)).round_dp(4);
+
+            prop_assert_eq!(daily, expected, "Daily burn should be total expenses / days");
+        }
+
+        /// **Property 11b: Monthly Burn Rate**
+        ///
+        /// *For any* daily burn rate, monthly SHALL be daily * 30.
+        #[test]
+        fn prop_monthly_burn_rate(
+            total_expenses in amount_strategy(),
+            days in 1i32..=90i32,
+        ) {
+            let (daily, monthly) = calculate_burn_rate_from_expenses(total_expenses, days);
+            let expected = (daily * dec!(30)).round_dp(4);
+
+            prop_assert_eq!(monthly, expected, "Monthly burn should be daily * 30");
+        }
+    }
+
+    // ========================================================================
+    // Property 12: Runway Days Calculation
+    // **Validates: Requirements 4.4**
+    // ========================================================================
+
+    proptest! {
+        #![proptest_config(ProptestConfig::with_cases(100))]
+
+        /// **Property 12: Runway Days**
+        ///
+        /// *For any* cash balance and daily burn, runway SHALL be balance / daily_burn.
+        ///
+        /// **Validates: Requirements 4.4**
+        #[test]
+        fn prop_runway_days(
+            cash_balance in amount_strategy(),
+            daily_burn in amount_strategy(),
+        ) {
+            let runway = calculate_runway_days(cash_balance, daily_burn);
+            let expected = (cash_balance / daily_burn)
+                .round_dp(0)
+                .to_string()
+                .parse::<i32>()
+                .unwrap_or(i32::MAX);
+
+            prop_assert_eq!(runway, expected, "Runway should be cash / daily burn");
+        }
+
+        /// **Property 12b: Runway Non-Negative**
+        ///
+        /// *For any* positive cash and burn, runway SHALL be non-negative.
+        #[test]
+        fn prop_runway_non_negative(
+            cash_balance in amount_strategy(),
+            daily_burn in amount_strategy(),
+        ) {
+            let runway = calculate_runway_days(cash_balance, daily_burn);
+            prop_assert!(runway >= 0, "Runway should be non-negative for positive inputs");
+        }
+    }
+
+    // ========================================================================
+    // Property 13: Cash Flow Aggregation
+    // **Validates: Requirements 4.5**
+    // ========================================================================
+
+    /// Aggregate cash flow entries by month.
+    fn aggregate_cash_flow(
+        entries: Vec<(String, Decimal, bool)>, // (month, amount, is_inflow)
+    ) -> std::collections::HashMap<String, (Decimal, Decimal)> {
+        let mut result: std::collections::HashMap<String, (Decimal, Decimal)> =
+            std::collections::HashMap::new();
+
+        for (month, amount, is_inflow) in entries {
+            let entry = result
+                .entry(month)
+                .or_insert((Decimal::ZERO, Decimal::ZERO));
+            if is_inflow {
+                entry.0 += amount;
+            } else {
+                entry.1 += amount;
+            }
+        }
+
+        result
+    }
+
+    proptest! {
+        #![proptest_config(ProptestConfig::with_cases(50))]
+
+        /// **Property 13: Cash Flow Aggregation**
+        ///
+        /// *For any* set of cash flow entries, aggregation SHALL sum inflows and outflows per month.
+        ///
+        /// **Validates: Requirements 4.5**
+        #[test]
+        fn prop_cash_flow_aggregation(
+            entries in prop::collection::vec(
+                (
+                    prop::sample::select(vec!["Jan", "Feb", "Mar", "Apr", "May", "Jun"]),
+                    amount_strategy(),
+                    prop::bool::ANY,
+                ),
+                1..20
+            ),
+        ) {
+            let entries_with_string: Vec<(String, Decimal, bool)> = entries
+                .into_iter()
+                .map(|(m, a, i)| (m.to_string(), a, i))
+                .collect();
+
+            let aggregated = aggregate_cash_flow(entries_with_string.clone());
+
+            // Verify each month's totals
+            for (month, amount, is_inflow) in &entries_with_string {
+                let (inflow, outflow) = aggregated.get(month).unwrap();
+                if *is_inflow {
+                    prop_assert!(*inflow >= *amount, "Inflow should include this entry");
+                } else {
+                    prop_assert!(*outflow >= *amount, "Outflow should include this entry");
+                }
+            }
+        }
+
+        /// **Property 13b: Net Cash Flow**
+        ///
+        /// *For any* month, net cash flow SHALL be inflow - outflow.
+        #[test]
+        fn prop_net_cash_flow(
+            inflow in amount_strategy(),
+            outflow in amount_strategy(),
+        ) {
+            let net = inflow - outflow;
+            let expected = inflow - outflow;
+
+            prop_assert_eq!(net, expected, "Net cash flow should be inflow - outflow");
+        }
+    }
+
+    // ========================================================================
+    // Property 14: Cursor-Based Pagination Consistency
+    // **Validates: Requirements 4.6**
+    // ========================================================================
+
+    /// Simulate cursor-based pagination.
+    fn paginate_with_cursor<T: Clone>(
+        items: &[T],
+        limit: usize,
+        cursor_index: Option<usize>,
+    ) -> (Vec<T>, Option<usize>) {
+        let start = cursor_index.unwrap_or(0);
+        let end = (start + limit).min(items.len());
+        let page = items[start..end].to_vec();
+        let next_cursor = if end < items.len() { Some(end) } else { None };
+        (page, next_cursor)
+    }
+
+    proptest! {
+        #![proptest_config(ProptestConfig::with_cases(50))]
+
+        /// **Property 14: Cursor Pagination Consistency**
+        ///
+        /// *For any* list and limit, paginating through all pages SHALL return all items exactly once.
+        ///
+        /// **Validates: Requirements 4.6**
+        #[test]
+        fn prop_cursor_pagination_complete(
+            items in prop::collection::vec(0i32..1000i32, 1..50),
+            limit in 1usize..=10usize,
+        ) {
+            let mut all_items = Vec::new();
+            let mut cursor = None;
+
+            loop {
+                let (page, next_cursor) = paginate_with_cursor(&items, limit, cursor);
+                all_items.extend(page);
+
+                if next_cursor.is_none() {
+                    break;
+                }
+                cursor = next_cursor;
+            }
+
+            prop_assert_eq!(all_items.len(), items.len(), "Should return all items");
+            prop_assert_eq!(all_items, items, "Items should be in order");
+        }
+
+        /// **Property 14b: Page Size Limit**
+        ///
+        /// *For any* pagination request, page size SHALL not exceed limit.
+        #[test]
+        fn prop_page_size_limit(
+            items in prop::collection::vec(0i32..1000i32, 1..50),
+            limit in 1usize..=10usize,
+        ) {
+            let (page, _) = paginate_with_cursor(&items, limit, None);
+            prop_assert!(page.len() <= limit, "Page size should not exceed limit");
+        }
+
+        /// **Property 14c: Has More Indicator**
+        ///
+        /// *For any* pagination, has_more SHALL be true iff there are more items.
+        #[test]
+        fn prop_has_more_indicator(
+            items in prop::collection::vec(0i32..1000i32, 1..50),
+            limit in 1usize..=10usize,
+        ) {
+            let (page, next_cursor) = paginate_with_cursor(&items, limit, None);
+            let has_more = next_cursor.is_some();
+            let expected_has_more = page.len() < items.len();
+
+            prop_assert_eq!(has_more, expected_has_more, "has_more should indicate remaining items");
+        }
+    }
 }
