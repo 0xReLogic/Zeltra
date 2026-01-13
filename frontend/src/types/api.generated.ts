@@ -1838,6 +1838,11 @@ export interface components {
              */
             reference_number?: string | null;
             /**
+             * @description Timezone for the transaction (e.g., "UTC", "Asia/Jakarta").
+             * @example UTC
+             */
+            timezone: string;
+            /**
              * Format: date
              * @description Transaction date (YYYY-MM-DD).
              */
@@ -2596,6 +2601,11 @@ export interface components {
             reference_number?: string | null;
             /** @description Status. */
             status: string;
+            /**
+             * @description Timezone for the transaction.
+             * @example UTC
+             */
+            timezone: string;
             /** @description Total credits in functional currency. */
             total_credit: string;
             /** @description Total debits in functional currency. */
@@ -5033,7 +5043,7 @@ export interface operations {
                     "application/json": components["schemas"]["TransactionResponse"];
                 };
             };
-            /** @description Invalid input or unbalanced transaction */
+            /** @description Invalid input, unbalanced transaction, or missing required budget dimensions */
             400: {
                 headers: {
                     [name: string]: unknown;

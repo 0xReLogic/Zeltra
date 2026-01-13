@@ -415,7 +415,7 @@ This plan verifies and fixes frontend API integration with the real backend. Tas
       - `CreateExchangeRateRequest`
       - `BulkImportRatesRequest`
     - _Requirements: 1.1_
-  - [-] 9.2 Update exchange rate queries
+  - [x] 9.2 Update exchange rate queries
     - Use `grepSearch` to find current exchange rate queries in `lib/queries/exchange-rates.ts`
     - Verify `useExchangeRates` query:
       - Endpoint: `GET /organizations/{org_id}/exchange-rates`
@@ -433,7 +433,7 @@ This plan verifies and fixes frontend API integration with the real backend. Tas
       - Fetches live rates from external API
       - Invalidate exchange rates list
     - _Requirements: 8.1, 8.2, 8.3_
-  - [ ] 9.3 Update exchange rate form components
+  - [x] 9.3 Update exchange rate form components
     - Use `grepSearch` to find exchange rate form components
     - Wire form to `useCreateExchangeRate`
     - Form fields:
@@ -444,14 +444,14 @@ This plan verifies and fixes frontend API integration with the real backend. Tas
     - Wire BulkImportDialog to `useBulkImportRates`
     - Add "Fetch Live Rates" button wired to `useFetchLiveRates`
     - _Requirements: 8.4_
-  - [ ] 9.4 Check problems and run lint
+  - [x] 9.4 Check problems and run lint
     - Use getDiagnostics tool to check for TypeScript/lint problems
     - Run `pnpm run lint` in frontend directory
     - Fix ALL errors before proceeding
 
 - [ ] 10. Checkpoint - Master Data CRUD (MANDATORY E2E)
   - **IF CONTEXT LOST:** Re-read `.kiro/specs/frontend-api-verification/requirements.md` and `design.md`
-  - [ ] 10.1 E2E Test with MCP Playwright (MUST PASS BEFORE PUSH)
+  - [x] 10.1 E2E Test with MCP Playwright (MUST PASS BEFORE PUSH)
     - Use MCP Playwright browser tools (NOT creating test files)
     - Test flow:
       1. Login with `kiro2@zeltra.dev` / `Kiro123!`
@@ -464,7 +464,7 @@ This plan verifies and fixes frontend API integration with the real backend. Tas
       8. Verify exchange rates page loads without errors
     - **IF TEST FAILS:** Identify the error, fix the code, re-test until pass
     - **CANNOT PUSH until E2E passes**
-  - [ ] 10.2 Push to GitHub (ONLY after E2E passes)
+  - [-] 10.2 Push to GitHub (ONLY after E2E passes)
     - `git add -A`
     - `git commit -m "feat(frontend): Dimension, Fiscal, Exchange Rate CRUD"`
     - `git push`

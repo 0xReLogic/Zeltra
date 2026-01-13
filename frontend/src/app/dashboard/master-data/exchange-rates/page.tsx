@@ -47,7 +47,7 @@ const formSchema = z.object({
   from_currency: z.string().min(1, 'Currency is required'),
   to_currency: z.string().min(1, 'Target currency is required'),
   rate: z.string().min(1, 'Rate is required'),
-  date: z.string().min(1, 'Date is required'),
+  effective_date: z.string().min(1, 'Date is required'),
 })
 
 export default function ExchangeRatesPage() {
@@ -61,7 +61,7 @@ export default function ExchangeRatesPage() {
       from_currency: 'USD',
       to_currency: 'IDR',
       rate: '',
-      date: new Date().toISOString().split('T')[0],
+      effective_date: new Date().toISOString().split('T')[0],
     },
   })
 
@@ -170,7 +170,7 @@ export default function ExchangeRatesPage() {
 
                   <FormField
                     control={form.control}
-                    name="date"
+                    name="effective_date"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Date</FormLabel>
@@ -212,9 +212,9 @@ export default function ExchangeRatesPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data?.data.sort((a, b) => b.date.localeCompare(a.date)).map((rate) => (
-                  <TableRow key={rate.id}>
-                    <TableCell>{rate.date}</TableCell>
+                {(Array.isArray(data) ? data : []).sort((a, b) => b.effective_date.localeCompare(a.effective_date)).map((rate, index) => (
+                  <TableRow key={`${rate.from_currency}-${rate.to_currency}-${rate.effective_date}-${index}`}>
+                    <TableCell>{rate.effective_date}</TableCell>
                     <TableCell className="font-medium">{rate.from_currency}</TableCell>
                     <TableCell>{rate.to_currency}</TableCell>
                     <TableCell>

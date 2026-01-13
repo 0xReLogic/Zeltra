@@ -31,6 +31,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useFiscalYears, useUpdatePeriodStatus, useCreateFiscalYear } from '@/lib/queries/fiscal'
+import type { PeriodStatus } from '@/types/fiscal'
 import { toast } from 'sonner'
 import { useState } from 'react'
 
@@ -45,7 +46,7 @@ export default function FiscalPeriodsPage() {
     setExpandedYear(expandedYear === yearId ? null : yearId)
   }
 
-  const handleStatusChange = (id: string, status: 'open' | 'closed' | 'locked') => {
+  const handleStatusChange = (id: string, status: PeriodStatus) => {
     updateStatus.mutate({ id, status })
   }
 
@@ -54,13 +55,12 @@ export default function FiscalPeriodsPage() {
     const formData = new FormData(e.currentTarget)
     const name = formData.get('name') as string
     const start_date = formData.get('start_date') as string
-    const include_adjustment = formData.get('include_adjustment') === 'on'
     
     // Auto-calculate end date (Dec 31 of same year)
     const year = new Date(start_date).getFullYear()
     const end_date = `${year}-12-31`
 
-    createYear.mutate({ name, start_date, end_date, include_adjustment }, {
+    createYear.mutate({ name, start_date, end_date }, {
       onSuccess: () => {
         toast.success(`Fiscal Year ${name} created`)
         setIsCreateOpen(false)
@@ -107,17 +107,6 @@ export default function FiscalPeriodsPage() {
                         />
                         <p className="text-[0.8rem] text-muted-foreground">End date will be automatically set to Dec 31st.</p>
                     </div>
-                    <div className="flex items-center space-x-2">
-                        <input 
-                            type="checkbox" 
-                            id="include_adjustment" 
-                            name="include_adjustment"
-                            className="h-4 w-4 rounded border-gray-300"
-                        />
-                        <Label htmlFor="include_adjustment" className="text-sm font-normal">
-                            Include Adjustment Period (Period 13)
-                        </Label>
-                    </div>
                     <DialogFooter>
                         <Button type="submit" disabled={createYear.isPending}>
                             {createYear.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -146,7 +135,7 @@ export default function FiscalPeriodsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data?.data.map((year) => (
+              {(Array.isArray(data) ? data : []).map((year) => (
                 <React.Fragment key={year.id}>
                   <TableRow 
                     className="cursor-pointer hover:bg-muted/50"
@@ -184,8 +173,8 @@ export default function FiscalPeriodsPage() {
                                      <Badge 
                                       variant="outline"
                                       className={
-                                        period.status === 'open' ? 'border-green-500 text-green-500' :
-                                        period.status === 'closed' ? 'border-yellow-500 text-yellow-500' :
+                                        period.status === 'Open' ? 'border-green-500 text-green-500' :
+                                        period.status === 'SoftClose' ? 'border-yellow-500 text-yellow-500' :
                                         'border-gray-500 text-gray-500'
                                       }
                                      >
@@ -200,14 +189,14 @@ export default function FiscalPeriodsPage() {
                                         </Button>
                                       </DropdownMenuTrigger>
                                       <DropdownMenuContent align="end">
-                                        <DropdownMenuItem onClick={() => handleStatusChange(period.id, 'open')}>
+                                        <DropdownMenuItem onClick={() => handleStatusChange(period.id, 'Open')}>
                                           <Unlock className="mr-2 h-4 w-4" /> Open
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => handleStatusChange(period.id, 'closed')}>
-                                          <Archive className="mr-2 h-4 w-4" /> Close
+                                        <DropdownMenuItem onClick={() => handleStatusChange(period.id, 'SoftClose')}>
+                                          <Archive className="mr-2 h-4 w-4" /> Soft Close
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => handleStatusChange(period.id, 'locked')}>
-                                          <Lock className="mr-2 h-4 w-4" /> Lock
+                                        <DropdownMenuItem onClick={() => handleStatusChange(period.id, 'Closed')}>
+                                          <Lock className="mr-2 h-4 w-4" /> Close
                                         </DropdownMenuItem>
                                       </DropdownMenuContent>
                                     </DropdownMenu>

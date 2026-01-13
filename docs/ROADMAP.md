@@ -600,20 +600,20 @@ AZURE_CONTAINER=attachments
 
 ### API Polish
 
-- [ ] OpenAPI/Swagger spec generation (utoipa)
-- [ ] API documentation
-- [ ] Consistent error format across all endpoints
-- [ ] Rate limiting
-- [ ] Request logging
+- [x] OpenAPI/Swagger spec generation (utoipa)
+- [x] API documentation
+- [x] Consistent error format across all endpoints
+- [x] Rate limiting
+- [x] Request logging
 
 ### Load & Security Testing
 
-- [ ] Setup k6 or similar
-- [ ] Test concurrent transaction creation
-- [ ] Test report generation under load
-- [ ] SQL injection attempts
-- [ ] Cross-tenant access attempts
-- [ ] Invalid JWT handling
+- [x] Setup k6 or similar (Integration via concurrent internal tests)
+- [x] Test concurrent transaction creation
+- [x] Test report generation under load
+- [x] SQL injection attempts
+- [x] Cross-tenant access attempts
+- [x] Invalid JWT handling
 
 **Deliverable:** Production-ready API with comprehensive test coverage.
 

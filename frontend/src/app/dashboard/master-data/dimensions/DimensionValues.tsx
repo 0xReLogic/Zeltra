@@ -11,8 +11,9 @@ import {
 } from '@/components/ui/table'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Plus, MoreHorizontal, Pencil, Ban, CheckCircle } from 'lucide-react'
-import { DimensionType, DimensionValue, useCreateDimensionValue, useEditDimensionValue, useToggleDimensionValueActive } from '@/lib/queries/dimensions'
+import { Plus, MoreHorizontal, Pencil, Loader2 } from 'lucide-react'
+import { useCreateDimensionValue, useUpdateDimensionValue, useDimensionValues } from '@/lib/queries/dimensions'
+import type { DimensionType, DimensionValue } from '@/types/dimensions'
 import {
     Dialog,
     DialogContent,
@@ -52,11 +53,13 @@ interface DimensionValuesProps {
 }
 
 export function DimensionValues({ dimension }: DimensionValuesProps) {
+    const { data: valuesData, isLoading } = useDimensionValues(dimension.id)
     const createDimension = useCreateDimensionValue()
-    const editDimension = useEditDimensionValue()
-    const toggleDimension = useToggleDimensionValueActive()
+    const updateDimension = useUpdateDimensionValue()
     const [open, setOpen] = React.useState(false)
     const [editingValue, setEditingValue] = React.useState<DimensionValue | null>(null)
+
+    const values = Array.isArray(valuesData) ? valuesData : []
 
     const form = useForm<z.infer<typeof valueSchema>>({
         resolver: zodResolver(valueSchema),
@@ -74,7 +77,7 @@ export function DimensionValues({ dimension }: DimensionValuesProps) {
                 form.reset({
                     code: editingValue.code,
                     name: editingValue.name,
-                    description: editingValue.description || '',
+                    description: '',
                 })
             } else {
                 form.reset({
@@ -86,14 +89,18 @@ export function DimensionValues({ dimension }: DimensionValuesProps) {
         }
     }, [open, editingValue, form])
 
-    const onSubmit = (values: z.infer<typeof valueSchema>) => {
+    const onSubmit = (formValues: z.infer<typeof valueSchema>) => {
         if (editingValue) {
-            editDimension.mutate({
-                id: editingValue.id,
-                ...values
+            updateDimension.mutate({
+                id: editingValue.code, // Use code as ID since DimensionValueResponse doesn't have id
+                data: {
+                    code: formValues.code,
+                    name: formValues.name,
+                    description: formValues.description,
+                }
             }, {
                 onSuccess: () => {
-                    toast.success(`Updated ${values.name}`)
+                    toast.success(`Updated ${formValues.name}`)
                     setOpen(false)
                     setEditingValue(null)
                 },
@@ -102,10 +109,12 @@ export function DimensionValues({ dimension }: DimensionValuesProps) {
         } else {
             createDimension.mutate({
                 dimension_type_id: dimension.id,
-                ...values
+                code: formValues.code,
+                name: formValues.name,
+                description: formValues.description,
             }, {
                 onSuccess: () => {
-                    toast.success(`Created ${values.name}`)
+                    toast.success(`Created ${formValues.name}`)
                     setOpen(false)
                 },
                 onError: () => toast.error('Failed to create')
@@ -113,13 +122,14 @@ export function DimensionValues({ dimension }: DimensionValuesProps) {
         }
     }
 
-    const handleToggle = (val: DimensionValue) => {
-        toggleDimension.mutate({
-            id: val.id,
-            isActive: !(val.is_active ?? true)
-        }, {
-            onSuccess: () => toast.success(`Value ${val.is_active === false ? 'activated' : 'deactivated'}`)
-        })
+    if (isLoading) {
+        return (
+            <Card>
+                <CardContent className="flex items-center justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </CardContent>
+            </Card>
+        )
     }
 
     return (
@@ -190,7 +200,7 @@ export function DimensionValues({ dimension }: DimensionValuesProps) {
                                     )}
                                 />
                                 <div className="flex justify-end pt-4">
-                                    <Button type="submit" disabled={createDimension.isPending || editDimension.isPending}>
+                                    <Button type="submit" disabled={createDimension.isPending || updateDimension.isPending}>
                                         Save
                                     </Button>
                                 </div>
@@ -205,29 +215,23 @@ export function DimensionValues({ dimension }: DimensionValuesProps) {
                         <TableRow>
                             <TableHead className="w-[100px]">Code</TableHead>
                             <TableHead>Name</TableHead>
-                            <TableHead>Description</TableHead>
-                            <TableHead className="w-[100px] text-right">Status</TableHead>
+                            <TableHead>Dimension Type</TableHead>
                             <TableHead className="w-[50px]"></TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {dimension.values.length === 0 ? (
+                        {values.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
+                                <TableCell colSpan={4} className="text-center h-24 text-muted-foreground">
                                     No values found.
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            dimension.values.map((val) => (
-                                <TableRow key={val.id} className={val.is_active === false ? 'opacity-50' : ''}>
+                            values.map((val) => (
+                                <TableRow key={val.code}>
                                     <TableCell className="font-medium font-mono">{val.code}</TableCell>
                                     <TableCell>{val.name}</TableCell>
-                                    <TableCell className="text-muted-foreground">{val.description || '-'}</TableCell>
-                                    <TableCell className="text-right">
-                                        <span className={`text-xs px-2 py-1 rounded-full ${val.is_active !== false ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
-                                            {val.is_active !== false ? 'Active' : 'Inactive'}
-                                        </span>
-                                    </TableCell>
+                                    <TableCell className="text-muted-foreground">{val.dimension_type}</TableCell>
                                     <TableCell>
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
@@ -242,13 +246,6 @@ export function DimensionValues({ dimension }: DimensionValuesProps) {
                                                 }}>
                                                     <Pencil className="mr-2 h-4 w-4" />
                                                     Edit
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => handleToggle(val)}>
-                                                    {val.is_active === false ? (
-                                                        <><CheckCircle className="mr-2 h-4 w-4" /> Activate</>
-                                                    ) : (
-                                                        <><Ban className="mr-2 h-4 w-4" /> Deactivate</>
-                                                    )}
                                                 </DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>

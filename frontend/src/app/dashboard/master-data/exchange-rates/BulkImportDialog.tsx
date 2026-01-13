@@ -31,7 +31,7 @@ export function BulkImportDialog() {
                     from_currency: from.toUpperCase(),
                     to_currency: to.toUpperCase(),
                     rate,
-                    date
+                    effective_date: date
                 }
             })
 
