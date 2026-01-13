@@ -27,6 +27,16 @@ export interface AuthResponse {
   expires_in: number
 }
 
+export interface RegisterResponse {
+  user: {
+    id: string
+    email: string
+    full_name: string
+    email_verified: boolean
+  }
+  message: string
+}
+
 export interface VerifyEmailRequest {
   token: string
 }

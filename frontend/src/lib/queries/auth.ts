@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query'
 import { apiClient } from '../api/client'
 import { useAuthStore } from '../stores/authStore'
-import { type LoginRequest, type RegisterRequest, type AuthResponse, type VerifyEmailRequest, type VerifyEmailResponse, type ResendVerificationRequest, type ResendVerificationResponse } from '@/types/auth'
+import { type LoginRequest, type RegisterRequest, type AuthResponse, type RegisterResponse, type VerifyEmailRequest, type VerifyEmailResponse, type ResendVerificationRequest, type ResendVerificationResponse } from '@/types/auth'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 
@@ -16,9 +16,16 @@ export function useLogin() {
         body: JSON.stringify(data),
       }),
     onSuccess: (data) => {
-      setAuth(data.user, data.access_token, data.refresh_token)
+      setAuth(data.user, data.access_token, data.refresh_token, data.expires_in)
       toast.success('Login successful')
-      router.push('/dashboard')
+      
+      // Check if user has organizations
+      if (data.user.organizations.length === 0) {
+        // Redirect to create organization page
+        router.push('/onboarding/create-organization')
+      } else {
+        router.push('/dashboard')
+      }
     },
     onError: (error) => {
       toast.error(error.message || 'Failed to login')
@@ -27,19 +34,17 @@ export function useLogin() {
 }
 
 export function useRegister() {
-  const setAuth = useAuthStore((state) => state.setAuth)
   const router = useRouter()
 
   return useMutation({
     mutationFn: (data: RegisterRequest) =>
-      apiClient<AuthResponse>('/auth/register', {
+      apiClient<RegisterResponse>('/auth/register', {
         method: 'POST',
         body: JSON.stringify(data),
       }),
     onSuccess: (data) => {
-      setAuth(data.user, data.access_token, data.refresh_token)
-      toast.success('Registration successful')
-      router.push('/dashboard')
+      toast.success(data.message || 'Registration successful! Please check your email to verify your account.')
+      router.push('/login')
     },
     onError: (error) => {
       toast.error(error.message || 'Failed to register')
