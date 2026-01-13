@@ -8,11 +8,37 @@ Live status untuk sync antara Backend & Frontend.
 
 |                    | Backend                                    | Frontend                              |
 | ------------------ | ------------------------------------------ | ------------------------------------- |
-| **Current Phase**  | 5 (API Polish & Attachments) ✅ COMPLETE   | 8 (Transaction Enhancements)          |
-| **Last Task Done** | Phase 5 - All Tasks Complete (773 tests)   | Phase 8 - Transaction Enhancements ✅ |
-| **Next Task**      | Phase 6 - TBD                              | Playwright E2E                        |
+| **Current Phase**  | 5 (API Polish & Attachments) ✅ COMPLETE   | 6-7 (Frontend Features) 🟡 IN PROGRESS |
+| **Last Task Done** | Phase 5 - All Tasks Complete (773 tests)   | Auth + Org Real API Integration ✅    |
+| **Next Task**      | Phase 6 - TBD                              | Verify remaining features with Real API |
 
 **Last Updated:** 2026-01-13
+
+---
+
+## 🟡 Real API Integration Progress
+
+**Date:** 2026-01-13
+
+**✅ Done (Real API Verified):**
+- Mock API dependencies removed (MSW disabled, MOCK_DATA deleted)
+- Role type mismatch fixed (6 roles: owner, admin, approver, accountant, viewer, submitter)
+- Organization creation UI added
+- API client optimized (30s timeout, 401 refresh, proper error handling)
+- Auth integration complete (login, register, logout, refresh, token expiration tracking)
+- Organization CRUD (create, update, list)
+- User/Team management (invite, update role, remove)
+- E2E tests updated for real API
+- OpenAPI types generated from `contracts/openapi.yaml`
+
+**⚠️ Need Verification (UI done, Real API unverified):**
+- Master Data (accounts, fiscal periods, dimensions, exchange rates)
+- Transactions (CRUD + workflow: submit/approve/reject/post/void)
+- Dashboard (metrics, cash flow, recent activity)
+- Reports (trial balance, balance sheet, income statement, dimensional)
+- Budgets (CRUD + lines + lock)
+- Simulation
+- Attachments
 
 ---
 
@@ -194,11 +220,11 @@ Frontend cek di sini untuk tau endpoint mana yang udah ready.
 
 ## Frontend-Backend Schema Sync Analysis
 
-**Last Verified:** 2026-01-08
+**Last Verified:** 2026-01-13
 
-### Compatibility Status: ✅ COMPATIBLE
+### Compatibility Status: ✅ FULLY INTEGRATED
 
-Frontend mock structures align with database schema. Notes for API implementation:
+Frontend now uses real backend API. Mock API has been disabled. Notes:
 
 | Area           | Status | Notes                                                        |
 | -------------- | ------ | ------------------------------------------------------------ |

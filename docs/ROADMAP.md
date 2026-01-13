@@ -626,7 +626,7 @@ AZURE_CONTAINER=attachments
 
 ---
 
-## Phase 6: Frontend Foundation (Week 16-17)
+## Phase 6: Frontend Foundation (Week 16-17) 🟡 IN PROGRESS
 
 NOW we start frontend, because backend is solid.
 
@@ -645,15 +645,15 @@ NOW we start frontend, because backend is solid.
 - [x] Zustand stores
 - [x] API client with typed responses
 
-### Auth Pages
+### Auth Pages (✅ Real API)
 
-- [x] Login
-- [x] Register
-- [x] Forgot password
-- [x] Organization selector
-- [x] Logout (UI ready, mock API connected - needs real backend integration)
-- [x] Email verification page (`/verify-email?token=xxx`)
-- [x] Resend verification email UI (in register success / login blocked state)
+- [x] Login ✅ Real API
+- [x] Register ✅ Real API
+- [x] Forgot password (UI only)
+- [x] Organization selector ✅ Real API
+- [x] Logout ✅ Real API
+- [x] Email verification page (`/verify-email?token=xxx`) ✅ Real API
+- [x] Resend verification email UI ✅ Real API
 
 ### Core Layout
 
@@ -661,26 +661,39 @@ NOW we start frontend, because backend is solid.
 - [x] Header with user menu
 - [x] Responsive design
 
-### Organization UI
+### Organization UI (✅ Real API)
 
 > **DB Tables:** `organizations`, `organization_users` > **DB Fields:** `base_currency`, `timezone`, `role`, `approval_limit`
 
-- [x] Organization Settings Page
+- [x] Organization Settings Page ✅ Real API
   - [x] Update base currency (`organizations.base_currency`)
   - [x] Update timezone (`organizations.timezone`)
   - [x] View subscription tier & status
-- [x] User/Team Management Page
+- [x] User/Team Management Page ✅ Real API
   - [x] List organization users (`organization_users`)
   - [x] Invite new user (email + role)
-  - [x] Update user role (`user_role` enum: viewer, accountant, approver, admin, owner)
+  - [x] Update user role (`user_role` enum: viewer, accountant, approver, admin, owner, submitter) ✅ 6 roles
   - [x] Set approval limit for approvers (`approval_limit` field)
   - [x] Remove user from organization
+- [x] Organization Creation UI ✅ Real API (2026-01-13)
+
+### Real API Integration Progress (2026-01-13)
+
+- [x] Mock API dependencies removed (MSW disabled)
+- [x] API client optimized (30s timeout, 401 refresh logic)
+- [x] Organization creation UI added
+- [x] OpenAPI types generated from contracts/openapi.yaml
+- [x] Auth flows (login, register, logout, refresh) ✅ Real API
+- [x] Organization CRUD ✅ Real API
+- [x] User/Team management ✅ Real API
 
 **Deliverable:** Frontend skeleton with auth working.
 
+**Status:** Auth & Organization = Real API ✅ | Other features = Need verification
+
 ---
 
-## Phase 7: Frontend Features (Week 18-20)
+## Phase 7: Frontend Features (Week 18-20) 🟡 IN PROGRESS
 
 > **RESEARCH REQUIRED:**
 >
@@ -689,148 +702,146 @@ NOW we start frontend, because backend is solid.
 > - Charts: `Recharts React 19 bar chart line chart example`
 > - Optimistic updates: `TanStack Query v5 optimistic update mutation`
 
-### Master Data UI
+### Master Data UI (⚠️ Need Real API Verification)
 
 > **DB Tables:** `chart_of_accounts`, `fiscal_years`, `fiscal_periods`, `dimension_types`, `dimension_values`, `exchange_rates`
 
-- [x] Chart of Accounts management
+- [x] Chart of Accounts management (UI done, API status: ⚠️ unverified)
   - [x] List accounts with hierarchy (parent_id)
   - [x] Account type/subtype display
   - [x] Create new account (`POST /accounts`)
   - [x] Edit account (`PATCH /accounts/:id`)
   - [x] Delete account (`DELETE /accounts/:id`)
   - [x] Toggle account active status
-- [x] Fiscal period management
+- [x] Fiscal period management (UI done, API status: ⚠️ unverified)
   - [x] List fiscal years with nested periods
   - [x] Period status badges (OPEN/SOFT_CLOSE/CLOSED)
   - [x] Change period status (`PATCH /fiscal-periods/:id/status`)
-  - [x] Create fiscal year with auto-generated periods (`POST /fiscal-years`) (Mocked)
-- [x] Dimension management
+  - [x] Create fiscal year with auto-generated periods (`POST /fiscal-years`)
+- [x] Dimension management (UI done, API status: ⚠️ unverified)
   - [x] List dimension types with nested values
   - [x] Add dimension value (`POST /dimensions/:typeId/values`)
   - [x] Create dimension type (`POST /dimension-types`)
   - [x] Edit dimension value
   - [x] Toggle dimension active status
-- [x] Exchange rate management
+- [x] Exchange rate management (UI done, API status: ⚠️ unverified)
   - [x] List exchange rates
   - [x] Add exchange rate (`POST /exchange-rates`)
   - [x] Bulk import exchange rates
 
-### Transaction UI
+### Transaction UI (⚠️ Need Real API Verification)
 
 > **DB Tables:** `transactions`, `ledger_entries`, `entry_dimensions`
 
-- [x] Transaction list with filters
+- [x] Transaction list with filters (UI done, API status: ⚠️ unverified)
   - [x] Filter by status (draft/pending/approved/posted/voided)
   - [x] Filter by date range
   - [x] Filter by transaction type
   - [x] Filter by dimension (department/project)
-- [x] Transaction entry form
+- [x] Transaction entry form (UI done, API status: ⚠️ unverified)
   - [x] Multi-line journal entry (debit/credit)
   - [x] Account selector
   - [x] Dimension assignment per entry (`entry_dimensions`)
-  - [x] Multi-currency support (source_currency, exchange_rate) (API Spec Ready)
-  - [x] Attachment upload (API Spec Ready)
-- [x] Approval queue
+  - [x] Multi-currency support (source_currency, exchange_rate)
+  - [x] Attachment upload
+- [x] Approval queue (UI done, API status: ⚠️ unverified)
   - [x] List pending transactions
   - [x] Approve/Reject actions
-  - [x] Bulk approve (API Spec Ready)
-- [x] Transaction detail
+  - [x] Bulk approve
+- [x] Transaction detail (UI done, API status: ⚠️ unverified)
   - [x] View entries with debit/credit
   - [x] View dimension assignments
-  - [x] View attachments (API Spec Ready)
-  - [x] Audit trail (submitted_by, approved_by, posted_by timestamps) (API Spec Ready)
+  - [x] View attachments
+  - [x] Audit trail (submitted_by, approved_by, posted_by timestamps)
 
-### Dashboard
+### Dashboard (⚠️ Need Real API Verification)
 
 > **Computed from:** `ledger_entries`, `budgets`, `budget_lines`
 
-- [x] Key metrics
+- [x] Key metrics (UI done, API status: ⚠️ unverified)
   - [x] Cash position (sum of cash accounts)
   - [x] Burn rate (daily/monthly)
   - [x] Runway days
   - [x] Pending approvals count
-- [x] Budget vs actual
+- [x] Budget vs actual (UI done, API status: ⚠️ unverified)
   - [x] Department budget cards
   - [x] Progress bars (actual/budget)
   - [x] Variance highlighting (favorable/unfavorable)
-  - ⚠️ **OPTIMIZATION NOTE:** Currently fetches full budget data from `GET /budgets`. For better scalability (100+ departments), consider switching to dedicated `GET /dashboard/budget-vs-actual` endpoint which returns pre-aggregated summary data with smaller payload and server-side caching support.
-- [x] Charts (Recharts)
+- [x] Charts (Recharts) (UI done, API status: ⚠️ unverified)
   - [x] Expense trend chart
   - [x] Cash flow chart
   - [x] Budget utilization by department
-- [x] Recent Activity Widget
+- [x] Recent Activity Widget (UI done, API status: ⚠️ unverified)
   - [x] Feed-style list of latest transaction & budget actions
   - [x] Uses `GET /api/v1/dashboard/recent-activity` endpoint
   - [x] Activity type icons (created, approved, posted, voided, etc.)
   - [x] Relative timestamps ("2 hours ago")
   - [x] Click to navigate to transaction/budget detail
 
-### Reports UI
+### Reports UI (⚠️ Need Real API Verification)
 
 > **Computed from:** `ledger_entries`, `chart_of_accounts`, `entry_dimensions`
 
-- [x] Report viewer
+- [x] Report viewer (UI done, API status: ⚠️ unverified)
   - [x] Trial Balance
   - [x] Balance Sheet
   - [x] Income Statement (P&L)
-- [x] Export functionality
+- [x] Export functionality (UI done)
   - [x] CSV export
   - [x] PDF export
-- [x] **Account Ledger View**
+- [x] **Account Ledger View** (UI done, API status: ⚠️ unverified)
   - [x] Select account from dropdown (via Account List)
   - [x] Show all entries for account (`ledger_entries.account_id`)
   - [x] Running balance column (`account_current_balance`)
-  - [x] Date range filter (Mocked)
-  - [x] Mock: `GET /accounts/:id/ledger`
-- [x] **Dimensional Reports UI** (MISSING - DB Ready)
+  - [x] Date range filter
+  - [x] `GET /accounts/:id/ledger`
+- [x] **Dimensional Reports UI** (UI done, API status: ⚠️ unverified)
   - [x] Filter by dimension type (Department/Project/Cost Center)
   - [x] Filter by dimension value (Department/Project/Cost Center)
   - [x] Group expenses by dimension (Chart & Table)
   - [x] Compare across dimensions
-  - [x] Mock: `GET /reports/dimensional`
+  - [x] `GET /reports/dimensional`
 
-### Advanced Features
+### Advanced Features (⚠️ Need Real API Verification)
 
 > **DB Tables:** `budgets`, `budget_lines`, `budget_line_dimensions`
 
-- [x] **Fiscal Year Creation UI** (Mocked - Auto-generate periods)
+- [x] **Fiscal Year Creation UI** (UI done, API status: ⚠️ unverified)
   - [x] Form: name, start_date, end_date
   - [x] Auto-generate 12 monthly periods
   - [x] Option for adjustment period (period 13)
-  - [x] Mock: `POST /fiscal-years`
-- [x] **Budget Management UI** (Mocked - Create, Detail, Lines)
+  - [x] `POST /fiscal-years`
+- [x] **Budget Management UI** (UI done, API status: ⚠️ unverified)
   - [x] Create budget (`budgets` table)
   - [x] Add budget lines per account/period (`budget_lines`)
   - [x] Assign dimensions to budget lines (`budget_line_dimensions`)
   - [x] Lock/unlock budget
-  - [x] Mock: `POST /budgets`, `POST /budgets/:id/lines`
-- [x] Simulation/Forecasting UI (Phase 4 backend dependency) (API Spec Ready)
+  - [x] `POST /budgets`, `POST /budgets/:id/lines`
+- [x] Simulation/Forecasting UI (UI done, API status: ⚠️ unverified)
   - [x] Historical data selection
   - [x] Adjustment parameters
   - [x] Projection results
 
-### Mock Handlers Status
+### Real API Integration Status (2026-01-13)
 
-The following mock handlers have been implemented in `frontend/src/mocks/handlers.ts`:
+**✅ Verified Real API:**
+- Auth (login, register, logout, refresh)
+- Organization CRUD
+- User/Team management
+- Role management (6 roles)
 
-- [x] Account Ledger: `GET /api/v1/accounts/:id/ledger`
-- [x] Dimensional Report: `GET /api/v1/reports/dimensional`
-- [x] Fiscal Year Creation: `POST /api/v1/fiscal-years`
-- [x] Organization Settings: `PATCH /api/v1/organizations/:id`
-- [x] Team Management:
-  - [x] `GET /api/v1/organizations/:id/users`
-  - [x] `POST /api/v1/organizations/:id/users`
-  - [x] `PATCH /api/v1/organizations/:id/users/:userId`
-  - [x] `DELETE /api/v1/organizations/:id/users/:userId`
-- [x] Budget Management:
-  - [x] `POST /api/v1/budgets`
-  - [x] `POST /api/v1/budgets/:id/lines`
-- [x] Dashboard Metrics: `GET /api/v1/dashboard/metrics`
-- [x] Cash Flow: `GET /api/v1/dashboard/cash-flow`
-- [x] Simulation: `POST /api/v1/simulation/run`
+**⚠️ Need Verification (UI done, API connection unverified):**
+- Master Data (accounts, fiscal periods, dimensions, exchange rates)
+- Transactions (CRUD + workflow)
+- Dashboard (metrics, cash flow, recent activity)
+- Reports (trial balance, balance sheet, income statement, dimensional)
+- Budgets (CRUD + lines)
+- Simulation
+- Attachments
 
 **Deliverable:** Complete frontend application.
+
+**Status:** UI Complete | Real API Integration = Partial (Auth + Org only)
 
 ---
 
