@@ -3,15 +3,21 @@
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
-#[sea_orm(table_name = "dimension_types")]
+#[derive(Copy, Clone, Default, Debug, DeriveEntity)]
+pub struct Entity;
+
+impl EntityName for Entity {
+    fn table_name(&self) -> &str {
+        "dimension_types"
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, DeriveModel, DeriveActiveModel, Eq, Serialize, Deserialize)]
 pub struct Model {
-    #[sea_orm(primary_key, auto_increment = false)]
     pub id: Uuid,
     pub organization_id: Uuid,
     pub code: String,
     pub name: String,
-    #[sea_orm(column_type = "Text", nullable)]
     pub description: Option<String>,
     pub is_required: bool,
     pub is_active: bool,
@@ -20,18 +26,66 @@ pub struct Model {
     pub updated_at: DateTimeWithTimeZone,
 }
 
-#[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
+#[derive(Copy, Clone, Debug, EnumIter, DeriveColumn)]
+pub enum Column {
+    Id,
+    OrganizationId,
+    Code,
+    Name,
+    Description,
+    IsRequired,
+    IsActive,
+    SortOrder,
+    CreatedAt,
+    UpdatedAt,
+}
+
+#[derive(Copy, Clone, Debug, EnumIter, DerivePrimaryKey)]
+pub enum PrimaryKey {
+    Id,
+}
+
+impl PrimaryKeyTrait for PrimaryKey {
+    type ValueType = Uuid;
+    fn auto_increment() -> bool {
+        false
+    }
+}
+
+#[derive(Copy, Clone, Debug, EnumIter)]
 pub enum Relation {
-    #[sea_orm(has_many = "super::dimension_values::Entity")]
     DimensionValues,
-    #[sea_orm(
-        belongs_to = "super::organizations::Entity",
-        from = "Column::OrganizationId",
-        to = "super::organizations::Column::Id",
-        on_update = "NoAction",
-        on_delete = "Cascade"
-    )]
     Organizations,
+}
+
+impl ColumnTrait for Column {
+    type EntityName = Entity;
+    fn def(&self) -> ColumnDef {
+        match self {
+            Self::Id => ColumnType::Uuid.def(),
+            Self::OrganizationId => ColumnType::Uuid.def(),
+            Self::Code => ColumnType::String(StringLen::N(50u32)).def(),
+            Self::Name => ColumnType::String(StringLen::N(100u32)).def(),
+            Self::Description => ColumnType::Text.def().null(),
+            Self::IsRequired => ColumnType::Boolean.def(),
+            Self::IsActive => ColumnType::Boolean.def(),
+            Self::SortOrder => ColumnType::SmallInteger.def(),
+            Self::CreatedAt => ColumnType::TimestampWithTimeZone.def(),
+            Self::UpdatedAt => ColumnType::TimestampWithTimeZone.def(),
+        }
+    }
+}
+
+impl RelationTrait for Relation {
+    fn def(&self) -> RelationDef {
+        match self {
+            Self::DimensionValues => Entity::has_many(super::dimension_values::Entity).into(),
+            Self::Organizations => Entity::belongs_to(super::organizations::Entity)
+                .from(Column::OrganizationId)
+                .to(super::organizations::Column::Id)
+                .into(),
+        }
+    }
 }
 
 impl Related<super::dimension_values::Entity> for Entity {

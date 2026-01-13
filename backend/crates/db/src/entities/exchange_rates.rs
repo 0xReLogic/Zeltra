@@ -4,15 +4,21 @@ use super::sea_orm_active_enums::RateSource;
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
-#[sea_orm(table_name = "exchange_rates")]
+#[derive(Copy, Clone, Default, Debug, DeriveEntity)]
+pub struct Entity;
+
+impl EntityName for Entity {
+    fn table_name(&self) -> &str {
+        "exchange_rates"
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, DeriveModel, DeriveActiveModel, Eq, Serialize, Deserialize)]
 pub struct Model {
-    #[sea_orm(primary_key, auto_increment = false)]
     pub id: Uuid,
     pub organization_id: Uuid,
     pub from_currency: String,
     pub to_currency: String,
-    #[sea_orm(column_type = "Decimal(Some((19, 10)))")]
     pub rate: Decimal,
     pub effective_date: Date,
     pub source: RateSource,
@@ -21,40 +27,79 @@ pub struct Model {
     pub created_at: DateTimeWithTimeZone,
 }
 
-#[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
+#[derive(Copy, Clone, Debug, EnumIter, DeriveColumn)]
+pub enum Column {
+    Id,
+    OrganizationId,
+    FromCurrency,
+    ToCurrency,
+    Rate,
+    EffectiveDate,
+    Source,
+    SourceReference,
+    CreatedBy,
+    CreatedAt,
+}
+
+#[derive(Copy, Clone, Debug, EnumIter, DerivePrimaryKey)]
+pub enum PrimaryKey {
+    Id,
+}
+
+impl PrimaryKeyTrait for PrimaryKey {
+    type ValueType = Uuid;
+    fn auto_increment() -> bool {
+        false
+    }
+}
+
+#[derive(Copy, Clone, Debug, EnumIter)]
 pub enum Relation {
-    #[sea_orm(
-        belongs_to = "super::currencies::Entity",
-        from = "Column::FromCurrency",
-        to = "super::currencies::Column::Code",
-        on_update = "NoAction",
-        on_delete = "NoAction"
-    )]
     Currencies2,
-    #[sea_orm(
-        belongs_to = "super::currencies::Entity",
-        from = "Column::ToCurrency",
-        to = "super::currencies::Column::Code",
-        on_update = "NoAction",
-        on_delete = "NoAction"
-    )]
     Currencies1,
-    #[sea_orm(
-        belongs_to = "super::organizations::Entity",
-        from = "Column::OrganizationId",
-        to = "super::organizations::Column::Id",
-        on_update = "NoAction",
-        on_delete = "Cascade"
-    )]
     Organizations,
-    #[sea_orm(
-        belongs_to = "super::users::Entity",
-        from = "Column::CreatedBy",
-        to = "super::users::Column::Id",
-        on_update = "NoAction",
-        on_delete = "NoAction"
-    )]
     Users,
+}
+
+impl ColumnTrait for Column {
+    type EntityName = Entity;
+    fn def(&self) -> ColumnDef {
+        match self {
+            Self::Id => ColumnType::Uuid.def(),
+            Self::OrganizationId => ColumnType::Uuid.def(),
+            Self::FromCurrency => ColumnType::Char(Some(3u32)).def(),
+            Self::ToCurrency => ColumnType::Char(Some(3u32)).def(),
+            Self::Rate => ColumnType::Decimal(Some((19u32, 10u32))).def(),
+            Self::EffectiveDate => ColumnType::Date.def(),
+            Self::Source => RateSource::db_type().get_column_type().to_owned().def(),
+            Self::SourceReference => ColumnType::String(StringLen::N(255u32)).def().null(),
+            Self::CreatedBy => ColumnType::Uuid.def().null(),
+            Self::CreatedAt => ColumnType::TimestampWithTimeZone.def(),
+        }
+    }
+}
+
+impl RelationTrait for Relation {
+    fn def(&self) -> RelationDef {
+        match self {
+            Self::Currencies2 => Entity::belongs_to(super::currencies::Entity)
+                .from(Column::FromCurrency)
+                .to(super::currencies::Column::Code)
+                .into(),
+            Self::Currencies1 => Entity::belongs_to(super::currencies::Entity)
+                .from(Column::ToCurrency)
+                .to(super::currencies::Column::Code)
+                .into(),
+            Self::Organizations => Entity::belongs_to(super::organizations::Entity)
+                .from(Column::OrganizationId)
+                .to(super::organizations::Column::Id)
+                .into(),
+            Self::Users => Entity::belongs_to(super::users::Entity)
+                .from(Column::CreatedBy)
+                .to(super::users::Column::Id)
+                .into(),
+        }
+    }
 }
 
 impl Related<super::organizations::Entity> for Entity {

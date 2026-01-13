@@ -79,6 +79,10 @@ pub enum WorkflowError {
     #[error("Rejection reason is required")]
     RejectionReasonRequired,
 
+    /// Attempted to void a reversal transaction.
+    #[error("Cannot void a reversal transaction")]
+    CannotVoidReversal,
+
     /// Database error.
     #[error("Database error: {0}")]
     Database(String),
@@ -93,7 +97,8 @@ impl WorkflowError {
             | Self::CannotModifyPosted
             | Self::CannotModifyVoided
             | Self::VoidReasonRequired
-            | Self::RejectionReasonRequired => 400,
+            | Self::RejectionReasonRequired
+            | Self::CannotVoidReversal => 400,
 
             Self::NotAuthorizedToApprove
             | Self::NotAuthorizedToApproveUser { .. }
@@ -122,6 +127,7 @@ impl WorkflowError {
             Self::TransactionNotFound(_) => "TRANSACTION_NOT_FOUND",
             Self::VoidReasonRequired => "VOID_REASON_REQUIRED",
             Self::RejectionReasonRequired => "REJECTION_REASON_REQUIRED",
+            Self::CannotVoidReversal => "CANNOT_VOID_REVERSAL",
             Self::Database(_) => "DATABASE_ERROR",
         }
     }

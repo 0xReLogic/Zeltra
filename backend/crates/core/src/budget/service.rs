@@ -75,6 +75,23 @@ impl BudgetService {
 
         Ok(())
     }
+
+    /// Check if ledger entry dimensions match those required by the budget.
+    ///
+    /// # Errors
+    ///
+    /// Returns `BudgetError::InvalidDimension` if required dimensions are missing.
+    pub fn check_dimension_compliance(
+        ledger_dimensions: &[uuid::Uuid],
+        required_dimensions: &[uuid::Uuid],
+    ) -> Result<(), BudgetError> {
+        for required in required_dimensions {
+            if !ledger_dimensions.contains(required) {
+                return Err(BudgetError::InvalidDimension(*required));
+            }
+        }
+        Ok(())
+    }
 }
 
 #[cfg(test)]

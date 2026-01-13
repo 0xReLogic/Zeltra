@@ -3,10 +3,17 @@
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
-#[sea_orm(table_name = "organization_usage")]
+#[derive(Copy, Clone, Default, Debug, DeriveEntity)]
+pub struct Entity;
+
+impl EntityName for Entity {
+    fn table_name(&self) -> &str {
+        "organization_usage"
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, DeriveModel, DeriveActiveModel, Eq, Serialize, Deserialize)]
 pub struct Model {
-    #[sea_orm(primary_key, auto_increment = false)]
     pub id: Uuid,
     pub organization_id: Uuid,
     pub year_month: String,
@@ -20,16 +27,66 @@ pub struct Model {
     pub updated_at: DateTimeWithTimeZone,
 }
 
-#[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
+#[derive(Copy, Clone, Debug, EnumIter, DeriveColumn)]
+pub enum Column {
+    Id,
+    OrganizationId,
+    YearMonth,
+    TransactionCount,
+    ApiCallCount,
+    StorageUsedBytes,
+    ActiveUserCount,
+    ActiveDimensionCount,
+    ActiveCurrencyCount,
+    CreatedAt,
+    UpdatedAt,
+}
+
+#[derive(Copy, Clone, Debug, EnumIter, DerivePrimaryKey)]
+pub enum PrimaryKey {
+    Id,
+}
+
+impl PrimaryKeyTrait for PrimaryKey {
+    type ValueType = Uuid;
+    fn auto_increment() -> bool {
+        false
+    }
+}
+
+#[derive(Copy, Clone, Debug, EnumIter)]
 pub enum Relation {
-    #[sea_orm(
-        belongs_to = "super::organizations::Entity",
-        from = "Column::OrganizationId",
-        to = "super::organizations::Column::Id",
-        on_update = "NoAction",
-        on_delete = "Cascade"
-    )]
     Organizations,
+}
+
+impl ColumnTrait for Column {
+    type EntityName = Entity;
+    fn def(&self) -> ColumnDef {
+        match self {
+            Self::Id => ColumnType::Uuid.def(),
+            Self::OrganizationId => ColumnType::Uuid.def(),
+            Self::YearMonth => ColumnType::Char(Some(7u32)).def(),
+            Self::TransactionCount => ColumnType::Integer.def(),
+            Self::ApiCallCount => ColumnType::Integer.def(),
+            Self::StorageUsedBytes => ColumnType::BigInteger.def(),
+            Self::ActiveUserCount => ColumnType::Integer.def(),
+            Self::ActiveDimensionCount => ColumnType::Integer.def(),
+            Self::ActiveCurrencyCount => ColumnType::Integer.def(),
+            Self::CreatedAt => ColumnType::TimestampWithTimeZone.def(),
+            Self::UpdatedAt => ColumnType::TimestampWithTimeZone.def(),
+        }
+    }
+}
+
+impl RelationTrait for Relation {
+    fn def(&self) -> RelationDef {
+        match self {
+            Self::Organizations => Entity::belongs_to(super::organizations::Entity)
+                .from(Column::OrganizationId)
+                .to(super::organizations::Column::Id)
+                .into(),
+        }
+    }
 }
 
 impl Related<super::organizations::Entity> for Entity {

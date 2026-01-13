@@ -3,12 +3,18 @@
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
-#[sea_orm(table_name = "users")]
+#[derive(Copy, Clone, Default, Debug, DeriveEntity)]
+pub struct Entity;
+
+impl EntityName for Entity {
+    fn table_name(&self) -> &str {
+        "users"
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, DeriveModel, DeriveActiveModel, Eq, Serialize, Deserialize)]
 pub struct Model {
-    #[sea_orm(primary_key, auto_increment = false)]
     pub id: Uuid,
-    #[sea_orm(unique)]
     pub email: String,
     pub password_hash: String,
     pub full_name: String,
@@ -18,20 +24,73 @@ pub struct Model {
     pub updated_at: DateTimeWithTimeZone,
 }
 
-#[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
+#[derive(Copy, Clone, Debug, EnumIter, DeriveColumn)]
+pub enum Column {
+    Id,
+    Email,
+    PasswordHash,
+    FullName,
+    IsActive,
+    EmailVerifiedAt,
+    CreatedAt,
+    UpdatedAt,
+}
+
+#[derive(Copy, Clone, Debug, EnumIter, DerivePrimaryKey)]
+pub enum PrimaryKey {
+    Id,
+}
+
+impl PrimaryKeyTrait for PrimaryKey {
+    type ValueType = Uuid;
+    fn auto_increment() -> bool {
+        false
+    }
+}
+
+#[derive(Copy, Clone, Debug, EnumIter)]
 pub enum Relation {
-    #[sea_orm(has_many = "super::attachments::Entity")]
     Attachments,
-    #[sea_orm(has_many = "super::budgets::Entity")]
     Budgets,
-    #[sea_orm(has_many = "super::exchange_rates::Entity")]
+    EmailVerificationTokens,
     ExchangeRates,
-    #[sea_orm(has_many = "super::fiscal_periods::Entity")]
     FiscalPeriods,
-    #[sea_orm(has_many = "super::fiscal_years::Entity")]
     FiscalYears,
-    #[sea_orm(has_many = "super::organization_users::Entity")]
     OrganizationUsers,
+    Sessions,
+}
+
+impl ColumnTrait for Column {
+    type EntityName = Entity;
+    fn def(&self) -> ColumnDef {
+        match self {
+            Self::Id => ColumnType::Uuid.def(),
+            Self::Email => ColumnType::String(StringLen::N(255u32)).def().unique(),
+            Self::PasswordHash => ColumnType::String(StringLen::N(255u32)).def(),
+            Self::FullName => ColumnType::String(StringLen::N(255u32)).def(),
+            Self::IsActive => ColumnType::Boolean.def(),
+            Self::EmailVerifiedAt => ColumnType::TimestampWithTimeZone.def().null(),
+            Self::CreatedAt => ColumnType::TimestampWithTimeZone.def(),
+            Self::UpdatedAt => ColumnType::TimestampWithTimeZone.def(),
+        }
+    }
+}
+
+impl RelationTrait for Relation {
+    fn def(&self) -> RelationDef {
+        match self {
+            Self::Attachments => Entity::has_many(super::attachments::Entity).into(),
+            Self::Budgets => Entity::has_many(super::budgets::Entity).into(),
+            Self::EmailVerificationTokens => {
+                Entity::has_many(super::email_verification_tokens::Entity).into()
+            }
+            Self::ExchangeRates => Entity::has_many(super::exchange_rates::Entity).into(),
+            Self::FiscalPeriods => Entity::has_many(super::fiscal_periods::Entity).into(),
+            Self::FiscalYears => Entity::has_many(super::fiscal_years::Entity).into(),
+            Self::OrganizationUsers => Entity::has_many(super::organization_users::Entity).into(),
+            Self::Sessions => Entity::has_many(super::sessions::Entity).into(),
+        }
+    }
 }
 
 impl Related<super::attachments::Entity> for Entity {
@@ -43,6 +102,12 @@ impl Related<super::attachments::Entity> for Entity {
 impl Related<super::budgets::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::Budgets.def()
+    }
+}
+
+impl Related<super::email_verification_tokens::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::EmailVerificationTokens.def()
     }
 }
 
@@ -67,6 +132,12 @@ impl Related<super::fiscal_years::Entity> for Entity {
 impl Related<super::organization_users::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::OrganizationUsers.def()
+    }
+}
+
+impl Related<super::sessions::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Sessions.def()
     }
 }
 

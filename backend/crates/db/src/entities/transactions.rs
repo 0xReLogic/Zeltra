@@ -5,19 +5,24 @@ use super::sea_orm_active_enums::TransactionType;
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
-#[sea_orm(table_name = "transactions")]
+#[derive(Copy, Clone, Default, Debug, DeriveEntity)]
+pub struct Entity;
+
+impl EntityName for Entity {
+    fn table_name(&self) -> &str {
+        "transactions"
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, DeriveModel, DeriveActiveModel, Eq, Serialize, Deserialize)]
 pub struct Model {
-    #[sea_orm(primary_key, auto_increment = false)]
     pub id: Uuid,
     pub organization_id: Uuid,
     pub fiscal_period_id: Uuid,
     pub reference_number: Option<String>,
     pub transaction_type: TransactionType,
     pub transaction_date: Date,
-    #[sea_orm(column_type = "Text")]
     pub description: String,
-    #[sea_orm(column_type = "Text", nullable)]
     pub memo: Option<String>,
     pub status: TransactionStatus,
     pub created_by: Uuid,
@@ -25,98 +30,157 @@ pub struct Model {
     pub submitted_by: Option<Uuid>,
     pub approved_at: Option<DateTimeWithTimeZone>,
     pub approved_by: Option<Uuid>,
-    #[sea_orm(column_type = "Text", nullable)]
     pub approval_notes: Option<String>,
     pub posted_at: Option<DateTimeWithTimeZone>,
     pub posted_by: Option<Uuid>,
     pub voided_at: Option<DateTimeWithTimeZone>,
     pub voided_by: Option<Uuid>,
-    #[sea_orm(column_type = "Text", nullable)]
     pub void_reason: Option<String>,
     pub reversed_by_transaction_id: Option<Uuid>,
     pub reverses_transaction_id: Option<Uuid>,
     pub created_at: DateTimeWithTimeZone,
     pub updated_at: DateTimeWithTimeZone,
+    pub timezone: String,
 }
 
-#[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
+#[derive(Copy, Clone, Debug, EnumIter, DeriveColumn)]
+pub enum Column {
+    Id,
+    OrganizationId,
+    FiscalPeriodId,
+    ReferenceNumber,
+    TransactionType,
+    TransactionDate,
+    Description,
+    Memo,
+    Status,
+    CreatedBy,
+    SubmittedAt,
+    SubmittedBy,
+    ApprovedAt,
+    ApprovedBy,
+    ApprovalNotes,
+    PostedAt,
+    PostedBy,
+    VoidedAt,
+    VoidedBy,
+    VoidReason,
+    ReversedByTransactionId,
+    ReversesTransactionId,
+    CreatedAt,
+    UpdatedAt,
+    Timezone,
+}
+
+#[derive(Copy, Clone, Debug, EnumIter, DerivePrimaryKey)]
+pub enum PrimaryKey {
+    Id,
+}
+
+impl PrimaryKeyTrait for PrimaryKey {
+    type ValueType = Uuid;
+    fn auto_increment() -> bool {
+        false
+    }
+}
+
+#[derive(Copy, Clone, Debug, EnumIter)]
 pub enum Relation {
-    #[sea_orm(has_many = "super::attachments::Entity")]
     Attachments,
-    #[sea_orm(
-        belongs_to = "super::fiscal_periods::Entity",
-        from = "Column::FiscalPeriodId",
-        to = "super::fiscal_periods::Column::Id",
-        on_update = "NoAction",
-        on_delete = "NoAction"
-    )]
     FiscalPeriods,
-    #[sea_orm(has_many = "super::ledger_entries::Entity")]
     LedgerEntries,
-    #[sea_orm(
-        belongs_to = "super::organizations::Entity",
-        from = "Column::OrganizationId",
-        to = "super::organizations::Column::Id",
-        on_update = "NoAction",
-        on_delete = "Cascade"
-    )]
     Organizations,
-    #[sea_orm(
-        belongs_to = "Entity",
-        from = "Column::ReversedByTransactionId",
-        to = "Column::Id",
-        on_update = "NoAction",
-        on_delete = "NoAction"
-    )]
     SelfRef2,
-    #[sea_orm(
-        belongs_to = "Entity",
-        from = "Column::ReversesTransactionId",
-        to = "Column::Id",
-        on_update = "NoAction",
-        on_delete = "NoAction"
-    )]
     SelfRef1,
-    #[sea_orm(
-        belongs_to = "super::users::Entity",
-        from = "Column::ApprovedBy",
-        to = "super::users::Column::Id",
-        on_update = "NoAction",
-        on_delete = "NoAction"
-    )]
     Users5,
-    #[sea_orm(
-        belongs_to = "super::users::Entity",
-        from = "Column::CreatedBy",
-        to = "super::users::Column::Id",
-        on_update = "NoAction",
-        on_delete = "NoAction"
-    )]
     Users4,
-    #[sea_orm(
-        belongs_to = "super::users::Entity",
-        from = "Column::PostedBy",
-        to = "super::users::Column::Id",
-        on_update = "NoAction",
-        on_delete = "NoAction"
-    )]
     Users3,
-    #[sea_orm(
-        belongs_to = "super::users::Entity",
-        from = "Column::SubmittedBy",
-        to = "super::users::Column::Id",
-        on_update = "NoAction",
-        on_delete = "NoAction"
-    )]
     Users2,
-    #[sea_orm(
-        belongs_to = "super::users::Entity",
-        from = "Column::VoidedBy",
-        to = "super::users::Column::Id",
-        on_update = "NoAction",
-        on_delete = "NoAction"
-    )]
     Users1,
+}
+
+impl ColumnTrait for Column {
+    type EntityName = Entity;
+    fn def(&self) -> ColumnDef {
+        match self {
+            Self::Id => ColumnType::Uuid.def(),
+            Self::OrganizationId => ColumnType::Uuid.def(),
+            Self::FiscalPeriodId => ColumnType::Uuid.def(),
+            Self::ReferenceNumber => ColumnType::String(StringLen::N(100u32)).def().null(),
+            Self::TransactionType => TransactionType::db_type()
+                .get_column_type()
+                .to_owned()
+                .def(),
+            Self::TransactionDate => ColumnType::Date.def(),
+            Self::Description => ColumnType::Text.def(),
+            Self::Memo => ColumnType::Text.def().null(),
+            Self::Status => TransactionStatus::db_type()
+                .get_column_type()
+                .to_owned()
+                .def(),
+            Self::CreatedBy => ColumnType::Uuid.def(),
+            Self::SubmittedAt => ColumnType::TimestampWithTimeZone.def().null(),
+            Self::SubmittedBy => ColumnType::Uuid.def().null(),
+            Self::ApprovedAt => ColumnType::TimestampWithTimeZone.def().null(),
+            Self::ApprovedBy => ColumnType::Uuid.def().null(),
+            Self::ApprovalNotes => ColumnType::Text.def().null(),
+            Self::PostedAt => ColumnType::TimestampWithTimeZone.def().null(),
+            Self::PostedBy => ColumnType::Uuid.def().null(),
+            Self::VoidedAt => ColumnType::TimestampWithTimeZone.def().null(),
+            Self::VoidedBy => ColumnType::Uuid.def().null(),
+            Self::VoidReason => ColumnType::Text.def().null(),
+            Self::ReversedByTransactionId => ColumnType::Uuid.def().null(),
+            Self::ReversesTransactionId => ColumnType::Uuid.def().null(),
+            Self::CreatedAt => ColumnType::TimestampWithTimeZone.def(),
+            Self::UpdatedAt => ColumnType::TimestampWithTimeZone.def(),
+            Self::Timezone => ColumnType::String(StringLen::N(50u32)).def(),
+        }
+    }
+}
+
+impl RelationTrait for Relation {
+    fn def(&self) -> RelationDef {
+        match self {
+            Self::Attachments => Entity::has_many(super::attachments::Entity).into(),
+            Self::FiscalPeriods => Entity::belongs_to(super::fiscal_periods::Entity)
+                .from(Column::FiscalPeriodId)
+                .to(super::fiscal_periods::Column::Id)
+                .into(),
+            Self::LedgerEntries => Entity::has_many(super::ledger_entries::Entity).into(),
+            Self::Organizations => Entity::belongs_to(super::organizations::Entity)
+                .from(Column::OrganizationId)
+                .to(super::organizations::Column::Id)
+                .into(),
+            Self::SelfRef2 => Entity::belongs_to(Entity)
+                .from(Column::ReversedByTransactionId)
+                .to(Column::Id)
+                .into(),
+            Self::SelfRef1 => Entity::belongs_to(Entity)
+                .from(Column::ReversesTransactionId)
+                .to(Column::Id)
+                .into(),
+            Self::Users5 => Entity::belongs_to(super::users::Entity)
+                .from(Column::ApprovedBy)
+                .to(super::users::Column::Id)
+                .into(),
+            Self::Users4 => Entity::belongs_to(super::users::Entity)
+                .from(Column::CreatedBy)
+                .to(super::users::Column::Id)
+                .into(),
+            Self::Users3 => Entity::belongs_to(super::users::Entity)
+                .from(Column::PostedBy)
+                .to(super::users::Column::Id)
+                .into(),
+            Self::Users2 => Entity::belongs_to(super::users::Entity)
+                .from(Column::SubmittedBy)
+                .to(super::users::Column::Id)
+                .into(),
+            Self::Users1 => Entity::belongs_to(super::users::Entity)
+                .from(Column::VoidedBy)
+                .to(super::users::Column::Id)
+                .into(),
+        }
+    }
 }
 
 impl Related<super::attachments::Entity> for Entity {

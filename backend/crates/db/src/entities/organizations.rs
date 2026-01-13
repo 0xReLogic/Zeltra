@@ -5,17 +5,22 @@ use super::sea_orm_active_enums::SubscriptionTier;
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
-#[sea_orm(table_name = "organizations")]
+#[derive(Copy, Clone, Default, Debug, DeriveEntity)]
+pub struct Entity;
+
+impl EntityName for Entity {
+    fn table_name(&self) -> &str {
+        "organizations"
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, DeriveModel, DeriveActiveModel, Eq, Serialize, Deserialize)]
 pub struct Model {
-    #[sea_orm(primary_key, auto_increment = false)]
     pub id: Uuid,
     pub name: String,
-    #[sea_orm(unique)]
     pub slug: String,
     pub base_currency: String,
     pub timezone: String,
-    #[sea_orm(column_type = "JsonBinary")]
     pub settings: Json,
     pub is_active: bool,
     pub subscription_tier: SubscriptionTier,
@@ -29,32 +34,103 @@ pub struct Model {
     pub updated_at: DateTimeWithTimeZone,
 }
 
-#[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
+#[derive(Copy, Clone, Debug, EnumIter, DeriveColumn)]
+pub enum Column {
+    Id,
+    Name,
+    Slug,
+    BaseCurrency,
+    Timezone,
+    Settings,
+    IsActive,
+    SubscriptionTier,
+    SubscriptionStatus,
+    TrialEndsAt,
+    SubscriptionEndsAt,
+    PaymentProvider,
+    PaymentCustomerId,
+    PaymentSubscriptionId,
+    CreatedAt,
+    UpdatedAt,
+}
+
+#[derive(Copy, Clone, Debug, EnumIter, DerivePrimaryKey)]
+pub enum PrimaryKey {
+    Id,
+}
+
+impl PrimaryKeyTrait for PrimaryKey {
+    type ValueType = Uuid;
+    fn auto_increment() -> bool {
+        false
+    }
+}
+
+#[derive(Copy, Clone, Debug, EnumIter)]
 pub enum Relation {
-    #[sea_orm(has_many = "super::approval_rules::Entity")]
     ApprovalRules,
-    #[sea_orm(has_many = "super::attachments::Entity")]
     Attachments,
-    #[sea_orm(has_many = "super::budgets::Entity")]
     Budgets,
-    #[sea_orm(has_many = "super::chart_of_accounts::Entity")]
     ChartOfAccounts,
-    #[sea_orm(has_many = "super::dimension_types::Entity")]
     DimensionTypes,
-    #[sea_orm(has_many = "super::dimension_values::Entity")]
     DimensionValues,
-    #[sea_orm(has_many = "super::exchange_rates::Entity")]
     ExchangeRates,
-    #[sea_orm(has_many = "super::fiscal_periods::Entity")]
     FiscalPeriods,
-    #[sea_orm(has_many = "super::fiscal_years::Entity")]
     FiscalYears,
-    #[sea_orm(has_many = "super::organization_usage::Entity")]
     OrganizationUsage,
-    #[sea_orm(has_many = "super::organization_users::Entity")]
     OrganizationUsers,
-    #[sea_orm(has_many = "super::transactions::Entity")]
+    Sessions,
     Transactions,
+}
+
+impl ColumnTrait for Column {
+    type EntityName = Entity;
+    fn def(&self) -> ColumnDef {
+        match self {
+            Self::Id => ColumnType::Uuid.def(),
+            Self::Name => ColumnType::String(StringLen::N(255u32)).def(),
+            Self::Slug => ColumnType::String(StringLen::N(100u32)).def().unique(),
+            Self::BaseCurrency => ColumnType::Char(Some(3u32)).def(),
+            Self::Timezone => ColumnType::String(StringLen::N(50u32)).def(),
+            Self::Settings => ColumnType::JsonBinary.def(),
+            Self::IsActive => ColumnType::Boolean.def(),
+            Self::SubscriptionTier => SubscriptionTier::db_type()
+                .get_column_type()
+                .to_owned()
+                .def(),
+            Self::SubscriptionStatus => SubscriptionStatus::db_type()
+                .get_column_type()
+                .to_owned()
+                .def(),
+            Self::TrialEndsAt => ColumnType::TimestampWithTimeZone.def().null(),
+            Self::SubscriptionEndsAt => ColumnType::TimestampWithTimeZone.def().null(),
+            Self::PaymentProvider => ColumnType::String(StringLen::N(50u32)).def().null(),
+            Self::PaymentCustomerId => ColumnType::String(StringLen::N(255u32)).def().null(),
+            Self::PaymentSubscriptionId => ColumnType::String(StringLen::N(255u32)).def().null(),
+            Self::CreatedAt => ColumnType::TimestampWithTimeZone.def(),
+            Self::UpdatedAt => ColumnType::TimestampWithTimeZone.def(),
+        }
+    }
+}
+
+impl RelationTrait for Relation {
+    fn def(&self) -> RelationDef {
+        match self {
+            Self::ApprovalRules => Entity::has_many(super::approval_rules::Entity).into(),
+            Self::Attachments => Entity::has_many(super::attachments::Entity).into(),
+            Self::Budgets => Entity::has_many(super::budgets::Entity).into(),
+            Self::ChartOfAccounts => Entity::has_many(super::chart_of_accounts::Entity).into(),
+            Self::DimensionTypes => Entity::has_many(super::dimension_types::Entity).into(),
+            Self::DimensionValues => Entity::has_many(super::dimension_values::Entity).into(),
+            Self::ExchangeRates => Entity::has_many(super::exchange_rates::Entity).into(),
+            Self::FiscalPeriods => Entity::has_many(super::fiscal_periods::Entity).into(),
+            Self::FiscalYears => Entity::has_many(super::fiscal_years::Entity).into(),
+            Self::OrganizationUsage => Entity::has_many(super::organization_usage::Entity).into(),
+            Self::OrganizationUsers => Entity::has_many(super::organization_users::Entity).into(),
+            Self::Sessions => Entity::has_many(super::sessions::Entity).into(),
+            Self::Transactions => Entity::has_many(super::transactions::Entity).into(),
+        }
+    }
 }
 
 impl Related<super::approval_rules::Entity> for Entity {
@@ -120,6 +196,12 @@ impl Related<super::organization_usage::Entity> for Entity {
 impl Related<super::organization_users::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::OrganizationUsers.def()
+    }
+}
+
+impl Related<super::sessions::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Sessions.def()
     }
 }
 

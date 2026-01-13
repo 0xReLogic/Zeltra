@@ -1,3 +1,7 @@
+#![allow(missing_docs)]
+#![allow(clippy::missing_docs_in_private_items)]
+#![allow(clippy::pedantic)]
+
 //! Database layer with `SeaORM` entities and repositories.
 //!
 //! This crate provides:

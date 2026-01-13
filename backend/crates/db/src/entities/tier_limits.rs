@@ -4,10 +4,17 @@ use super::sea_orm_active_enums::SubscriptionTier;
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
-#[sea_orm(table_name = "tier_limits")]
+#[derive(Copy, Clone, Default, Debug, DeriveEntity)]
+pub struct Entity;
+
+impl EntityName for Entity {
+    fn table_name(&self) -> &str {
+        "tier_limits"
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, DeriveModel, DeriveActiveModel, Eq, Serialize, Deserialize)]
 pub struct Model {
-    #[sea_orm(primary_key, auto_increment = false)]
     pub tier: SubscriptionTier,
     pub max_users: Option<i32>,
     pub max_transactions_per_month: Option<i32>,
@@ -27,13 +34,89 @@ pub struct Model {
     pub audit_log_retention_days: i32,
     pub attachment_storage_gb: i32,
     pub display_name: String,
-    #[sea_orm(column_type = "Text", nullable)]
     pub description: Option<String>,
     pub created_at: DateTimeWithTimeZone,
     pub updated_at: DateTimeWithTimeZone,
 }
 
-#[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
+#[derive(Copy, Clone, Debug, EnumIter, DeriveColumn)]
+pub enum Column {
+    Tier,
+    MaxUsers,
+    MaxTransactionsPerMonth,
+    MaxDimensions,
+    MaxCurrencies,
+    MaxFiscalPeriods,
+    MaxBudgets,
+    MaxApprovalRules,
+    HasMultiCurrency,
+    HasSimulation,
+    HasApiAccess,
+    HasSso,
+    HasCustomReports,
+    HasMultiEntity,
+    HasAuditExport,
+    HasPrioritySupport,
+    AuditLogRetentionDays,
+    AttachmentStorageGb,
+    DisplayName,
+    Description,
+    CreatedAt,
+    UpdatedAt,
+}
+
+#[derive(Copy, Clone, Debug, EnumIter, DerivePrimaryKey)]
+pub enum PrimaryKey {
+    Tier,
+}
+
+impl PrimaryKeyTrait for PrimaryKey {
+    type ValueType = SubscriptionTier;
+    fn auto_increment() -> bool {
+        false
+    }
+}
+
+#[derive(Copy, Clone, Debug, EnumIter)]
 pub enum Relation {}
+
+impl ColumnTrait for Column {
+    type EntityName = Entity;
+    fn def(&self) -> ColumnDef {
+        match self {
+            Self::Tier => SubscriptionTier::db_type()
+                .get_column_type()
+                .to_owned()
+                .def(),
+            Self::MaxUsers => ColumnType::Integer.def().null(),
+            Self::MaxTransactionsPerMonth => ColumnType::Integer.def().null(),
+            Self::MaxDimensions => ColumnType::Integer.def(),
+            Self::MaxCurrencies => ColumnType::Integer.def(),
+            Self::MaxFiscalPeriods => ColumnType::Integer.def().null(),
+            Self::MaxBudgets => ColumnType::Integer.def().null(),
+            Self::MaxApprovalRules => ColumnType::Integer.def().null(),
+            Self::HasMultiCurrency => ColumnType::Boolean.def(),
+            Self::HasSimulation => ColumnType::Boolean.def(),
+            Self::HasApiAccess => ColumnType::Boolean.def(),
+            Self::HasSso => ColumnType::Boolean.def(),
+            Self::HasCustomReports => ColumnType::Boolean.def(),
+            Self::HasMultiEntity => ColumnType::Boolean.def(),
+            Self::HasAuditExport => ColumnType::Boolean.def(),
+            Self::HasPrioritySupport => ColumnType::Boolean.def(),
+            Self::AuditLogRetentionDays => ColumnType::Integer.def(),
+            Self::AttachmentStorageGb => ColumnType::Integer.def(),
+            Self::DisplayName => ColumnType::String(StringLen::N(50u32)).def(),
+            Self::Description => ColumnType::Text.def().null(),
+            Self::CreatedAt => ColumnType::TimestampWithTimeZone.def(),
+            Self::UpdatedAt => ColumnType::TimestampWithTimeZone.def(),
+        }
+    }
+}
+
+impl RelationTrait for Relation {
+    fn def(&self) -> RelationDef {
+        panic!("No RelationDef")
+    }
+}
 
 impl ActiveModelBehavior for ActiveModel {}

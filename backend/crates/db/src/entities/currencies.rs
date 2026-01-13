@@ -3,10 +3,17 @@
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
-#[sea_orm(table_name = "currencies")]
+#[derive(Copy, Clone, Default, Debug, DeriveEntity)]
+pub struct Entity;
+
+impl EntityName for Entity {
+    fn table_name(&self) -> &str {
+        "currencies"
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, DeriveModel, DeriveActiveModel, Eq, Serialize, Deserialize)]
 pub struct Model {
-    #[sea_orm(primary_key, auto_increment = false)]
     pub code: String,
     pub name: String,
     pub symbol: String,
@@ -14,12 +21,53 @@ pub struct Model {
     pub is_active: bool,
 }
 
-#[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
+#[derive(Copy, Clone, Debug, EnumIter, DeriveColumn)]
+pub enum Column {
+    Code,
+    Name,
+    Symbol,
+    DecimalPlaces,
+    IsActive,
+}
+
+#[derive(Copy, Clone, Debug, EnumIter, DerivePrimaryKey)]
+pub enum PrimaryKey {
+    Code,
+}
+
+impl PrimaryKeyTrait for PrimaryKey {
+    type ValueType = String;
+    fn auto_increment() -> bool {
+        false
+    }
+}
+
+#[derive(Copy, Clone, Debug, EnumIter)]
 pub enum Relation {
-    #[sea_orm(has_many = "super::budgets::Entity")]
     Budgets,
-    #[sea_orm(has_many = "super::chart_of_accounts::Entity")]
     ChartOfAccounts,
+}
+
+impl ColumnTrait for Column {
+    type EntityName = Entity;
+    fn def(&self) -> ColumnDef {
+        match self {
+            Self::Code => ColumnType::Char(Some(3u32)).def(),
+            Self::Name => ColumnType::String(StringLen::N(100u32)).def(),
+            Self::Symbol => ColumnType::String(StringLen::N(10u32)).def(),
+            Self::DecimalPlaces => ColumnType::SmallInteger.def(),
+            Self::IsActive => ColumnType::Boolean.def(),
+        }
+    }
+}
+
+impl RelationTrait for Relation {
+    fn def(&self) -> RelationDef {
+        match self {
+            Self::Budgets => Entity::has_many(super::budgets::Entity).into(),
+            Self::ChartOfAccounts => Entity::has_many(super::chart_of_accounts::Entity).into(),
+        }
+    }
 }
 
 impl Related<super::budgets::Entity> for Entity {

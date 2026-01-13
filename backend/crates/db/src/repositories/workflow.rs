@@ -10,9 +10,12 @@ use sea_orm::{
 };
 use uuid::Uuid;
 
-use zeltra_core::workflow::{
-    ApprovalEngine, ApprovalRule, OriginalEntry, ReversalInput, ReversalService, WorkflowError,
-    WorkflowService,
+use zeltra_core::{
+    ledger::types::TransactionType as CoreTransactionType,
+    workflow::{
+        ApprovalEngine, ApprovalRule, OriginalEntry, ReversalInput, ReversalService, WorkflowError,
+        WorkflowService,
+    },
 };
 
 use crate::entities::{
@@ -140,10 +143,32 @@ impl WorkflowRepository {
         approved_by: Uuid,
         approval_notes: Option<String>,
     ) -> Result<transactions::Model, WorkflowError> {
+        self.approve_transaction_internal(
+            &self.db,
+            organization_id,
+            transaction_id,
+            approved_by,
+            approval_notes,
+        )
+        .await
+    }
+
+    /// Internal method for approving a transaction with a generic connection.
+    async fn approve_transaction_internal<C>(
+        &self,
+        conn: &C,
+        organization_id: Uuid,
+        transaction_id: Uuid,
+        approved_by: Uuid,
+        approval_notes: Option<String>,
+    ) -> Result<transactions::Model, WorkflowError>
+    where
+        C: sea_orm::ConnectionTrait,
+    {
         // Fetch transaction
         let transaction = transactions::Entity::find_by_id(transaction_id)
             .filter(transactions::Column::OrganizationId.eq(organization_id))
-            .one(&self.db)
+            .one(conn)
             .await
             .map_err(|e| WorkflowError::Database(e.to_string()))?
             .ok_or(WorkflowError::TransactionNotFound(transaction_id))?;
@@ -156,11 +181,13 @@ impl WorkflowRepository {
             WorkflowService::approve(current_status, approved_by, approval_notes.clone())?;
 
         // Check user authorization
-        self.check_approval_authorization(
+        self.check_approval_authorization_with_conn(
+            conn,
             organization_id,
             approved_by,
             &transaction.transaction_type,
-            self.calculate_transaction_total(transaction_id).await?,
+            self.calculate_transaction_total_with_conn(conn, transaction_id)
+                .await?,
         )
         .await?;
 
@@ -174,7 +201,7 @@ impl WorkflowRepository {
         active.updated_at = Set(now);
 
         let updated = active
-            .update(&self.db)
+            .update(conn)
             .await
             .map_err(|e| WorkflowError::Database(e.to_string()))?;
 
@@ -304,9 +331,11 @@ impl WorkflowRepository {
 
         // Convert DB status to core status
         let current_status = db_status_to_core(&transaction.status);
+        let core_tx_type = db_tx_type_to_core(&transaction.transaction_type);
 
         // Validate transition using WorkflowService
-        let _action = WorkflowService::void(current_status, voided_by, void_reason.clone())?;
+        let _action =
+            WorkflowService::void(current_status, core_tx_type, voided_by, void_reason.clone())?;
 
         // Fetch ledger entries
         let entries = ledger_entries::Entity::find()
@@ -572,13 +601,24 @@ impl WorkflowRepository {
         approved_by: Uuid,
         approval_notes: Option<String>,
     ) -> Result<BulkApproveResult, WorkflowError> {
+        let txn = self
+            .db
+            .begin()
+            .await
+            .map_err(|e| WorkflowError::Database(e.to_string()))?;
+
         let mut results = Vec::with_capacity(transaction_ids.len());
         let mut success_count = 0;
-        let mut failure_count = 0;
 
         for tx_id in transaction_ids {
             match self
-                .approve_transaction(organization_id, tx_id, approved_by, approval_notes.clone())
+                .approve_transaction_internal(
+                    &txn,
+                    organization_id,
+                    tx_id,
+                    approved_by,
+                    approval_notes.clone(),
+                )
                 .await
             {
                 Ok(_) => {
@@ -590,20 +630,32 @@ impl WorkflowRepository {
                     });
                 }
                 Err(e) => {
-                    failure_count += 1;
-                    results.push(BulkApproveItemResult {
-                        transaction_id: tx_id,
-                        success: false,
-                        error: Some(e.to_string()),
+                    // In atomic mode, if one fails, we rollback and return the error
+                    txn.rollback().await.map_err(|rollback_err| {
+                        WorkflowError::Database(rollback_err.to_string())
+                    })?;
+
+                    return Ok(BulkApproveResult {
+                        results: vec![BulkApproveItemResult {
+                            transaction_id: tx_id,
+                            success: false,
+                            error: Some(e.to_string()),
+                        }],
+                        success_count: 0,
+                        failure_count: 1,
                     });
                 }
             }
         }
 
+        txn.commit()
+            .await
+            .map_err(|e| WorkflowError::Database(e.to_string()))?;
+
         Ok(BulkApproveResult {
             results,
             success_count,
-            failure_count,
+            failure_count: 0,
         })
     }
 
@@ -611,19 +663,23 @@ impl WorkflowRepository {
     // Helper methods
     // ========================================================================
 
-    /// Checks if a user is authorized to approve a transaction.
-    async fn check_approval_authorization(
+    /// Internal version of check_approval_authorization with generic connection.
+    async fn check_approval_authorization_with_conn<C>(
         &self,
+        conn: &C,
         organization_id: Uuid,
         user_id: Uuid,
         transaction_type: &TransactionType,
         amount: Decimal,
-    ) -> Result<(), WorkflowError> {
+    ) -> Result<(), WorkflowError>
+    where
+        C: sea_orm::ConnectionTrait,
+    {
         // Get user's role and approval limit
         let org_user = organization_users::Entity::find()
             .filter(organization_users::Column::OrganizationId.eq(organization_id))
             .filter(organization_users::Column::UserId.eq(user_id))
-            .one(&self.db)
+            .one(conn)
             .await
             .map_err(|e| WorkflowError::Database(e.to_string()))?
             .ok_or(WorkflowError::NotAuthorizedToApprove)?;
@@ -631,8 +687,10 @@ impl WorkflowRepository {
         let user_role = db_role_to_string(&org_user.role);
         let approval_limit = org_user.approval_limit;
 
-        // Get approval rules
-        let rules = self.get_approval_rules(organization_id).await?;
+        // Get approval rules (this uses &self.db which is fine as rules are usually read-only)
+        let rules = self
+            .get_approval_rules_with_conn(conn, organization_id)
+            .await?;
         let tx_type = db_tx_type_to_string(transaction_type);
 
         // Get required role
@@ -643,16 +701,20 @@ impl WorkflowRepository {
         ApprovalEngine::can_approve(&user_role, approval_limit, &required_role, amount)
     }
 
-    /// Gets approval rules for an organization.
-    async fn get_approval_rules(
+    /// Gets approval rules for an organization with generic connection.
+    async fn get_approval_rules_with_conn<C>(
         &self,
+        conn: &C,
         organization_id: Uuid,
-    ) -> Result<Vec<ApprovalRule>, WorkflowError> {
+    ) -> Result<Vec<ApprovalRule>, WorkflowError>
+    where
+        C: sea_orm::ConnectionTrait,
+    {
         let db_rules = approval_rules::Entity::find()
             .filter(approval_rules::Column::OrganizationId.eq(organization_id))
             .filter(approval_rules::Column::IsActive.eq(true))
             .order_by_asc(approval_rules::Column::Priority)
-            .all(&self.db)
+            .all(conn)
             .await
             .map_err(|e| WorkflowError::Database(e.to_string()))?;
 
@@ -676,14 +738,36 @@ impl WorkflowRepository {
         Ok(rules)
     }
 
+    /// Gets approval rules for an organization.
+    async fn get_approval_rules(
+        &self,
+        organization_id: Uuid,
+    ) -> Result<Vec<ApprovalRule>, WorkflowError> {
+        self.get_approval_rules_with_conn(&self.db, organization_id)
+            .await
+    }
+
     /// Calculates the total amount of a transaction.
     async fn calculate_transaction_total(
         &self,
         transaction_id: Uuid,
     ) -> Result<Decimal, WorkflowError> {
+        self.calculate_transaction_total_with_conn(&self.db, transaction_id)
+            .await
+    }
+
+    /// Internal version of calculate_transaction_total with generic connection.
+    async fn calculate_transaction_total_with_conn<C>(
+        &self,
+        conn: &C,
+        transaction_id: Uuid,
+    ) -> Result<Decimal, WorkflowError>
+    where
+        C: sea_orm::ConnectionTrait,
+    {
         let entries = ledger_entries::Entity::find()
             .filter(ledger_entries::Column::TransactionId.eq(transaction_id))
-            .all(&self.db)
+            .all(conn)
             .await
             .map_err(|e| WorkflowError::Database(e.to_string()))?;
 
@@ -720,6 +804,21 @@ fn db_role_to_string(role: &crate::entities::sea_orm_active_enums::UserRole) -> 
         crate::entities::sea_orm_active_enums::UserRole::Approver => "approver".to_string(),
         crate::entities::sea_orm_active_enums::UserRole::Viewer => "viewer".to_string(),
         crate::entities::sea_orm_active_enums::UserRole::Submitter => "submitter".to_string(),
+    }
+}
+
+/// Converts database TransactionType to core TransactionType.
+fn db_tx_type_to_core(tx_type: &TransactionType) -> CoreTransactionType {
+    match tx_type {
+        TransactionType::Journal => CoreTransactionType::Journal,
+        TransactionType::Expense => CoreTransactionType::Expense,
+        TransactionType::Invoice => CoreTransactionType::Invoice,
+        TransactionType::Bill => CoreTransactionType::Bill,
+        TransactionType::Payment => CoreTransactionType::Payment,
+        TransactionType::Transfer => CoreTransactionType::Transfer,
+        TransactionType::Adjustment => CoreTransactionType::Adjustment,
+        TransactionType::OpeningBalance => CoreTransactionType::OpeningBalance,
+        TransactionType::Reversal => CoreTransactionType::Reversal,
     }
 }
 

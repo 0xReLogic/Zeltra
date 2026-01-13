@@ -5,15 +5,21 @@ use super::sea_orm_active_enums::AccountType;
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
-#[sea_orm(table_name = "chart_of_accounts")]
+#[derive(Copy, Clone, Default, Debug, DeriveEntity)]
+pub struct Entity;
+
+impl EntityName for Entity {
+    fn table_name(&self) -> &str {
+        "chart_of_accounts"
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, DeriveModel, DeriveActiveModel, Eq, Serialize, Deserialize)]
 pub struct Model {
-    #[sea_orm(primary_key, auto_increment = false)]
     pub id: Uuid,
     pub organization_id: Uuid,
     pub code: String,
     pub name: String,
-    #[sea_orm(column_type = "Text", nullable)]
     pub description: Option<String>,
     pub account_type: AccountType,
     pub account_subtype: Option<AccountSubtype>,
@@ -28,36 +34,94 @@ pub struct Model {
     pub updated_at: DateTimeWithTimeZone,
 }
 
-#[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
+#[derive(Copy, Clone, Debug, EnumIter, DeriveColumn)]
+pub enum Column {
+    Id,
+    OrganizationId,
+    Code,
+    Name,
+    Description,
+    AccountType,
+    AccountSubtype,
+    ParentId,
+    Currency,
+    IsActive,
+    IsSystemAccount,
+    AllowDirectPosting,
+    IsBankAccount,
+    BankAccountNumber,
+    CreatedAt,
+    UpdatedAt,
+}
+
+#[derive(Copy, Clone, Debug, EnumIter, DerivePrimaryKey)]
+pub enum PrimaryKey {
+    Id,
+}
+
+impl PrimaryKeyTrait for PrimaryKey {
+    type ValueType = Uuid;
+    fn auto_increment() -> bool {
+        false
+    }
+}
+
+#[derive(Copy, Clone, Debug, EnumIter)]
 pub enum Relation {
-    #[sea_orm(has_many = "super::budget_lines::Entity")]
     BudgetLines,
-    #[sea_orm(
-        belongs_to = "Entity",
-        from = "Column::ParentId",
-        to = "Column::Id",
-        on_update = "NoAction",
-        on_delete = "NoAction"
-    )]
     SelfRef,
-    #[sea_orm(
-        belongs_to = "super::currencies::Entity",
-        from = "Column::Currency",
-        to = "super::currencies::Column::Code",
-        on_update = "NoAction",
-        on_delete = "NoAction"
-    )]
     Currencies,
-    #[sea_orm(has_many = "super::ledger_entries::Entity")]
     LedgerEntries,
-    #[sea_orm(
-        belongs_to = "super::organizations::Entity",
-        from = "Column::OrganizationId",
-        to = "super::organizations::Column::Id",
-        on_update = "NoAction",
-        on_delete = "Cascade"
-    )]
     Organizations,
+}
+
+impl ColumnTrait for Column {
+    type EntityName = Entity;
+    fn def(&self) -> ColumnDef {
+        match self {
+            Self::Id => ColumnType::Uuid.def(),
+            Self::OrganizationId => ColumnType::Uuid.def(),
+            Self::Code => ColumnType::String(StringLen::N(20u32)).def(),
+            Self::Name => ColumnType::String(StringLen::N(255u32)).def(),
+            Self::Description => ColumnType::Text.def().null(),
+            Self::AccountType => AccountType::db_type().get_column_type().to_owned().def(),
+            Self::AccountSubtype => AccountSubtype::db_type()
+                .get_column_type()
+                .to_owned()
+                .def()
+                .null(),
+            Self::ParentId => ColumnType::Uuid.def().null(),
+            Self::Currency => ColumnType::Char(Some(3u32)).def(),
+            Self::IsActive => ColumnType::Boolean.def(),
+            Self::IsSystemAccount => ColumnType::Boolean.def(),
+            Self::AllowDirectPosting => ColumnType::Boolean.def(),
+            Self::IsBankAccount => ColumnType::Boolean.def(),
+            Self::BankAccountNumber => ColumnType::String(StringLen::N(50u32)).def().null(),
+            Self::CreatedAt => ColumnType::TimestampWithTimeZone.def(),
+            Self::UpdatedAt => ColumnType::TimestampWithTimeZone.def(),
+        }
+    }
+}
+
+impl RelationTrait for Relation {
+    fn def(&self) -> RelationDef {
+        match self {
+            Self::BudgetLines => Entity::has_many(super::budget_lines::Entity).into(),
+            Self::SelfRef => Entity::belongs_to(Entity)
+                .from(Column::ParentId)
+                .to(Column::Id)
+                .into(),
+            Self::Currencies => Entity::belongs_to(super::currencies::Entity)
+                .from(Column::Currency)
+                .to(super::currencies::Column::Code)
+                .into(),
+            Self::LedgerEntries => Entity::has_many(super::ledger_entries::Entity).into(),
+            Self::Organizations => Entity::belongs_to(super::organizations::Entity)
+                .from(Column::OrganizationId)
+                .to(super::organizations::Column::Id)
+                .into(),
+        }
+    }
 }
 
 impl Related<super::budget_lines::Entity> for Entity {

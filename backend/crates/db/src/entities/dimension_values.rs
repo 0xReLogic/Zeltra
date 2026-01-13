@@ -3,16 +3,22 @@
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
-#[sea_orm(table_name = "dimension_values")]
+#[derive(Copy, Clone, Default, Debug, DeriveEntity)]
+pub struct Entity;
+
+impl EntityName for Entity {
+    fn table_name(&self) -> &str {
+        "dimension_values"
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, DeriveModel, DeriveActiveModel, Eq, Serialize, Deserialize)]
 pub struct Model {
-    #[sea_orm(primary_key, auto_increment = false)]
     pub id: Uuid,
     pub organization_id: Uuid,
     pub dimension_type_id: Uuid,
     pub code: String,
     pub name: String,
-    #[sea_orm(column_type = "Text", nullable)]
     pub description: Option<String>,
     pub parent_id: Option<Uuid>,
     pub is_active: bool,
@@ -22,36 +28,84 @@ pub struct Model {
     pub updated_at: DateTimeWithTimeZone,
 }
 
-#[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
+#[derive(Copy, Clone, Debug, EnumIter, DeriveColumn)]
+pub enum Column {
+    Id,
+    OrganizationId,
+    DimensionTypeId,
+    Code,
+    Name,
+    Description,
+    ParentId,
+    IsActive,
+    EffectiveFrom,
+    EffectiveTo,
+    CreatedAt,
+    UpdatedAt,
+}
+
+#[derive(Copy, Clone, Debug, EnumIter, DerivePrimaryKey)]
+pub enum PrimaryKey {
+    Id,
+}
+
+impl PrimaryKeyTrait for PrimaryKey {
+    type ValueType = Uuid;
+    fn auto_increment() -> bool {
+        false
+    }
+}
+
+#[derive(Copy, Clone, Debug, EnumIter)]
 pub enum Relation {
-    #[sea_orm(has_many = "super::budget_line_dimensions::Entity")]
     BudgetLineDimensions,
-    #[sea_orm(
-        belongs_to = "super::dimension_types::Entity",
-        from = "Column::DimensionTypeId",
-        to = "super::dimension_types::Column::Id",
-        on_update = "NoAction",
-        on_delete = "Cascade"
-    )]
     DimensionTypes,
-    #[sea_orm(
-        belongs_to = "Entity",
-        from = "Column::ParentId",
-        to = "Column::Id",
-        on_update = "NoAction",
-        on_delete = "NoAction"
-    )]
     SelfRef,
-    #[sea_orm(has_many = "super::entry_dimensions::Entity")]
     EntryDimensions,
-    #[sea_orm(
-        belongs_to = "super::organizations::Entity",
-        from = "Column::OrganizationId",
-        to = "super::organizations::Column::Id",
-        on_update = "NoAction",
-        on_delete = "Cascade"
-    )]
     Organizations,
+}
+
+impl ColumnTrait for Column {
+    type EntityName = Entity;
+    fn def(&self) -> ColumnDef {
+        match self {
+            Self::Id => ColumnType::Uuid.def(),
+            Self::OrganizationId => ColumnType::Uuid.def(),
+            Self::DimensionTypeId => ColumnType::Uuid.def(),
+            Self::Code => ColumnType::String(StringLen::N(50u32)).def(),
+            Self::Name => ColumnType::String(StringLen::N(255u32)).def(),
+            Self::Description => ColumnType::Text.def().null(),
+            Self::ParentId => ColumnType::Uuid.def().null(),
+            Self::IsActive => ColumnType::Boolean.def(),
+            Self::EffectiveFrom => ColumnType::Date.def().null(),
+            Self::EffectiveTo => ColumnType::Date.def().null(),
+            Self::CreatedAt => ColumnType::TimestampWithTimeZone.def(),
+            Self::UpdatedAt => ColumnType::TimestampWithTimeZone.def(),
+        }
+    }
+}
+
+impl RelationTrait for Relation {
+    fn def(&self) -> RelationDef {
+        match self {
+            Self::BudgetLineDimensions => {
+                Entity::has_many(super::budget_line_dimensions::Entity).into()
+            }
+            Self::DimensionTypes => Entity::belongs_to(super::dimension_types::Entity)
+                .from(Column::DimensionTypeId)
+                .to(super::dimension_types::Column::Id)
+                .into(),
+            Self::SelfRef => Entity::belongs_to(Entity)
+                .from(Column::ParentId)
+                .to(Column::Id)
+                .into(),
+            Self::EntryDimensions => Entity::has_many(super::entry_dimensions::Entity).into(),
+            Self::Organizations => Entity::belongs_to(super::organizations::Entity)
+                .from(Column::OrganizationId)
+                .to(super::organizations::Column::Id)
+                .into(),
+        }
+    }
 }
 
 impl Related<super::budget_line_dimensions::Entity> for Entity {

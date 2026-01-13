@@ -178,8 +178,8 @@ pub async fn login(
 
     // Store session in database (only if user has an org)
     if !default_org_id.is_nil() {
-        let expires_at =
-            chrono::Utc::now() + chrono::Duration::days(state.jwt_service.refresh_token_expires_days());
+        let expires_at = chrono::Utc::now()
+            + chrono::Duration::days(state.jwt_service.refresh_token_expires_days());
         if let Err(e) = session_repo
             .create(
                 user.id,

@@ -141,9 +141,14 @@ impl WorkflowService {
     /// * `Err(WorkflowError::VoidReasonRequired)` if reason is empty
     pub fn void(
         current_status: TransactionStatus,
+        transaction_type: crate::ledger::types::TransactionType,
         voided_by: Uuid,
         void_reason: String,
     ) -> Result<WorkflowAction, WorkflowError> {
+        if transaction_type == crate::ledger::types::TransactionType::Reversal {
+            return Err(WorkflowError::CannotVoidReversal);
+        }
+
         if void_reason.trim().is_empty() {
             return Err(WorkflowError::VoidReasonRequired);
         }
@@ -282,6 +287,7 @@ mod tests {
         let user_id = Uuid::new_v4();
         let result = WorkflowService::void(
             TransactionStatus::Posted,
+            crate::ledger::types::TransactionType::Expense,
             user_id,
             "Error found".to_string(),
         );
@@ -290,9 +296,26 @@ mod tests {
     }
 
     #[test]
+    fn test_void_reversal_fails() {
+        let user_id = Uuid::new_v4();
+        let result = WorkflowService::void(
+            TransactionStatus::Posted,
+            crate::ledger::types::TransactionType::Reversal,
+            user_id,
+            "Error found".to_string(),
+        );
+        assert!(matches!(result, Err(WorkflowError::CannotVoidReversal)));
+    }
+
+    #[test]
     fn test_void_empty_reason_fails() {
         let user_id = Uuid::new_v4();
-        let result = WorkflowService::void(TransactionStatus::Posted, user_id, String::new());
+        let result = WorkflowService::void(
+            TransactionStatus::Posted,
+            crate::ledger::types::TransactionType::Expense,
+            user_id,
+            String::new(),
+        );
         assert!(matches!(result, Err(WorkflowError::VoidReasonRequired)));
     }
 
@@ -301,6 +324,7 @@ mod tests {
         let user_id = Uuid::new_v4();
         let result = WorkflowService::void(
             TransactionStatus::Approved,
+            crate::ledger::types::TransactionType::Expense,
             user_id,
             "Error found".to_string(),
         );

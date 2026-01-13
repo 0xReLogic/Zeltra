@@ -124,6 +124,9 @@ pub struct CreateTransactionRequest {
     pub memo: Option<String>,
     /// Ledger entries.
     pub entries: Vec<CreateEntryRequest>,
+    /// Timezone for the transaction (e.g., "UTC", "Asia/Jakarta").
+    #[schema(example = "UTC")]
+    pub timezone: String,
 }
 
 /// Request body for a single ledger entry.
@@ -190,6 +193,9 @@ pub struct TransactionResponse {
     pub total_debit: String,
     /// Total credits in functional currency.
     pub total_credit: String,
+    /// Timezone for the transaction.
+    #[schema(example = "UTC")]
+    pub timezone: String,
 }
 
 /// Response for a ledger entry.
@@ -415,7 +421,7 @@ async fn list_transactions(
     request_body = CreateTransactionRequest,
     responses(
         (status = 201, description = "Transaction created successfully", body = TransactionResponse),
-        (status = 400, description = "Invalid input or unbalanced transaction"),
+        (status = 400, description = "Invalid input, unbalanced transaction, or missing required budget dimensions"),
         (status = 403, description = "Forbidden")
     ),
     tag = "Transactions",
@@ -593,6 +599,7 @@ async fn create_transaction(
         memo: payload.memo,
         entries,
         created_by: auth.user_id(),
+        timezone: payload.timezone,
     };
 
     match tx_repo.create_transaction(input).await {
@@ -636,6 +643,7 @@ async fn create_transaction(
                 entries: entry_responses,
                 total_debit: total_debit.to_string(),
                 total_credit: total_credit.to_string(),
+                timezone: result.transaction.timezone,
             };
 
             (StatusCode::CREATED, Json(response)).into_response()
@@ -749,6 +757,7 @@ async fn get_transaction(
                 entries: entry_responses,
                 total_debit: total_debit.to_string(),
                 total_credit: total_credit.to_string(),
+                timezone: result.transaction.timezone,
             };
 
             (StatusCode::OK, Json(response)).into_response()

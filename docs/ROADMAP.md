@@ -695,15 +695,25 @@ NOW we start frontend, because backend is solid.
 
 ### Backend Fixes Impact (Internal Handover) 🟢 NEW
 
-> **PENTING UNTUK FE:** Hasil bug-fix di backend (Januari 2026) memerlukan penyesuaian di UI:
+> [!IMPORTANT] > **PENTING UNTUK FE:** Hasil bug-fix di backend (Januari 2026) memerlukan penyesuaian di UI untuk menjaga integritas data:
 
-1.  **Field Timezone Wajib**: API `POST /transactions` sekarang butuh field `timezone`. FE wajib ambil timezone user (browser/settings) dan kirim ke BE.
-2.  **Budget Dimension Validation**: Jika API balikin error 400 saat simpan transaksi, cek body response. BE akan kasih tau dimensi apa yang kurang (misal: "Dimension 'Department' is required"). Tampilkan ini sebagai validasi form.
-3.  **UI Button Protection**:
-    - **Void Button**: Disable tombol Void jika status transaksi adalah `Reversal`. Transaksi pembatalan tidak boleh dibatalkan lagi.
-    - **Approve Button**: Jika `approval_limit` user di DB adalah `NULL`, user dianggap memiliki limit $0. Disable tombol approve jika amount transaksi > limit user.
-4.  **Audit Trail Consistency**: Tabel ledger sekarang dijamin punya `account_version` yang sekuensial (1, 2, 3...) tanpa bolong, bahkan jika ada transaksi yang gagal di tengah.
-5.  **Rounding Accuracy**: Total Debit/Credit di UI akan selalu balance sempurna karena BE sudah menggunakan _Residual Adjustment_ (pembulatan otomatis 0.01 error).
+1.  **Field Timezone Wajib**:
+    - API `POST /organizations/{org_id}/transactions` sekarang butuh field `timezone` (e.g., `"Asia/Jakarta"`).
+    - FE wajib ambil timezone user (browser settings) dan kirim ke BE.
+    - Tanpa ini, API akan return **400 Bad Request**.
+2.  **Transaction Response Update**:
+    - Semua endpoint transaksi (Get, List, Create) sekarang mengembalikan field `timezone`.
+    - Gunakan ini untuk menampilkan waktu transaksi yang akurat di UI sesuai input asli user.
+3.  **Budget Dimension Validation**:
+    - Jika API balikin error **400**, cek body response. BE akan mengirim list `missing_dimensions`.
+    - Tampilkan pesan error spesifik: _"Dimensi 'Project' wajib diisi karena akun ini terikat budget."_
+4.  **UI Button Protection**:
+    - **Void Button**: Disable tombol Void jika status transaksi adalah `Reversal`. Transaksi pembatalan (void) bersifat final dan tidak boleh di-void kembali.
+    - **Approve Button**: Jika `approval_limit` user di DB adalah `NULL`, user dianggap memiliki limit $0 (Paling Aman). Jangan izinkan user menekan approve jika amount transaksi > limit.
+5.  **Audit Trail Consistency**:
+    - Tabel ledger sekarang dijamin punya `account_version` yang sekuensial (1, 2, 3...) tanpa bolong (no gaps).
+    - Ini menjamin _Running Balance_ yang ditampilkan di UI akan selalu akurat saat ditarik dari history.
+6.  **Rounding Accuracy**: Total Debit/Credit di UI akan selalu balance sempurna karena BE sudah menggunakan _Residual Adjustment_ (pembulatan otomatis 0.01 error).
 
 ---
 

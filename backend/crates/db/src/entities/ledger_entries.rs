@@ -3,71 +3,122 @@
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
-#[sea_orm(table_name = "ledger_entries")]
+#[derive(Copy, Clone, Default, Debug, DeriveEntity)]
+pub struct Entity;
+
+impl EntityName for Entity {
+    fn table_name(&self) -> &str {
+        "ledger_entries"
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, DeriveModel, DeriveActiveModel, Eq, Serialize, Deserialize)]
 pub struct Model {
-    #[sea_orm(primary_key, auto_increment = false)]
     pub id: Uuid,
     pub transaction_id: Uuid,
     pub account_id: Uuid,
     pub source_currency: String,
-    #[sea_orm(column_type = "Decimal(Some((19, 4)))")]
     pub source_amount: Decimal,
-    #[sea_orm(column_type = "Decimal(Some((19, 10)))")]
     pub exchange_rate: Decimal,
     pub functional_currency: String,
-    #[sea_orm(column_type = "Decimal(Some((19, 4)))")]
     pub functional_amount: Decimal,
-    #[sea_orm(column_type = "Decimal(Some((19, 4)))")]
     pub debit: Decimal,
-    #[sea_orm(column_type = "Decimal(Some((19, 4)))")]
     pub credit: Decimal,
     pub account_version: i64,
-    #[sea_orm(column_type = "Decimal(Some((19, 4)))")]
     pub account_previous_balance: Decimal,
-    #[sea_orm(column_type = "Decimal(Some((19, 4)))")]
     pub account_current_balance: Decimal,
     pub memo: Option<String>,
     pub event_at: DateTimeWithTimeZone,
     pub created_at: DateTimeWithTimeZone,
 }
 
-#[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
+#[derive(Copy, Clone, Debug, EnumIter, DeriveColumn)]
+pub enum Column {
+    Id,
+    TransactionId,
+    AccountId,
+    SourceCurrency,
+    SourceAmount,
+    ExchangeRate,
+    FunctionalCurrency,
+    FunctionalAmount,
+    Debit,
+    Credit,
+    AccountVersion,
+    AccountPreviousBalance,
+    AccountCurrentBalance,
+    Memo,
+    EventAt,
+    CreatedAt,
+}
+
+#[derive(Copy, Clone, Debug, EnumIter, DerivePrimaryKey)]
+pub enum PrimaryKey {
+    Id,
+}
+
+impl PrimaryKeyTrait for PrimaryKey {
+    type ValueType = Uuid;
+    fn auto_increment() -> bool {
+        false
+    }
+}
+
+#[derive(Copy, Clone, Debug, EnumIter)]
 pub enum Relation {
-    #[sea_orm(
-        belongs_to = "super::chart_of_accounts::Entity",
-        from = "Column::AccountId",
-        to = "super::chart_of_accounts::Column::Id",
-        on_update = "NoAction",
-        on_delete = "NoAction"
-    )]
     ChartOfAccounts,
-    #[sea_orm(
-        belongs_to = "super::currencies::Entity",
-        from = "Column::FunctionalCurrency",
-        to = "super::currencies::Column::Code",
-        on_update = "NoAction",
-        on_delete = "NoAction"
-    )]
     Currencies2,
-    #[sea_orm(
-        belongs_to = "super::currencies::Entity",
-        from = "Column::SourceCurrency",
-        to = "super::currencies::Column::Code",
-        on_update = "NoAction",
-        on_delete = "NoAction"
-    )]
     Currencies1,
-    #[sea_orm(has_many = "super::entry_dimensions::Entity")]
     EntryDimensions,
-    #[sea_orm(
-        belongs_to = "super::transactions::Entity",
-        from = "Column::TransactionId",
-        to = "super::transactions::Column::Id",
-        on_update = "NoAction",
-        on_delete = "Cascade"
-    )]
     Transactions,
+}
+
+impl ColumnTrait for Column {
+    type EntityName = Entity;
+    fn def(&self) -> ColumnDef {
+        match self {
+            Self::Id => ColumnType::Uuid.def(),
+            Self::TransactionId => ColumnType::Uuid.def(),
+            Self::AccountId => ColumnType::Uuid.def(),
+            Self::SourceCurrency => ColumnType::Char(Some(3u32)).def(),
+            Self::SourceAmount => ColumnType::Decimal(Some((19u32, 4u32))).def(),
+            Self::ExchangeRate => ColumnType::Decimal(Some((19u32, 10u32))).def(),
+            Self::FunctionalCurrency => ColumnType::Char(Some(3u32)).def(),
+            Self::FunctionalAmount => ColumnType::Decimal(Some((19u32, 4u32))).def(),
+            Self::Debit => ColumnType::Decimal(Some((19u32, 4u32))).def(),
+            Self::Credit => ColumnType::Decimal(Some((19u32, 4u32))).def(),
+            Self::AccountVersion => ColumnType::BigInteger.def(),
+            Self::AccountPreviousBalance => ColumnType::Decimal(Some((19u32, 4u32))).def(),
+            Self::AccountCurrentBalance => ColumnType::Decimal(Some((19u32, 4u32))).def(),
+            Self::Memo => ColumnType::String(StringLen::N(500u32)).def().null(),
+            Self::EventAt => ColumnType::TimestampWithTimeZone.def(),
+            Self::CreatedAt => ColumnType::TimestampWithTimeZone.def(),
+        }
+    }
+}
+
+impl RelationTrait for Relation {
+    fn def(&self) -> RelationDef {
+        match self {
+            Self::ChartOfAccounts => Entity::belongs_to(super::chart_of_accounts::Entity)
+                .from(Column::AccountId)
+                .to(super::chart_of_accounts::Column::Id)
+                .into(),
+            Self::Currencies2 => Entity::belongs_to(super::currencies::Entity)
+                .from(Column::FunctionalCurrency)
+                .to(super::currencies::Column::Code)
+                .into(),
+            Self::Currencies1 => Entity::belongs_to(super::currencies::Entity)
+                .from(Column::SourceCurrency)
+                .to(super::currencies::Column::Code)
+                .into(),
+            Self::EntryDimensions => Entity::has_many(super::entry_dimensions::Entity).into(),
+            Self::Transactions => Entity::belongs_to(super::transactions::Entity)
+                .from(Column::TransactionId)
+                .to(super::transactions::Column::Id)
+                .into(),
+        }
+    }
 }
 
 impl Related<super::chart_of_accounts::Entity> for Entity {

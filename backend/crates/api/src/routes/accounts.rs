@@ -154,8 +154,6 @@ pub struct BalanceQuery {
     pub as_of: Option<NaiveDate>,
 }
 
-
-
 /// GET `/organizations/{org_id}/accounts` - List accounts with balances.
 #[utoipa::path(
     get,
@@ -948,7 +946,6 @@ pub async fn get_account_balance(
         }
     }
 }
-
 
 // Helper functions
 

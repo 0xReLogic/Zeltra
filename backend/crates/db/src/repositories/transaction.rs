@@ -4,14 +4,17 @@
 
 use chrono::{NaiveDate, Utc};
 use rust_decimal::Decimal;
+use sea_orm::sea_query::LockType;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, DatabaseTransaction, DbErr, EntityTrait,
     QueryFilter, QueryOrder, QuerySelect, Set, TransactionTrait,
 };
+use std::collections::HashMap;
 use uuid::Uuid;
 
 use crate::entities::{
-    chart_of_accounts, entry_dimensions, fiscal_periods, ledger_entries,
+    budget_line_dimensions, budget_lines, chart_of_accounts, dimension_values, entry_dimensions,
+    fiscal_periods, ledger_entries,
     sea_orm_active_enums::{AccountType, TransactionStatus, TransactionType},
     transactions,
 };
@@ -55,6 +58,25 @@ pub enum TransactionError {
     #[error("Concurrent modification detected for account {0}, please retry")]
     ConcurrentModification(Uuid),
 
+    /// Budget constraint violation (missing required dimensions).
+    #[error(
+        "Budget constraint violation for account {account_id}: missing required dimensions {missing_dimensions:?}"
+    )]
+    BudgetConstraintViolation {
+        /// Account ID.
+        account_id: Uuid,
+        /// Missing dimension IDs.
+        missing_dimensions: Vec<Uuid>,
+    },
+
+    /// Dimension is disabled.
+    #[error("Dimension value {0} is disabled")]
+    DisabledDimension(Uuid),
+
+    /// Rounding imbalance is too high.
+    #[error("Rounding imbalance of {0} exceeds threshold of 1.00")]
+    SuspiciousImbalance(Decimal),
+
     /// Database error.
     #[error("Database error: {0}")]
     Database(#[from] DbErr),
@@ -79,6 +101,8 @@ pub struct CreateTransactionInput {
     pub entries: Vec<CreateLedgerEntryInput>,
     /// User who created the transaction.
     pub created_by: Uuid,
+    /// Timezone of the transaction date.
+    pub timezone: String,
 }
 
 /// Input for a single ledger entry.
@@ -178,10 +202,11 @@ impl TransactionRepository {
         let transaction = self
             .insert_transaction(&txn, &input, fiscal_period.id)
             .await?;
+        let transaction_id = transaction.id;
 
         // Create ledger entries and dimensions
         let entries = self
-            .insert_entries(&txn, transaction.id, &input.entries)
+            .insert_entries(&txn, transaction_id, fiscal_period.id, &input.entries)
             .await?;
 
         // Commit database transaction
@@ -231,6 +256,7 @@ impl TransactionRepository {
             memo: Set(input.memo.clone()),
             status: Set(TransactionStatus::Draft), // Requirement 5.8
             created_by: Set(input.created_by),
+            timezone: Set(input.timezone.clone()),
             created_at: Set(now),
             updated_at: Set(now),
             ..Default::default()
@@ -250,31 +276,90 @@ impl TransactionRepository {
         &self,
         txn: &DatabaseTransaction,
         transaction_id: Uuid,
+        fiscal_period_id: Uuid,
         entries: &[CreateLedgerEntryInput],
     ) -> Result<Vec<LedgerEntryWithDimensions>, TransactionError> {
+        // Calculate total debit and credit to find residual
+        let mut total_debit = Decimal::ZERO;
+        let mut total_credit = Decimal::ZERO;
+        for e in entries {
+            total_debit += e.debit;
+            total_credit += e.credit;
+        }
+
+        let residual = total_debit - total_credit;
+
+        // --- Issue: Residual Adjustment Ceiling ---
+        // If residual is too large (> 1.00), it's likely a logic error, not rounding.
+        if residual.abs() > Decimal::from(1) {
+            return Err(TransactionError::SuspiciousImbalance(residual));
+        }
+
+        let last_entry_index = entries.len() - 1;
+
+        // Fetch all accounts at once for balance calculation (Requirement 8.4, 8.5)
+        let account_ids: Vec<Uuid> = entries.iter().map(|e| e.account_id).collect();
+        let accounts: HashMap<Uuid, chart_of_accounts::Model> = chart_of_accounts::Entity::find()
+            .filter(chart_of_accounts::Column::Id.is_in(account_ids))
+            .all(txn)
+            .await?
+            .into_iter()
+            .map(|a| (a.id, a))
+            .collect();
+
+        let mut entry_models = Vec::with_capacity(entries.len());
+        let mut dimension_models = Vec::new();
+
+        // Pre-fetch dimension values to check for active status
+        let all_dim_ids: Vec<Uuid> = entries
+            .iter()
+            .flat_map(|e| e.dimensions.iter().copied())
+            .collect();
+        let dim_values: HashMap<Uuid, dimension_values::Model> = if all_dim_ids.is_empty() {
+            HashMap::new()
+        } else {
+            dimension_values::Entity::find()
+                .filter(dimension_values::Column::Id.is_in(all_dim_ids))
+                .all(txn)
+                .await?
+                .into_iter()
+                .map(|dv| (dv.id, dv))
+                .collect()
+        };
+
         let now = Utc::now().into();
         let mut result = Vec::with_capacity(entries.len());
 
         // Track balance changes per account within this transaction
         // Key: account_id, Value: (latest_version, latest_balance)
         let mut account_balances: std::collections::HashMap<Uuid, (i64, Decimal)> =
-            std::collections::HashMap::new();
+            std::collections::HashMap::with_capacity(accounts.len());
 
-        for entry_input in entries {
+        for (i, entry_input) in entries.iter().enumerate() {
             let entry_id = Uuid::new_v4();
+            let mut current_debit = entry_input.debit;
+            let mut current_credit = entry_input.credit;
+            let mut current_functional_amount = entry_input.functional_amount;
 
-            // Get account info for balance calculation (Requirement 8.4, 8.5)
-            let account = chart_of_accounts::Entity::find_by_id(entry_input.account_id)
-                .one(txn)
-                .await?
+            // Apply residual adjustment to the last entry
+            if i == last_entry_index && !residual.is_zero() {
+                if current_debit > Decimal::ZERO {
+                    current_debit -= residual;
+                    current_functional_amount = current_debit;
+                } else {
+                    current_credit += residual;
+                    current_functional_amount = current_credit;
+                }
+            }
+
+            // Get account info (now from our pre-fetched map)
+            let account = accounts
+                .get(&entry_input.account_id)
                 .ok_or(TransactionError::AccountNotFound(entry_input.account_id))?;
 
             // Calculate balance change based on account type
-            let balance_change = calculate_balance_change(
-                &account.account_type,
-                entry_input.debit,
-                entry_input.credit,
-            );
+            let balance_change =
+                calculate_balance_change(&account.account_type, current_debit, current_credit);
 
             // Get or fetch the current balance for this account
             let (account_version, previous_balance) =
@@ -295,6 +380,40 @@ impl TransactionRepository {
             // Update our tracking map
             account_balances.insert(entry_input.account_id, (account_version, current_balance));
 
+            // --- Issue 3: Budget Tracking Dimension Mismatch (Validation) ---
+            // Find if any budget lines exist for this account and period that require dimensions
+            let budget_lines = budget_lines::Entity::find()
+                .filter(budget_lines::Column::AccountId.eq(entry_input.account_id))
+                .filter(budget_lines::Column::FiscalPeriodId.eq(fiscal_period_id))
+                .all(txn)
+                .await?;
+
+            for bl in budget_lines {
+                let required_dims: Vec<Uuid> = budget_line_dimensions::Entity::find()
+                    .filter(budget_line_dimensions::Column::BudgetLineId.eq(bl.id))
+                    .all(txn)
+                    .await?
+                    .into_iter()
+                    .map(|d| d.dimension_value_id)
+                    .collect();
+
+                if !required_dims.is_empty() {
+                    // Check if entry dimensions match
+                    if zeltra_core::budget::service::BudgetService::check_dimension_compliance(
+                        &entry_input.dimensions,
+                        &required_dims,
+                    )
+                    .is_err()
+                    {
+                        return Err(TransactionError::BudgetConstraintViolation {
+                            account_id: entry_input.account_id,
+                            missing_dimensions: required_dims,
+                        });
+                    }
+                }
+            }
+            // --- End Issue 3 ---
+
             // Insert ledger entry with balance tracking
             let entry = ledger_entries::ActiveModel {
                 id: Set(entry_id),
@@ -304,9 +423,9 @@ impl TransactionRepository {
                 source_amount: Set(entry_input.source_amount),
                 exchange_rate: Set(entry_input.exchange_rate),
                 functional_currency: Set(entry_input.functional_currency.clone()),
-                functional_amount: Set(entry_input.functional_amount),
-                debit: Set(entry_input.debit),
-                credit: Set(entry_input.credit),
+                functional_amount: Set(current_functional_amount),
+                debit: Set(current_debit),
+                credit: Set(current_credit),
                 memo: Set(entry_input.memo.clone()),
                 event_at: Set(now),
                 created_at: Set(now),
@@ -316,23 +435,70 @@ impl TransactionRepository {
                 account_current_balance: Set(current_balance),
             };
 
-            let inserted_entry = entry.insert(txn).await?;
+            entry_models.push(entry);
 
-            // Insert entry dimensions (Requirement 7.4)
+            // Collect dimension models for batch insertion (Requirement 7.4)
             for dimension_value_id in &entry_input.dimensions {
-                let dimension = entry_dimensions::ActiveModel {
+                // --- Issue: Dimension is_active Check ---
+                let dim_val =
+                    dim_values
+                        .get(dimension_value_id)
+                        .ok_or(TransactionError::Database(DbErr::RecordNotFound(format!(
+                            "Dimension value {}",
+                            dimension_value_id
+                        ))))?;
+
+                if !dim_val.is_active {
+                    return Err(TransactionError::DisabledDimension(*dimension_value_id));
+                }
+
+                dimension_models.push(entry_dimensions::ActiveModel {
                     id: Set(Uuid::new_v4()),
                     ledger_entry_id: Set(entry_id),
                     dimension_value_id: Set(*dimension_value_id),
                     created_at: Set(now),
-                };
-                dimension.insert(txn).await?;
+                });
             }
 
+            // Capture results for return
+            // We need to store these because we'll batch insert later
+            // Since we use ActiveModel::insert_many, we won't get the returning models here
+            // but for financial integrity, we probably want to return what we actually sent
             result.push(LedgerEntryWithDimensions {
-                entry: inserted_entry,
+                entry: ledger_entries::Model {
+                    id: entry_id,
+                    transaction_id,
+                    account_id: entry_input.account_id,
+                    source_currency: entry_input.source_currency.clone(),
+                    source_amount: entry_input.source_amount,
+                    exchange_rate: entry_input.exchange_rate,
+                    functional_currency: entry_input.functional_currency.clone(),
+                    functional_amount: current_functional_amount,
+                    debit: current_debit,
+                    credit: current_credit,
+                    account_version,
+                    account_previous_balance: previous_balance,
+                    account_current_balance: current_balance,
+                    memo: entry_input.memo.clone(),
+                    event_at: now,
+                    created_at: now,
+                },
                 dimensions: entry_input.dimensions.clone(),
             });
+        }
+
+        // Batch insert ledger entries
+        if !entry_models.is_empty() {
+            ledger_entries::Entity::insert_many(entry_models)
+                .exec(txn)
+                .await?;
+        }
+
+        // Batch insert dimension values (chunked if needed, but here simple insert_many)
+        if !dimension_models.is_empty() {
+            entry_dimensions::Entity::insert_many(dimension_models)
+                .exec(txn)
+                .await?;
         }
 
         Ok(result)
@@ -341,16 +507,20 @@ impl TransactionRepository {
     /// Gets the latest account balance (version and balance).
     ///
     /// Returns (0, 0) if no entries exist for the account.
-    async fn get_latest_account_balance(
+    pub async fn get_latest_account_balance<C>(
         &self,
-        txn: &DatabaseTransaction,
+        conn: &C,
         account_id: Uuid,
-    ) -> Result<(i64, Decimal), TransactionError> {
+    ) -> Result<(i64, Decimal), TransactionError>
+    where
+        C: sea_orm::ConnectionTrait,
+    {
         let latest_entry = ledger_entries::Entity::find()
             .filter(ledger_entries::Column::AccountId.eq(account_id))
             .order_by_desc(ledger_entries::Column::AccountVersion)
+            .lock(LockType::NoKeyUpdate)
             .limit(1)
-            .one(txn)
+            .one(conn)
             .await?;
 
         match latest_entry {

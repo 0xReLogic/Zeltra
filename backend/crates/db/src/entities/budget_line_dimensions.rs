@@ -3,34 +3,74 @@
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
-#[sea_orm(table_name = "budget_line_dimensions")]
+#[derive(Copy, Clone, Default, Debug, DeriveEntity)]
+pub struct Entity;
+
+impl EntityName for Entity {
+    fn table_name(&self) -> &str {
+        "budget_line_dimensions"
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, DeriveModel, DeriveActiveModel, Eq, Serialize, Deserialize)]
 pub struct Model {
-    #[sea_orm(primary_key, auto_increment = false)]
     pub id: Uuid,
     pub budget_line_id: Uuid,
     pub dimension_value_id: Uuid,
     pub created_at: DateTimeWithTimeZone,
 }
 
-#[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
+#[derive(Copy, Clone, Debug, EnumIter, DeriveColumn)]
+pub enum Column {
+    Id,
+    BudgetLineId,
+    DimensionValueId,
+    CreatedAt,
+}
+
+#[derive(Copy, Clone, Debug, EnumIter, DerivePrimaryKey)]
+pub enum PrimaryKey {
+    Id,
+}
+
+impl PrimaryKeyTrait for PrimaryKey {
+    type ValueType = Uuid;
+    fn auto_increment() -> bool {
+        false
+    }
+}
+
+#[derive(Copy, Clone, Debug, EnumIter)]
 pub enum Relation {
-    #[sea_orm(
-        belongs_to = "super::budget_lines::Entity",
-        from = "Column::BudgetLineId",
-        to = "super::budget_lines::Column::Id",
-        on_update = "NoAction",
-        on_delete = "Cascade"
-    )]
     BudgetLines,
-    #[sea_orm(
-        belongs_to = "super::dimension_values::Entity",
-        from = "Column::DimensionValueId",
-        to = "super::dimension_values::Column::Id",
-        on_update = "NoAction",
-        on_delete = "NoAction"
-    )]
     DimensionValues,
+}
+
+impl ColumnTrait for Column {
+    type EntityName = Entity;
+    fn def(&self) -> ColumnDef {
+        match self {
+            Self::Id => ColumnType::Uuid.def(),
+            Self::BudgetLineId => ColumnType::Uuid.def(),
+            Self::DimensionValueId => ColumnType::Uuid.def(),
+            Self::CreatedAt => ColumnType::TimestampWithTimeZone.def(),
+        }
+    }
+}
+
+impl RelationTrait for Relation {
+    fn def(&self) -> RelationDef {
+        match self {
+            Self::BudgetLines => Entity::belongs_to(super::budget_lines::Entity)
+                .from(Column::BudgetLineId)
+                .to(super::budget_lines::Column::Id)
+                .into(),
+            Self::DimensionValues => Entity::belongs_to(super::dimension_values::Entity)
+                .from(Column::DimensionValueId)
+                .to(super::dimension_values::Column::Id)
+                .into(),
+        }
+    }
 }
 
 impl Related<super::budget_lines::Entity> for Entity {

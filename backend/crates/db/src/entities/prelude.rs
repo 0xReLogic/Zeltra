@@ -18,6 +18,7 @@ pub use super::ledger_entries::Entity as LedgerEntries;
 pub use super::organization_usage::Entity as OrganizationUsage;
 pub use super::organization_users::Entity as OrganizationUsers;
 pub use super::organizations::Entity as Organizations;
+pub use super::sessions::Entity as Sessions;
 pub use super::tier_limits::Entity as TierLimits;
 pub use super::transactions::Entity as Transactions;
 pub use super::users::Entity as Users;

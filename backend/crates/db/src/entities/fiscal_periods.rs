@@ -4,10 +4,17 @@ use super::sea_orm_active_enums::FiscalPeriodStatus;
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
-#[sea_orm(table_name = "fiscal_periods")]
+#[derive(Copy, Clone, Default, Debug, DeriveEntity)]
+pub struct Entity;
+
+impl EntityName for Entity {
+    fn table_name(&self) -> &str {
+        "fiscal_periods"
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, DeriveModel, DeriveActiveModel, Eq, Serialize, Deserialize)]
 pub struct Model {
-    #[sea_orm(primary_key, auto_increment = false)]
     pub id: Uuid,
     pub organization_id: Uuid,
     pub fiscal_year_id: Uuid,
@@ -23,36 +30,87 @@ pub struct Model {
     pub updated_at: DateTimeWithTimeZone,
 }
 
-#[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
+#[derive(Copy, Clone, Debug, EnumIter, DeriveColumn)]
+pub enum Column {
+    Id,
+    OrganizationId,
+    FiscalYearId,
+    Name,
+    PeriodNumber,
+    StartDate,
+    EndDate,
+    Status,
+    IsAdjustmentPeriod,
+    ClosedBy,
+    ClosedAt,
+    CreatedAt,
+    UpdatedAt,
+}
+
+#[derive(Copy, Clone, Debug, EnumIter, DerivePrimaryKey)]
+pub enum PrimaryKey {
+    Id,
+}
+
+impl PrimaryKeyTrait for PrimaryKey {
+    type ValueType = Uuid;
+    fn auto_increment() -> bool {
+        false
+    }
+}
+
+#[derive(Copy, Clone, Debug, EnumIter)]
 pub enum Relation {
-    #[sea_orm(has_many = "super::budget_lines::Entity")]
     BudgetLines,
-    #[sea_orm(
-        belongs_to = "super::fiscal_years::Entity",
-        from = "Column::FiscalYearId",
-        to = "super::fiscal_years::Column::Id",
-        on_update = "NoAction",
-        on_delete = "Cascade"
-    )]
     FiscalYears,
-    #[sea_orm(
-        belongs_to = "super::organizations::Entity",
-        from = "Column::OrganizationId",
-        to = "super::organizations::Column::Id",
-        on_update = "NoAction",
-        on_delete = "Cascade"
-    )]
     Organizations,
-    #[sea_orm(has_many = "super::transactions::Entity")]
     Transactions,
-    #[sea_orm(
-        belongs_to = "super::users::Entity",
-        from = "Column::ClosedBy",
-        to = "super::users::Column::Id",
-        on_update = "NoAction",
-        on_delete = "NoAction"
-    )]
     Users,
+}
+
+impl ColumnTrait for Column {
+    type EntityName = Entity;
+    fn def(&self) -> ColumnDef {
+        match self {
+            Self::Id => ColumnType::Uuid.def(),
+            Self::OrganizationId => ColumnType::Uuid.def(),
+            Self::FiscalYearId => ColumnType::Uuid.def(),
+            Self::Name => ColumnType::String(StringLen::N(50u32)).def(),
+            Self::PeriodNumber => ColumnType::SmallInteger.def(),
+            Self::StartDate => ColumnType::Date.def(),
+            Self::EndDate => ColumnType::Date.def(),
+            Self::Status => FiscalPeriodStatus::db_type()
+                .get_column_type()
+                .to_owned()
+                .def(),
+            Self::IsAdjustmentPeriod => ColumnType::Boolean.def(),
+            Self::ClosedBy => ColumnType::Uuid.def().null(),
+            Self::ClosedAt => ColumnType::TimestampWithTimeZone.def().null(),
+            Self::CreatedAt => ColumnType::TimestampWithTimeZone.def(),
+            Self::UpdatedAt => ColumnType::TimestampWithTimeZone.def(),
+        }
+    }
+}
+
+impl RelationTrait for Relation {
+    fn def(&self) -> RelationDef {
+        match self {
+            Self::BudgetLines => Entity::has_many(super::budget_lines::Entity).into(),
+            Self::FiscalYears => Entity::belongs_to(super::fiscal_years::Entity)
+                .from(Column::FiscalYearId)
+                .to(super::fiscal_years::Column::Id)
+                .into(),
+            Self::Organizations => Entity::belongs_to(super::organizations::Entity)
+                .from(Column::OrganizationId)
+                .to(super::organizations::Column::Id)
+                .into(),
+            Self::Transactions => Entity::has_many(super::transactions::Entity).into(),
+            Self::Users => Entity::belongs_to(super::users::Entity)
+                .from(Column::ClosedBy)
+                .to(super::users::Column::Id)
+                .into(),
+        }
+    }
 }
 
 impl Related<super::budget_lines::Entity> for Entity {

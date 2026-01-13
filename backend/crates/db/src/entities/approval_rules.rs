@@ -5,18 +5,22 @@ use super::sea_orm_active_enums::UserRole;
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
-#[sea_orm(table_name = "approval_rules")]
+#[derive(Copy, Clone, Default, Debug, DeriveEntity)]
+pub struct Entity;
+
+impl EntityName for Entity {
+    fn table_name(&self) -> &str {
+        "approval_rules"
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, DeriveModel, DeriveActiveModel, Eq, Serialize, Deserialize)]
 pub struct Model {
-    #[sea_orm(primary_key, auto_increment = false)]
     pub id: Uuid,
     pub organization_id: Uuid,
     pub name: String,
-    #[sea_orm(column_type = "Text", nullable)]
     pub description: Option<String>,
-    #[sea_orm(column_type = "Decimal(Some((19, 4)))", nullable)]
     pub min_amount: Option<Decimal>,
-    #[sea_orm(column_type = "Decimal(Some((19, 4)))", nullable)]
     pub max_amount: Option<Decimal>,
     pub transaction_types: Vec<TransactionType>,
     pub required_role: UserRole,
@@ -26,16 +30,71 @@ pub struct Model {
     pub updated_at: DateTimeWithTimeZone,
 }
 
-#[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
+#[derive(Copy, Clone, Debug, EnumIter, DeriveColumn)]
+pub enum Column {
+    Id,
+    OrganizationId,
+    Name,
+    Description,
+    MinAmount,
+    MaxAmount,
+    TransactionTypes,
+    RequiredRole,
+    Priority,
+    IsActive,
+    CreatedAt,
+    UpdatedAt,
+}
+
+#[derive(Copy, Clone, Debug, EnumIter, DerivePrimaryKey)]
+pub enum PrimaryKey {
+    Id,
+}
+
+impl PrimaryKeyTrait for PrimaryKey {
+    type ValueType = Uuid;
+    fn auto_increment() -> bool {
+        false
+    }
+}
+
+#[derive(Copy, Clone, Debug, EnumIter)]
 pub enum Relation {
-    #[sea_orm(
-        belongs_to = "super::organizations::Entity",
-        from = "Column::OrganizationId",
-        to = "super::organizations::Column::Id",
-        on_update = "NoAction",
-        on_delete = "Cascade"
-    )]
     Organizations,
+}
+
+impl ColumnTrait for Column {
+    type EntityName = Entity;
+    fn def(&self) -> ColumnDef {
+        match self {
+            Self::Id => ColumnType::Uuid.def(),
+            Self::OrganizationId => ColumnType::Uuid.def(),
+            Self::Name => ColumnType::String(StringLen::N(255u32)).def(),
+            Self::Description => ColumnType::Text.def().null(),
+            Self::MinAmount => ColumnType::Decimal(Some((19u32, 4u32))).def().null(),
+            Self::MaxAmount => ColumnType::Decimal(Some((19u32, 4u32))).def().null(),
+            Self::TransactionTypes => ColumnType::Array(RcOrArc::new(
+                TransactionType::db_type().get_column_type().to_owned(),
+            ))
+            .def(),
+            Self::RequiredRole => UserRole::db_type().get_column_type().to_owned().def(),
+            Self::Priority => ColumnType::SmallInteger.def(),
+            Self::IsActive => ColumnType::Boolean.def(),
+            Self::CreatedAt => ColumnType::TimestampWithTimeZone.def(),
+            Self::UpdatedAt => ColumnType::TimestampWithTimeZone.def(),
+        }
+    }
+}
+
+impl RelationTrait for Relation {
+    fn def(&self) -> RelationDef {
+        match self {
+            Self::Organizations => Entity::belongs_to(super::organizations::Entity)
+                .from(Column::OrganizationId)
+                .to(super::organizations::Column::Id)
+                .into(),
+        }
+    }
 }
 
 impl Related<super::organizations::Entity> for Entity {

@@ -308,13 +308,13 @@ This plan verifies and fixes frontend API integration with the real backend. Tas
       9. Test create budget if form is ready ✅ (dialog works, fiscal years dropdown empty)
     - **IF TEST FAILS:** Identify the error, fix the code, re-test until pass
     - **CANNOT PUSH until E2E passes**
-  - [ ] 6.2 Push to GitHub (ONLY after E2E passes)
+  - [x] 6.2 Push to GitHub (ONLY after E2E passes)
     - `git add -A`
     - `git commit -m "feat(frontend): Account & Budget CRUD mutations"`
     - `git push`
 
 - [ ] 7. Dimension CRUD
-  - [ ] 7.1 Update dimension types
+  - [x] 7.1 Update dimension types
     - Use `grepSearch` to find current dimension types
     - Import and re-export types from `api.generated.ts`:
       - `DimensionType` - dimension type definition
@@ -323,7 +323,7 @@ This plan verifies and fixes frontend API integration with the real backend. Tas
       - `CreateDimensionValueRequest`
       - `UpdateDimensionValueRequest`
     - _Requirements: 1.1_
-  - [ ] 7.2 Update dimension queries
+  - [x] 7.2 Update dimension queries
     - Use `grepSearch` to find current dimension queries in `lib/queries/dimensions.ts`
     - Verify `useDimensionTypes` query:
       - Endpoint: `GET /organizations/{org_id}/dimension-types`
@@ -347,7 +347,7 @@ This plan verifies and fixes frontend API integration with the real backend. Tas
       - Payload: `{ is_active: boolean }`
       - Invalidate dimension values list
     - _Requirements: 6.1, 6.2, 6.3, 6.4_
-  - [ ] 7.3 Update dimension form components
+  - [x] 7.3 Update dimension form components
     - Use `grepSearch` to find dimension form components
     - Wire DimensionTypeDialog to `useCreateDimensionType`
     - Form fields for dimension type:
@@ -360,13 +360,13 @@ This plan verifies and fixes frontend API integration with the real backend. Tas
       - code (required)
       - name (required)
     - _Requirements: 6.5_
-  - [ ] 7.4 Check problems and run lint
+  - [x] 7.4 Check problems and run lint
     - Use getDiagnostics tool to check for TypeScript/lint problems
     - Run `pnpm run lint` in frontend directory
     - Fix ALL errors before proceeding
 
 - [ ] 8. Fiscal Period Management
-  - [ ] 8.1 Update fiscal types
+  - [x] 8.1 Update fiscal types
     - Use `grepSearch` to find current fiscal types
     - Import and re-export types from `api.generated.ts`:
       - `FiscalYear` - fiscal year definition
@@ -374,7 +374,7 @@ This plan verifies and fixes frontend API integration with the real backend. Tas
       - `CreateFiscalYearRequest`
       - `PeriodStatus` - enum (Open, SoftClose, Closed)
     - _Requirements: 1.1_
-  - [ ] 8.2 Update fiscal queries
+  - [x] 8.2 Update fiscal queries
     - Use `grepSearch` to find current fiscal queries in `lib/queries/fiscal.ts`
     - Verify `useFiscalYears` query:
       - Endpoint: `GET /organizations/{org_id}/fiscal-years`
@@ -390,7 +390,7 @@ This plan verifies and fixes frontend API integration with the real backend. Tas
       - Payload: `{ status: 'Open' | 'SoftClose' | 'Closed' }`
       - Invalidate fiscal periods list
     - _Requirements: 7.1, 7.2_
-  - [ ] 8.3 Update fiscal form components
+  - [x] 8.3 Update fiscal form components
     - Use `grepSearch` to find fiscal form components
     - Wire CreateFiscalYearDialog to `useCreateFiscalYear`
     - Form fields:
@@ -402,20 +402,20 @@ This plan verifies and fixes frontend API integration with the real backend. Tas
       - Dropdown to change status (Open, SoftClose, Closed)
       - Confirmation dialog for closing periods
     - _Requirements: 7.3, 7.4_
-  - [ ] 8.4 Check problems and run lint
+  - [x] 8.4 Check problems and run lint
     - Use getDiagnostics tool to check for TypeScript/lint problems
     - Run `pnpm run lint` in frontend directory
     - Fix ALL errors before proceeding
 
 - [ ] 9. Exchange Rate Management
-  - [ ] 9.1 Update exchange rate types
+  - [x] 9.1 Update exchange rate types
     - Use `grepSearch` to find current exchange rate types
     - Import and re-export types from `api.generated.ts`:
       - `ExchangeRate`
       - `CreateExchangeRateRequest`
       - `BulkImportRatesRequest`
     - _Requirements: 1.1_
-  - [ ] 9.2 Update exchange rate queries
+  - [-] 9.2 Update exchange rate queries
     - Use `grepSearch` to find current exchange rate queries in `lib/queries/exchange-rates.ts`
     - Verify `useExchangeRates` query:
       - Endpoint: `GET /organizations/{org_id}/exchange-rates`

@@ -3,50 +3,95 @@
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
-#[sea_orm(table_name = "budget_lines")]
+#[derive(Copy, Clone, Default, Debug, DeriveEntity)]
+pub struct Entity;
+
+impl EntityName for Entity {
+    fn table_name(&self) -> &str {
+        "budget_lines"
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, DeriveModel, DeriveActiveModel, Eq, Serialize, Deserialize)]
 pub struct Model {
-    #[sea_orm(primary_key, auto_increment = false)]
     pub id: Uuid,
     pub budget_id: Uuid,
     pub account_id: Uuid,
     pub fiscal_period_id: Uuid,
-    #[sea_orm(column_type = "Decimal(Some((19, 4)))")]
     pub amount: Decimal,
-    #[sea_orm(column_type = "Text", nullable)]
     pub notes: Option<String>,
     pub created_at: DateTimeWithTimeZone,
     pub updated_at: DateTimeWithTimeZone,
 }
 
-#[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
+#[derive(Copy, Clone, Debug, EnumIter, DeriveColumn)]
+pub enum Column {
+    Id,
+    BudgetId,
+    AccountId,
+    FiscalPeriodId,
+    Amount,
+    Notes,
+    CreatedAt,
+    UpdatedAt,
+}
+
+#[derive(Copy, Clone, Debug, EnumIter, DerivePrimaryKey)]
+pub enum PrimaryKey {
+    Id,
+}
+
+impl PrimaryKeyTrait for PrimaryKey {
+    type ValueType = Uuid;
+    fn auto_increment() -> bool {
+        false
+    }
+}
+
+#[derive(Copy, Clone, Debug, EnumIter)]
 pub enum Relation {
-    #[sea_orm(has_many = "super::budget_line_dimensions::Entity")]
     BudgetLineDimensions,
-    #[sea_orm(
-        belongs_to = "super::budgets::Entity",
-        from = "Column::BudgetId",
-        to = "super::budgets::Column::Id",
-        on_update = "NoAction",
-        on_delete = "Cascade"
-    )]
     Budgets,
-    #[sea_orm(
-        belongs_to = "super::chart_of_accounts::Entity",
-        from = "Column::AccountId",
-        to = "super::chart_of_accounts::Column::Id",
-        on_update = "NoAction",
-        on_delete = "NoAction"
-    )]
     ChartOfAccounts,
-    #[sea_orm(
-        belongs_to = "super::fiscal_periods::Entity",
-        from = "Column::FiscalPeriodId",
-        to = "super::fiscal_periods::Column::Id",
-        on_update = "NoAction",
-        on_delete = "NoAction"
-    )]
     FiscalPeriods,
+}
+
+impl ColumnTrait for Column {
+    type EntityName = Entity;
+    fn def(&self) -> ColumnDef {
+        match self {
+            Self::Id => ColumnType::Uuid.def(),
+            Self::BudgetId => ColumnType::Uuid.def(),
+            Self::AccountId => ColumnType::Uuid.def(),
+            Self::FiscalPeriodId => ColumnType::Uuid.def(),
+            Self::Amount => ColumnType::Decimal(Some((19u32, 4u32))).def(),
+            Self::Notes => ColumnType::Text.def().null(),
+            Self::CreatedAt => ColumnType::TimestampWithTimeZone.def(),
+            Self::UpdatedAt => ColumnType::TimestampWithTimeZone.def(),
+        }
+    }
+}
+
+impl RelationTrait for Relation {
+    fn def(&self) -> RelationDef {
+        match self {
+            Self::BudgetLineDimensions => {
+                Entity::has_many(super::budget_line_dimensions::Entity).into()
+            }
+            Self::Budgets => Entity::belongs_to(super::budgets::Entity)
+                .from(Column::BudgetId)
+                .to(super::budgets::Column::Id)
+                .into(),
+            Self::ChartOfAccounts => Entity::belongs_to(super::chart_of_accounts::Entity)
+                .from(Column::AccountId)
+                .to(super::chart_of_accounts::Column::Id)
+                .into(),
+            Self::FiscalPeriods => Entity::belongs_to(super::fiscal_periods::Entity)
+                .from(Column::FiscalPeriodId)
+                .to(super::fiscal_periods::Column::Id)
+                .into(),
+        }
+    }
 }
 
 impl Related<super::budget_line_dimensions::Entity> for Entity {

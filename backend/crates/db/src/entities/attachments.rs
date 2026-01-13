@@ -5,10 +5,17 @@ use super::sea_orm_active_enums::StorageProvider;
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
-#[sea_orm(table_name = "attachments")]
+#[derive(Copy, Clone, Default, Debug, DeriveEntity)]
+pub struct Entity;
+
+impl EntityName for Entity {
+    fn table_name(&self) -> &str {
+        "attachments"
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, DeriveModel, DeriveActiveModel, Eq, Serialize, Deserialize)]
 pub struct Model {
-    #[sea_orm(primary_key, auto_increment = false)]
     pub id: Uuid,
     pub organization_id: Uuid,
     pub transaction_id: Option<Uuid>,
@@ -21,39 +28,95 @@ pub struct Model {
     pub storage_bucket: String,
     pub storage_key: String,
     pub storage_region: Option<String>,
-    #[sea_orm(column_type = "JsonBinary", nullable)]
     pub extracted_data: Option<Json>,
     pub ocr_processed_at: Option<DateTimeWithTimeZone>,
     pub uploaded_by: Uuid,
     pub created_at: DateTimeWithTimeZone,
 }
 
-#[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
+#[derive(Copy, Clone, Debug, EnumIter, DeriveColumn)]
+pub enum Column {
+    Id,
+    OrganizationId,
+    TransactionId,
+    AttachmentType,
+    FileName,
+    FileSize,
+    MimeType,
+    ChecksumSha256,
+    StorageProvider,
+    StorageBucket,
+    StorageKey,
+    StorageRegion,
+    ExtractedData,
+    OcrProcessedAt,
+    UploadedBy,
+    CreatedAt,
+}
+
+#[derive(Copy, Clone, Debug, EnumIter, DerivePrimaryKey)]
+pub enum PrimaryKey {
+    Id,
+}
+
+impl PrimaryKeyTrait for PrimaryKey {
+    type ValueType = Uuid;
+    fn auto_increment() -> bool {
+        false
+    }
+}
+
+#[derive(Copy, Clone, Debug, EnumIter)]
 pub enum Relation {
-    #[sea_orm(
-        belongs_to = "super::organizations::Entity",
-        from = "Column::OrganizationId",
-        to = "super::organizations::Column::Id",
-        on_update = "NoAction",
-        on_delete = "Cascade"
-    )]
     Organizations,
-    #[sea_orm(
-        belongs_to = "super::transactions::Entity",
-        from = "Column::TransactionId",
-        to = "super::transactions::Column::Id",
-        on_update = "NoAction",
-        on_delete = "SetNull"
-    )]
     Transactions,
-    #[sea_orm(
-        belongs_to = "super::users::Entity",
-        from = "Column::UploadedBy",
-        to = "super::users::Column::Id",
-        on_update = "NoAction",
-        on_delete = "NoAction"
-    )]
     Users,
+}
+
+impl ColumnTrait for Column {
+    type EntityName = Entity;
+    fn def(&self) -> ColumnDef {
+        match self {
+            Self::Id => ColumnType::Uuid.def(),
+            Self::OrganizationId => ColumnType::Uuid.def(),
+            Self::TransactionId => ColumnType::Uuid.def().null(),
+            Self::AttachmentType => AttachmentType::db_type().get_column_type().to_owned().def(),
+            Self::FileName => ColumnType::String(StringLen::N(255u32)).def(),
+            Self::FileSize => ColumnType::BigInteger.def(),
+            Self::MimeType => ColumnType::String(StringLen::N(100u32)).def(),
+            Self::ChecksumSha256 => ColumnType::String(StringLen::N(64u32)).def().null(),
+            Self::StorageProvider => StorageProvider::db_type()
+                .get_column_type()
+                .to_owned()
+                .def(),
+            Self::StorageBucket => ColumnType::String(StringLen::N(100u32)).def(),
+            Self::StorageKey => ColumnType::String(StringLen::N(500u32)).def(),
+            Self::StorageRegion => ColumnType::String(StringLen::N(50u32)).def().null(),
+            Self::ExtractedData => ColumnType::JsonBinary.def().null(),
+            Self::OcrProcessedAt => ColumnType::TimestampWithTimeZone.def().null(),
+            Self::UploadedBy => ColumnType::Uuid.def(),
+            Self::CreatedAt => ColumnType::TimestampWithTimeZone.def(),
+        }
+    }
+}
+
+impl RelationTrait for Relation {
+    fn def(&self) -> RelationDef {
+        match self {
+            Self::Organizations => Entity::belongs_to(super::organizations::Entity)
+                .from(Column::OrganizationId)
+                .to(super::organizations::Column::Id)
+                .into(),
+            Self::Transactions => Entity::belongs_to(super::transactions::Entity)
+                .from(Column::TransactionId)
+                .to(super::transactions::Column::Id)
+                .into(),
+            Self::Users => Entity::belongs_to(super::users::Entity)
+                .from(Column::UploadedBy)
+                .to(super::users::Column::Id)
+                .into(),
+        }
+    }
 }
 
 impl Related<super::organizations::Entity> for Entity {

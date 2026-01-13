@@ -112,8 +112,8 @@ impl ApprovalEngine {
             })
             .collect();
 
-        // Sort by priority (lower = higher priority)
-        applicable.sort_by_key(|r| r.priority);
+        // Sort by priority (lower = higher priority), then by ID for determinism
+        applicable.sort_by(|a, b| a.priority.cmp(&b.priority).then_with(|| a.id.cmp(&b.id)));
         applicable.first().map(|r| r.required_role.clone())
     }
 
@@ -156,14 +156,14 @@ impl ApprovalEngine {
         }
 
         // Check approval limit (only for Approver role, higher roles have unlimited)
-        if user_role_enum == UserRole::Approver
-            && let Some(limit) = user_approval_limit
-            && transaction_amount > limit
-        {
-            return Err(WorkflowError::ExceedsApprovalLimit {
-                amount: transaction_amount,
-                limit,
-            });
+        if user_role_enum == UserRole::Approver {
+            let limit = user_approval_limit.unwrap_or(Decimal::ZERO);
+            if transaction_amount > limit {
+                return Err(WorkflowError::ExceedsApprovalLimit {
+                    amount: transaction_amount,
+                    limit,
+                });
+            }
         }
 
         Ok(())
