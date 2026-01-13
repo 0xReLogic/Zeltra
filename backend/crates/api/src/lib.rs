@@ -17,6 +17,7 @@ mod security_tests;
 
 pub use error::ApiError;
 
+use crate::middleware::rate_limit::RateLimitLayer;
 use axum::Router;
 use sea_orm::DatabaseConnection;
 use std::sync::Arc;
@@ -42,6 +43,7 @@ pub struct AppState {
 pub fn create_router(state: AppState) -> Router {
     Router::new()
         .nest("/api/v1", routes::api_routes_with_state(state.clone()))
+        .layer(RateLimitLayer::with_default_config())
         .layer(TraceLayer::new_for_http())
         .layer(
             CorsLayer::new()
