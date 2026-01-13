@@ -1,10 +1,10 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Loader2, Save } from 'lucide-react'
+import { Loader2, Save, Plus } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -26,6 +26,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useOrganization, useUpdateOrganization } from '@/lib/queries/organizations'
+import { CreateOrganizationDialog } from '@/components/organizations/CreateOrganizationDialog'
 import { toast } from 'sonner'
 
 const orgSettingsSchema = z.object({
@@ -36,6 +37,7 @@ const orgSettingsSchema = z.object({
 type OrgSettingsValues = z.infer<typeof orgSettingsSchema>
 
 export default function OrganizationSettingsPage() {
+  const [isCreateOpen, setIsCreateOpen] = useState(false)
 
   const { data: org, isLoading } = useOrganization()
   const updateOrg = useUpdateOrganization()
@@ -83,12 +85,26 @@ export default function OrganizationSettingsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-medium">Organization Settings</h3>
-        <p className="text-sm text-muted-foreground">
-          Manage your organization&apos;s general preferences.
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-medium">Organization Settings</h3>
+          <p className="text-sm text-muted-foreground">
+            Manage your organization&apos;s general preferences.
+          </p>
+        </div>
+        <Button onClick={() => setIsCreateOpen(true)}>
+          <Plus className="mr-2 h-4 w-4" />
+          Create Organization
+        </Button>
       </div>
+
+      <CreateOrganizationDialog 
+        open={isCreateOpen} 
+        onOpenChange={setIsCreateOpen}
+        onSuccess={() => {
+          toast.success('Switched to new organization')
+        }}
+      />
 
       <Card>
         <CardHeader>

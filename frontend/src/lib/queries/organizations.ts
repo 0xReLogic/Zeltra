@@ -1,7 +1,32 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api/client'
-import { Organization, OrganizationUser, UpdateOrganizationRequest, InviteUserRequest, UpdateUserRoleRequest } from '@/types/organizations'
+import { Organization, OrganizationUser, CreateOrganizationRequest, UpdateOrganizationRequest, InviteUserRequest, UpdateUserRoleRequest } from '@/types/organizations'
 import { useAuthStore } from '@/lib/stores/authStore'
+
+export function useOrganizations() {
+  return useQuery({
+    queryKey: ['organizations'],
+    queryFn: () => apiClient<{ data: Organization[] }>('/organizations'),
+  })
+}
+
+export function useCreateOrganization() {
+  const queryClient = useQueryClient()
+  const setOrg = useAuthStore((state) => state.setOrg)
+
+  return useMutation({
+    mutationFn: (data: CreateOrganizationRequest) =>
+      apiClient<Organization>('/organizations', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    onSuccess: (newOrg) => {
+      queryClient.invalidateQueries({ queryKey: ['organizations'] })
+      // Switch to the new organization
+      setOrg(newOrg.id)
+    },
+  })
+}
 
 export function useOrganization() {
   const currentOrgId = useAuthStore((state) => state.currentOrgId)
