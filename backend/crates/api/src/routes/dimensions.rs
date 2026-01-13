@@ -845,7 +845,7 @@ mod tests {
 
     #[test]
     fn test_update_dimension_value_request_empty() {
-        let json = r#"{}"#;
+        let json = r"{}";
         let req: UpdateDimensionValueRequest =
             serde_json::from_str(json).expect("Failed to deserialize");
         assert_eq!(req.code, None);
@@ -875,7 +875,7 @@ mod tests {
 
     #[test]
     fn test_toggle_dimension_value_status_request_missing_field() {
-        let json = r#"{}"#;
+        let json = r"{}";
         let result: Result<ToggleDimensionValueStatusRequest, _> = serde_json::from_str(json);
         assert!(result.is_err(), "Should fail when is_active is missing");
     }

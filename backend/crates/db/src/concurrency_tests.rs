@@ -75,7 +75,7 @@ mod tests {
     async fn test_concurrent_balance_updates_simulation() {
         // Simulate 100 concurrent transactions
         let num_transactions = 100;
-        let initial_balance = Decimal::new(100000, 2); // 1000.00
+        let initial_balance = Decimal::new(100_000, 2); // 1000.00
         let amount_per_tx = Decimal::new(100, 2); // 1.00
 
         // All credits: final should be initial + (num_transactions * amount)
@@ -98,7 +98,7 @@ mod tests {
 
                 // Simulate atomic balance update
                 let mut bal = balance.lock().await;
-                *bal = *bal + amount_per_tx;
+                *bal += amount_per_tx;
             });
 
             handles.push(handle);
@@ -117,7 +117,7 @@ mod tests {
     async fn test_mixed_concurrent_transactions() {
         // 50 credits and 50 debits of same amount should net to zero change
         let num_each = 50;
-        let initial_balance = Decimal::new(100000, 2); // 1000.00
+        let initial_balance = Decimal::new(100_000, 2); // 1000.00
         let amount = Decimal::new(100, 2); // 1.00
 
         let balance = Arc::new(tokio::sync::Mutex::new(initial_balance));
@@ -133,7 +133,7 @@ mod tests {
             let handle = tokio::spawn(async move {
                 barrier.wait().await;
                 let mut bal = balance.lock().await;
-                *bal = *bal + amount;
+                *bal += amount;
             });
             handles.push(handle);
         }
@@ -146,7 +146,7 @@ mod tests {
             let handle = tokio::spawn(async move {
                 barrier.wait().await;
                 let mut bal = balance.lock().await;
-                *bal = *bal - amount;
+                *bal -= amount;
             });
             handles.push(handle);
         }
@@ -174,7 +174,7 @@ proptest! {
     #[test]
     fn prop_balance_integrity(
         initial_cents in 0i64..1_000_000,
-        transactions in prop::collection::vec((1i64..10000, prop::bool::ANY), 1..50)
+        transactions in prop::collection::vec((1i64..10_000, prop::bool::ANY), 1..50)
     ) {
         let initial = Decimal::new(initial_cents, 2);
 
@@ -198,7 +198,7 @@ proptest! {
     #[test]
     fn prop_transaction_order_independence(
         initial_cents in 0i64..1_000_000,
-        amounts in prop::collection::vec(1i64..10000, 2..20)
+        amounts in prop::collection::vec(1i64..10_000, 2..20)
     ) {
         let initial = Decimal::new(initial_cents, 2);
 
@@ -211,7 +211,7 @@ proptest! {
         let forward = calculate_expected_balance(initial, &credits);
 
         // Reverse order
-        let reversed: Vec<(Decimal, bool)> = credits.iter().rev().cloned().collect();
+        let reversed: Vec<(Decimal, bool)> = credits.iter().rev().copied().collect();
         let backward = calculate_expected_balance(initial, &reversed);
 
         prop_assert_eq!(forward, backward, "Order should not affect final balance");
@@ -221,7 +221,7 @@ proptest! {
     #[test]
     fn prop_credit_debit_roundtrip(
         initial_cents in 0i64..1_000_000,
-        amount_cents in 1i64..100000
+        amount_cents in 1i64..100_000
     ) {
         let initial = Decimal::new(initial_cents, 2);
         let amount = Decimal::new(amount_cents, 2);

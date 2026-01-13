@@ -3,11 +3,11 @@
 //! This utility uses the `ApiDoc` struct from `zeltra-api` to generate a YAML
 //! version of the OpenAPI specification and writes it to `contracts/openapi.yaml`.
 
-use utoipa::OpenApi;
-use zeltra_api::routes::ApiDoc;
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
+use utoipa::OpenApi;
+use zeltra_api::routes::ApiDoc;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Generating OpenAPI specification...");
@@ -23,12 +23,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // We want to write to Zeltra/contracts/openapi.yaml
     let output_path = Path::new("../contracts/openapi.yaml");
 
-    println!("Writing to {:?}...", output_path);
+    println!("Writing to {}...", output_path.display());
 
     let mut file = File::create(output_path)?;
     file.write_all(openapi_yaml.as_bytes())?;
 
-    println!("Successfully generated OpenAPI specification at {:?}", output_path);
+    println!(
+        "Successfully generated OpenAPI specification at {}",
+        output_path.display()
+    );
 
     Ok(())
 }

@@ -117,7 +117,7 @@ proptest! {
 
         let details = error.details.unwrap();
         prop_assert_eq!(
-            details.get("retry_after").and_then(|v| v.as_u64()),
+            details.get("retry_after").and_then(serde_json::Value::as_u64),
             Some(retry_after)
         );
     }

@@ -24,12 +24,10 @@ proptest! {
         prop_assert_eq!(result.variance, budgeted - actual);
 
         // Favorable if under budget (variance > 0)
-        if result.variance > Decimal::ZERO {
-            prop_assert_eq!(result.status, VarianceStatus::Favorable);
-        } else if result.variance < Decimal::ZERO {
-            prop_assert_eq!(result.status, VarianceStatus::Unfavorable);
-        } else {
-            prop_assert_eq!(result.status, VarianceStatus::OnBudget);
+        match result.variance.cmp(&Decimal::ZERO) {
+            std::cmp::Ordering::Greater => prop_assert_eq!(result.status, VarianceStatus::Favorable),
+            std::cmp::Ordering::Less => prop_assert_eq!(result.status, VarianceStatus::Unfavorable),
+            std::cmp::Ordering::Equal => prop_assert_eq!(result.status, VarianceStatus::OnBudget),
         }
     }
 
@@ -49,12 +47,10 @@ proptest! {
         prop_assert_eq!(result.variance, actual - budgeted);
 
         // Favorable if over target (variance > 0)
-        if result.variance > Decimal::ZERO {
-            prop_assert_eq!(result.status, VarianceStatus::Favorable);
-        } else if result.variance < Decimal::ZERO {
-            prop_assert_eq!(result.status, VarianceStatus::Unfavorable);
-        } else {
-            prop_assert_eq!(result.status, VarianceStatus::OnBudget);
+        match result.variance.cmp(&Decimal::ZERO) {
+            std::cmp::Ordering::Greater => prop_assert_eq!(result.status, VarianceStatus::Favorable),
+            std::cmp::Ordering::Less => prop_assert_eq!(result.status, VarianceStatus::Unfavorable),
+            std::cmp::Ordering::Equal => prop_assert_eq!(result.status, VarianceStatus::OnBudget),
         }
     }
 

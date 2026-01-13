@@ -843,8 +843,7 @@ mod integration_tests {
                 Request::builder()
                     .method("GET")
                     .uri(format!(
-                        "/organizations/{}/transactions/{}/attachments",
-                        org_id, tx_id
+                        "/organizations/{org_id}/transactions/{tx_id}/attachments"
                     ))
                     .body(Body::empty())
                     .unwrap(),

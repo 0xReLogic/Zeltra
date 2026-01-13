@@ -1302,7 +1302,7 @@ mod tests {
 
     #[test]
     fn test_toggle_status_request_missing_field() {
-        let json = r#"{}"#;
+        let json = r"{}";
         let result: Result<ToggleStatusRequest, _> = serde_json::from_str(json);
         assert!(result.is_err(), "Should fail when is_active is missing");
     }

@@ -278,9 +278,9 @@ proptest! {
     /// Property: Numeric bounds are enforced
     #[test]
     fn prop_numeric_bounds(
-        value in i64::MIN..i64::MAX
+        _value in i64::MIN..i64::MAX
     ) {
-        prop_assert!(value >= i64::MIN);
-        prop_assert!(value <= i64::MAX);
+        // proptest already guarantees value is within i64 bounds
+        prop_assert!(true);
     }
 }

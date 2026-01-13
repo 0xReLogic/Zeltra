@@ -21,13 +21,16 @@ mod tests {
 
             // Generate monthly amounts with some variance
             let monthly_amounts: Vec<Decimal> = (0..num_months)
-                .map(|m| base_amount + Decimal::from(m as i64 * 100))
+                .map(|m| {
+                    base_amount
+                        + Decimal::from(i64::try_from(m).expect("month index fits in i64") * 100)
+                })
                 .collect();
 
             data.push(HistoricalAccountData {
                 account_id: Uuid::new_v4(),
-                account_code: format!("{:04}", 4000 + i),
-                account_name: format!("Account {}", i),
+                account_code: format!("{i:04}"),
+                account_name: format!("Account {i}"),
                 account_type: account_type.to_string(),
                 monthly_amounts,
             });
@@ -56,7 +59,7 @@ mod tests {
         let duration = start.elapsed();
 
         println!("\n=== BENCHMARK: 100 accounts, 12-month projection ===");
-        println!("Duration: {:?}", duration);
+        println!("Duration: {duration:?}");
         println!("Projections generated: {}", result.projections.len());
         println!("Expected projections: {}", 100 * 12);
 
@@ -88,7 +91,7 @@ mod tests {
         let duration = start.elapsed();
 
         println!("\n=== BENCHMARK: 500 accounts, 12-month projection ===");
-        println!("Duration: {:?}", duration);
+        println!("Duration: {duration:?}");
         println!("Projections generated: {}", result.projections.len());
 
         assert_eq!(result.projections.len(), 500 * 12);
@@ -118,7 +121,7 @@ mod tests {
         let duration = start.elapsed();
 
         println!("\n=== BENCHMARK: 100 accounts, 60-month projection (5 years) ===");
-        println!("Duration: {:?}", duration);
+        println!("Duration: {duration:?}");
         println!("Projections generated: {}", result.projections.len());
 
         assert_eq!(result.projections.len(), 100 * 60);
@@ -149,12 +152,11 @@ mod tests {
         let duration = start.elapsed();
 
         println!("\n=== BENCHMARK: WORST CASE - 1000 accounts, 60-month projection ===");
-        println!("Duration: {:?}", duration);
+        println!("Duration: {duration:?}");
         println!("Projections generated: {}", result.projections.len());
-        println!(
-            "Throughput: {:.0} projections/sec",
-            result.projections.len() as f64 / duration.as_secs_f64()
-        );
+        #[allow(clippy::cast_precision_loss)]
+        let throughput = result.projections.len() as f64 / duration.as_secs_f64();
+        println!("Throughput: {throughput:.0} projections/sec");
 
         assert_eq!(result.projections.len(), 1000 * 60);
         // Worst case should still be under 5 seconds

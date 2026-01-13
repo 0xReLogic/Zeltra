@@ -43,7 +43,7 @@ mod tests {
         HistoricalAccountData {
             account_id: Uuid::new_v4(),
             account_code: format!("{}-001", account_type.to_uppercase()),
-            account_name: format!("Test {} Account", account_type),
+            account_name: format!("Test {account_type} Account"),
             account_type: account_type.to_string(),
             monthly_amounts,
         }
@@ -181,7 +181,7 @@ mod tests {
             let result = SimulationEngine::run(&data, &params);
 
             prop_assert_eq!(
-                result.projections.len() as u32,
+                u32::try_from(result.projections.len()).unwrap(),
                 months,
                 "Should have one projection per month"
             );

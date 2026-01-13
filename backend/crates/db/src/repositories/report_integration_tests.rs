@@ -26,7 +26,7 @@ mod tests {
         AccountBalance {
             account_id: Uuid::new_v4(),
             code: format!("{}-001", account_type.to_uppercase()),
-            name: format!("Test {} Account", account_type),
+            name: format!("Test {account_type} Account"),
             account_type: account_type.to_string(),
             account_subtype: account_subtype.map(String::from),
             total_debit: debit,

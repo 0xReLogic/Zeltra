@@ -35,7 +35,7 @@ pub fn routes() -> Router<AppState> {
         )
         .route(
             "/organizations/{org_id}/dashboard/budget-vs-actual",
-            get(get_budget_vs_actual),
+            get(get_dashboard_budget_vs_actual),
         )
 }
 
@@ -646,7 +646,7 @@ async fn get_cash_flow(
     security(("bearerAuth" = []))
 )]
 #[axum::debug_handler]
-async fn get_budget_vs_actual(
+async fn get_dashboard_budget_vs_actual(
     State(state): State<AppState>,
     Path(org_id): Path<Uuid>,
     Query(query): Query<BudgetVsActualQuery>,

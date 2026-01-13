@@ -19,12 +19,12 @@ proptest! {
         // Generate accounts with random debits and credits
         let accounts: Vec<AccountBalance> = (0..num_accounts)
             .map(|i| {
-                let debit = Decimal::from(i as i64 * 1000 + 500);
-                let credit = Decimal::from(i as i64 * 800 + 300);
+                let debit = Decimal::from(i64::try_from(i).unwrap() * 1000 + 500);
+                let credit = Decimal::from(i64::try_from(i).unwrap() * 800 + 300);
                 AccountBalance {
                     account_id: Uuid::new_v4(),
                     code: format!("{}", 1000 + i),
-                    name: format!("Account {}", i),
+                    name: format!("Account {i}"),
                     account_type: if i % 2 == 0 { "asset" } else { "liability" }.to_string(),
                     account_subtype: None,
                     total_debit: debit,
@@ -62,15 +62,15 @@ proptest! {
         let mut running_credit = Decimal::ZERO;
 
         for i in 0..num_accounts - 1 {
-            let debit = Decimal::from(i as i64 * 1000 + 500);
-            let credit = Decimal::from(i as i64 * 800 + 300);
+            let debit = Decimal::from(i64::try_from(i).unwrap() * 1000 + 500);
+            let credit = Decimal::from(i64::try_from(i).unwrap() * 800 + 300);
             running_debit += debit;
             running_credit += credit;
 
             accounts.push(AccountBalance {
                 account_id: Uuid::new_v4(),
                 code: format!("{}", 1000 + i),
-                name: format!("Account {}", i),
+                name: format!("Account {i}"),
                 account_type: if i % 2 == 0 { "asset" } else { "liability" }.to_string(),
                 account_subtype: None,
                 total_debit: debit,
@@ -171,12 +171,12 @@ proptest! {
         let mut expected_equity = Decimal::ZERO;
 
         for i in 0..num_assets {
-            let balance = Decimal::from(i as i64 * 1000 + 100);
+            let balance = Decimal::from(i64::try_from(i).unwrap() * 1000 + 100);
             expected_assets += balance;
             accounts.push(AccountBalance {
                 account_id: Uuid::new_v4(),
-                code: format!("1{:03}", i),
-                name: format!("Asset {}", i),
+                code: format!("1{i:03}"),
+                name: format!("Asset {i}"),
                 account_type: "asset".to_string(),
                 account_subtype: None,
                 total_debit: balance,
@@ -186,12 +186,12 @@ proptest! {
         }
 
         for i in 0..num_liabilities {
-            let balance = Decimal::from(i as i64 * 500 + 50);
+            let balance = Decimal::from(i64::try_from(i).unwrap() * 500 + 50);
             expected_liabilities += balance;
             accounts.push(AccountBalance {
                 account_id: Uuid::new_v4(),
-                code: format!("2{:03}", i),
-                name: format!("Liability {}", i),
+                code: format!("2{i:03}"),
+                name: format!("Liability {i}"),
                 account_type: "liability".to_string(),
                 account_subtype: None,
                 total_debit: Decimal::ZERO,
@@ -201,12 +201,12 @@ proptest! {
         }
 
         for i in 0..num_equity {
-            let balance = Decimal::from(i as i64 * 200 + 20);
+            let balance = Decimal::from(i64::try_from(i).unwrap() * 200 + 20);
             expected_equity += balance;
             accounts.push(AccountBalance {
                 account_id: Uuid::new_v4(),
-                code: format!("3{:03}", i),
-                name: format!("Equity {}", i),
+                code: format!("3{i:03}"),
+                name: format!("Equity {i}"),
                 account_type: "equity".to_string(),
                 account_subtype: None,
                 total_debit: Decimal::ZERO,
@@ -305,12 +305,12 @@ proptest! {
         let mut expected_opex = Decimal::ZERO;
 
         for i in 0..num_revenue {
-            let balance = Decimal::from(i as i64 * 10000 + 5000);
+            let balance = Decimal::from(i64::try_from(i).unwrap() * 10000 + 5000);
             expected_revenue += balance;
             accounts.push(AccountBalance {
                 account_id: Uuid::new_v4(),
-                code: format!("4{:03}", i),
-                name: format!("Revenue {}", i),
+                code: format!("4{i:03}"),
+                name: format!("Revenue {i}"),
                 account_type: "revenue".to_string(),
                 account_subtype: None,
                 total_debit: Decimal::ZERO,
@@ -320,12 +320,12 @@ proptest! {
         }
 
         for i in 0..num_cogs {
-            let balance = Decimal::from(i as i64 * 3000 + 1000);
+            let balance = Decimal::from(i64::try_from(i).unwrap() * 3000 + 1000);
             expected_cogs += balance;
             accounts.push(AccountBalance {
                 account_id: Uuid::new_v4(),
-                code: format!("5{:03}", i),
-                name: format!("COGS {}", i),
+                code: format!("5{i:03}"),
+                name: format!("COGS {i}"),
                 account_type: "expense".to_string(),
                 account_subtype: Some("cost_of_goods_sold".to_string()),
                 total_debit: balance,
@@ -335,12 +335,12 @@ proptest! {
         }
 
         for i in 0..num_opex {
-            let balance = Decimal::from(i as i64 * 2000 + 500);
+            let balance = Decimal::from(i64::try_from(i).unwrap() * 2000 + 500);
             expected_opex += balance;
             accounts.push(AccountBalance {
                 account_id: Uuid::new_v4(),
-                code: format!("6{:03}", i),
-                name: format!("OpEx {}", i),
+                code: format!("6{i:03}"),
+                name: format!("OpEx {i}"),
                 account_type: "expense".to_string(),
                 account_subtype: Some("operating_expense".to_string()),
                 total_debit: balance,

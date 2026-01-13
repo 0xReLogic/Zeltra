@@ -60,15 +60,15 @@ fn valid_rate_item_strategy() -> impl Strategy<Value = RateImportItem> {
         date_strategy(),
     )
         .prop_filter_map("currencies must differ", |(from, to, rate, date)| {
-            if from != to {
+            if from == to {
+                None
+            } else {
                 Some(RateImportItem {
                     from_currency: from,
                     to_currency: to,
                     rate,
                     effective_date: date,
                 })
-            } else {
-                None
             }
         })
 }

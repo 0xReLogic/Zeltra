@@ -1,3 +1,4 @@
+#![allow(clippy::needless_for_each)]
 //! API route definitions.
 
 use axum::{Router, middleware};
@@ -100,7 +101,7 @@ use utoipa_swagger_ui::SwaggerUi;
         dashboard::get_dashboard_metrics,
         dashboard::get_recent_activity,
         dashboard::get_cash_flow,
-        dashboard::get_budget_vs_actual,
+        dashboard::get_dashboard_budget_vs_actual,
         simulation::run_simulation,
     ),
     components(

@@ -56,8 +56,8 @@ proptest! {
         let historical_data: Vec<HistoricalAccountData> = (0..num_accounts)
             .map(|i| HistoricalAccountData {
                 account_id: Uuid::new_v4(),
-                account_code: format!("ACC{}", i),
-                account_name: format!("Account {}", i),
+                account_code: format!("ACC{i}"),
+                account_name: format!("Account {i}"),
                 account_type: "expense".to_string(),
                 monthly_amounts: vec![dec!(1000)],
             })
@@ -175,8 +175,8 @@ proptest! {
         for i in 0..num_revenue {
             historical_data.push(HistoricalAccountData {
                 account_id: Uuid::new_v4(),
-                account_code: format!("REV{}", i),
-                account_name: format!("Revenue {}", i),
+                account_code: format!("REV{i}"),
+                account_name: format!("Revenue {i}"),
                 account_type: "revenue".to_string(),
                 monthly_amounts: vec![dec!(1000)],
             });
@@ -186,8 +186,8 @@ proptest! {
         for i in 0..num_expense {
             historical_data.push(HistoricalAccountData {
                 account_id: Uuid::new_v4(),
-                account_code: format!("EXP{}", i),
-                account_name: format!("Expense {}", i),
+                account_code: format!("EXP{i}"),
+                account_name: format!("Expense {i}"),
                 account_type: "expense".to_string(),
                 monthly_amounts: vec![dec!(500)],
             });
