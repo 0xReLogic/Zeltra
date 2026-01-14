@@ -677,7 +677,9 @@ NOW we start frontend, because backend is solid.
 
 **Status:** Auth & Organization = Real API ✅ | Other features = Need verification
 
-### Backend Fixes Impact (Internal Handover) 🟢 NEW
+### Technical Handover & Strategic Alignment 🟢 IMPORTANT
+
+> [!IMPORTANT] > **PENTING UNTUK SELURUH TIM:** Hasil audit tier enforcement (Januari 2026) dan strategi monetisasi via UI gating ("Golden Lock"):
 
 > [!IMPORTANT] > **PENTING UNTUK FE:** Hasil bug-fix di backend (Januari 2026) memerlukan penyesuaian di UI untuk menjaga integritas data:
 
@@ -726,16 +728,28 @@ NOW we start frontend, because backend is solid.
 
 ---
 
-### UI/UX Strategy for Phase 7+ (The "Holy Grail" UX) 🟢 STRATEGIC
+### UI/UX Strategy: The "Golden Lock" �
 
-- **Role-Based Visibility (Hide)**:
-  - User Management (Invite/Edit/Remove) hanya muncul untuk role `Owner`.
-  - Tombol "Void" atau "Delete" permanen disembunyikan untuk role `Viewer` / `Submitter`.
-  - **Tujuan**: Mengurangi kognitif load dan menjaga keamanan operasional.
-- **Tier-Based Visibility (Lock 🔒)**:
-  - Fitur **Sentinel Intelligence** (Accruals, Revaluation, ESG) ditampilkan di sidebar tapi dengan ikon gembok emas 🔒.
-  - Saat diklik, tampilkan modal "Upgrade to Enterprise/Growth" untuk upsell.
-  - **Tujuan**: Drive revenue secara organik melalui rasa penasaran user.
+Kita menggunakan strategi **"Show but Lock"** (Gembok Emas) daripada menyembunyikan fitur. Tujuannya adalah **Product-Led Growth (PLG)** - membiarkan user melihat potensi penuh Zeltra agar mereka terdorong untuk upgrade secara organik.
+
+#### 🚩 Gating Rules by Tier
+
+| Feature Category | Feature                |    🛡️ STARTER    | 🚀 GROWTH | 👑 ENTERPRISE |
+| :--------------- | :--------------------- | :--------------: | :-------: | :-----------: |
+| **Dimensions**   | Project & Cost Centers |    🔒 (Max 2)    |    ✅     |      ✅       |
+| **Global**       | Auto-Sync (ECB)        | 🔒 (Manual Only) |    ✅     |      ✅       |
+| **Global**       | Real-Time Revaluation  |        🔒        |    ✅     |      ✅       |
+| **Intelligence** | Accruals Engine        |        🔒        |    🔒     |      ✅       |
+| **Intelligence** | Budget Simulation      |        🔒        |    🔒     |      ✅       |
+| **Intelligence** | Intercompany Hub       |        🔒        |    🔒     |      ✅       |
+| **Reporting**    | Full Analytics Dash    |        🔒        |    ✅     |      ✅       |
+| **Budgets**      | Budget Creation        |     🔒 (> 3)     |    ✅     |      ✅       |
+
+#### 💡 Implementation for Frontend:
+
+- **Visual**: Gunakan ikon gembok warna **Gold/Amber** di samping menu/tombol yang terkunci.
+- **Interaction**: Saat diklik, tampilkan **Upgrade Modal** (Upsell screen).
+- **Resource Quotas**: Hitung limit (Users, Tx, Budgets) secara dinamis menggunakan field `limits` dari `OrganizationResponse`. Jika quota penuh, ubah UI menjadi **Red/Warning State** + Disable action dengan ikon 🔒.
 
 ### Master Data UI (✅ Real API - Verified via E2E)
 
