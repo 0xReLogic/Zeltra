@@ -95,28 +95,6 @@ graph TD
     end
 ```
 
-### 💡 Analogi Sederhana ("Kardus & Segel")
-
-Bayangkan kita punya **Gudang Dokumen (Zeltra)**.
-
-1.  **Layer 1 (Sidik Jari)**:
-    Setiap ada kertas masuk (transaksi), kita foto kertasnya & bikin "Sidik Jari Digital" (Hash). Kalau ada yang coret 1 huruf aja, sidik jarinya berubah total.
-
-2.  **Layer 2 (Kardus & Segel - Merkle Tree)**:
-    Daripada lapor ke notaris tiap 1 kertas (mahal), kita masukin 1.000 kertas ke dalam 1 Kardus Besar. Kita segel kardus itu pake **Satu Segel Utama (Root Hash)**.
-
-    - Jika 1 kertas di dalem diubah, Segel Utama di luar kardus bakal "pecah" otomatis.
-
-3.  **Layer 3 (Notaris Publik - Blockchain)**:
-    Kita cuma bawa **Foto Segel Utama** itu ke Notaris (Blockchain). Kita bayar biaya notaris cuma 1x sehari buat 1 foto segel itu.
-
-    - **Rahasia Terjamin**: Kita GAK kirim isi kertasnya (Data Transaksi tetap rahasia di server Zeltra). Kita cuma kirim "Bukti Segel"-nya.
-
-4.  **Layer 4 (Auditor)**:
-    Auditor cukup tanya: _"Mana Segel Utama hari ini? Coba cocokin sama foto yang ada di Notaris."_
-    - Cocok = **Valid 100%**.
-    - Beda = **Fraud**.
-
 ### 💰 Cost Analysis (The "Hidden" Profit)
 
 | Komponen           | Biaya        | Alasan                                                  |
@@ -124,10 +102,74 @@ Bayangkan kita punya **Gudang Dokumen (Zeltra)**.
 | **Hashing Engine** | ~$0.01 / mo  | Jalan di CPU server biasa (Rust sangat efisien).        |
 | **Merkle Tree**    | $0           | Kalkulasi matematika di RAM (milliseconds).             |
 | **Blockchain Fee** | ~$0.05 / day | Cuma kirim 1 string teks (Root Hash) ke Solana/Polygon. |
-| **Storage**        | Murah        | Hash cuma teks pendek 64 karakter.                      |
 
-**Strategi Profit:**
+---
 
-- **Total Cost**: ~$2 - $5 per bulan per Enterprise client.
-- **Harga Jual**: $500+ per bulan (Enterprise Tier).
-- **Margin**: **99%**.
+## 5. Zeltra Forensic Suite (Math-Based Integrity)
+
+Fitur "Low Code, High Impact" yang menggunakan statistika murni untuk memberikan audit-grade security.
+
+### A. Beneish M-Score (The Fraud Detector)
+
+> **Digunakan untuk menangkap manipulasi laporan keuangan (e.g. Enron).**
+
+- **Rumus**: Kombinasi 8 rasio finansial (DSRI, GMI, AQI, SGI, DEPI, SGAI, LVGI, TATA).
+- **Logic**: Jika M-Score > -1.78, probabilitas manipulasi tinggi.
+- **Implementasi Zeltra**:
+  - _Real-time Score_: Dihitung setiap kali user generate Balance Sheet.
+  - _Alert_: "⚠️ M-Score Risk: High. Abnormal increase in Receivables vs Sales."
+
+### B. Altman Z-Score (The Bankruptcy Prophet)
+
+> **Prediksi kebangkrutan 2 tahun ke depan dengan akurasi 90%.**
+
+- **Logic**: Mengukur kesehatan finansial berdasarkan Working Capital, Retained Earnings, EBIT, Market Value, dan Sales.
+- **Implementasi Zeltra**:
+  - _Health Widget_: Speedometer di Dashboard.
+  - _Zone_: Safe Zone (> 2.99), Grey Zone (1.81 - 2.99), Distress Zone (< 1.81).
+
+### C. Advanced Benford's Law (2nd Digit Test)
+
+> **Deteksi anomali rounding & human-generated numbers.**
+
+- **Logic**: Penipu sering gagal memalsukan distribusi "Digit Kedua" (bukan digit pertama).
+- **Implementasi Zeltra**:
+  - Scanning otomatis tabel `transactions`.
+  - Deteksi anomali pada angka yang terlalu sering muncul (misal: akhiran 99 atau 00).
+
+---
+
+## 6. Zeltra "Lite" Killer Features (Easy Wins)
+
+Fitur-fitur ini sangat mudah diimplementasikan (Low Effort) tapi terdengar sangat canggih dan mahal (High Perceived Value).
+
+### A. Activity-Based Costing (ABC) AI (The "True Cost")
+
+> **Konsep**: Mengalokasikan overhead (listrik/sewa) ke produk secara spesifik, bukan rata-rata.
+
+- **Logic**:
+  - User definisikan "Cost Drivers" (e.g. Jam Mesin, Jumlah Order).
+  - Zeltra AI alokasikan biaya overhead ke setiap unit produk terjual.
+  - Output: "Produk A margin 30%, Produk B sebenernya RUGI -5% (karena makan overhead banyak)."
+- **Killer Value**: Menemukan "Produk Parasit" yang kelihatannya untung padahal buntung.
+- **Effort**: Algoritma alokasi weighted average (Math only).
+
+### B. Smart Dupont Analysis (The "Why" Widget)
+
+> **Konsep**: Memecah ROE (Return on Equity) menjadi 3 komponen atomik secara otomatis.
+
+- **Rumus**: `ROE = (Net Profit Margin) x (Asset Turnover) x (Financial Leverage)`
+- **User sees**: Widget pohon interaktif. User klik ROE -> Pecah jadi 3 cabang. Klik lagi -> Pecah lagi.
+- **Killer Value**: CEO langsung tau masalahnya dimana. "Oh, profit margin oke, tapi Asset Turnover kita sampah (aset nganggur)."
+- **Effort**: 100% rumus matematika sederhana di Frontend/Backend.
+
+### C. Cash Conversion Cycle (CCC) Optimizer
+
+> **Konsep**: Algoritma optimasi cash flow.
+
+- **Rumus**: `CCC = Days Inventory + Days Sales Outstanding - Days Payable Outstanding`.
+- **Feature**: "What-If Simulator".
+  - _Slider UI_: "Kalau kita tagih utang client 5 hari lebih cepet..."
+  - _Output_: "...Cash Flow kita nambah $50,000 bulan depan".
+- **Killer Value**: Visualisasi dampak operasional ke saldo bank.
+- **Effort**: Javascript Logic sederhana.
