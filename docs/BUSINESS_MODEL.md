@@ -38,6 +38,7 @@
 | **Sentinel Intelligence** | **Accruals Engine**     | ❌                     | ❌                        | ✅ **Auto-Recognize**    |
 |                           | **Budget Simulation**   | ❌                     | ❌                        | ✅ **What-If Scenarios** |
 |                           | **Intercompany Hub**    | ❌                     | ❌                        | ✅ **Branch Mapping**    |
+|                           | **Forensic Suite (AI)** | ❌                     | ❌                        | ✅ **Benford & Beneish** |
 |                           |                         |                        |                           |                          |
 | **Reporting**             | **Financial Stmts**     | ✅ Standard (P&L, BS)  | ✅ Comparative            | ✅ Dimensional           |
 |                           | **Export Format**       | PDF / CSV              | PDF / Excel / JSON        | **API / Data Dump**      |
@@ -60,6 +61,7 @@
 | **Dimensionality**      | Slice & dice reports by Project/Dept without paying $15k/year for Sage/NetSuite.           |
 | **Performance**         | Built on **Rust**. Handles high-volume transactions without the bloat of legacy Java ERPs. |
 | **Intercompany Hub**    | Map accounts between branches for seamless inter-entity transactions. Enterprise-only.     |
+| **Forensic Suite (AI)** | **3-Pillar Integrity**: Advanced Benford ($P(d_2)$), Altman Z-Score, and Beneish M-Score.  |
 
 ---
 

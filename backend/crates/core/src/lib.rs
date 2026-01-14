@@ -25,6 +25,7 @@ pub mod currency;
 pub mod dashboard;
 pub mod dimension;
 pub mod fiscal;
+pub mod forensic;
 pub mod ledger;
 pub mod reports;
 pub mod simulation;

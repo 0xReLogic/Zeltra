@@ -316,6 +316,36 @@ components:
       - email
       - role
       type: object
+    AltmanDetails:
+      description: Details of the 5 Altman Z-Score factors.
+      properties:
+        x1_working_capital:
+          description: 'X1: Working Capital / Total Assets.'
+          format: double
+          type: number
+        x2_retained_earnings:
+          description: 'X2: Retained Earnings / Total Assets.'
+          format: double
+          type: number
+        x3_ebit:
+          description: 'X3: EBIT / Total Assets.'
+          format: double
+          type: number
+        x4_equity:
+          description: 'X4: Market Value of Equity / Total Liabilities.'
+          format: double
+          type: number
+        x5_sales:
+          description: 'X5: Sales / Total Assets.'
+          format: double
+          type: number
+      required:
+      - x1_working_capital
+      - x2_retained_earnings
+      - x3_ebit
+      - x4_equity
+      - x5_sales
+      type: object
     AnnualSummaryResponse:
       description: Annual summary response.
       properties:
@@ -546,6 +576,100 @@ components:
       required:
       - accounts
       - total
+      type: object
+    BeneishDetails:
+      description: Details of the 8 Beneish M-Score variables.
+      properties:
+        aqi:
+          format: double
+          type: number
+        depi:
+          format: double
+          type: number
+        dsri:
+          format: double
+          type: number
+        gmi:
+          format: double
+          type: number
+        lvgi:
+          format: double
+          type: number
+        sgai:
+          format: double
+          type: number
+        sgi:
+          format: double
+          type: number
+        tata:
+          format: double
+          type: number
+      required:
+      - dsri
+      - gmi
+      - aqi
+      - sgi
+      - depi
+      - sgai
+      - lvgi
+      - tata
+      type: object
+    BenfordRecord:
+      description: Single digit record for Benford.
+      properties:
+        actual_percentage:
+          description: Actual frequency percentage (0.0 - 100.0).
+          example: 30.1
+          format: double
+          type: number
+        difference:
+          description: Difference.
+          format: double
+          type: number
+        digit:
+          description: The digit (0-9).
+          example: 1
+          format: int32
+          minimum: 0
+          type: integer
+        expected_percentage:
+          description: Expected frequency percentage.
+          example: 30.1
+          format: double
+          type: number
+      required:
+      - digit
+      - actual_percentage
+      - expected_percentage
+      - difference
+      type: object
+    BenfordResponse:
+      description: Response for Advanced Benford's Law analysis.
+      properties:
+        distribution_1st_digit:
+          description: 1st Digit Distribution.
+          items:
+            $ref: '#/components/schemas/BenfordRecord'
+          type: array
+        distribution_2nd_digit:
+          description: 2nd Digit Distribution (New).
+          items:
+            $ref: '#/components/schemas/BenfordRecord'
+          type: array
+        mad_score:
+          description: Mean Absolute Deviation Score.
+          example: 0.005
+          format: double
+          type: number
+        mad_verdict:
+          description: MAD Verdict (Conform/Nonconform).
+          example: Close Conformity
+          type: string
+      required:
+      - distribution_1st_digit
+      - distribution_2nd_digit
+      - mad_score
+      - mad_verdict
       type: object
     BudgetLineInput:
       description: Input for a single budget line.
@@ -1877,6 +2001,37 @@ components:
       required:
       - status
       - version
+      type: object
+    HealthScoreResponse:
+      description: Combined Health Score Response (Altman Z + Beneish M).
+      properties:
+        m_details:
+          $ref: '#/components/schemas/BeneishDetails'
+        m_prob:
+          format: double
+          type: number
+        m_risk_level:
+          type: string
+        m_score:
+          description: Beneish M-Score Result (New).
+          format: double
+          type: number
+        z_details:
+          $ref: '#/components/schemas/AltmanDetails'
+        z_score:
+          description: Altman Z-Score Result.
+          format: double
+          type: number
+        z_zone:
+          type: string
+      required:
+      - z_score
+      - z_zone
+      - z_details
+      - m_score
+      - m_risk_level
+      - m_prob
+      - m_details
       type: object
     IncomeStatementResponse:
       description: Response for income statement report.
@@ -5122,6 +5277,66 @@ paths:
       summary: POST `/organizations/{org_id}/fiscal-years` - Create a fiscal year with auto-generated periods.
       tags:
       - Fiscal
+  /organizations/{org_id}/forensic/benford:
+    get:
+      description: Performs Advanced Benford's Law analysis (1st & 2nd Digit, MAD).
+      operationId: get_benford
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BenfordResponse'
+          description: Advanced Benford analysis
+        '402':
+          description: Payment Required (Enterprise Only)
+        '403':
+          description: Forbidden
+        '404':
+          description: Organization not found
+      security:
+      - bearerAuth: []
+      summary: GET /organizations/{org_id}/forensic/benford
+      tags:
+      - Forensic
+  /organizations/{org_id}/forensic/health-score:
+    get:
+      description: Calculates Financial Health Metrics (Altman Z-Score & Beneish M-Score).
+      operationId: get_health_score
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthScoreResponse'
+          description: Health Score Results
+        '402':
+          description: Payment Required (Enterprise Only)
+        '403':
+          description: Forbidden
+        '404':
+          description: Organization not found
+      security:
+      - bearerAuth: []
+      summary: GET /organizations/{org_id}/forensic/health-score
+      tags:
+      - Forensic
   /organizations/{org_id}/intercompany/connect:
     post:
       operationId: create_intercompany_mapping
@@ -6236,3 +6451,5 @@ tags:
   name: Simulation
 - description: Sentinel Intelligence - Revaluation, Accruals, Intercompany
   name: Sentinel
+- description: AI-driven forensic analysis (Benford, Z-Score)
+  name: Forensic

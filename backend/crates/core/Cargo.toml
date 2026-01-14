@@ -45,7 +45,7 @@ tracing = { workspace = true }
 # NO database deps, NO web deps - pure business logic
 
 [dev-dependencies]
-proptest = { workspace = true }
+proptest.workspace = true
 rstest = { workspace = true }
 
 [lints]

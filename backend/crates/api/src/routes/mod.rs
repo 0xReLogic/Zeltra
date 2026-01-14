@@ -15,6 +15,7 @@ pub mod dashboard;
 pub mod dimensions;
 pub mod exchange_rates;
 pub mod fiscal;
+pub mod forensic;
 pub mod health;
 pub mod organizations;
 pub mod reports;
@@ -111,6 +112,8 @@ use utoipa_swagger_ui::SwaggerUi;
         sentinel::get_accrual_schedule,
         sentinel::list_intercompany_mappings,
         sentinel::create_intercompany_mapping,
+        forensic::get_benford,
+        forensic::get_health_score,
     ),
     components(
         schemas(
@@ -218,6 +221,8 @@ use utoipa_swagger_ui::SwaggerUi;
             sentinel::IntercompanyMappingResponse,
             sentinel::CreateIntercompanyMappingRequest,
             organizations::TierLimitsResponse,
+            forensic::BenfordResponse,
+            forensic::HealthScoreResponse,
         )
     ),
     tags(
@@ -236,7 +241,8 @@ use utoipa_swagger_ui::SwaggerUi;
         (name = "Reports", description = "Financial report generation endpoints"),
         (name = "Dashboard", description = "Dashboard and analytics endpoints"),
         (name = "Simulation", description = "Scenario planning and projection endpoints"),
-        (name = "Sentinel", description = "Sentinel Intelligence - Revaluation, Accruals, Intercompany")
+        (name = "Sentinel", description = "Sentinel Intelligence - Revaluation, Accruals, Intercompany"),
+        (name = "Forensic", description = "AI-driven forensic analysis (Benford, Z-Score)")
     ),
     modifiers(&SecurityAddon)
 )]
@@ -285,6 +291,7 @@ pub fn api_routes_with_state(state: AppState) -> Router<AppState> {
         .merge(dashboard::routes())
         .merge(attachments::routes())
         .merge(sentinel::routes())
+        .merge(forensic::routes())
         .layer(middleware::from_fn_with_state(
             state.clone(),
             auth_middleware,
