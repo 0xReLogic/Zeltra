@@ -631,7 +631,9 @@ async fn create_transaction(
             }
         };
 
-        if let Err(e) = check_monthly_transaction_limit(limits.max_transactions_per_month, current_tx_count) {
+        if let Err(e) =
+            check_monthly_transaction_limit(limits.max_transactions_per_month, current_tx_count)
+        {
             return e.into_response();
         }
     }
@@ -1930,7 +1932,6 @@ async fn fetch_invoice_details(
         original_entry.entry.account_id,
     ))
 }
-
 
 #[cfg(test)]
 mod tests {

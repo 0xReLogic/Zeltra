@@ -183,16 +183,7 @@ impl TransactionRepository {
         Self { db }
     }
 
-    /// Creates a new transaction with entries and dimensions.
-    ///
-    /// Requirements: 5.8, 5.9, 7.4
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if:
-    /// - No fiscal period exists for the transaction date
-    /// - The fiscal period is closed
-    /// - Database operation fails
+
     /// Counts transactions created in the current month (UTC) for an organization.
     ///
     /// # Errors
@@ -200,17 +191,29 @@ impl TransactionRepository {
     /// Returns an error if the database query fails.
     pub async fn count_monthly_usage(&self, org_id: Uuid) -> Result<u64, DbErr> {
         let now = Utc::now();
-        let start_of_month =
-            NaiveDate::from_ymd_opt(now.year(), now.month(), 1).unwrap_or_default()
-                .and_hms_opt(0, 0, 0).unwrap_or_default()
-                .and_local_timezone(Utc).unwrap();
+        let start_of_month = NaiveDate::from_ymd_opt(now.year(), now.month(), 1)
+            .unwrap_or_default()
+            .and_hms_opt(0, 0, 0)
+            .unwrap_or_default()
+            .and_local_timezone(Utc)
+            .unwrap();
 
-        let next_month = if now.month() == 12 { 1 } else { now.month() + 1 };
-        let next_year = if now.month() == 12 { now.year() + 1 } else { now.year() };
-        let end_of_month =
-            NaiveDate::from_ymd_opt(next_year, next_month, 1).unwrap_or_default()
-                .and_hms_opt(0, 0, 0).unwrap_or_default()
-                .and_local_timezone(Utc).unwrap();
+        let next_month = if now.month() == 12 {
+            1
+        } else {
+            now.month() + 1
+        };
+        let next_year = if now.month() == 12 {
+            now.year() + 1
+        } else {
+            now.year()
+        };
+        let end_of_month = NaiveDate::from_ymd_opt(next_year, next_month, 1)
+            .unwrap_or_default()
+            .and_hms_opt(0, 0, 0)
+            .unwrap_or_default()
+            .and_local_timezone(Utc)
+            .unwrap();
 
         transactions::Entity::find()
             .filter(transactions::Column::OrganizationId.eq(org_id))

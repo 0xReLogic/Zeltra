@@ -1127,7 +1127,6 @@ async fn update_member(
         .into_response()
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
