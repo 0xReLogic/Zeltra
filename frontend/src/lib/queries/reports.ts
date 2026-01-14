@@ -1,5 +1,6 @@
-import { useQuery } from '@tanstack/react-query'
-import { apiClient } from '../api/client'
+import { useQuery } from '@tanstack/react-query';
+import { apiClient } from '../api/client';
+import type { DimensionalReportResponse } from '@/types/dimensional-report';
 
 export interface TrialBalanceItem {
   code: string
@@ -39,10 +40,10 @@ export interface DimensionalReportData {
 }
 
 export interface DimensionalReportParams {
-  startDate: string
-  endDate: string
-  dimension: string
-  values?: string[]
+  startDate: string;
+  endDate: string;
+  dimensionTypeId?: string;
+  dimensionValueId?: string;
 }
 
 export function useTrialBalance() {
@@ -53,18 +54,32 @@ export function useTrialBalance() {
 }
 
 export function useDimensionalReport(params: DimensionalReportParams) {
-    return useQuery({
-        queryKey: ['reports', 'dimensional', params],
-        queryFn: () => {
-            const searchParams = new URLSearchParams({
-                start_date: params.startDate,
-                end_date: params.endDate,
-                dimension: params.dimension
-            })
-            // Handle array of values logic if needed, for mock simplistic passing
-            return apiClient<DimensionalReportData>(`/reports/dimensional?${searchParams.toString()}`)
-        }
-    })
+  return useQuery({
+    queryKey: ['reports', 'dimensional', params],
+    queryFn: () => {
+      const searchParams = new URLSearchParams({
+        from: params.startDate,
+        to: params.endDate,
+      });
+      
+      if (params.dimensionTypeId && params.dimensionTypeId !== 'all') {
+        // Pass the dimension type CODE to backend
+        searchParams.set('group_by', params.dimensionTypeId);
+      } else {
+        // Default to empty if no dimension selected
+        searchParams.set('group_by', '');
+      }
+      
+      if (params.dimensionValueId) {
+        searchParams.set('dimensions', params.dimensionValueId);
+      }
+      
+      return apiClient<DimensionalReportResponse>(
+        `/reports/dimensional?${searchParams.toString()}`
+      );
+    },
+    enabled: !!params.startDate && !!params.endDate && !!params.dimensionTypeId,
+  });
 }
 
 export interface IncomeStatementItem {

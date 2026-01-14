@@ -128,23 +128,23 @@ This plan covers verification and fixes for the remaining Phase 6-7 frontend fea
   - Git push `frontend` folder only if lint + E2E pass
   - Ask user if questions arise
 
-- [ ] 7. Dimensional Reports API Integration
+- [-] 7. Dimensional Reports API Integration
   - **Context:** Read `design.md` and `requirements.md` if context lost. Use `grepSearch`/`fileSearch` to find existing code.
-  - [ ] 7.1 Create dimensional report types file
+  - [x] 7.1 Create dimensional report types file
     - Create `frontend/src/types/dimensional-report.ts`
     - Export `DimensionalReportResponse`, `DimensionalReportRowResponse` from api.generated.ts
     - _Requirements: 4.5_
-  - [ ] 7.2 Update dimensional report queries with OpenAPI types
+  - [x] 7.2 Update dimensional report queries with OpenAPI types
     - Update `frontend/src/lib/queries/reports.ts`
     - Replace custom `DimensionalReportData` with OpenAPI types
     - Verify query parameter names match backend (dimension_type_id, dimension_value_id)
     - _Requirements: 4.1, 4.4, 4.5_
-  - [ ] 7.3 Update dimensional report page to use new types
+  - [x] 7.3 Update dimensional report page to use new types
     - Update `frontend/src/app/dashboard/reports/dimensional/page.tsx`
     - Adjust data mapping for chart and table
     - Handle response structure from OpenAPI types
     - _Requirements: 4.2, 4.3_
-  - [ ] 7.4 E2E test dimensional reports feature (via MCP Playwright)
+  - [x] 7.4 E2E test dimensional reports feature (via MCP Playwright)
     - Use MCP Playwright to navigate to dimensional reports
     - Select dimension type (Department/Project/Cost Center) via browser
     - Verify chart and table display data in browser
@@ -152,7 +152,7 @@ This plan covers verification and fixes for the remaining Phase 6-7 frontend fea
     - Debug any errors directly
     - _Requirements: 4.1, 4.2_
 
-- [ ] 8. Checkpoint - Dimensional Reports Verified
+- [x] 8. Checkpoint - Dimensional Reports Verified
   - Run `getDiagnostics` on all modified files - MUST pass
   - Ensure dimensional reports work with real API via MCP Playwright E2E
   - Git push `frontend` folder only if lint + E2E pass

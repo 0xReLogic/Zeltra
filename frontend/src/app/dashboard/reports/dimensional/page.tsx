@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   Card,
   CardContent,
@@ -37,24 +37,55 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table'
+import type { DimensionalReportRowResponse, DimensionValueResponse } from '@/types/dimensional-report'
+import { apiClient } from '@/lib/api/client'
+
+interface DimensionType {
+  id: string
+  code: string
+  name: string
+}
 
 export default function DimensionalReportPage() {
-  const [dimension, setDimension] = useState('DEPT')
+  const [selectedDimensionType, setSelectedDimensionType] = useState<DimensionType | undefined>()
+  const [dimensionTypes, setDimensionTypes] = useState<DimensionType[]>([])
+  const [loadingDimensions, setLoadingDimensions] = useState(true)
   const [startDate, setStartDate] = useState('2026-01-01')
   const [endDate, setEndDate] = useState('2026-12-31')
 
-  const { data: report } = useDimensionalReport({
+  // Fetch available dimension types
+  useEffect(() => {
+    const fetchDimensionTypes = async () => {
+      try {
+        const response = await apiClient<{ dimension_types: DimensionType[] }>(
+          '/dimension-types'
+        )
+        setDimensionTypes(response.dimension_types || [])
+      } catch (error) {
+        console.error('Failed to fetch dimension types:', error)
+      } finally {
+        setLoadingDimensions(false)
+      }
+    }
+
+    fetchDimensionTypes()
+  }, [])
+
+  const { data: report, isLoading } = useDimensionalReport({
       startDate,
       endDate,
-      dimension
+      dimensionTypeId: selectedDimensionType?.code
   })
 
-  const chartData = report?.data.map(item => ({
-      name: item.name,
-      Revenue: parseFloat(item.revenue),
-      Expense: parseFloat(item.expense),
-      Profit: parseFloat(item.net_profit)
-  })) || []
+  const chartData = report?.rows.map((row: DimensionalReportRowResponse) => {
+    const dimensionLabel = row.dimensions.map((d: DimensionValueResponse) => d.value).join(' - ')
+    return {
+      name: dimensionLabel,
+      Debit: parseFloat(row.total_debit),
+      Credit: parseFloat(row.total_credit),
+      Balance: parseFloat(row.balance)
+    }
+  }) || []
 
   return (
     <div className="space-y-6">
@@ -68,14 +99,25 @@ export default function DimensionalReportPage() {
         <div className="flex items-center gap-2">
            <div className="grid gap-1">
                 <Label htmlFor="dimension" className="sr-only">Dimension</Label>
-                <Select value={dimension} onValueChange={setDimension}>
+                <Select value={selectedDimensionType?.id || ''} onValueChange={(id) => {
+                  const selected = dimensionTypes.find(dt => dt.id === id)
+                  setSelectedDimensionType(selected)
+                }}>
                     <SelectTrigger className="w-[180px]">
                         <SelectValue placeholder="Select Dimension" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="DEPT">Department</SelectItem>
-                        <SelectItem value="PROJ">Project</SelectItem>
-                        <SelectItem value="COST">Cost Center</SelectItem>
+                        {loadingDimensions ? (
+                          <SelectItem value="loading" disabled>Loading...</SelectItem>
+                        ) : dimensionTypes.length === 0 ? (
+                          <SelectItem value="none" disabled>No dimensions available</SelectItem>
+                        ) : (
+                          dimensionTypes.map((dt) => (
+                            <SelectItem key={dt.id} value={dt.id}>
+                              {dt.name}
+                            </SelectItem>
+                          ))
+                        )}
                     </SelectContent>
                 </Select>
            </div>
@@ -98,102 +140,121 @@ export default function DimensionalReportPage() {
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="col-span-4">
-            <CardHeader>
-                <CardTitle>Financial Performance by {dimension === 'DEPT' ? 'Department' : dimension === 'PROJ' ? 'Project' : 'Cost Center'}</CardTitle>
-                <CardDescription>Revenue vs Expense vs Net Profit</CardDescription>
-            </CardHeader>
-            <CardContent className="pl-2">
-                <ResponsiveContainer width="100%" height={350}>
-                    <BarChart data={chartData}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                        <XAxis 
-                            dataKey="name" 
-                            stroke="#888888" 
-                            fontSize={12} 
-                            tickLine={false} 
-                            axisLine={false} 
-                        />
-                        <YAxis
-                            stroke="#888888"
-                            fontSize={12}
-                            tickLine={false}
-                            axisLine={false}
-                            tickFormatter={(value) => `$${value}`}
-                        />
-                        <Tooltip 
-                            cursor={{ fill: 'transparent' }}
-                            formatter={(value) => [`$${Number(value).toLocaleString()}`, '']}
-                        />
-                        <Legend />
-                        <Bar dataKey="Revenue" fill="#0ea5e9" radius={[4, 4, 0, 0]} />
-                        <Bar dataKey="Expense" fill="#ef4444" radius={[4, 4, 0, 0]} />
-                        <Bar dataKey="Profit" fill="#10b981" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                </ResponsiveContainer>
-            </CardContent>
-        </Card>
+      {isLoading && (
+        <div className="text-center py-8 text-muted-foreground">Loading report...</div>
+      )}
 
-        <Card className="col-span-3">
-             <CardHeader>
-                <CardTitle>Summary</CardTitle>
-                <CardDescription>Global totals for selected period</CardDescription>
-             </CardHeader>
-             <CardContent>
-                 <div className="space-y-4">
-                     <div className="flex items-center justify-between border-b pb-4">
-                         <div className="text-sm font-medium">Total Revenue</div>
-                         <div className="text-2xl font-bold">{formatCurrency(parseFloat(report?.summary.global_revenue || '0'))}</div>
-                     </div>
-                     <div className="flex items-center justify-between border-b pb-4">
-                         <div className="text-sm font-medium">Total Expense</div>
-                         <div className="text-2xl font-bold text-red-500">{formatCurrency(parseFloat(report?.summary.global_expense || '0'))}</div>
-                     </div>
-                     <div className="flex items-center justify-between pt-2">
-                         <div className="text-sm font-medium">Net Profit</div>
-                         <div className="text-2xl font-bold text-emerald-500">{formatCurrency(parseFloat(report?.summary.global_net || '0'))}</div>
-                     </div>
-                 </div>
-             </CardContent>
-        </Card>
-      </div>
+      {!isLoading && !report && (
+        <div className="text-center py-8 text-muted-foreground">No data available</div>
+      )}
 
-       <Card>
-            <CardHeader>
-                <CardTitle>Detailed Breakdown</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Dimension Value</TableHead>
-                            <TableHead className="text-right">Revenue</TableHead>
-                            <TableHead className="text-right">Expense</TableHead>
-                            <TableHead className="text-right">Net Profit</TableHead>
-                            <TableHead>Top Contributors</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {report?.data.map((item) => (
-                            <TableRow key={item.id}>
-                                <TableCell className="font-medium">{item.name}</TableCell>
-                                <TableCell className="text-right">{formatCurrency(parseFloat(item.revenue))}</TableCell>
-                                <TableCell className="text-right text-red-500">{formatCurrency(parseFloat(item.expense))}</TableCell>
-                                <TableCell className={`text-right font-bold ${parseFloat(item.net_profit) < 0 ? 'text-red-500' : 'text-emerald-500'}`}>
-                                    {formatCurrency(parseFloat(item.net_profit))}
-                                </TableCell>
-                                <TableCell className="text-xs text-muted-foreground">
-                                    {item.breakdown.map((b, i) => (
-                                        <div key={i}>{b.account}: {formatCurrency(parseFloat(b.amount))}</div>
-                                    ))}
-                                </TableCell>
+      {!isLoading && report && (
+        <>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+            <Card className="col-span-4">
+                <CardHeader>
+                    <CardTitle>Financial Performance by {report.group_by.join(', ')}</CardTitle>
+                    <CardDescription>Debit vs Credit vs Balance</CardDescription>
+                </CardHeader>
+                <CardContent className="pl-2">
+                    <ResponsiveContainer width="100%" height={350}>
+                        <BarChart data={chartData}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                            <XAxis 
+                                dataKey="name" 
+                                stroke="#888888" 
+                                fontSize={12} 
+                                tickLine={false} 
+                                axisLine={false} 
+                            />
+                            <YAxis
+                                stroke="#888888"
+                                fontSize={12}
+                                tickLine={false}
+                                axisLine={false}
+                                tickFormatter={(value) => `${value}`}
+                            />
+                            <Tooltip 
+                                cursor={{ fill: 'transparent' }}
+                                formatter={(value) => [`${Number(value).toLocaleString()}`, '']}
+                            />
+                            <Legend />
+                            <Bar dataKey="Debit" fill="#0ea5e9" radius={[4, 4, 0, 0]} />
+                            <Bar dataKey="Credit" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                            <Bar dataKey="Balance" fill="#10b981" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                    </ResponsiveContainer>
+                </CardContent>
+            </Card>
+
+            <Card className="col-span-3">
+                <CardHeader>
+                    <CardTitle>Summary</CardTitle>
+                    <CardDescription>Report period: {report.period_start} to {report.period_end}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between border-b pb-4">
+                            <div className="text-sm font-medium">Currency</div>
+                            <div className="text-lg font-semibold">{report.currency}</div>
+                        </div>
+                        <div className="flex items-center justify-between border-b pb-4">
+                            <div className="text-sm font-medium">Grand Total</div>
+                            <div className="text-2xl font-bold">{formatCurrency(parseFloat(report.grand_total))}</div>
+                        </div>
+                        <div className="flex items-center justify-between pt-2">
+                            <div className="text-sm font-medium">Grouped By</div>
+                            <div className="text-sm text-muted-foreground">{report.group_by.join(', ')}</div>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+          </div>
+
+          {report.rows.length > 0 && (
+            <Card>
+                <CardHeader>
+                    <CardTitle>Detailed Breakdown</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Dimension Values</TableHead>
+                                <TableHead className="text-right">Total Debit</TableHead>
+                                <TableHead className="text-right">Total Credit</TableHead>
+                                <TableHead className="text-right">Balance</TableHead>
                             </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </CardContent>
-       </Card>
+                        </TableHeader>
+                        <TableBody>
+                            {report.rows.map((row: DimensionalReportRowResponse, idx: number) => {
+                              const dimensionLabel = row.dimensions.map((d: DimensionValueResponse) => `${d.dimension_type}: ${d.value}`).join(', ')
+                              return (
+                                <TableRow key={idx}>
+                                    <TableCell className="font-medium">{dimensionLabel || 'No dimensions'}</TableCell>
+                                    <TableCell className="text-right">{formatCurrency(parseFloat(row.total_debit))}</TableCell>
+                                    <TableCell className="text-right">{formatCurrency(parseFloat(row.total_credit))}</TableCell>
+                                    <TableCell className={`text-right font-bold ${parseFloat(row.balance) < 0 ? 'text-red-500' : 'text-emerald-500'}`}>
+                                        {formatCurrency(parseFloat(row.balance))}
+                                    </TableCell>
+                                </TableRow>
+                              )
+                            })}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
+          )}
+
+          {report.rows.length === 0 && (
+            <Card>
+              <CardContent className="py-8 text-center text-muted-foreground">
+                No dimensional data found for the selected period.
+              </CardContent>
+            </Card>
+          )}
+        </>
+      )}
     </div>
   )
 }

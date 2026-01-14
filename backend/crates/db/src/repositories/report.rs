@@ -497,7 +497,7 @@ impl ReportRepository {
         for dim_type in group_by {
             let exists = dimension_types::Entity::find()
                 .filter(dimension_types::Column::OrganizationId.eq(organization_id))
-                .filter(dimension_types::Column::Name.eq(dim_type))
+                .filter(dimension_types::Column::Code.eq(dim_type))
                 .one(&self.db)
                 .await?;
 
