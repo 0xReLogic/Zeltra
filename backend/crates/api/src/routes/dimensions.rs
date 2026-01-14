@@ -265,6 +265,11 @@ async fn create_dimension_type(
         return response;
     }
 
+    // Check dimension limit
+    if let Err(response) = check_dimension_limit(&state, &org_repo, org_id).await {
+        return response;
+    }
+
     let dim_repo = DimensionRepository::new((*state.db).clone());
 
     let input = CreateDimensionTypeInput {
@@ -812,6 +817,67 @@ async fn check_admin_role(
             )
                 .into_response())
         }
+    }
+}
+
+async fn check_dimension_limit(
+    state: &AppState,
+    org_repo: &OrganizationRepository,
+    org_id: Uuid,
+) -> Result<(), axum::response::Response> {
+    // Get tier limits
+    let limits = match org_repo.get_tier_limits(org_id).await {
+        Ok(Some(l)) => l,
+        Ok(None) => return Ok(()), // Default to no limit if not found (shouldn't happen)
+        Err(e) => {
+            error!(error = %e, "Failed to get tier limits");
+            return Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": "internal_error",
+                    "message": "An error occurred"
+                })),
+            )
+                .into_response());
+        }
+    };
+
+    // Count current dimension types
+    let dim_repo = DimensionRepository::new((*state.db).clone());
+    let current_count = match dim_repo
+        .list_dimension_types(org_id, DimensionTypeFilter { is_active: None })
+        .await
+    {
+        Ok(types) => i32::try_from(types.len()).unwrap_or(i32::MAX),
+        Err(e) => {
+            error!(error = %e, "Failed to count dimension types");
+            return Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": "internal_error",
+                    "message": "An error occurred"
+                })),
+            )
+                .into_response());
+        }
+    };
+
+    if current_count >= limits.max_dimensions {
+        Err((
+            StatusCode::PAYMENT_REQUIRED,
+            Json(json!({
+                "error": "tier_limit_reached",
+                "message": format!(
+                    "You have reached the maximum number of dimensions ({}) for your current tier. Please upgrade to create more.",
+                    limits.max_dimensions
+                ),
+                "limit": limits.max_dimensions,
+                "current": current_count
+            })),
+        )
+            .into_response())
+    } else {
+        Ok(())
     }
 }
 

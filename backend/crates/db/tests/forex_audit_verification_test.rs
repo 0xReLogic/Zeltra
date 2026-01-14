@@ -7,12 +7,14 @@
 #![allow(clippy::uninlined_format_args)]
 #![allow(clippy::struct_field_names)]
 #![allow(clippy::too_many_lines)]
+#![allow(clippy::manual_let_else)]
+#![allow(missing_docs)]
 
 use chrono::NaiveDate;
 use rust_decimal::Decimal;
 use sea_orm::{
     ActiveModelTrait, ActiveValue::Set, ColumnTrait, ConnectionTrait, Database, DatabaseConnection,
-    EntityTrait, QueryFilter,
+    EntityTrait, QueryFilter, QuerySelect,
 };
 use std::env;
 use uuid::Uuid;
@@ -474,7 +476,6 @@ async fn test_concurrent_aggregation_integrity() {
     // Verify Sum
     // We expect 10 entries of 1.00 = 10.00
 
-    use sea_orm::{EntityTrait, QuerySelect};
     let sum_debit: Option<Decimal> = ledger_entries::Entity::find()
         .filter(ledger_entries::Column::AccountId.eq(data.expense_account_id))
         .select_only()

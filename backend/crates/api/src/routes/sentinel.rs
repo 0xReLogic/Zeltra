@@ -18,9 +18,11 @@ use tracing::{error, info};
 use uuid::Uuid;
 
 use crate::{AppState, middleware::AuthUser};
+use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, QueryOrder, Set};
 use zeltra_core::ledger::types::AccrualFrequency;
 use zeltra_db::{
     OrganizationRepository,
+    entities::{accrual_schedules, intercompany_mappings, revaluation_logs},
     repositories::{
         accrual::{AccrualError, AccrualRepository, CreateAccrualScheduleInput},
         intercompany::{IntercompanyError, IntercompanyRepository},
@@ -215,9 +217,11 @@ async fn list_revaluation_logs(
         return response;
     }
 
+    if let Err(response) = check_tier_feature(&org_repo, org_id, "has_multi_currency").await {
+        return response;
+    }
+
     // Query revaluation logs directly
-    use sea_orm::{ColumnTrait, EntityTrait, QueryFilter, QueryOrder};
-    use zeltra_db::entities::revaluation_logs;
 
     let logs = revaluation_logs::Entity::find()
         .filter(revaluation_logs::Column::OrganizationId.eq(org_id))
@@ -286,9 +290,6 @@ async fn list_accrual_schedules(
         return response;
     }
 
-    use sea_orm::{ColumnTrait, EntityTrait, QueryFilter, QueryOrder};
-    use zeltra_db::entities::accrual_schedules;
-
     let schedules = accrual_schedules::Entity::find()
         .filter(accrual_schedules::Column::OrganizationId.eq(org_id))
         .order_by_desc(accrual_schedules::Column::CreatedAt)
@@ -344,6 +345,10 @@ async fn create_accrual_schedule(
         return response;
     }
 
+    if let Err(response) = check_tier_feature(&org_repo, org_id, "has_auto_accruals").await {
+        return response;
+    }
+
     // Parse amount
     let total_amount = match Decimal::from_str(&payload.total_amount) {
         Ok(a) if a > Decimal::ZERO => a,
@@ -360,32 +365,26 @@ async fn create_accrual_schedule(
     };
 
     // Parse dates
-    let start_date = match NaiveDate::parse_from_str(&payload.start_date, "%Y-%m-%d") {
-        Ok(d) => d,
-        Err(_) => {
-            return (
-                StatusCode::BAD_REQUEST,
-                Json(json!({
-                    "error": "invalid_date",
-                    "message": "Invalid start_date format. Use YYYY-MM-DD"
-                })),
-            )
-                .into_response();
-        }
+    let Ok(start_date) = NaiveDate::parse_from_str(&payload.start_date, "%Y-%m-%d") else {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({
+                "error": "invalid_date",
+                "message": "Invalid start_date format. Use YYYY-MM-DD"
+            })),
+        )
+            .into_response();
     };
 
-    let end_date = match NaiveDate::parse_from_str(&payload.end_date, "%Y-%m-%d") {
-        Ok(d) => d,
-        Err(_) => {
-            return (
-                StatusCode::BAD_REQUEST,
-                Json(json!({
-                    "error": "invalid_date",
-                    "message": "Invalid end_date format. Use YYYY-MM-DD"
-                })),
-            )
-                .into_response();
-        }
+    let Ok(end_date) = NaiveDate::parse_from_str(&payload.end_date, "%Y-%m-%d") else {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({
+                "error": "invalid_date",
+                "message": "Invalid end_date format. Use YYYY-MM-DD"
+            })),
+        )
+            .into_response();
     };
 
     if end_date <= start_date {
@@ -400,18 +399,15 @@ async fn create_accrual_schedule(
     }
 
     // Parse frequency
-    let frequency = match AccrualFrequency::from_str(&payload.frequency) {
-        Ok(f) => f,
-        Err(_) => {
-            return (
-                StatusCode::BAD_REQUEST,
-                Json(json!({
-                    "error": "invalid_frequency",
-                    "message": "Frequency must be one of: daily, weekly, monthly, quarterly, yearly"
-                })),
-            )
-                .into_response();
-        }
+    let Ok(frequency) = AccrualFrequency::from_str(&payload.frequency) else {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({
+                "error": "invalid_frequency",
+                "message": "Frequency must be one of: daily, weekly, monthly, quarterly, yearly"
+            })),
+        )
+            .into_response();
     };
 
     let repo = AccrualRepository::new((*state.db).clone());
@@ -443,7 +439,7 @@ async fn create_accrual_schedule(
         }
         Err(e) => {
             error!(error = %e, "Failed to create accrual schedule");
-            accrual_error_response(e)
+            accrual_error_response(&e)
         }
     }
 }
@@ -474,9 +470,6 @@ async fn get_accrual_schedule(
     if let Err(response) = check_membership(&org_repo, org_id, auth.user_id()).await {
         return response;
     }
-
-    use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
-    use zeltra_db::entities::accrual_schedules;
 
     let schedule = accrual_schedules::Entity::find()
         .filter(accrual_schedules::Column::Id.eq(schedule_id))
@@ -557,7 +550,7 @@ async fn list_intercompany_mappings(
         }
         Err(e) => {
             error!(error = %e, "Failed to list intercompany mappings");
-            intercompany_error_response(e)
+            intercompany_error_response(&e)
         }
     }
 }
@@ -586,8 +579,11 @@ async fn create_intercompany_mapping(
 ) -> impl IntoResponse {
     let org_repo = OrganizationRepository::new((*state.db).clone());
 
-    // Check admin/owner membership for source org
     if let Err(response) = check_admin_membership(&org_repo, org_id, auth.user_id()).await {
+        return response;
+    }
+
+    if let Err(response) = check_tier_feature(&org_repo, org_id, "has_intercompany_hub").await {
         return response;
     }
 
@@ -605,9 +601,6 @@ async fn create_intercompany_mapping(
         )
             .into_response();
     }
-
-    use sea_orm::{ActiveModelTrait, Set};
-    use zeltra_db::entities::intercompany_mappings;
 
     let mapping = intercompany_mappings::ActiveModel {
         id: Set(Uuid::new_v4()),
@@ -757,7 +750,58 @@ async fn check_admin_membership(
     }
 }
 
-fn accrual_error_response(e: AccrualError) -> axum::response::Response {
+async fn check_tier_feature(
+    org_repo: &OrganizationRepository,
+    org_id: Uuid,
+    feature: &str,
+) -> Result<(), axum::response::Response> {
+    match org_repo.get_tier_limits(org_id).await {
+        Ok(Some(limits)) => {
+            let has_access = match feature {
+                "has_multi_currency" => limits.has_multi_currency,
+                "has_auto_accruals" => limits.has_auto_accruals,
+                "has_intercompany_hub" => limits.has_intercompany_hub,
+                "has_simulation" => limits.has_simulation,
+                _ => false,
+            };
+
+            if has_access {
+                Ok(())
+            } else {
+                Err((
+                    StatusCode::PAYMENT_REQUIRED,
+                    Json(json!({
+                        "error": "tier_limit_reached",
+                        "message": format!("Your current tier does not include the '{}' feature. Please upgrade to unlock.", feature.replace("has_", "").replace('_', " ")),
+                        "feature": feature
+                    })),
+                )
+                    .into_response())
+            }
+        }
+        Ok(None) => Err((
+            StatusCode::NOT_FOUND,
+            Json(json!({
+                "error": "organization_not_found",
+                "message": "Organization or tier limits not found"
+            })),
+        )
+            .into_response()),
+        Err(e) => {
+            error!(error = %e, "Database error checking tier limits");
+            Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": "internal_error",
+                    "message": "An error occurred"
+                })),
+            )
+                .into_response())
+        }
+    }
+}
+
+fn accrual_error_response(e: &AccrualError) -> axum::response::Response {
     match e {
         AccrualError::NotFound => (
             StatusCode::NOT_FOUND,
@@ -778,7 +822,7 @@ fn accrual_error_response(e: AccrualError) -> axum::response::Response {
     }
 }
 
-fn intercompany_error_response(e: IntercompanyError) -> axum::response::Response {
+fn intercompany_error_response(e: &IntercompanyError) -> axum::response::Response {
     match e {
         IntercompanyError::MappingNotFound => (
             StatusCode::NOT_FOUND,

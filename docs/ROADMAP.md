@@ -712,6 +712,15 @@ NOW we start frontend, because backend is solid.
     - **Accruals**: `POST /organizations/{org_id}/accrual-schedules` - Registrasi biaya dibayar dimuka (Prepaid) / Accrual.
     - **Intercompany**: `POST /organizations/{org_id}/intercompany/connect` - Mapping akun antar cabang.
     - **Manual Override**: `LedgerEntryInput` kini mendukung field `functional_amount`. FE bisa override nilai kurs manual (misal untuk penyesuaian audit/pajak).
+13. **Sentinel Tier Enforcement (Gembok Emas Backend) 🔒**:
+    - Backend kini menerapkan pembatasan fitur secara ketat berdasarkan `subscription_tier`.
+    - Jika user mencoba akses fitur premium (Auto-Accruals, Intercompany Hub, Revaluation) di tier yang kaga mendukung, API akan return **402 Payment Required**.
+    - FE wajib handle error 402 ini dengan menampilkan modal upgrade.
+14. **Exposed Feature Flags & Resource Quotas**:
+    - Object `OrganizationResponse` kini punya field baru `limits: TierLimitsResponse`.
+    - Gunakan field ini (`has_auto_accruals`, `has_intercompany_hub`, `max_dimensions`, dll) untuk secara proaktif mengatur UI (hide/disable menu atau tombol) sebelum user klik.
+15. **Dimension Quotas (Starter Tier Limit)**:
+    - Tier **Starter** dibatasi maksimal **2 Dimensi**. Cek field `limits.max_dimensions` untuk validasi sisi client.
 
 ---
 
@@ -1462,6 +1471,39 @@ tests/
 - Cash flow forecasts within 10% accuracy
 - AI recommendations adopted by 60% of users
 - 200+ tests passing
+
+---
+
+## Phase 12: Professional Finance & Audit Readiness (Months 12+ Post-Launch)
+
+> **CORE FOCUS:** Transitioning from "Management-Ready" to "Statutory-Ready" for global enterprises and audit-heavy organizations.
+
+### Bank Reconciliation Excellence (Audit-Ready)
+
+- [ ] **Automatic Bank Feeds:** Deep integration with Plaid, Yodlee, and direct Banking APIs.
+- [ ] **Bank Reconciliation Statement (PDF):** Formal report documenting book vs. bank balance with reconciliation proof.
+- [ ] **Aging of Unmatched Items:** Tracking and reporting of outstanding deposits and unpresented checks.
+- [ ] **Reconciliation Approval Workflow:** Segregation of duties for who performs vs. who approves the reconciliation.
+- [ ] **Historical Bank Balance Tracking:** Snapshots of bank balances for year-end audit verification.
+
+### Statutory Compliance & Onboarding
+
+- [ ] **Standard Template Library:** One-click Chart of Accounts (CoA) templates for IFRS, GAAP, and PSAK (Indonesia).
+- [ ] **Compliance Onboarding Wizard:** "Day 1 Ready" setup process based on organization's tax jurisdiction and reporting standards.
+- [ ] **Indirect Cash Flow Statement:** Fully automated statutory format including adjustments for non-cash items and FX.
+- [ ] **Disclosure Notes Engine:** Automated generation of financial statement disclosure notes.
+
+### Advanced Governance & Risk Management
+
+- [ ] **SOC2/ISO 27001 Readiness:** Finalizing technical controls and evidence collection for official certification.
+- [ ] **Automation Guardrails:** Fine-grained controls for auto-entries (Accruals, Revaluations) including override and approval requirements.
+- [ ] **Role-Based Compliance Alerts:** Proactive alerting for "Conflict of Interest" actions or unauthorized fiscal period modifications.
+
+### Deep Ecosystem Connectors
+
+- [ ] **Stripe/Paypal/Stax:** Real-time revenue and fee reconciliation.
+- [ ] **Gusto/Deel/Rippling:** Deep payroll integration with automatic dimension mapping.
+- [ ] **E-Invoicing Connectors:** Integration with regional e-invoicing mandates (e.g., Peppol, Tax Authority APIs).
 
 ---
 

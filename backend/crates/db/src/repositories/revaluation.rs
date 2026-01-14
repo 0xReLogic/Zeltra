@@ -57,8 +57,6 @@ impl RevaluationRepository {
     }
 
     /// Finds accounts that are candidates for revaluation.
-    ///
-    /// Candidates are active accounts with a currency different from the organization's base currency.
     pub async fn find_revaluation_candidates(
         &self,
         organization_id: Uuid,
@@ -76,6 +74,18 @@ impl RevaluationRepository {
             .await?;
 
         Ok(accounts)
+    }
+
+    /// Generates a deterministic idempotency key for a revaluation event.
+    fn generate_idempotency_key(&self, org_id: Uuid, account_id: Uuid, date: NaiveDate) -> Uuid {
+        use sha2::{Digest, Sha256};
+        let data = format!("reval-{org_id}-{account_id}-{date}");
+        let mut hasher = Sha256::new();
+        hasher.update(data.as_bytes());
+        let hash = hasher.finalize();
+        let mut bytes = [0u8; 16];
+        bytes.copy_from_slice(&hash[..16]);
+        Uuid::from_bytes(bytes)
     }
 
     /// Returns the carrying balances (functional and source) for an account as of a date.
@@ -178,6 +188,17 @@ impl RevaluationRepository {
         let mut processed_count = 0;
 
         for account in candidates {
+            // Check if already revalued to prevent double-posting
+            let existing = revaluation_logs::Entity::find()
+                .filter(revaluation_logs::Column::AccountId.eq(account.id))
+                .filter(revaluation_logs::Column::RevaluationDate.eq(as_of))
+                .one(&self.db)
+                .await?;
+
+            if existing.is_some() {
+                continue;
+            }
+
             // Get balances
             let (carrying_functional, source_balance) =
                 self.get_carrying_balances(account.id, as_of).await?;
@@ -265,7 +286,11 @@ impl RevaluationRepository {
                     .collect(),
                 created_by: tx_input.created_by,
                 timezone: "UTC".to_string(),
-                idempotency_key: Some(Uuid::new_v4()),
+                idempotency_key: Some(self.generate_idempotency_key(
+                    organization_id,
+                    account.id,
+                    as_of,
+                )),
                 iso_metadata: None,
             };
 

@@ -1,4 +1,8 @@
 #![allow(missing_docs)]
+#![allow(clippy::redundant_field_names)]
+#![allow(clippy::too_many_lines)]
+#![allow(clippy::uninlined_format_args)]
+#![allow(clippy::items_after_statements)]
 use chrono::{NaiveDate, Utc};
 use rust_decimal_macros::dec;
 use sea_orm::{ColumnTrait, Database, DatabaseConnection, EntityTrait, QueryFilter, Set};

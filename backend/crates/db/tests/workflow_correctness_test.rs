@@ -5,6 +5,7 @@ use sea_orm::{Database, EntityTrait, Set};
 use std::env;
 use uuid::Uuid;
 
+use zeltra_core::workflow::{ApprovalEngine, ApprovalRule};
 use zeltra_db::{
     entities::{
         approval_rules,
@@ -23,6 +24,7 @@ fn get_database_url() -> String {
 }
 
 #[tokio::test]
+#[allow(clippy::similar_names)]
 async fn test_approval_determinism() {
     let db = Database::connect(&get_database_url())
         .await
@@ -78,7 +80,6 @@ async fn test_approval_determinism() {
     let _rules = repo.get_pending_transactions(org_id, Uuid::new_v4()).await; // Triggers rule fetch
 
     // Actually, I can test ApprovalEngine directly since it's core logic
-    use zeltra_core::workflow::{ApprovalEngine, ApprovalRule};
     let core_rules = vec![
         ApprovalRule {
             id: rule_b_id, // Owner, large ID

@@ -2,10 +2,10 @@
 
 use chrono::{NaiveDate, Utc};
 use rust_decimal::Decimal;
-use std::str::FromStr;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, DbErr, EntityTrait, QueryFilter, Set,
 };
+use std::str::FromStr;
 use uuid::Uuid;
 
 use crate::entities::accrual_schedules;
@@ -72,6 +72,7 @@ impl AccrualRepository {
             frequency: Set(format!("{:?}", input.frequency).to_lowercase()),
             total_periods: Set(input.total_periods),
             periods_processed: Set(0),
+            total_amount_recognized: Set(Decimal::ZERO),
             next_run_date: Set(input.next_run_date),
             status: Set("active".to_string()),
             last_transaction_id: Set(None),
@@ -102,6 +103,7 @@ impl AccrualRepository {
         &self,
         id: Uuid,
         periods_processed: i32,
+        total_amount_recognized: Decimal,
         next_run_date: Option<NaiveDate>,
         last_transaction_id: Uuid,
         status: AccrualStatus,
@@ -113,6 +115,7 @@ impl AccrualRepository {
 
         let mut active: accrual_schedules::ActiveModel = schedule.into();
         active.periods_processed = Set(periods_processed);
+        active.total_amount_recognized = Set(total_amount_recognized);
         active.next_run_date = Set(next_run_date);
         active.last_transaction_id = Set(Some(last_transaction_id));
         active.status = Set(format!("{:?}", status).to_lowercase());
@@ -138,11 +141,13 @@ impl AccrualRepository {
             let period_amount =
                 zeltra_core::ledger::accrual::AccrualEngine::calculate_period_amount(
                     schedule.total_amount,
+                    schedule.total_amount_recognized,
                     schedule.total_periods,
                     schedule.periods_processed,
                 );
 
             let new_periods_processed = schedule.periods_processed + 1;
+            let new_total_amount_recognized = schedule.total_amount_recognized + period_amount;
             let next_run = if new_periods_processed < schedule.total_periods {
                 Some(
                     zeltra_core::ledger::accrual::AccrualEngine::calculate_next_run_date(
@@ -215,6 +220,7 @@ impl AccrualRepository {
             self.update_after_run(
                 schedule.id,
                 new_periods_processed,
+                new_total_amount_recognized,
                 next_run,
                 result.transaction.id,
                 status,

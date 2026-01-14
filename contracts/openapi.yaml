@@ -85,8 +85,9 @@ components:
           type: string
         baseline_amount:
           description: Average monthly amount from historical period.
-      Successfully generated OpenAPI specification at ../contracts/openapi.yaml
- change from baseline.
+          type: string
+        change_percent:
+          description: Percentage change from baseline.
           type: string
         period_end:
           description: Period end date.
@@ -2186,6 +2187,11 @@ components:
           description: Organization ID.
           format: uuid
           type: string
+        limits:
+          oneOf:
+          - type: 'null'
+          - $ref: '#/components/schemas/TierLimitsResponse'
+            description: Tier limits and feature flags.
         name:
           description: Organization name.
           type: string
@@ -2754,6 +2760,40 @@ components:
       - projections
       - annual_summary
       - monthly_summary
+      type: object
+    TierLimitsResponse:
+      description: Subscription tier limits and feature flags.
+      properties:
+        has_audit_export:
+          description: Whether audit data export is enabled.
+          type: boolean
+        has_auto_accruals:
+          description: Whether automated accruals are enabled.
+          type: boolean
+        has_custom_reports:
+          description: Whether custom reporting is enabled.
+          type: boolean
+        has_intercompany_hub:
+          description: Whether the intercompany hub is enabled.
+          type: boolean
+        has_multi_currency:
+          description: Whether multi-currency features are enabled.
+          type: boolean
+        has_simulation:
+          description: Whether simulation and scenario planning are enabled.
+          type: boolean
+        max_dimensions:
+          description: Maximum number of dimension types allowed.
+          format: int32
+          type: integer
+      required:
+      - max_dimensions
+      - has_multi_currency
+      - has_auto_accruals
+      - has_intercompany_hub
+      - has_simulation
+      - has_custom_reports
+      - has_audit_export
       type: object
     ToggleDimensionValueStatusRequest:
       description: Request body for toggling dimension value status.

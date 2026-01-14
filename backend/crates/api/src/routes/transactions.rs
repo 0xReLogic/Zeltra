@@ -175,52 +175,13 @@ async fn pay_invoice(
 
     match tx_repo.create_transaction(input).await {
         Ok(result) => {
-            // ... construct response (same as create_transaction) ...
-            // For brevity, I'll copy the response construction from create_transaction logic
-            // or reuse a helper function if I could. I'll just adapt the code here.
+            info!(
+                org_id = %org_id,
+                transaction_id = %result.transaction.id,
+                "Invoice payment transaction created"
+            );
 
-            // (Copying response construction logic...)
-            let total_debit: Decimal = result.entries.iter().map(|e| e.entry.debit).sum();
-            let total_credit: Decimal = result.entries.iter().map(|e| e.entry.credit).sum();
-
-            let entry_responses: Vec<EntryResponse> = result
-                .entries
-                .into_iter()
-                .map(|e| EntryResponse {
-                    id: e.entry.id,
-                    account_id: e.entry.account_id,
-                    source_currency: e.entry.source_currency,
-                    source_amount: e.entry.source_amount.to_string(),
-                    exchange_rate: e.entry.exchange_rate.to_string(),
-                    functional_currency: e.entry.functional_currency,
-                    functional_amount: e.entry.functional_amount.to_string(),
-                    debit: e.entry.debit.to_string(),
-                    credit: e.entry.credit.to_string(),
-                    memo: e.entry.memo,
-                    dimensions: e.dimensions,
-                })
-                .collect();
-
-            let response = TransactionResponse {
-                id: result.transaction.id,
-                reference_number: result.transaction.reference_number,
-                transaction_type: tx_type_to_string(&result.transaction.transaction_type),
-                transaction_date: result.transaction.transaction_date.to_string(),
-                description: result.transaction.description,
-                memo: result.transaction.memo,
-                status: status_to_string(&result.transaction.status),
-                fiscal_period_id: result.transaction.fiscal_period_id,
-                created_by: result.transaction.created_by,
-                created_at: result.transaction.created_at.to_rfc3339(),
-                updated_at: result.transaction.updated_at.to_rfc3339(),
-                entries: entry_responses,
-                total_debit: total_debit.to_string(),
-                total_credit: total_credit.to_string(),
-                timezone: result.transaction.timezone,
-                idempotency_key: result.transaction.idempotency_key,
-                iso_metadata: result.transaction.iso_metadata.clone(),
-            };
-
+            let response = map_transaction_to_response(result);
             (StatusCode::CREATED, Json(response)).into_response()
         }
         Err(e) => {
@@ -802,44 +763,7 @@ async fn create_transaction(
                 "Transaction created"
             );
 
-            let entry_responses: Vec<EntryResponse> = result
-                .entries
-                .into_iter()
-                .map(|e| EntryResponse {
-                    id: e.entry.id,
-                    account_id: e.entry.account_id,
-                    source_currency: e.entry.source_currency,
-                    source_amount: e.entry.source_amount.to_string(),
-                    exchange_rate: e.entry.exchange_rate.to_string(),
-                    functional_currency: e.entry.functional_currency,
-                    functional_amount: e.entry.functional_amount.to_string(),
-                    debit: e.entry.debit.to_string(),
-                    credit: e.entry.credit.to_string(),
-                    memo: e.entry.memo,
-                    dimensions: e.dimensions,
-                })
-                .collect();
-
-            let response = TransactionResponse {
-                id: result.transaction.id,
-                reference_number: result.transaction.reference_number,
-                transaction_type: tx_type_to_string(&result.transaction.transaction_type),
-                transaction_date: result.transaction.transaction_date.to_string(),
-                description: result.transaction.description,
-                memo: result.transaction.memo,
-                status: status_to_string(&result.transaction.status),
-                fiscal_period_id: result.transaction.fiscal_period_id,
-                created_by: result.transaction.created_by,
-                created_at: result.transaction.created_at.to_rfc3339(),
-                updated_at: result.transaction.updated_at.to_rfc3339(),
-                entries: entry_responses,
-                total_debit: total_debit.to_string(),
-                total_credit: total_credit.to_string(),
-                timezone: result.transaction.timezone,
-                idempotency_key: result.transaction.idempotency_key,
-                iso_metadata: result.transaction.iso_metadata.clone(),
-            };
-
+            let response = map_transaction_to_response(result);
             (StatusCode::CREATED, Json(response)).into_response()
         }
         Err(e) => {
@@ -914,48 +838,7 @@ async fn get_transaction(
 
     match tx_repo.get_transaction(org_id, transaction_id).await {
         Ok(result) => {
-            // Calculate totals
-            let total_debit: Decimal = result.entries.iter().map(|e| e.entry.debit).sum();
-            let total_credit: Decimal = result.entries.iter().map(|e| e.entry.credit).sum();
-
-            let entry_responses: Vec<EntryResponse> = result
-                .entries
-                .into_iter()
-                .map(|e| EntryResponse {
-                    id: e.entry.id,
-                    account_id: e.entry.account_id,
-                    source_currency: e.entry.source_currency,
-                    source_amount: e.entry.source_amount.to_string(),
-                    exchange_rate: e.entry.exchange_rate.to_string(),
-                    functional_currency: e.entry.functional_currency,
-                    functional_amount: e.entry.functional_amount.to_string(),
-                    debit: e.entry.debit.to_string(),
-                    credit: e.entry.credit.to_string(),
-                    memo: e.entry.memo,
-                    dimensions: e.dimensions,
-                })
-                .collect();
-
-            let response = TransactionResponse {
-                id: result.transaction.id,
-                reference_number: result.transaction.reference_number,
-                transaction_type: tx_type_to_string(&result.transaction.transaction_type),
-                transaction_date: result.transaction.transaction_date.to_string(),
-                description: result.transaction.description,
-                memo: result.transaction.memo,
-                status: status_to_string(&result.transaction.status),
-                fiscal_period_id: result.transaction.fiscal_period_id,
-                created_by: result.transaction.created_by,
-                created_at: result.transaction.created_at.to_rfc3339(),
-                updated_at: result.transaction.updated_at.to_rfc3339(),
-                entries: entry_responses,
-                total_debit: total_debit.to_string(),
-                total_credit: total_credit.to_string(),
-                timezone: result.transaction.timezone,
-                idempotency_key: result.transaction.idempotency_key,
-                iso_metadata: result.transaction.iso_metadata.clone(),
-            };
-
+            let response = map_transaction_to_response(result);
             (StatusCode::OK, Json(response)).into_response()
         }
         Err(e) => {
@@ -1795,6 +1678,49 @@ async fn check_membership(
             )
                 .into_response())
         }
+    }
+}
+
+fn map_transaction_to_response(result: TransactionWithEntries) -> TransactionResponse {
+    let total_debit: Decimal = result.entries.iter().map(|e| e.entry.debit).sum();
+    let total_credit: Decimal = result.entries.iter().map(|e| e.entry.credit).sum();
+
+    let entry_responses: Vec<EntryResponse> = result
+        .entries
+        .into_iter()
+        .map(|e| EntryResponse {
+            id: e.entry.id,
+            account_id: e.entry.account_id,
+            source_currency: e.entry.source_currency,
+            source_amount: e.entry.source_amount.to_string(),
+            exchange_rate: e.entry.exchange_rate.to_string(),
+            functional_currency: e.entry.functional_currency,
+            functional_amount: e.entry.functional_amount.to_string(),
+            debit: e.entry.debit.to_string(),
+            credit: e.entry.credit.to_string(),
+            memo: e.entry.memo,
+            dimensions: e.dimensions,
+        })
+        .collect();
+
+    TransactionResponse {
+        id: result.transaction.id,
+        reference_number: result.transaction.reference_number,
+        transaction_type: tx_type_to_string(&result.transaction.transaction_type),
+        transaction_date: result.transaction.transaction_date.to_string(),
+        description: result.transaction.description,
+        memo: result.transaction.memo,
+        status: status_to_string(&result.transaction.status),
+        fiscal_period_id: result.transaction.fiscal_period_id,
+        created_by: result.transaction.created_by,
+        created_at: result.transaction.created_at.to_rfc3339(),
+        updated_at: result.transaction.updated_at.to_rfc3339(),
+        entries: entry_responses,
+        total_debit: total_debit.to_string(),
+        total_credit: total_credit.to_string(),
+        timezone: result.transaction.timezone,
+        idempotency_key: result.transaction.idempotency_key,
+        iso_metadata: result.transaction.iso_metadata,
     }
 }
 

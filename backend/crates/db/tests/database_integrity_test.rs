@@ -64,7 +64,7 @@ async fn test_unique_account_version_constraint() {
         functional_amount: Set(dec!(100)),
         debit: Set(dec!(100)),
         credit: Set(dec!(0)),
-        account_version: Set(777222),
+        account_version: Set(777_222),
         account_previous_balance: Set(dec!(0)),
         account_current_balance: Set(dec!(100)),
         entry_hash: Set(None),
@@ -83,7 +83,7 @@ async fn test_unique_account_version_constraint() {
         functional_amount: Set(dec!(100)),
         debit: Set(dec!(100)),
         credit: Set(dec!(0)),
-        account_version: Set(777222), // Same version!
+        account_version: Set(777_222), // Same version!
         account_previous_balance: Set(dec!(100)),
         account_current_balance: Set(dec!(200)),
         entry_hash: Set(None),

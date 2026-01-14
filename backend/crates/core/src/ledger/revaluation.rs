@@ -57,19 +57,18 @@ impl RevaluationEngine {
     pub fn create_revaluation_transaction(
         input: &RevaluationTransactionInput,
     ) -> CreateTransactionInput {
-        let (reval_debit, _reval_credit, gl_debit, gl_credit) = if input.adjustment_amount
-            > Decimal::ZERO
-        {
-            (
-                input.adjustment_amount,
-                Decimal::ZERO,
-                Decimal::ZERO,
-                input.adjustment_amount,
-            )
-        } else {
-            let abs_amount = input.adjustment_amount.abs();
-            (Decimal::ZERO, abs_amount, abs_amount, Decimal::ZERO)
-        };
+        let (reval_debit, _reval_credit, gl_debit, gl_credit) =
+            if input.adjustment_amount > Decimal::ZERO {
+                (
+                    input.adjustment_amount,
+                    Decimal::ZERO,
+                    Decimal::ZERO,
+                    input.adjustment_amount,
+                )
+            } else {
+                let abs_amount = input.adjustment_amount.abs();
+                (Decimal::ZERO, abs_amount, abs_amount, Decimal::ZERO)
+            };
 
         let memo_text = format!(
             "FX Revaluation: {acc}/{base} at {rate}",

@@ -217,6 +217,7 @@ use utoipa_swagger_ui::SwaggerUi;
             sentinel::RevaluationLogResponse,
             sentinel::IntercompanyMappingResponse,
             sentinel::CreateIntercompanyMappingRequest,
+            organizations::TierLimitsResponse,
         )
     ),
     tags(

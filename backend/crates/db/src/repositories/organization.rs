@@ -11,7 +11,7 @@ use uuid::Uuid;
 use crate::entities::{
     currencies, organization_users, organizations,
     sea_orm_active_enums::{SubscriptionStatus, SubscriptionTier, TransactionStatus, UserRole},
-    transactions, users,
+    tier_limits, transactions, users,
 };
 
 /// Error types for organization operations.
@@ -533,6 +533,19 @@ impl OrganizationRepository {
 
         let updated = active.update(&self.db).await?;
         Ok(updated)
+    }
+
+    /// Gets the subscription tier limits for an organization.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the database query fails.
+    pub async fn get_tier_limits(&self, org_id: Uuid) -> Result<Option<tier_limits::Model>, DbErr> {
+        organizations::Entity::find_by_id(org_id)
+            .find_also_related(tier_limits::Entity)
+            .one(&self.db)
+            .await
+            .map(|res| res.and_then(|(_, limit)| limit))
     }
 }
 

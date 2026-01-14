@@ -38,22 +38,14 @@ Zeltra fills the gap between:
 
 ### Feature Comparison
 
-| Feature                             | Expensify | Zoho Expense | Xero  | QuickBooks | Sage Intacct | **Zeltra**        |
-| ----------------------------------- | --------- | ------------ | ----- | ---------- | ------------ | ----------------- |
-| Expense tracking                    | ✅        | ✅           | ✅    | ✅         | ✅           | ✅                |
-| Receipt OCR                         | ✅        | ✅           | ❌    | ❌         | ✅           | ❌ (roadmap)      |
-| Corporate cards                     | ✅        | ❌           | ❌    | ❌         | ❌           | ❌                |
-| Mobile app                          | ✅        | ✅           | ✅    | ✅         | ✅           | ❌ (roadmap)      |
-| Multi-currency (proper)             | ❌        | ❌           | ❌    | Limited    | ✅           | ✅ 3-value        |
-| Dimensional accounting              | ❌        | ❌           | ❌    | ❌         | ✅           | ✅                |
-| Budget simulation                   | ❌        | ❌           | ❌    | ❌         | Limited      | ✅ Real-time      |
-| Double-entry ledger                 | ❌        | ❌           | ✅    | ✅         | ✅           | ✅                |
-| On-premise option                   | ❌        | ❌           | ❌    | ❌         | ❌           | ✅                |
-| Approval workflow                   | ✅        | ✅           | Basic | ✅         | ✅           | ✅                |
-| Financial reports                   | ❌        | ❌           | ✅    | ✅         | ✅           | ✅                |
-| Self-hosted                         | ❌        | ❌           | ❌    | ❌         | ❌           | ✅                |
-| **Sentinel Integrity (Standard)**   | ❌        | ❌           | ❌    | ❌         | ❌           | ✅ **(Standard)** |
-| **Sentinel Intelligence (Premium)** | ❌        | ❌           | ❌    | ❌         | ❌           | ✅ **(Premium)**  |
+| Feature                             | Expensify | Zoho Expense | Xero | QuickBooks | Sage Intacct | **Zeltra**        |
+| ----------------------------------- | --------- | ------------ | ---- | ---------- | ------------ | ----------------- |
+| Expense tracking                    | ✅        | ✅           | ✅   | ✅         | ✅           | ✅                |
+| Multi-currency (proper)             | ❌        | ❌           | ❌   | Limited    | ✅           | ✅ 3-value        |
+| Dimensional accounting              | ❌        | ❌           | ❌   | ❌         | ✅           | ✅                |
+| Double-entry ledger                 | ❌        | ❌           | ✅   | ✅         | ✅           | ✅                |
+| **Sentinel Integrity (Starter+)**   | ❌        | ❌           | ❌   | ❌         | ❌           | ✅ **(Standard)** |
+| **Sentinel Intelligence (Growth+)** | ❌        | ❌           | ❌   | ❌         | ❌           | ✅ **(Premium)**  |
 
 ---
 
@@ -196,11 +188,11 @@ Why Zeltra:
 
 ### Cloud SaaS Pricing (Tiered Flat Monthly)
 
-| Tier           | Price     | User Limits     | Target              | Key Features                                                              |
-| -------------- | --------- | --------------- | ------------------- | ------------------------------------------------------------------------- |
-| **Starter**    | $12/month | Up to 50 users  | Small teams (5-50)  | Basic expense, single currency, 2 dimensions, **Sentinel Integrity Core** |
-| **Growth**     | $25/month | Up to 200 users | Mid-market (50-200) | Multi-currency, unlimited dimensions, budgets, **Real-time Revaluation**  |
-| **Enterprise** | $45/month | Unlimited users | Large (200+)        | Simulation, API, SSO, **Sentinel Intelligence Suite**                     |
+| Tier           | Price     | User Limits     | Target              | Key Features                                                            |
+| -------------- | --------- | --------------- | ------------------- | ----------------------------------------------------------------------- |
+| **Starter**    | $12/month | Up to 50 users  | Small teams (5-50)  | Fiscal Mgmt, 2 Dimensions, Manual Forex, **Sentinel Integrity Core**    |
+| **Growth**     | $25/month | Up to 200 users | Mid-market (50-200) | Unlimited Dimensions/Currency, **Sentinel Intelligence: Auto-Reval**    |
+| **Enterprise** | $45/month | Unlimited users | Large (200+)        | Simulation, Multi-Entity, SSO, **Sentinel Intelligence: Accruals & IC** |
 
 **Effective Per-User Cost:**
 

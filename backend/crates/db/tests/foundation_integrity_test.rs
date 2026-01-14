@@ -1,4 +1,9 @@
 //! Foundation integrity tests for Zeltra 2026.
+#![allow(clippy::uninlined_format_args)]
+#![allow(clippy::struct_field_names)]
+#![allow(clippy::too_many_lines)]
+#![allow(clippy::items_after_statements)]
+
 use chrono::{NaiveDate, Utc};
 use rust_decimal::Decimal;
 use sea_orm::{ActiveModelTrait, Database, DatabaseConnection, Set};

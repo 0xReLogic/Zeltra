@@ -20,6 +20,26 @@ use zeltra_shared::auth::{
     AddUserRequest, CreateOrganizationRequest, UpdateMemberRequest, UpdateOrganizationRequest,
 };
 
+/// Subscription tier limits and feature flags.
+#[derive(serde::Serialize, utoipa::ToSchema)]
+#[allow(clippy::struct_excessive_bools)]
+pub struct TierLimitsResponse {
+    /// Maximum number of dimension types allowed.
+    pub max_dimensions: i32,
+    /// Whether multi-currency features are enabled.
+    pub has_multi_currency: bool,
+    /// Whether automated accruals are enabled.
+    pub has_auto_accruals: bool,
+    /// Whether the intercompany hub is enabled.
+    pub has_intercompany_hub: bool,
+    /// Whether simulation and scenario planning are enabled.
+    pub has_simulation: bool,
+    /// Whether custom reporting is enabled.
+    pub has_custom_reports: bool,
+    /// Whether audit data export is enabled.
+    pub has_audit_export: bool,
+}
+
 /// Organization details response.
 #[derive(serde::Serialize, utoipa::ToSchema)]
 pub struct OrganizationResponse {
@@ -37,6 +57,8 @@ pub struct OrganizationResponse {
     pub subscription_tier: String,
     /// Subscription status.
     pub subscription_status: String,
+    /// Tier limits and feature flags.
+    pub limits: Option<TierLimitsResponse>,
     /// Creation timestamp.
     pub created_at: chrono::DateTime<chrono::Utc>,
 }
@@ -168,6 +190,13 @@ async fn create_organization(
         "Organization created"
     );
 
+    let limits = org_repo
+        .get_tier_limits(org.id)
+        .await
+        .ok()
+        .flatten()
+        .map(|l| map_tier_limits(&l));
+
     (
         StatusCode::CREATED,
         Json(json!({
@@ -178,6 +207,7 @@ async fn create_organization(
             "timezone": org.timezone,
             "subscription_tier": format!("{:?}", org.subscription_tier).to_lowercase(),
             "subscription_status": format!("{:?}", org.subscription_status).to_lowercase(),
+            "limits": limits,
             "created_at": org.created_at
         })),
     )
@@ -258,6 +288,13 @@ async fn get_organization(
         }
     };
 
+    let limits = org_repo
+        .get_tier_limits(org.id)
+        .await
+        .ok()
+        .flatten()
+        .map(|l| map_tier_limits(&l));
+
     (
         StatusCode::OK,
         Json(json!({
@@ -268,6 +305,7 @@ async fn get_organization(
             "timezone": org.timezone,
             "subscription_tier": format!("{:?}", org.subscription_tier).to_lowercase(),
             "subscription_status": format!("{:?}", org.subscription_status).to_lowercase(),
+            "limits": limits,
             "created_at": org.created_at
         })),
     )
@@ -414,6 +452,13 @@ async fn update_organization(
 
     info!(org_id = %org_id, "Organization updated");
 
+    let limits = org_repo
+        .get_tier_limits(org.id)
+        .await
+        .ok()
+        .flatten()
+        .map(|l| map_tier_limits(&l));
+
     (
         StatusCode::OK,
         Json(json!({
@@ -424,6 +469,7 @@ async fn update_organization(
             "timezone": org.timezone,
             "subscription_tier": format!("{:?}", org.subscription_tier).to_lowercase(),
             "subscription_status": format!("{:?}", org.subscription_status).to_lowercase(),
+            "limits": limits,
             "updated_at": org.updated_at
         })),
     )
@@ -694,6 +740,18 @@ fn string_to_role(s: &str) -> Option<UserRole> {
         "viewer" => Some(UserRole::Viewer),
         "submitter" => Some(UserRole::Submitter),
         _ => None,
+    }
+}
+
+fn map_tier_limits(m: &zeltra_db::entities::tier_limits::Model) -> TierLimitsResponse {
+    TierLimitsResponse {
+        max_dimensions: m.max_dimensions,
+        has_multi_currency: m.has_multi_currency,
+        has_auto_accruals: m.has_auto_accruals,
+        has_intercompany_hub: m.has_intercompany_hub,
+        has_simulation: m.has_simulation,
+        has_custom_reports: m.has_custom_reports,
+        has_audit_export: m.has_audit_export,
     }
 }
 

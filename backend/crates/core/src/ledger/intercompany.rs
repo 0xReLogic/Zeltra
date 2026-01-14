@@ -91,7 +91,10 @@ impl IntercompanyEngine {
             organization_id: input.consolidation_org_id,
             transaction_type: TransactionType::Adjustment,
             transaction_date: input.date,
-            description: format!("Intercompany Elimination: {ref_str}", ref_str = input.reference),
+            description: format!(
+                "Intercompany Elimination: {ref_str}",
+                ref_str = input.reference
+            ),
             reference_number: Some(format!("ELIM-{ref_str}", ref_str = input.reference)),
             memo: Some("Eliminating balance between mapping accounts".to_string()),
             entries: vec![

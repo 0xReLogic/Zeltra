@@ -83,6 +83,7 @@ pub enum Relation {
     RevaluationLogs,
     Sessions,
     Transactions,
+    TierLimits,
 }
 
 impl ColumnTrait for Column {
@@ -133,6 +134,10 @@ impl RelationTrait for Relation {
             Self::RevaluationLogs => Entity::has_many(super::revaluation_logs::Entity).into(),
             Self::Sessions => Entity::has_many(super::sessions::Entity).into(),
             Self::Transactions => Entity::has_many(super::transactions::Entity).into(),
+            Self::TierLimits => Entity::belongs_to(super::tier_limits::Entity)
+                .from(Column::SubscriptionTier)
+                .to(super::tier_limits::Column::Tier)
+                .into(),
         }
     }
 }
@@ -224,6 +229,12 @@ impl Related<super::sessions::Entity> for Entity {
 impl Related<super::transactions::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::Transactions.def()
+    }
+}
+
+impl Related<super::tier_limits::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::TierLimits.def()
     }
 }
 

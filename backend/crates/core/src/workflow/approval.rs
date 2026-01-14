@@ -156,14 +156,14 @@ impl ApprovalEngine {
         }
 
         // Check approval limit (only for Approver role, higher roles have unlimited)
-        if user_role_enum == UserRole::Approver {
-            let limit = user_approval_limit.unwrap_or(Decimal::ZERO);
-            if transaction_amount > limit {
+        match (user_role_enum, user_approval_limit) {
+            (UserRole::Approver, Some(limit)) if transaction_amount > limit => {
                 return Err(WorkflowError::ExceedsApprovalLimit {
                     amount: transaction_amount,
                     limit,
                 });
             }
+            _ => {}
         }
 
         Ok(())

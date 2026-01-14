@@ -86,21 +86,24 @@ impl AccrualEngine {
     /// Calculate the amount for a specific period.
     pub fn calculate_period_amount(
         total_amount: Decimal,
+        total_amount_recognized: Decimal,
         total_periods: i32,
         periods_processed: i32,
     ) -> Decimal {
-        if total_periods <= 1 {
-            return total_amount;
+        if total_periods <= periods_processed {
+            return Decimal::ZERO;
         }
 
-        let amount_per_period = (total_amount / Decimal::from(total_periods)).round_dp(4);
+        let remaining_amount = total_amount - total_amount_recognized;
+        let remaining_periods = total_periods - periods_processed;
 
-        if periods_processed == total_periods - 1 {
-            // Last period: use residual to avoid rounding errors
-            total_amount - (amount_per_period * Decimal::from(total_periods - 1))
-        } else {
-            amount_per_period
+        if remaining_periods <= 1 {
+            // Last period or one-off: use residual to prevent rounding errors
+            return remaining_amount;
         }
+
+        // Proportional calculation for remaining periods
+        (remaining_amount / Decimal::from(remaining_periods)).round_dp(4)
     }
 }
 
@@ -181,20 +184,30 @@ mod tests {
         let periods = 3;
 
         // Period 1: 1000 / 3 = 333.3333
-        assert_eq!(
-            AccrualEngine::calculate_period_amount(total, periods, 0),
-            dec!(333.3333)
-        );
-        // Period 2: 333.3333
-        assert_eq!(
-            AccrualEngine::calculate_period_amount(total, periods, 1),
-            dec!(333.3333)
-        );
-        // Period 3 (Final): 1000 - (333.3333 * 2) = 1000 - 666.6666 = 333.3334
-        assert_eq!(
-            AccrualEngine::calculate_period_amount(total, periods, 2),
-            dec!(333.3334)
-        );
+        let p1 = AccrualEngine::calculate_period_amount(total, dec!(0), periods, 0);
+        assert_eq!(p1, dec!(333.3333));
+
+        // Period 2: (1000 - 333.3333) / 2 = 666.6667 / 2 = 333.3334
+        let p2 = AccrualEngine::calculate_period_amount(total, dec!(333.3333), periods, 1);
+        assert_eq!(p2, dec!(333.3334));
+
+        // Period 3 (Final): 1000 - (333.3333 + 333.3334) = 333.3333
+        let p3 = AccrualEngine::calculate_period_amount(total, dec!(666.6667), periods, 2);
+        assert_eq!(p3, dec!(333.3333));
+    }
+
+    #[test]
+    fn test_calculate_period_amount_amendment() {
+        let total = dec!(1000);
+        // Original: 3 periods. After 1 period ($333.3333 recognized), amend to 5 total periods.
+        let recognized = dec!(333.3333);
+        let new_total_periods = 5;
+        let p2_new =
+            AccrualEngine::calculate_period_amount(total, recognized, new_total_periods, 1);
+        // Remaining: 1000 - 333.3333 = 666.6667
+        // Remaining periods: 5 - 1 = 4
+        // Amount: 666.6667 / 4 = 166.6667
+        assert_eq!(p2_new, dec!(166.6667));
     }
 
     #[test]
