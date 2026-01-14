@@ -183,7 +183,6 @@ impl TransactionRepository {
         Self { db }
     }
 
-
     /// Counts transactions created in the current month (UTC) for an organization.
     ///
     /// # Errors
