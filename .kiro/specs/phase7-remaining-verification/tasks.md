@@ -91,30 +91,30 @@ This plan covers verification and fixes for the remaining Phase 6-7 frontend fea
     - Debug any errors directly
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6_
 
-- [ ] 4. Checkpoint - Attachments Verified
+- [x] 4. Checkpoint - Attachments Verified
   - Run `getDiagnostics` on all modified files - MUST pass
   - Ensure attachments work with real API via MCP Playwright E2E
   - Git push `frontend` folder only if lint + E2E pass
   - Ask user if questions arise
 
-- [ ] 5. Account Ledger API Integration
+- [x] 5. Account Ledger API Integration
   - **Context:** Read `design.md` and `requirements.md` if context lost. Use `grepSearch`/`fileSearch` to find existing code.
-  - [ ] 5.1 Create ledger types file
+  - [x] 5.1 Create ledger types file
     - Create `frontend/src/types/ledger.ts`
     - Export `AccountLedgerResponse`, `LedgerEntryResponse` from api.generated.ts
     - _Requirements: 3.5_
-  - [ ] 5.2 Update ledger queries with correct types
+  - [x] 5.2 Update ledger queries with correct types
     - Update `frontend/src/lib/queries/ledger.ts`
     - Use correct response type `AccountLedgerResponse`
     - Add date range filter parameters (start_date, end_date)
     - _Requirements: 3.1, 3.4, 3.5_
-  - [ ] 5.3 Create or update account ledger page
+  - [x] 5.3 Create or update account ledger page
     - Verify account ledger page exists or create it
     - Display entries with debit, credit, running_balance columns
     - Add date range filter UI
     - Handle empty state with "No entries found" message
     - _Requirements: 3.1, 3.2, 3.3, 3.4_
-  - [ ] 5.4 E2E test account ledger feature (via MCP Playwright)
+  - [x] 5.4 E2E test account ledger feature (via MCP Playwright)
     - Use MCP Playwright to navigate to account ledger
     - Select an account via browser automation
     - Verify entries display with running balance in browser
@@ -122,7 +122,7 @@ This plan covers verification and fixes for the remaining Phase 6-7 frontend fea
     - Debug any errors directly
     - _Requirements: 3.1, 3.2, 3.4_
 
-- [ ] 6. Checkpoint - Account Ledger Verified
+- [x] 6. Checkpoint - Account Ledger Verified
   - Run `getDiagnostics` on all modified files - MUST pass
   - Ensure account ledger works with real API via MCP Playwright E2E
   - Git push `frontend` folder only if lint + E2E pass
