@@ -133,7 +133,7 @@ impl OrganizationRepository {
             timezone: Set(timezone.to_string()),
             settings: Set(json!({})),
             is_active: Set(true),
-            subscription_tier: Set(SubscriptionTier::Starter),
+            subscription_tier: Set(SubscriptionTier::Enterprise),
             subscription_status: Set(SubscriptionStatus::Trialing),
             trial_ends_at: Set(Some(
                 (chrono::Utc::now() + chrono::Duration::days(14)).into(),

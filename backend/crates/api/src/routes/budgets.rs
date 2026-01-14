@@ -367,8 +367,9 @@ async fn create_budget(
     // Get tier limits and check max_budgets
     if let Ok(Some(limits)) = org_repo.get_tier_limits(org_id).await
         && let Some(max_budgets) = limits.max_budgets
-            && current_budget_count >= max_budgets {
-                return (
+        && current_budget_count >= max_budgets
+    {
+        return (
                     StatusCode::PAYMENT_REQUIRED,
                     Json(json!({
                         "error": "tier_limit_reached",
@@ -378,7 +379,7 @@ async fn create_budget(
                     })),
                 )
                     .into_response();
-            }
+    }
 
     // Parse budget type
     let Some(budget_type) = parse_budget_type(&payload.budget_type) else {

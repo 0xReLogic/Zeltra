@@ -65,6 +65,8 @@ pub struct OrganizationResponse {
     pub limits: Option<TierLimitsResponse>,
     /// Creation timestamp.
     pub created_at: chrono::DateTime<chrono::Utc>,
+    /// Trial expiration date (if applicable).
+    pub trial_ends_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 
 /// Organization user session response.
@@ -212,7 +214,8 @@ async fn create_organization(
             "subscription_tier": format!("{:?}", org.subscription_tier).to_lowercase(),
             "subscription_status": format!("{:?}", org.subscription_status).to_lowercase(),
             "limits": limits,
-            "created_at": org.created_at
+            "created_at": org.created_at,
+            "trial_ends_at": org.trial_ends_at
         })),
     )
         .into_response()
@@ -310,7 +313,8 @@ async fn get_organization(
             "subscription_tier": format!("{:?}", org.subscription_tier).to_lowercase(),
             "subscription_status": format!("{:?}", org.subscription_status).to_lowercase(),
             "limits": limits,
-            "created_at": org.created_at
+            "created_at": org.created_at,
+            "trial_ends_at": org.trial_ends_at
         })),
     )
         .into_response()
@@ -474,7 +478,9 @@ async fn update_organization(
             "subscription_tier": format!("{:?}", org.subscription_tier).to_lowercase(),
             "subscription_status": format!("{:?}", org.subscription_status).to_lowercase(),
             "limits": limits,
-            "updated_at": org.updated_at
+            "limits": limits,
+            "updated_at": org.updated_at,
+            "trial_ends_at": org.trial_ends_at
         })),
     )
         .into_response()
