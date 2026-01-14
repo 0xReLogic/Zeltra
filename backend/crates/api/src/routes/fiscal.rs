@@ -49,6 +49,9 @@ pub struct CreateFiscalYearRequest {
     /// End date (YYYY-MM-DD).
     #[schema(example = "2026-12-31")]
     pub end_date: NaiveDate,
+    /// Whether to include an adjustment period (period 13).
+    #[serde(default)]
+    pub include_adjustment_period: bool,
 }
 
 /// Request body for updating period status.
@@ -207,6 +210,7 @@ async fn create_fiscal_year(
         name: payload.name,
         start_date: payload.start_date,
         end_date: payload.end_date,
+        include_adjustment_period: payload.include_adjustment_period,
     };
 
     match fiscal_repo.create_fiscal_year(input).await {

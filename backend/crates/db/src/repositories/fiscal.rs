@@ -71,6 +71,8 @@ pub struct CreateFiscalYearInput {
     pub start_date: NaiveDate,
     /// End date of the fiscal year.
     pub end_date: NaiveDate,
+    /// Whether to include an adjustment period (period 13).
+    pub include_adjustment_period: bool,
 }
 
 /// Validates that start_date is strictly before end_date.
@@ -170,6 +172,7 @@ impl FiscalRepository {
             input.organization_id,
             input.start_date,
             input.end_date,
+            input.include_adjustment_period,
         );
 
         let mut inserted_periods = Vec::with_capacity(periods.len());
@@ -402,6 +405,7 @@ fn generate_monthly_periods(
     organization_id: Uuid,
     start_date: NaiveDate,
     end_date: NaiveDate,
+    include_adjustment_period: bool,
 ) -> Vec<PeriodData> {
     let mut periods = Vec::new();
     let mut current = start_date;
@@ -436,6 +440,20 @@ fn generate_monthly_periods(
             NaiveDate::from_ymd_opt(current.year(), current.month() + 1, 1).unwrap()
         };
         period_number += 1;
+    }
+
+    // Add adjustment period (period 13) if requested
+    if include_adjustment_period {
+        periods.push(PeriodData {
+            id: Uuid::new_v4(),
+            organization_id,
+            fiscal_year_id,
+            name: "Adjustment Period".to_string(),
+            period_number,
+            start_date: end_date,
+            end_date,
+            is_adjustment_period: true,
+        });
     }
 
     periods
@@ -485,7 +503,7 @@ mod tests {
         let org_id = Uuid::new_v4();
         let fy_id = Uuid::new_v4();
 
-        let periods = generate_monthly_periods(fy_id, org_id, start, end);
+        let periods = generate_monthly_periods(fy_id, org_id, start, end, false);
 
         assert_eq!(periods.len(), 12);
         assert_eq!(periods[0].name, "January 2026");
@@ -518,11 +536,26 @@ mod tests {
         let org_id = Uuid::new_v4();
         let fy_id = Uuid::new_v4();
 
-        let periods = generate_monthly_periods(fy_id, org_id, start, end);
+        let periods = generate_monthly_periods(fy_id, org_id, start, end, false);
 
         assert_eq!(periods.len(), 12);
         assert_eq!(periods[0].name, "April 2026");
         assert_eq!(periods[11].name, "March 2027");
+    }
+
+    #[test]
+    fn test_generate_monthly_periods_with_adjustment() {
+        let start = NaiveDate::from_ymd_opt(2026, 1, 1).unwrap();
+        let end = NaiveDate::from_ymd_opt(2026, 12, 31).unwrap();
+        let org_id = Uuid::new_v4();
+        let fy_id = Uuid::new_v4();
+
+        let periods = generate_monthly_periods(fy_id, org_id, start, end, true);
+
+        assert_eq!(periods.len(), 13);
+        assert_eq!(periods[12].name, "Adjustment Period");
+        assert_eq!(periods[12].period_number, 13);
+        assert!(periods[12].is_adjustment_period);
     }
 
     #[test]

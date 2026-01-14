@@ -1317,6 +1317,9 @@ components:
           example: 2026-12-31
           format: date
           type: string
+        include_adjustment_period:
+          description: Whether to include an adjustment period (period 13).
+          type: boolean
         name:
           description: Fiscal year name (e.g., "FY 2026").
           example: FY 2026

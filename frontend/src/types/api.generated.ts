@@ -2022,6 +2022,8 @@ export interface components {
              * @example 2026-12-31
              */
             end_date: string;
+            /** @description Whether to include an adjustment period (period 13). */
+            include_adjustment_period?: boolean;
             /**
              * @description Fiscal year name (e.g., "FY 2026").
              * @example FY 2026

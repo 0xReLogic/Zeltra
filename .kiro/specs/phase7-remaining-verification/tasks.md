@@ -158,7 +158,7 @@ This plan covers verification and fixes for the remaining Phase 6-7 frontend fea
   - Git push `frontend` folder only if lint + E2E pass
   - Ask user if questions arise
 
-- [ ] 9. Fiscal Year Creation API Integration
+- [x] 9. Fiscal Year Creation API Integration
   - **Context:** Read `design.md` and `requirements.md` if context lost. Use `grepSearch`/`fileSearch` to find existing code.
   - [ ] 9.1 Verify fiscal types match OpenAPI
     - Check `frontend/src/types/fiscal.ts`
