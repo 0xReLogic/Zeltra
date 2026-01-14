@@ -266,6 +266,41 @@ export interface paths {
         patch: operations["toggle_account_status"];
         trace?: never;
     };
+    "/organizations/{org_id}/accrual-schedules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** GET `/organizations/{org_id}/accrual-schedules` - List accrual schedules. */
+        get: operations["list_accrual_schedules"];
+        put?: never;
+        /** POST `/organizations/{org_id}/accrual-schedules` - Create accrual schedule. */
+        post: operations["create_accrual_schedule"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/accrual-schedules/{schedule_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** GET `/organizations/{org_id}/accrual-schedules/{schedule_id}` - Get accrual schedule. */
+        get: operations["get_accrual_schedule"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/organizations/{org_id}/approval-rules": {
         parameters: {
             query?: never;
@@ -669,6 +704,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/organizations/{org_id}/intercompany/connect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** POST `/organizations/{org_id}/intercompany/connect` - Create intercompany mapping. */
+        post: operations["create_intercompany_mapping"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/intercompany/mappings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** GET `/organizations/{org_id}/intercompany/mappings` - List intercompany mappings. */
+        get: operations["list_intercompany_mappings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/organizations/{org_id}/reports/balance-sheet": {
         parameters: {
             query?: never;
@@ -741,6 +810,23 @@ export interface paths {
          * @description Requirement 14.1: Trial balance report endpoint
          */
         get: operations["get_trial_balance"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/revaluation-logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** GET `/organizations/{org_id}/revaluation-logs` - List revaluation logs. */
+        get: operations["list_revaluation_logs"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1136,6 +1222,59 @@ export interface components {
             subtype?: string | null;
             /** @description Account type. */
             type: string;
+        };
+        /** @description Response for an accrual schedule. */
+        AccrualScheduleResponse: {
+            /** @description Created at. */
+            created_at: string;
+            /**
+             * Format: uuid
+             * @description Credit account ID.
+             */
+            credit_account_id: string;
+            /** @description Currency ID. */
+            currency_id: string;
+            /**
+             * Format: uuid
+             * @description Debit account ID.
+             */
+            debit_account_id: string;
+            /** @description Description. */
+            description?: string | null;
+            /** @description End date. */
+            end_date: string;
+            /** @description Frequency. */
+            frequency: string;
+            /**
+             * Format: uuid
+             * @description Schedule ID.
+             */
+            id: string;
+            /** @description Name. */
+            name: string;
+            /** @description Next run date. */
+            next_run_date?: string | null;
+            /**
+             * Format: uuid
+             * @description Organization ID.
+             */
+            organization_id: string;
+            /**
+             * Format: int32
+             * @description Periods processed.
+             */
+            periods_processed: number;
+            /** @description Start date. */
+            start_date: string;
+            /** @description Status. */
+            status: string;
+            /** @description Total amount. */
+            total_amount: string;
+            /**
+             * Format: int32
+             * @description Total periods.
+             */
+            total_periods: number;
         };
         /** @description Activity item response. */
         ActivityItemResponse: {
@@ -1651,6 +1790,57 @@ export interface components {
              */
             type: string;
         };
+        /** @description Request body for creating an accrual schedule. */
+        CreateAccrualScheduleRequest: {
+            /**
+             * Format: uuid
+             * @description Credit account ID.
+             */
+            credit_account_id: string;
+            /**
+             * @description Currency ID (ISO code).
+             * @example USD
+             */
+            currency_id: string;
+            /**
+             * Format: uuid
+             * @description Debit account ID.
+             */
+            debit_account_id: string;
+            /** @description Optional description. */
+            description?: string | null;
+            /**
+             * @description End date (YYYY-MM-DD).
+             * @example 2026-12-31
+             */
+            end_date: string;
+            /**
+             * @description Frequency: daily, weekly, monthly, quarterly, yearly.
+             * @example monthly
+             */
+            frequency: string;
+            /**
+             * @description Name of the accrual schedule.
+             * @example Prepaid Insurance
+             */
+            name: string;
+            /**
+             * @description Start date (YYYY-MM-DD).
+             * @example 2026-01-01
+             */
+            start_date: string;
+            /**
+             * @description Total amount to accrue.
+             * @example 12000.00
+             */
+            total_amount: string;
+            /**
+             * Format: int32
+             * @description Total number of periods.
+             * @example 12
+             */
+            total_periods: number;
+        };
         /** @description Request body for creating an approval rule. */
         CreateApprovalRuleRequest: {
             /** @description Optional description. */
@@ -1844,6 +2034,24 @@ export interface components {
              */
             start_date: string;
         };
+        /** @description Request body for creating an intercompany mapping. */
+        CreateIntercompanyMappingRequest: {
+            /**
+             * Format: uuid
+             * @description Source account ID (in current organization).
+             */
+            source_account_id: string;
+            /**
+             * Format: uuid
+             * @description Target account ID (in target organization).
+             */
+            target_account_id: string;
+            /**
+             * Format: uuid
+             * @description Target organization ID.
+             */
+            target_org_id: string;
+        };
         /** @description Create organization request. */
         CreateOrganizationRequest: {
             /** @description Base currency (ISO 4217 code). */
@@ -1864,6 +2072,13 @@ export interface components {
             description: string;
             /** @description Ledger entries. */
             entries: components["schemas"]["CreateEntryRequest"][];
+            /**
+             * Format: uuid
+             * @description Optional idempotency key for preventing duplicate transactions.
+             */
+            idempotency_key?: string | null;
+            /** @description Optional ISO 20022 metadata. */
+            iso_metadata?: unknown;
             /** @description Optional memo. */
             memo?: string | null;
             /**
@@ -2231,6 +2446,40 @@ export interface components {
             /** @description Section total. */
             total: string;
         };
+        /** @description Response for an intercompany mapping. */
+        IntercompanyMappingResponse: {
+            /** @description Whether to auto-post transactions. */
+            auto_post: boolean;
+            /** @description Created at. */
+            created_at: string;
+            /**
+             * Format: uuid
+             * @description Mapping ID.
+             */
+            id: string;
+            /** @description Mapping type. */
+            mapping_type: string;
+            /**
+             * Format: uuid
+             * @description Source account ID.
+             */
+            source_account_id: string;
+            /**
+             * Format: uuid
+             * @description Source organization ID.
+             */
+            source_org_id: string;
+            /**
+             * Format: uuid
+             * @description Target account ID.
+             */
+            target_account_id: string;
+            /**
+             * Format: uuid
+             * @description Target organization ID.
+             */
+            target_org_id: string;
+        };
         /** @description Ledger entry response. */
         LedgerEntryResponse: {
             /** @description Credit. */
@@ -2372,6 +2621,7 @@ export interface components {
              * @description Organization ID.
              */
             id: string;
+            limits?: null | components["schemas"]["TierLimitsResponse"];
             /** @description Organization name. */
             name: string;
             /** @description Organization slug. */
@@ -2514,9 +2764,16 @@ export interface components {
             gain_loss_account_id: string;
             /**
              * Format: uuid
+             * @description Optional idempotency key.
+             */
+            idempotency_key?: string | null;
+            /**
+             * Format: uuid
              * @description ID of the invoice (transaction) being paid.
              */
             invoice_id: string;
+            /** @description Optional ISO 20022 metadata. */
+            iso_metadata?: unknown;
             /**
              * Format: uuid
              * @description Account ID to pay from (e.g., Bank).
@@ -2527,6 +2784,11 @@ export interface components {
              * @description Payment date.
              */
             payment_date: string;
+            /**
+             * @description Timezone for the transaction.
+             * @example UTC
+             */
+            timezone: string;
         };
         /** @description Pending approvals response. */
         PendingApprovalsResponse: {
@@ -2657,6 +2919,45 @@ export interface components {
             /** @description User email to resend verification to. */
             email: string;
         };
+        /** @description Response for a revaluation log. */
+        RevaluationLogResponse: {
+            /**
+             * Format: uuid
+             * @description Account ID.
+             */
+            account_id: string;
+            /** @description Carrying balance before revaluation. */
+            carrying_balance: string;
+            /** @description Created at. */
+            created_at: string;
+            /** @description Exchange rate used. */
+            exchange_rate: string;
+            /** @description Functional currency. */
+            functional_currency: string;
+            /** @description Gain/loss amount. */
+            gain_loss_amount: string;
+            /**
+             * Format: uuid
+             * @description Log ID.
+             */
+            id: string;
+            /**
+             * Format: uuid
+             * @description Organization ID.
+             */
+            organization_id: string;
+            /** @description Revaluation date. */
+            revaluation_date: string;
+            /** @description Revalued balance. */
+            revalued_balance: string;
+            /** @description Account currency. */
+            source_currency: string;
+            /**
+             * Format: uuid
+             * @description Related transaction ID.
+             */
+            transaction_id?: string | null;
+        };
         /** @description Request body for running a simulation. */
         RunSimulationRequest: {
             /** @description Per-account growth rate overrides. Key is account_id (UUID), value is growth rate. */
@@ -2712,6 +3013,36 @@ export interface components {
              */
             simulation_id: string;
         };
+        /** @description Subscription tier limits and feature flags. */
+        TierLimitsResponse: {
+            /** @description Whether audit data export is enabled. */
+            has_audit_export: boolean;
+            /** @description Whether automated accruals are enabled. */
+            has_auto_accruals: boolean;
+            /** @description Whether custom reporting is enabled. */
+            has_custom_reports: boolean;
+            /** @description Whether the intercompany hub is enabled. */
+            has_intercompany_hub: boolean;
+            /** @description Whether multi-currency features are enabled. */
+            has_multi_currency: boolean;
+            /** @description Whether simulation and scenario planning are enabled. */
+            has_simulation: boolean;
+            /**
+             * Format: int32
+             * @description Maximum number of dimension types allowed.
+             */
+            max_dimensions: number;
+            /**
+             * Format: int32
+             * @description Maximum transactions per month allowed (None = unlimited).
+             */
+            max_transactions_per_month?: number | null;
+            /**
+             * Format: int32
+             * @description Maximum number of users allowed (None = unlimited).
+             */
+            max_users?: number | null;
+        };
         /** @description Request body for toggling dimension value status. */
         ToggleDimensionValueStatusRequest: {
             /** @description Whether the dimension value should be active. */
@@ -2765,6 +3096,13 @@ export interface components {
              * @description Transaction ID.
              */
             id: string;
+            /**
+             * Format: uuid
+             * @description Optional idempotency key.
+             */
+            idempotency_key?: string | null;
+            /** @description Optional ISO 20022 metadata. */
+            iso_metadata?: unknown;
             /** @description Memo. */
             memo?: string | null;
             /** @description Reference number. */
@@ -3635,6 +3973,116 @@ export interface operations {
                 content?: never;
             };
             /** @description Account not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_accrual_schedules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of accrual schedules */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccrualScheduleResponse"][];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    create_accrual_schedule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAccrualScheduleRequest"];
+            };
+        };
+        responses: {
+            /** @description Accrual schedule created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccrualScheduleResponse"];
+                };
+            };
+            /** @description Invalid input */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_accrual_schedule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: string;
+                /** @description Schedule ID */
+                schedule_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Accrual schedule details */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccrualScheduleResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Schedule not found */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -4961,6 +5409,77 @@ export interface operations {
             };
         };
     };
+    create_intercompany_mapping: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateIntercompanyMappingRequest"];
+            };
+        };
+        responses: {
+            /** @description Intercompany mapping created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IntercompanyMappingResponse"];
+                };
+            };
+            /** @description Invalid input */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_intercompany_mappings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of intercompany mappings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IntercompanyMappingResponse"][];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     get_balance_sheet: {
         parameters: {
             query?: never;
@@ -5136,6 +5655,36 @@ export interface operations {
             };
             /** @description Organization not found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_revaluation_logs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of revaluation logs */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RevaluationLogResponse"][];
+                };
+            };
+            /** @description Forbidden */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

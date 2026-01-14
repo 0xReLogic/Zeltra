@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useRef, useState, useMemo } from 'react'
+import React, { useState, useMemo } from 'react'
 import { useParams } from 'next/navigation'
 import { ArrowLeft, Loader2, CheckCircle, XCircle, Clock, FileText, Send, Ban, BookCheck } from 'lucide-react'
 import Link from 'next/link'
@@ -20,6 +20,7 @@ import {
   TableFooter,
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
+import { AttachmentUpload, AttachmentList } from '@/components/attachments'
 
 const STATUS_CONFIG = {
   draft: { label: 'Draft', variant: 'secondary' as const, icon: FileText },
@@ -39,16 +40,13 @@ const TYPE_LABELS = {
 export default function TransactionDetailPage() {
   const params = useParams()
   const transactionId = params.id as string
-
-  const { data: transaction, isLoading, isError } = useTransaction(transactionId)
+  const { data: transaction, isLoading, isError, refetch } = useTransaction(transactionId)
   const { data: accountsData } = useAccounts()
   const approve = useApproveTransaction()
   const reject = useRejectTransaction()
   const submit = useSubmitTransaction()
   const post = usePostTransaction()
   const voidTx = useVoidTransaction()
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const [attachments, setAttachments] = useState<{name: string, id: string}[]>([])
   const [rejectReason, setRejectReason] = useState('')
   const [voidReason, setVoidReason] = useState('')
   const [showRejectDialog, setShowRejectDialog] = useState(false)
@@ -57,29 +55,13 @@ export default function TransactionDetailPage() {
   // Create account lookup map for displaying account code/name from account_id
   const accountsMap = useMemo(() => {
     const map = new Map<string, { code: string; name: string }>()
-    if (accountsData) {
-      for (const account of accountsData) {
+    if (accountsData?.accounts) {
+      for (const account of accountsData.accounts) {
         map.set(account.id, { code: account.code, name: account.name })
       }
     }
     return map
   }, [accountsData])
-
-  const handleUploadClick = () => {
-    fileInputRef.current?.click()
-  }
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      const toastId = toast.loading("Uploading attachment...")
-      setTimeout(() => {
-        setAttachments(prev => [...prev, { name: file.name, id: Math.random().toString() }])
-        toast.dismiss(toastId)
-        toast.success("File uploaded successfully")
-      }, 1000)
-    }
-  }
 
   if (isLoading) {
     return (
@@ -106,6 +88,7 @@ export default function TransactionDetailPage() {
   const totalDebit = transaction.entries.reduce((sum, e) => sum + parseFloat(e.debit || '0'), 0)
   const totalCredit = transaction.entries.reduce((sum, e) => sum + parseFloat(e.credit || '0'), 0)
   const isBalanced = Math.abs(totalDebit - totalCredit) < 0.01
+  const isDraft = transaction.status === 'draft'
 
   return (
     <div className="space-y-6">
@@ -218,34 +201,17 @@ export default function TransactionDetailPage() {
             <CardTitle>Attachments</CardTitle>
             <CardDescription>Supporting documents</CardDescription>
           </CardHeader>
-          <CardContent>
-            <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileChange} />
-            <div
-              onClick={handleUploadClick}
-              className="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-center hover:bg-muted/50 transition-colors cursor-pointer"
-            >
-              <FileText className="h-8 w-8 text-muted-foreground mb-2" />
-              <p className="text-sm font-medium">Click to upload</p>
-              <p className="text-xs text-muted-foreground">or drag and drop files here</p>
-            </div>
-            <div className="mt-4 space-y-2">
-              <div className="flex items-center justify-between p-3 border rounded-md">
-                <div className="flex items-center space-x-3">
-                  <FileText className="h-4 w-4 text-blue-500" />
-                  <span className="text-sm font-medium">invoice_inv-2024-001.pdf</span>
-                </div>
-                <Button variant="ghost" size="sm">View</Button>
-              </div>
-              {attachments.map(file => (
-                <div key={file.id} className="flex items-center justify-between p-3 border rounded-md">
-                  <div className="flex items-center space-x-3">
-                    <FileText className="h-4 w-4 text-blue-500" />
-                    <span className="text-sm font-medium">{file.name}</span>
-                  </div>
-                  <Button variant="ghost" size="sm">View</Button>
-                </div>
-              ))}
-            </div>
+          <CardContent className="space-y-4">
+            {isDraft && (
+              <AttachmentUpload
+                transactionId={transactionId}
+                onUploadComplete={() => refetch()}
+              />
+            )}
+            <AttachmentList
+              transactionId={transactionId}
+              allowDelete={isDraft}
+            />
           </CardContent>
         </Card>
 
