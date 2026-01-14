@@ -105,40 +105,6 @@ graph TD
 
 ---
 
-## 5. Zeltra Forensic Suite (Math-Based Integrity)
-
-Fitur "Low Code, High Impact" yang menggunakan statistika murni untuk memberikan audit-grade security.
-
-### A. Beneish M-Score (The Fraud Detector)
-
-> **Digunakan untuk menangkap manipulasi laporan keuangan (e.g. Enron).**
-
-- **Rumus**: Kombinasi 8 rasio finansial (DSRI, GMI, AQI, SGI, DEPI, SGAI, LVGI, TATA).
-- **Logic**: Jika M-Score > -1.78, probabilitas manipulasi tinggi.
-- **Implementasi Zeltra**:
-  - _Real-time Score_: Dihitung setiap kali user generate Balance Sheet.
-  - _Alert_: "⚠️ M-Score Risk: High. Abnormal increase in Receivables vs Sales."
-
-### B. Altman Z-Score (The Bankruptcy Prophet)
-
-> **Prediksi kebangkrutan 2 tahun ke depan dengan akurasi 90%.**
-
-- **Logic**: Mengukur kesehatan finansial berdasarkan Working Capital, Retained Earnings, EBIT, Market Value, dan Sales.
-- **Implementasi Zeltra**:
-  - _Health Widget_: Speedometer di Dashboard.
-  - _Zone_: Safe Zone (> 2.99), Grey Zone (1.81 - 2.99), Distress Zone (< 1.81).
-
-### C. Advanced Benford's Law (2nd Digit Test)
-
-> **Deteksi anomali rounding & human-generated numbers.**
-
-- **Logic**: Penipu sering gagal memalsukan distribusi "Digit Kedua" (bukan digit pertama).
-- **Implementasi Zeltra**:
-  - Scanning otomatis tabel `transactions`.
-  - Deteksi anomali pada angka yang terlalu sering muncul (misal: akhiran 99 atau 00).
-
----
-
 ## 6. Zeltra "Lite" Killer Features (Easy Wins)
 
 Fitur-fitur ini sangat mudah diimplementasikan (Low Effort) tapi terdengar sangat canggih dan mahal (High Perceived Value).
