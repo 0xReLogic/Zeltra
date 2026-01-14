@@ -202,6 +202,7 @@ This plan covers verification and fixes for the remaining Phase 6-7 frontend fea
 
 - **Simulation requires Enterprise tier** - Upgrade org via MCP Postgres before testing
 - **Attachments use local storage** - Backend .env configured with `STORAGE_PROVIDER=local`
+- **⚠️ IMPORTANT: Attachments full upload requires REAL cloud storage (Azure Blob/Cloudflare R2)** - Local storage doesn't support presigned URLs. Frontend is 100% ready, but backend needs Azure/R2 configuration for complete upload flow.
 - **E2E testing via MCP Playwright** - No test files created, direct browser automation for immediate debugging
 - **Token optimization** - Use `grepSearch`/`fileSearch` instead of reading full files
 - **Context recovery** - Read `design.md` and `requirements.md` if context lost between sessions
