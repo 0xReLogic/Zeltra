@@ -188,23 +188,23 @@ Why Zeltra:
 
 ### Cloud SaaS Pricing (Tiered Flat Monthly)
 
-| Tier           | Price     | User Limits     | Target              | Key Features                                                            |
-| -------------- | --------- | --------------- | ------------------- | ----------------------------------------------------------------------- |
-| **Starter**    | $12/month | Up to 50 users  | Small teams (5-50)  | Fiscal Mgmt, 2 Dimensions, Manual Forex, **Sentinel Integrity Core**    |
-| **Growth**     | $25/month | Up to 200 users | Mid-market (50-200) | Unlimited Dimensions/Currency, **Sentinel Intelligence: Auto-Reval**    |
-| **Enterprise** | $45/month | Unlimited users | Large (200+)        | Simulation, Multi-Entity, SSO, **Sentinel Intelligence: Accruals & IC** |
+| Tier           | Price      | User Limits     | Target              | Key Features                                                            |
+| -------------- | ---------- | --------------- | ------------------- | ----------------------------------------------------------------------- |
+| **Starter**    | $12/month  | Up to 50 users  | Small teams (5-50)  | Fiscal Mgmt, 2 Dimensions, Manual Forex, **Sentinel Integrity Core**    |
+| **Growth**     | $25/month  | Up to 200 users | Mid-market (50-200) | Unlimited Dimensions/Currency, **Sentinel Intelligence: Auto-Reval**    |
+| **Enterprise** | **Custom** | Unlimited users | Large (200+)        | Simulation, Multi-Entity, SSO, **Sentinel Intelligence: Accruals & IC** |
 
 **Effective Per-User Cost:**
 
 - Starter: $0.24/user (for 50 users)
 - Growth: $0.125/user (for 200 users)
-- Enterprise: Varies by team size
+- Enterprise: **Contact Sales**
 
 Comparison:
 
 - Starter ($12) vs Xero Established ($65) - 81% cheaper, +dimensions
 - Growth ($25) vs QuickBooks Plus ($90) - 72% cheaper, +multi-currency
-- Enterprise ($45) vs Sage Intacct ($400+/mo) - 89% cheaper, similar features
+- Enterprise (Custom) vs Sage Intacct ($400+/mo) - Much cheaper, similar features
 
 ### Self-Hosted License
 

@@ -990,6 +990,19 @@ NOW we start frontend, because backend is solid.
 
 **Deliverable:** Live production system with billing.
 
+### Accounting Readiness (MVP) - 🟢 CRITICAL ADDITION
+
+> **Moved from Phase 12:** Required for Day 1 Accountant usability.
+
+- [ ] **Bank Reconciliation (Manual MVP):**
+  - [ ] Schema: `external_statements` table implementation.
+  - [ ] UI: Manual CSV statement upload (Bank Format Agnostic).
+  - [ ] UI: Split-screen matching interface (Ledger vs Statement).
+  - [ ] Report: Reconciliation Discrepancy Report (PDF).
+- [ ] **Onboarding Templates (CoA):**
+  - [ ] Pre-seeded templates: "SaaS Startup", "Agency", "Retail".
+  - [ ] Auto-mapping to IFRS/GAAP categories during setup.
+
 ---
 
 ## Phase 9: AI-Enhanced OCR Integration (Months 1-3 Post-Launch)
@@ -1478,17 +1491,15 @@ tests/
 
 > **CORE FOCUS:** Transitioning from "Management-Ready" to "Statutory-Ready" for global enterprises and audit-heavy organizations.
 
-### Bank Reconciliation Excellence (Audit-Ready)
+### Advanced Bank Automation (Audit-Ready)
 
-- [ ] **Automatic Bank Feeds:** Deep integration with Plaid, Yodlee, and direct Banking APIs.
-- [ ] **Bank Reconciliation Statement (PDF):** Formal report documenting book vs. bank balance with reconciliation proof.
+- [ ] **Automatic Bank Feeds:** Deep integration with Plaid, Yodlee, and direct Banking APIs (replaces Manual CSV).
 - [ ] **Aging of Unmatched Items:** Tracking and reporting of outstanding deposits and unpresented checks.
 - [ ] **Reconciliation Approval Workflow:** Segregation of duties for who performs vs. who approves the reconciliation.
 - [ ] **Historical Bank Balance Tracking:** Snapshots of bank balances for year-end audit verification.
 
 ### Statutory Compliance & Onboarding
 
-- [ ] **Standard Template Library:** One-click Chart of Accounts (CoA) templates for IFRS, GAAP, and PSAK (Indonesia).
 - [ ] **Compliance Onboarding Wizard:** "Day 1 Ready" setup process based on organization's tax jurisdiction and reporting standards.
 - [ ] **Indirect Cash Flow Statement:** Fully automated statutory format including adjustments for non-cash items and FX.
 - [ ] **Disclosure Notes Engine:** Automated generation of financial statement disclosure notes.
