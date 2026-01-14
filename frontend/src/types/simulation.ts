@@ -1,49 +1,19 @@
-export interface SimulationRequest {
-  base_period_start: string
-  projection_months: number
-  revenue_growth_rate: string
-  expense_growth_rate: string
-  account_adjustments?: Record<string, string>
-  dimension_filters?: string[]
-}
+/**
+ * Simulation Types
+ * Re-exports from OpenAPI generated types for simulation feature
+ */
 
-export interface MonthlySummary {
-  month: string
-  period_name: string
-  revenue: string
-  expenses: string
-  net_income: string
-}
+import type { components } from './api.generated'
 
-export interface AnnualSummary {
-  total_projected_revenue: string
-  total_projected_expenses: string
-  projected_net_income: string
-  net_profit_margin: string
-}
+// Request/Response types
+export type RunSimulationRequest = components['schemas']['RunSimulationRequest']
+export type SimulationResponse = components['schemas']['SimulationResponse']
 
-export interface AccountProjection {
-  period_name: string
-  period_start: string
-  period_end: string
-  account_id: string
-  account_code: string
-  account_name: string
-  account_type: string
-  baseline_amount: string
-  projected_amount: string
-  change_percent: string
-  revenue: string
-  expenses: string
-  net_income: string
-  month: string
-}
+// Related types
+export type AccountProjectionResponse = components['schemas']['AccountProjectionResponse']
+export type AnnualSummaryResponse = components['schemas']['AnnualSummaryResponse']
+export type MonthlySummaryResponse = components['schemas']['MonthlySummaryResponse']
 
-export interface SimulationResult {
-  simulation_id: string
-  parameters_hash: string
-  cached: boolean
-  projections: AccountProjection[]
-  annual_summary: AnnualSummary
-  monthly_summary: MonthlySummary[]
-}
+// Legacy type aliases for backward compatibility with existing page
+export type SimulationRequest = RunSimulationRequest
+export type SimulationResult = SimulationResponse

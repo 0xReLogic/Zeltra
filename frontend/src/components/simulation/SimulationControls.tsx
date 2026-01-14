@@ -9,10 +9,10 @@ import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Loader2, Play } from 'lucide-react'
 
-import { SimulationRequest } from '@/types/simulation'
+import type { RunSimulationRequest } from '@/types/simulation'
 
 interface SimulationControlsProps {
-  onRun: (params: SimulationRequest) => void
+  onRun: (params: RunSimulationRequest) => void
   isLoading: boolean
 }
 
@@ -21,10 +21,12 @@ export function SimulationControls({ onRun, isLoading }: SimulationControlsProps
   const [revenueGrowth, setRevenueGrowth] = useState('0.10')
   const [expenseGrowth, setExpenseGrowth] = useState('0.05')
   const [baseStart, setBaseStart] = useState('2025-01-01')
+  const [baseEnd, setBaseEnd] = useState('2025-12-31')
 
   const handleRun = () => {
     onRun({
         base_period_start: baseStart,
+        base_period_end: baseEnd,
         projection_months: parseInt(months),
         revenue_growth_rate: revenueGrowth,
         expense_growth_rate: expenseGrowth
@@ -43,6 +45,15 @@ export function SimulationControls({ onRun, isLoading }: SimulationControlsProps
                 type="date" 
                 value={baseStart} 
                 onChange={(e) => setBaseStart(e.target.value)} 
+            />
+        </div>
+
+        <div className="space-y-2">
+            <Label>Base Period End</Label>
+            <Input 
+                type="date" 
+                value={baseEnd} 
+                onChange={(e) => setBaseEnd(e.target.value)} 
             />
         </div>
 

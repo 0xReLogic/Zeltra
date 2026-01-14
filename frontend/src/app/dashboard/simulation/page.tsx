@@ -1,40 +1,25 @@
 
 'use client'
 
-import { useState } from 'react'
-
 import { SimulationControls } from '@/components/simulation/SimulationControls'
 import { SimulationChart } from '@/components/simulation/SimulationChart'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ArrowUpRight, ArrowDownRight, TrendingUp } from 'lucide-react'
-
-import { SimulationRequest, SimulationResult } from '@/types/simulation'
-
-// Simple specific fetcher for this page to keep it self-contained or use existing lib
-const runSimulation = async (params: SimulationRequest): Promise<SimulationResult> => {
-  const res = await fetch('/api/v1/simulation/run', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(params)
-  })
-  if (!res.ok) throw new Error('Simulation failed')
-  return res.json()
-}
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { ArrowUpRight, ArrowDownRight, TrendingUp, AlertCircle } from 'lucide-react'
+import { useRunSimulation } from '@/lib/queries/simulation'
+import type { RunSimulationRequest } from '@/types/simulation'
+import { toast } from 'sonner'
 
 export default function SimulationPage() {
-  const [result, setResult] = useState<SimulationResult | null>(null)
-  const [loading, setLoading] = useState(false)
+  const simulation = useRunSimulation()
 
-  const handleRun = async (params: SimulationRequest) => {
-    setLoading(true)
-    try {
-        const data = await runSimulation(params)
-        setResult(data)
-    } catch (error) {
-        console.error(error)
-    } finally {
-        setLoading(false)
-    }
+  const handleRun = (params: RunSimulationRequest) => {
+    simulation.mutate(params, {
+      onError: (error) => {
+        console.error('Simulation failed:', error)
+        toast.error('Simulation failed. Please check your parameters.')
+      }
+    })
   }
 
   return (
@@ -44,15 +29,25 @@ export default function SimulationPage() {
         <p className="text-muted-foreground">Draft & Forecast Scenarios</p>
       </div>
 
+      {simulation.isError && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>
+            {simulation.error instanceof Error ? simulation.error.message : 'Simulation failed. This feature requires Enterprise tier.'}
+          </AlertDescription>
+        </Alert>
+      )}
+
       <div className="grid grid-cols-12 gap-6">
         {/* Controls */}
         <div className="col-span-12 md:col-span-3">
-          <SimulationControls onRun={handleRun} isLoading={loading} />
+          <SimulationControls onRun={handleRun} isLoading={simulation.isPending} />
         </div>
 
         {/* Main Chart */}
         <div className="col-span-12 md:col-span-9">
-          {result ? (
+          {simulation.data ? (
              <div className="space-y-6">
                 {/* Summary Cards */}
                 <div className="grid grid-cols-3 gap-4">
@@ -62,7 +57,7 @@ export default function SimulationPage() {
                            <ArrowUpRight className="h-4 w-4 text-emerald-500" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">${parseFloat(result.annual_summary.total_projected_revenue).toLocaleString()}</div>
+                            <div className="text-2xl font-bold">${parseFloat(simulation.data.annual_summary.total_projected_revenue).toLocaleString()}</div>
                         </CardContent>
                     </Card>
                     <Card>
@@ -71,7 +66,7 @@ export default function SimulationPage() {
                            <ArrowDownRight className="h-4 w-4 text-rose-500" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">${parseFloat(result.annual_summary.total_projected_expenses).toLocaleString()}</div>
+                            <div className="text-2xl font-bold">${parseFloat(simulation.data.annual_summary.total_projected_expenses).toLocaleString()}</div>
                         </CardContent>
                     </Card>
                      <Card>
@@ -80,12 +75,12 @@ export default function SimulationPage() {
                            <TrendingUp className="h-4 w-4 text-blue-500" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{result.annual_summary.net_profit_margin}%</div>
+                            <div className="text-2xl font-bold">{simulation.data.annual_summary.net_profit_margin}%</div>
                         </CardContent>
                     </Card>
                 </div>
 
-                <SimulationChart data={result.projections} />
+                <SimulationChart data={simulation.data.projections} />
              </div>
           ) : (
             <div className="h-[400px] flex items-center justify-center border rounded-lg bg-muted/10 border-dashed">
