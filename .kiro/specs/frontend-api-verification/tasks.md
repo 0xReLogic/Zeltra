@@ -313,7 +313,7 @@ This plan verifies and fixes frontend API integration with the real backend. Tas
     - `git commit -m "feat(frontend): Account & Budget CRUD mutations"`
     - `git push`
 
-- [ ] 7. Dimension CRUD
+- [x] 7. Dimension CRUD
   - [x] 7.1 Update dimension types
     - Use `grepSearch` to find current dimension types
     - Import and re-export types from `api.generated.ts`:
@@ -365,7 +365,7 @@ This plan verifies and fixes frontend API integration with the real backend. Tas
     - Run `pnpm run lint` in frontend directory
     - Fix ALL errors before proceeding
 
-- [ ] 8. Fiscal Period Management
+- [x] 8. Fiscal Period Management
   - [x] 8.1 Update fiscal types
     - Use `grepSearch` to find current fiscal types
     - Import and re-export types from `api.generated.ts`:
@@ -407,7 +407,7 @@ This plan verifies and fixes frontend API integration with the real backend. Tas
     - Run `pnpm run lint` in frontend directory
     - Fix ALL errors before proceeding
 
-- [ ] 9. Exchange Rate Management
+- [x] 9. Exchange Rate Management
   - [x] 9.1 Update exchange rate types
     - Use `grepSearch` to find current exchange rate types
     - Import and re-export types from `api.generated.ts`:
@@ -449,7 +449,7 @@ This plan verifies and fixes frontend API integration with the real backend. Tas
     - Run `pnpm run lint` in frontend directory
     - Fix ALL errors before proceeding
 
-- [ ] 10. Checkpoint - Master Data CRUD (MANDATORY E2E)
+- [x] 10. Checkpoint - Master Data CRUD (MANDATORY E2E)
   - **IF CONTEXT LOST:** Re-read `.kiro/specs/frontend-api-verification/requirements.md` and `design.md`
   - [x] 10.1 E2E Test with MCP Playwright (MUST PASS BEFORE PUSH)
     - Use MCP Playwright browser tools (NOT creating test files)
@@ -464,7 +464,7 @@ This plan verifies and fixes frontend API integration with the real backend. Tas
       8. Verify exchange rates page loads without errors
     - **IF TEST FAILS:** Identify the error, fix the code, re-test until pass
     - **CANNOT PUSH until E2E passes**
-  - [-] 10.2 Push to GitHub (ONLY after E2E passes)
+  - [x] 10.2 Push to GitHub (ONLY after E2E passes)
     - `git add -A`
     - `git commit -m "feat(frontend): Dimension, Fiscal, Exchange Rate CRUD"`
     - `git push`
