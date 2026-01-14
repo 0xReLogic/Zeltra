@@ -714,11 +714,13 @@ NOW we start frontend, because backend is solid.
     - **Manual Override**: `LedgerEntryInput` kini mendukung field `functional_amount`. FE bisa override nilai kurs manual (misal untuk penyesuaian audit/pajak).
 13. **Sentinel Tier Enforcement (Gembok Emas Backend) 🔒**:
     - Backend kini menerapkan pembatasan fitur secara ketat berdasarkan `subscription_tier`.
-    - Jika user mencoba akses fitur premium (Auto-Accruals, Intercompany Hub, Revaluation) di tier yang kaga mendukung, API akan return **402 Payment Required**.
+    - **User & Transaction Limits**: Endpoint `POST /users` dan `POST /transactions` akan return **402 Payment Required** jika kuota `max_users` atau `max_transactions_per_month` tercapai.
+    - Jika user mencoba akses fitur premium (Auto-Accruals, Intercompany Hub, Revaluation) di tier yang kaga mendukung, API juga return **402**.
     - FE wajib handle error 402 ini dengan menampilkan modal upgrade.
 14. **Exposed Feature Flags & Resource Quotas**:
     - Object `OrganizationResponse` kini punya field baru `limits: TierLimitsResponse`.
-    - Gunakan field ini (`has_auto_accruals`, `has_intercompany_hub`, `max_dimensions`, dll) untuk secara proaktif mengatur UI (hide/disable menu atau tombol) sebelum user klik.
+    - **Update Schema**: Field baru `max_users` (Option<i32>) dan `max_transactions_per_month` (Option<i32>) sudah tersedia. Null = Unlimited.
+    - Gunakan field ini untuk menampilkan **Usage Meter** (e.g. "Users: 3 / 5") dan secara proaktif mengatur UI (hide/disable menu) sebelum user klik.
 15. **Dimension Quotas (Starter Tier Limit)**:
     - Tier **Starter** dibatasi maksimal **2 Dimensi**. Cek field `limits.max_dimensions` untuk validasi sisi client.
 

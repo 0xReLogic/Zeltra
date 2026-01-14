@@ -332,6 +332,18 @@ impl OrganizationRepository {
         Ok(count)
     }
 
+    /// Counts all members in an organization.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the database query fails.
+    pub async fn count_members(&self, org_id: Uuid) -> Result<u64, DbErr> {
+        organization_users::Entity::find()
+            .filter(organization_users::Column::OrganizationId.eq(org_id))
+            .count(&self.db)
+            .await
+    }
+
     /// Updates an organization's settings with full validation.
     ///
     /// Validates:

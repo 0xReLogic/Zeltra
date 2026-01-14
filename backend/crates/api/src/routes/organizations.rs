@@ -26,6 +26,10 @@ use zeltra_shared::auth::{
 pub struct TierLimitsResponse {
     /// Maximum number of dimension types allowed.
     pub max_dimensions: i32,
+    /// Maximum number of users allowed (None = unlimited).
+    pub max_users: Option<i32>,
+    /// Maximum transactions per month allowed (None = unlimited).
+    pub max_transactions_per_month: Option<i32>,
     /// Whether multi-currency features are enabled.
     pub has_multi_currency: bool,
     /// Whether automated accruals are enabled.
@@ -556,6 +560,28 @@ async fn list_users(
     (StatusCode::OK, Json(json!({ "users": users_json }))).into_response()
 }
 
+/// Checks if the organization has reached its max users limit.
+fn check_tier_user_limit(
+    max_users: Option<i32>,
+    current_users: u64,
+) -> Result<(), (StatusCode, Json<serde_json::Value>)> {
+    if let Some(max) = max_users {
+        let max_u64 = u64::try_from(max).unwrap_or(u64::MAX);
+        if current_users >= max_u64 {
+            return Err((
+                StatusCode::PAYMENT_REQUIRED,
+                Json(json!({
+                    "error": "tier_limit_reached",
+                    "message": format!("You have reached the maximum number of users ({}) for your current tier. Please upgrade to add more users.", max),
+                    "limit": max,
+                    "current": current_users
+                })),
+            ));
+        }
+    }
+    Ok(())
+}
+
 /// POST `/organizations/{org_id}/users` - Add user to organization.
 #[utoipa::path(
     post,
@@ -610,6 +636,29 @@ async fn add_user(
                 .into_response();
         }
         Ok(true) => {}
+    }
+
+    // Check tier limits - Max Users
+    // Check tier limits - Max Users
+    if let Ok(Some(limits)) = org_repo.get_tier_limits(org_id).await {
+        let current_users = match org_repo.count_members(org_id).await {
+            Ok(count) => count,
+            Err(e) => {
+                error!(error = %e, "Database error counting members");
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(json!({
+                        "error": "internal_error",
+                        "message": "An error occurred"
+                    })),
+                )
+                    .into_response();
+            }
+        };
+
+        if let Err(e) = check_tier_user_limit(limits.max_users, current_users) {
+            return e.into_response();
+        }
     }
 
     // Find user by email
@@ -746,6 +795,8 @@ fn string_to_role(s: &str) -> Option<UserRole> {
 fn map_tier_limits(m: &zeltra_db::entities::tier_limits::Model) -> TierLimitsResponse {
     TierLimitsResponse {
         max_dimensions: m.max_dimensions,
+        max_users: m.max_users,
+        max_transactions_per_month: m.max_transactions_per_month,
         has_multi_currency: m.has_multi_currency,
         has_auto_accruals: m.has_auto_accruals,
         has_intercompany_hub: m.has_intercompany_hub,
@@ -1074,4 +1125,31 @@ async fn update_member(
         })),
     )
         .into_response()
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_user_limit_enforcement() {
+        // Case 1: No limit
+        assert!(check_tier_user_limit(None, 100).is_ok());
+
+        // Case 2: Limit not reached
+        assert!(check_tier_user_limit(Some(5), 4).is_ok());
+
+        // Case 3: Limit reached (exactly)
+        let result = check_tier_user_limit(Some(5), 5);
+        assert!(result.is_err());
+        let (status, _) = result.unwrap_err();
+        assert_eq!(status, StatusCode::PAYMENT_REQUIRED);
+
+        // Case 4: Limit exceeded
+        let result = check_tier_user_limit(Some(5), 6);
+        assert!(result.is_err());
+        let (status, _) = result.unwrap_err();
+        assert_eq!(status, StatusCode::PAYMENT_REQUIRED);
+    }
 }

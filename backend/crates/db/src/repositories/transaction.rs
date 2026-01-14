@@ -2,12 +2,12 @@
 //!
 //! Implements Requirements 5.8, 5.9, 7.4, 8.1-8.5, 10.2-10.7 for transaction management.
 
-use chrono::{NaiveDate, Utc};
+use chrono::{Datelike, NaiveDate, Utc};
 use rust_decimal::Decimal;
 use sea_orm::sea_query::LockType;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, DatabaseTransaction, DbErr, EntityTrait,
-    QueryFilter, QueryOrder, QuerySelect, Set, TransactionTrait,
+    PaginatorTrait, QueryFilter, QueryOrder, QuerySelect, Set, TransactionTrait,
 };
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;
@@ -193,6 +193,46 @@ impl TransactionRepository {
     /// - No fiscal period exists for the transaction date
     /// - The fiscal period is closed
     /// - Database operation fails
+    /// Counts transactions created in the current month (UTC) for an organization.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the database query fails.
+    pub async fn count_monthly_usage(&self, org_id: Uuid) -> Result<u64, DbErr> {
+        let now = Utc::now();
+        let start_of_month =
+            NaiveDate::from_ymd_opt(now.year(), now.month(), 1).unwrap_or_default()
+                .and_hms_opt(0, 0, 0).unwrap_or_default()
+                .and_local_timezone(Utc).unwrap();
+
+        let next_month = if now.month() == 12 { 1 } else { now.month() + 1 };
+        let next_year = if now.month() == 12 { now.year() + 1 } else { now.year() };
+        let end_of_month =
+            NaiveDate::from_ymd_opt(next_year, next_month, 1).unwrap_or_default()
+                .and_hms_opt(0, 0, 0).unwrap_or_default()
+                .and_local_timezone(Utc).unwrap();
+
+        transactions::Entity::find()
+            .filter(transactions::Column::OrganizationId.eq(org_id))
+            .filter(transactions::Column::CreatedAt.gte(start_of_month))
+            .filter(transactions::Column::CreatedAt.lt(end_of_month))
+            .count(&self.db)
+            .await
+    }
+
+    /// Creates a new transaction with ledger entries.
+    ///
+    /// Validates:
+    /// - At least 2 entries (double-entry)
+    /// - Debits equal credits (balance)
+    /// - Accounts belong to organization
+    /// - Dimensions are valid
+    /// - Fiscal period is open
+    /// - Exchange rates for multi-currency
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if validation fails or database operation fails.
     pub async fn create_transaction(
         &self,
         input: CreateTransactionInput,

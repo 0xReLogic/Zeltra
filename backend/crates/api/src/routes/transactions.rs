@@ -561,6 +561,28 @@ async fn list_transactions(
     }
 }
 
+/// Checks if the organization has reached its monthly transaction limit.
+fn check_monthly_transaction_limit(
+    max_tx: Option<i32>,
+    current_count: u64,
+) -> Result<(), (StatusCode, Json<serde_json::Value>)> {
+    if let Some(max) = max_tx {
+        let max_u64 = u64::try_from(max).unwrap_or(u64::MAX);
+        if current_count >= max_u64 {
+            return Err((
+                StatusCode::PAYMENT_REQUIRED,
+                Json(json!({
+                    "error": "tier_limit_reached",
+                    "message": format!("You have reached the maximum transactions ({}) for this month. Please upgrade your plan.", max),
+                    "limit": max,
+                    "current": current_count
+                })),
+            ));
+        }
+    }
+    Ok(())
+}
+
 /// POST `/organizations/{org_id}/transactions` - Create a new transaction.
 #[utoipa::path(
     post,
@@ -589,6 +611,29 @@ async fn create_transaction(
     // Check membership
     if let Err(response) = check_membership(&org_repo, org_id, auth.user_id()).await {
         return response;
+    }
+
+    // Check tier limits - Max Transactions
+    if let Ok(Some(limits)) = org_repo.get_tier_limits(org_id).await {
+        let txn_repo = TransactionRepository::new((*state.db).clone());
+        let current_tx_count = match txn_repo.count_monthly_usage(org_id).await {
+            Ok(count) => count,
+            Err(e) => {
+                error!(error = %e, "Database error counting transactions");
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(json!({
+                        "error": "internal_error",
+                        "message": "An error occurred"
+                    })),
+                )
+                    .into_response();
+            }
+        };
+
+        if let Err(e) = check_monthly_transaction_limit(limits.max_transactions_per_month, current_tx_count) {
+            return e.into_response();
+        }
     }
 
     // Parse transaction type
@@ -1884,4 +1929,31 @@ async fn fetch_invoice_details(
         original_entry.entry.source_currency.clone(),
         original_entry.entry.account_id,
     ))
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_transaction_limit_enforcement() {
+        // Case 1: No limit
+        assert!(check_monthly_transaction_limit(None, 100).is_ok());
+
+        // Case 2: Limit not reached
+        assert!(check_monthly_transaction_limit(Some(5), 4).is_ok());
+
+        // Case 3: Limit reached (exactly)
+        let result = check_monthly_transaction_limit(Some(5), 5);
+        assert!(result.is_err());
+        let (status, _) = result.unwrap_err();
+        assert_eq!(status, StatusCode::PAYMENT_REQUIRED);
+
+        // Case 4: Limit exceeded
+        let result = check_monthly_transaction_limit(Some(5), 6);
+        assert!(result.is_err());
+        let (status, _) = result.unwrap_err();
+        assert_eq!(status, StatusCode::PAYMENT_REQUIRED);
+    }
 }

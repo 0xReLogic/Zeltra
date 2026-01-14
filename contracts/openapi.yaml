@@ -2786,6 +2786,18 @@ components:
           description: Maximum number of dimension types allowed.
           format: int32
           type: integer
+        max_transactions_per_month:
+          description: Maximum transactions per month allowed (None = unlimited).
+          format: int32
+          type:
+          - integer
+          - 'null'
+        max_users:
+          description: Maximum number of users allowed (None = unlimited).
+          format: int32
+          type:
+          - integer
+          - 'null'
       required:
       - max_dimensions
       - has_multi_currency
