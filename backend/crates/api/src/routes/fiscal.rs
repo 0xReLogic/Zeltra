@@ -157,7 +157,7 @@ async fn list_fiscal_years(
                 })
                 .collect();
 
-            (StatusCode::OK, Json(json!({ "fiscal_years": response }))).into_response()
+            (StatusCode::OK, Json(response)).into_response()
         }
         Err(e) => {
             error!(error = %e, "Failed to list fiscal years");

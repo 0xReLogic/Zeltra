@@ -704,6 +704,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/organizations/{org_id}/forensic/benford": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * GET /organizations/{org_id}/forensic/benford
+         * @description Performs Benford's Law analysis on all ledger entries.
+         */
+        get: operations["get_benford"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/forensic/health-score": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * GET /organizations/{org_id}/forensic/health-score
+         * @description Calculates Altman Z-Score based on Balance Sheet.
+         */
+        get: operations["get_z_score"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/organizations/{org_id}/intercompany/connect": {
         parameters: {
             query?: never;
@@ -1326,6 +1366,40 @@ export interface components {
             /** @description Role to assign. */
             role: string;
         };
+        /** @description Details of the 5 Altman Z-Score factors. */
+        AltmanDetails: {
+            /**
+             * Format: double
+             * @description X1: Working Capital / Total Assets.
+             * @example 0.4
+             */
+            x1_working_capital: number;
+            /**
+             * Format: double
+             * @description X2: Retained Earnings / Total Assets.
+             * @example 0.3
+             */
+            x2_retained_earnings: number;
+            /**
+             * Format: double
+             * @description X3: EBIT / Total Assets.
+             * @example 0.2
+             */
+            x3_ebit: number;
+            /**
+             * Format: double
+             * @description X4: Market Value of Equity / Total Liabilities.
+             *     Note: For private companies, we use Book Value of Equity.
+             * @example 1.5
+             */
+            x4_equity: number;
+            /**
+             * Format: double
+             * @description X5: Sales / Total Assets.
+             * @example 1
+             */
+            x5_sales: number;
+        };
         /** @description Annual summary response. */
         AnnualSummaryResponse: {
             /** @description Net income / Revenue * 100. */
@@ -1475,6 +1549,49 @@ export interface components {
             accounts: components["schemas"]["AccountBalanceResponse"][];
             /** @description Section total. */
             total: string;
+        };
+        /** @description Benford analysis result for a single digit. */
+        BenfordRecord: {
+            /**
+             * Format: double
+             * @description Actual frequency percentage (0.0 - 100.0).
+             * @example 30.1
+             */
+            actual_percentage: number;
+            /**
+             * Format: double
+             * @description Difference between actual and expected.
+             * @example 0
+             */
+            difference: number;
+            /**
+             * Format: int32
+             * @description The leading digit (1-9).
+             * @example 1
+             */
+            digit: number;
+            /**
+             * Format: double
+             * @description Expected frequency percentage according to Benford's Law.
+             * @example 30.1
+             */
+            expected_percentage: number;
+        };
+        /** @description Response for Benford's Law analysis. */
+        BenfordResponse: {
+            /**
+             * Format: double
+             * @description Overall anomaly score (simplified for UI).
+             * @example 0.05
+             */
+            anomaly_score: number;
+            /** @description Analysis results per digit. */
+            distribution: components["schemas"]["BenfordRecord"][];
+            /**
+             * @description Verdict: Safe, Suspicious, Danger.
+             * @example Safe
+             */
+            verdict: string;
         };
         /** @description Input for a single budget line. */
         BudgetLineInput: {
@@ -3303,6 +3420,22 @@ export interface components {
             original_transaction: components["schemas"]["TransactionResponse"];
             /** @description Reversing transaction (posted). */
             reversing_transaction: components["schemas"]["TransactionResponse"];
+        };
+        /** @description Response for Altman Z-Score. */
+        ZScoreResponse: {
+            /** @description Detailed breakdown. */
+            details: components["schemas"]["AltmanDetails"];
+            /**
+             * Format: double
+             * @description The calculated Z-Score.
+             * @example 4.2
+             */
+            score: number;
+            /**
+             * @description The Zone (Safe, Grey, Distress).
+             * @example Safe
+             */
+            zone: string;
         };
     };
     responses: never;
@@ -5404,6 +5537,94 @@ export interface operations {
             };
             /** @description Overlapping fiscal year */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_benford: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Benford analysis result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BenfordResponse"];
+                };
+            };
+            /** @description Payment Required (Enterprise Only) */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Organization not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_z_score: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Z-Score result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ZScoreResponse"];
+                };
+            };
+            /** @description Payment Required (Enterprise Only) */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Organization not found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -30,6 +30,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
 import { useFiscalYears, useUpdatePeriodStatus, useCreateFiscalYear } from '@/lib/queries/fiscal'
 import type { PeriodStatus } from '@/types/fiscal'
 import { toast } from 'sonner'
@@ -55,12 +56,13 @@ export default function FiscalPeriodsPage() {
     const formData = new FormData(e.currentTarget)
     const name = formData.get('name') as string
     const start_date = formData.get('start_date') as string
+    const include_adjustment_period = formData.get('include_adjustment_period') === 'on'
     
     // Auto-calculate end date (Dec 31 of same year)
     const year = new Date(start_date).getFullYear()
     const end_date = `${year}-12-31`
 
-    createYear.mutate({ name, start_date, end_date }, {
+    createYear.mutate({ name, start_date, end_date, include_adjustment_period }, {
       onSuccess: () => {
         toast.success(`Fiscal Year ${name} created`)
         setIsCreateOpen(false)
@@ -106,6 +108,12 @@ export default function FiscalPeriodsPage() {
                             defaultValue="2027-01-01"
                         />
                         <p className="text-[0.8rem] text-muted-foreground">End date will be automatically set to Dec 31st.</p>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <Checkbox id="include_adjustment_period" name="include_adjustment_period" />
+                        <Label htmlFor="include_adjustment_period" className="text-sm font-normal cursor-pointer">
+                            Include adjustment period (Period 13)
+                        </Label>
                     </div>
                     <DialogFooter>
                         <Button type="submit" disabled={createYear.isPending}>

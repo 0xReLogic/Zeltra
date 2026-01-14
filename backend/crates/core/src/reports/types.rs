@@ -75,7 +75,7 @@ pub struct BalanceSheetSubsection {
 }
 
 /// Balance sheet report.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct BalanceSheetReport {
     /// Report type identifier.
     pub report_type: String,

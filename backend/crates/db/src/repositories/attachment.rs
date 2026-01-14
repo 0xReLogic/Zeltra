@@ -32,9 +32,12 @@ impl AttachmentRepository {
     }
 
     /// Get total storage used by an organization in bytes.
-    pub async fn get_total_storage_used(&self, organization_id: Uuid) -> Result<i64, AttachmentError> {
-        use sea_orm::sea_query::Expr;
+    pub async fn get_total_storage_used(
+        &self,
+        organization_id: Uuid,
+    ) -> Result<i64, AttachmentError> {
         use sea_orm::QuerySelect;
+        use sea_orm::sea_query::Expr;
 
         let result: Option<i64> = attachments::Entity::find()
             .filter(attachments::Column::OrganizationId.eq(organization_id))

@@ -160,20 +160,20 @@ This plan covers verification and fixes for the remaining Phase 6-7 frontend fea
 
 - [x] 9. Fiscal Year Creation API Integration
   - **Context:** Read `design.md` and `requirements.md` if context lost. Use `grepSearch`/`fileSearch` to find existing code.
-  - [ ] 9.1 Verify fiscal types match OpenAPI
+  - [x] 9.1 Verify fiscal types match OpenAPI
     - Check `frontend/src/types/fiscal.ts`
     - Verify `CreateFiscalYearRequest` matches OpenAPI schema
     - Add `include_adjustment_period` field if missing
     - _Requirements: 5.4, 5.6_
-  - [ ] 9.2 Update fiscal queries if needed
+  - [x] 9.2 Update fiscal queries if needed
     - Verify `useCreateFiscalYear` mutation uses correct types
     - Add adjustment period support to request
     - _Requirements: 5.1, 5.4_
-  - [ ] 9.3 Update fiscal year creation form
+  - [x] 9.3 Update fiscal year creation form
     - Add checkbox for adjustment period (period 13)
     - Verify form fields match API requirements
     - _Requirements: 5.1, 5.4_
-  - [ ] 9.4 E2E test fiscal year creation (via MCP Playwright)
+  - [x] 9.4 E2E test fiscal year creation (via MCP Playwright)
     - Use MCP Playwright to navigate to fiscal periods page
     - Click "New Fiscal Year" via browser automation
     - Fill form and submit
