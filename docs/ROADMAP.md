@@ -193,25 +193,18 @@ tests/
 
 ---
 
-## Phase 2: Ledger Core + API (Week 5-8)
+## Phase 2a: Ledger Core + API (Week 5-8) - BATTLE TESTED ✅
 
-This is the MOST CRITICAL phase. Take your time. Get it right.
+This is the MOST CRITICAL phase. It ensures the mathematical foundation of Zeltra is bulletproof.
 
-> **RESEARCH REQUIRED (ACCOUNTING - JANGAN HALU!):**
+> **RESEARCH REQUIRED (ACCOUNTING):**
 >
 > - Double-entry basics: `double entry bookkeeping debit credit rules`
 > - Account types: `chart of accounts asset liability equity revenue expense normal balance`
 > - Transaction posting: `journal entry posting general ledger accounting`
 > - Balance calculation: `account balance debit credit calculation`
-> - Multi-currency: `multi currency accounting functional currency translation`
-> - Exchange rate: `foreign exchange rate accounting spot rate`
+> - Multi-currency (Basic): `multi currency accounting functional currency translation`
 > - Rounding: `bankers rounding half even accounting`
-
-> **RESEARCH REQUIRED (RUST):**
->
-> - SeaORM transactions: `SeaORM 1.1 database transaction begin commit rollback`
-> - Decimal arithmetic: `rust_decimal checked_add checked_sub example`
-> - Concurrent access: `Rust PostgreSQL concurrent update optimistic locking`
 
 ### Week 5-6: Basic Ledger Operations
 
@@ -282,42 +275,35 @@ This is the MOST CRITICAL phase. Take your time. Get it right.
 
 #### Transaction API Endpoints (Vertical Slice)
 
-- [x] `POST /transactions` (create draft)
-- [x] `GET /transactions` (list with filters)
-- [x] `GET /transactions/:id` (detail with entries)
-- [x] `PATCH /transactions/:id` (update draft only)
-- [x] `DELETE /transactions/:id` (delete draft only)
+- [x] `POST /organizations/{org_id}/transactions` (create draft)
+- [x] `GET /organizations/{org_id}/transactions` (list with filters)
+- [x] `GET /organizations/{org_id}/transactions/:id` (detail with entries)
+- [x] `PATCH /organizations/{org_id}/transactions/:id` (update draft only)
+- [x] `DELETE /organizations/{org_id}/transactions/:id` (delete draft only)
 
-### Ledger Tests (CRITICAL)
+---
 
-```
-tests/
-├── ledger/
-│   ├── test_create_transaction.rs
-│   ├── test_balance_tracking.rs
-│   ├── test_concurrent_transactions.rs
-│   ├── test_multi_currency.rs
-│   ├── test_rounding.rs
-│   ├── test_dimensions.rs
-│   ├── test_fiscal_period.rs
-│   └── test_balance_never_drifts.rs  # Stress test
-├── api/
-│   ├── test_transactions_api.rs
-│   ├── test_accounts_api.rs
-│   └── test_fiscal_periods_api.rs
-```
+## Phase 2b: Advanced Ledger Core (Mata Dewa 2.0) 🟢 STRATEGIC
 
-**Deliverable:** Ledger engine that NEVER produces incorrect balances. API endpoints working.
+This adds intelligence and automation to the core ledger.
 
-**Exit Criteria:**
+### Automation & Intelligence
 
-- [x] 150+ unit tests passing (229 tests!)
-- [x] Concurrent transaction stress test passing
-- [x] Balance drift test passing (1000+ transactions)
-- [x] Multi-currency conversion accurate to 4 decimal places
-- [x] All fiscal period rules enforced
-- [x] All API endpoints return correct responses
-- [x] Postman/curl testing works
+- [ ] **Real-time Revaluation Engine**: Daily background job to revalue foreign balances (unrealized G/L).
+- [ ] **Automated Accruals Engine**: Schedule-based recognition for prepayments/deferred revenue.
+- [ ] **Intercompany Transactions**: Automated mirrored entries between linked organizations.
+- [ ] **Usage-Based Ledger API**: Real-time posting from telemetry/usage data.
+
+### Compliance & ESG
+
+- [ ] **ESG Reporting Metadata**: Structure support for carbon/social impact tagging in ledger.
+- [ ] **Pillar Two Readiness**: Schema support for global minimum tax per jurisdiction.
+
+### API Endpoints
+
+- [ ] `GET /organizations/{org_id}/revaluation-logs`
+- [ ] `POST /organizations/{org_id}/accrual-schedules`
+- [ ] `POST /organizations/{org_id}/intercompany/connect`
 
 ---
 
@@ -721,17 +707,27 @@ NOW we start frontend, because backend is solid.
     - Field `iso_metadata` (JSON) kini tersedia untuk menyimpan data tambahan standar perbankan.
     - Seluruh transaksi kini dilindungi oleh _Hash Chaining_ di level database untuk menjamin integritas audit.
 11. **OpenAPI Schema Updated**: Jalankan `npm run generate-api` (atau perintah serupa di FE) untuk sinkronisasi tipe data terbaru yang sudah mencakup field-field di atas.
+12. **Mata Dewa 2.0 (Intelligence Add-ons)**:
+    - Akan ada halaman baru untuk `Accrual Schedules`, `Intercompany`, dan `ESG Dashboard`.
+    - Struktur utama transaksi TIDAK BERUBAH. Fitur 2.0 bersifat additive (menambah menu, bukan merusak yang ada).
+    - **Endpoint Baru (Drafting)**:
+      - `GET /organizations/{org_id}/revaluation-logs` (Log selisih kurs otomatis).
+      - `POST /organizations/{org_id}/accrual-schedules` (Jadwal otomatisasi biaya/pendapatan).
+      - `POST /organizations/{org_id}/intercompany/connect` (Hubungkan dengan cabang lain).
+      - `POST /usage-events` (API untuk integrasi data pemakaian/telemetry).
 
 ---
 
-## Phase 7: Frontend Features (Week 18-20) 🟡 IN PROGRESS
+### UI/UX Strategy for Phase 7+ (The "Holy Grail" UX) 🟢 STRATEGIC
 
-> **RESEARCH REQUIRED:**
->
-> - React Hook Form: `React Hook Form Zod validation Next.js 16`
-> - Data tables: `TanStack Table React 19 sorting filtering pagination`
-> - Charts: `Recharts React 19 bar chart line chart example`
-> - Optimistic updates: `TanStack Query v5 optimistic update mutation`
+- **Role-Based Visibility (Hide)**:
+  - User Management (Invite/Edit/Remove) hanya muncul untuk role `Owner`.
+  - Tombol "Void" atau "Delete" permanen disembunyikan untuk role `Viewer` / `Submitter`.
+  - **Tujuan**: Mengurangi kognitif load dan menjaga keamanan operasional.
+- **Tier-Based Visibility (Lock 🔒)**:
+  - Fitur **Mata Dewa 2.0** (Accruals, Revaluation, ESG) ditampilkan di sidebar tapi dengan ikon gembok emas 🔒.
+  - Saat diklik, tampilkan modal "Upgrade to Enterprise/Growth" untuk upsell.
+  - **Tujuan**: Drive revenue secara organik melalui rasa penasaran user.
 
 ### Master Data UI (✅ Real API - Verified via E2E)
 
@@ -1474,20 +1470,21 @@ tests/
 
 ## Timeline Summary (REVISED - Vertical Slice)
 
-| Phase                         | Duration | Focus                                   | End Date     |
-| ----------------------------- | -------- | --------------------------------------- | ------------ |
-| Phase 0: Foundation           | 2 weeks  | Infra + DB + **Seeders**                | Jan 21, 2026 |
-| Phase 1: Auth & Org           | 2 weeks  | **Auth FIRST** + API                    | Feb 4, 2026  |
-| Phase 2: Ledger Core          | 4 weeks  | Double-entry + Multi-currency + **API** | Mar 4, 2026  |
-| Phase 3: Workflow             | 2 weeks  | Transaction lifecycle + **API**         | Mar 18, 2026 |
-| Phase 4: Reports              | 3 weeks  | Financial reports, simulation + **API** | Apr 8, 2026  |
-| Phase 5: Attachments          | 2 weeks  | File storage + API polish               | Apr 22, 2026 |
-| Phase 6: Frontend Foundation  | 2 weeks  | Next.js setup, auth UI                  | May 6, 2026  |
-| Phase 7: Frontend Features    | 3 weeks  | Full UI                                 | May 27, 2026 |
-| Phase 8: Polish & Launch      | 2 weeks  | Testing, deploy                         | Jun 10, 2026 |
-| Phase 9: OCR Integration      | 3 months | Client-side OCR + mobile optimization   | Sep 10, 2026 |
-| Phase 10: Mobile App          | 3 months | React Native app + offline sync         | Dec 10, 2026 |
-| Phase 11: AI/ML Deep Learning | 6 months | TensorFlow.js + predictive analytics    | Jun 10, 2027 |
+| Phase                                     | Duration | Focus                                   | End Date     |
+| ----------------------------------------- | -------- | --------------------------------------- | ------------ |
+| Phase 0: Foundation                       | 2 weeks  | Infra + DB + **Seeders**                | Jan 21, 2026 |
+| Phase 1: Auth & Org                       | 2 weeks  | **Auth FIRST** + API                    | Feb 4, 2026  |
+| Phase 2: Ledger Core                      | 4 weeks  | Double-entry + Multi-currency + **API** | Mar 4, 2026  |
+| Phase 3: Workflow                         | 2 weeks  | Transaction lifecycle + **API**         | Mar 18, 2026 |
+| Phase 4: Reports                          | 3 weeks  | Financial reports, simulation + **API** | Apr 8, 2026  |
+| Phase 5: Attachments                      | 2 weeks  | File storage + API polish               | Apr 22, 2026 |
+| Phase 6: Frontend Foundation              | 2 weeks  | Next.js setup, auth UI                  | May 6, 2026  |
+| Phase 7: Frontend Features                | 3 weeks  | Full UI                                 | May 27, 2026 |
+| Phase 8: Polish & Launch                  | 2 weeks  | Testing, deploy                         | Jun 10, 2026 |
+| Phase 2b: Advanced Ledger (Mata Dewa 2.0) | 4 weeks  | Automation, ESG, Intercompany Hub       | Jul 8, 2026  |
+| Phase 9: OCR Integration                  | 3 months | Client-side OCR + mobile optimization   | Oct 10, 2026 |
+| Phase 10: Mobile App                      | 3 months | React Native app + offline sync         | Jan 10, 2027 |
+| Phase 11: AI/ML Deep Learning             | 6 months | TensorFlow.js + predictive analytics    | Jul 10, 2027 |
 
 **Total: 22 weeks core + 12 months post-launch**
 
