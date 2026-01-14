@@ -12,7 +12,7 @@ use chrono::NaiveDate;
 use rust_decimal::Decimal;
 use sea_orm::{
     ActiveModelTrait, ActiveValue::Set, ColumnTrait, ConnectionTrait, Database, DatabaseConnection,
-    EntityTrait, QueryFilter, TransactionTrait,
+    EntityTrait, QueryFilter,
 };
 use std::env;
 use uuid::Uuid;
@@ -238,6 +238,9 @@ async fn test_audit_immutability() {
         description: Set("Immutability Test".to_string()),
         status: Set(TransactionStatus::Draft),
         created_by: Set(data.user_id),
+        timezone: Set("UTC".to_string()),
+        idempotency_key: Set(None),
+        iso_metadata: Set(None),
         ..Default::default()
     }
     .insert(&db)
@@ -245,7 +248,7 @@ async fn test_audit_immutability() {
     .expect("Failed to create tx");
 
     let entry_id = Uuid::new_v4();
-    let entry = ledger_entries::ActiveModel {
+    let _entry = ledger_entries::ActiveModel {
         id: Set(entry_id),
         transaction_id: Set(tx_id),
         account_id: Set(data.expense_account_id),
@@ -393,7 +396,7 @@ async fn test_concurrent_aggregation_integrity() {
     };
     let data = match setup_test_data(&db).await {
         Ok(d) => d,
-        Err(e) => return,
+        Err(_) => return,
     };
 
     // Spawn 10 concurrent tasks inserting entries
@@ -493,7 +496,7 @@ async fn test_forex_gain_loss_logic_simulation() {
     };
     let data = match setup_test_data(&db).await {
         Ok(d) => d,
-        Err(e) => return,
+        Err(_) => return,
     };
 
     // Scenario:
@@ -592,5 +595,135 @@ async fn test_forex_gain_loss_logic_simulation() {
 
     // Pass implies DB accepted the transaction (balanced).
     
+    cleanup_test_data(&db, &data).await.expect("Cleanup failed");
+}
+
+#[tokio::test]
+async fn test_backdated_balance_reporting() {
+    let db = match Database::connect(&get_database_url()).await {
+        Ok(db) => db,
+        Err(e) => {
+            eprintln!("Skipping test - db not available: {}", e);
+            return;
+        }
+    };
+    let data = match setup_test_data(&db).await {
+        Ok(d) => d,
+        Err(_) => return,
+    };
+
+    let repo = zeltra_db::repositories::account::AccountRepository::new(db.clone());
+
+    // 1. Transaction 1: Today (2026-01-13) - $100
+    let tx1_id = Uuid::new_v4();
+    transactions::ActiveModel {
+        id: Set(tx1_id),
+        organization_id: Set(data.org_id),
+        fiscal_period_id: Set(data.fiscal_period_id),
+        transaction_type: Set(TransactionType::Journal),
+        transaction_date: Set(NaiveDate::from_ymd_opt(2026, 1, 13).unwrap()),
+        description: Set("Today's Tx".to_string()),
+        status: Set(TransactionStatus::Posted),
+        created_by: Set(data.user_id),
+        ..Default::default()
+    }
+    .insert(&db).await.unwrap();
+
+    ledger_entries::Entity::insert_many(vec![
+        ledger_entries::ActiveModel {
+            id: Set(Uuid::new_v4()),
+            transaction_id: Set(tx1_id),
+            account_id: Set(data.expense_account_id),
+            source_currency: Set("USD".to_string()),
+            source_amount: Set(Decimal::new(10000, 2)), // 100.00
+            exchange_rate: Set(Decimal::ONE),
+            functional_currency: Set("USD".to_string()),
+            functional_amount: Set(Decimal::new(10000, 2)),
+            debit: Set(Decimal::new(10000, 2)),
+            credit: Set(Decimal::ZERO),
+            account_version: Set(1),
+            account_previous_balance: Set(Decimal::ZERO),
+            account_current_balance: Set(Decimal::new(10000, 2)),
+            ..Default::default()
+        },
+        ledger_entries::ActiveModel {
+            id: Set(Uuid::new_v4()),
+            transaction_id: Set(tx1_id),
+            account_id: Set(data.asset_account_id),
+            source_currency: Set("USD".to_string()),
+            source_amount: Set(Decimal::new(10000, 2)),
+            exchange_rate: Set(Decimal::ONE),
+            functional_currency: Set("USD".to_string()),
+            functional_amount: Set(Decimal::new(10000, 2)),
+            debit: Set(Decimal::ZERO),
+            credit: Set(Decimal::new(10000, 2)),
+            account_version: Set(1),
+            account_previous_balance: Set(Decimal::ZERO),
+            account_current_balance: Set(Decimal::new(-10000, 2)),
+            ..Default::default()
+        }
+    ])
+    .exec(&db).await.unwrap();
+
+    // 2. Transaction 2: Backdated (Yesterday 2026-01-12) - $50
+    let tx2_id = Uuid::new_v4();
+    transactions::ActiveModel {
+        id: Set(tx2_id),
+        organization_id: Set(data.org_id),
+        fiscal_period_id: Set(data.fiscal_period_id),
+        transaction_type: Set(TransactionType::Journal),
+        transaction_date: Set(NaiveDate::from_ymd_opt(2026, 1, 12).unwrap()),
+        description: Set("Backdated Tx".to_string()),
+        status: Set(TransactionStatus::Posted),
+        created_by: Set(data.user_id),
+        ..Default::default()
+    }
+    .insert(&db).await.unwrap();
+
+    // Simulating backdated entry that gets HIGH VERSION but PAST DATE
+    ledger_entries::Entity::insert_many(vec![
+        ledger_entries::ActiveModel {
+            id: Set(Uuid::new_v4()),
+            transaction_id: Set(tx2_id),
+            account_id: Set(data.expense_account_id),
+            source_currency: Set("USD".to_string()),
+            source_amount: Set(Decimal::new(5000, 2)), // 50.00
+            exchange_rate: Set(Decimal::ONE),
+            functional_currency: Set("USD".to_string()),
+            functional_amount: Set(Decimal::new(5000, 2)),
+            debit: Set(Decimal::new(5000, 2)),
+            credit: Set(Decimal::ZERO),
+            account_version: Set(2),
+            account_previous_balance: Set(Decimal::new(10000, 2)),
+            account_current_balance: Set(Decimal::new(15000, 2)), // 150.00
+            ..Default::default()
+        },
+        ledger_entries::ActiveModel {
+            id: Set(Uuid::new_v4()),
+            transaction_id: Set(tx2_id),
+            account_id: Set(data.asset_account_id),
+            source_currency: Set("USD".to_string()),
+            source_amount: Set(Decimal::new(5000, 2)),
+            exchange_rate: Set(Decimal::ONE),
+            functional_currency: Set("USD".to_string()),
+            functional_amount: Set(Decimal::new(5000, 2)),
+            debit: Set(Decimal::ZERO),
+            credit: Set(Decimal::new(5000, 2)),
+            account_version: Set(2),
+            account_previous_balance: Set(Decimal::new(-10000, 2)),
+            account_current_balance: Set(Decimal::new(-15000, 2)),
+            ..Default::default()
+        }
+    ])
+    .exec(&db).await.unwrap();
+
+    // 3. Verify Balance as of "Yesterday" (2026-01-12)
+    let balance_yesterday = repo.get_balance_at_date(data.expense_account_id, NaiveDate::from_ymd_opt(2026, 1, 12).unwrap()).await.unwrap();
+    
+    println!("Balance Yesterday (Found: {}, Expected: 50.00)", balance_yesterday);
+    
+    // Proving the flaw:
+    assert_eq!(balance_yesterday, Decimal::new(5000, 2), "Mata Dewa Result: Point-in-Time reporting is WRONG. It found {} instead of 50.00", balance_yesterday);
+
     cleanup_test_data(&db, &data).await.expect("Cleanup failed");
 }

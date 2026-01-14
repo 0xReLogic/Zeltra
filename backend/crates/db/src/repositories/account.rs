@@ -458,16 +458,60 @@ impl AccountRepository {
 
     /// Gets the current balance for an account.
     ///
-    /// Returns the `account_current_balance` from the most recent ledger entry,
-    /// or zero if no entries exist.
+    /// Returns the sum of all debits minus credits for the account.
     async fn get_account_balance(&self, account_id: Uuid) -> Result<Decimal, AccountError> {
-        let latest_entry = ledger_entries::Entity::find()
+        self.calculate_sum_balance(account_id, None).await
+    }
+
+    async fn calculate_sum_balance(
+        &self,
+        account_id: Uuid,
+        as_of: Option<NaiveDate>,
+    ) -> Result<Decimal, AccountError> {
+
+        // 1. Get account type to determine normal balance
+        let account = chart_of_accounts::Entity::find_by_id(account_id)
+            .one(&self.db)
+            .await?
+            .ok_or(AccountError::AccountNotFound(account_id))?;
+
+        // 2. Build Query
+        let mut query = ledger_entries::Entity::find()
             .filter(ledger_entries::Column::AccountId.eq(account_id))
-            .order_by_desc(ledger_entries::Column::AccountVersion)
+            .join(
+                JoinType::InnerJoin,
+                ledger_entries::Relation::Transactions.def(),
+            )
+            .filter(transactions::Column::Status.eq(TransactionStatus::Posted));
+
+        if let Some(date) = as_of {
+            query = query.filter(transactions::Column::TransactionDate.lte(date));
+        }
+
+        // 3. Aggregate
+        let totals = query
+            .select_only()
+            .column_as(ledger_entries::Column::Debit.sum(), "total_debit")
+            .column_as(ledger_entries::Column::Credit.sum(), "total_credit")
+            .into_tuple::<(Option<Decimal>, Option<Decimal>)>()
             .one(&self.db)
             .await?;
 
-        Ok(latest_entry.map_or(Decimal::ZERO, |e| e.account_current_balance))
+        let (debit, credit) = totals.unwrap_or((None, None));
+        let total_debit = debit.unwrap_or(Decimal::ZERO);
+        let total_credit = credit.unwrap_or(Decimal::ZERO);
+
+        // 4. Calculate based on normal balance rules
+        // Asset/Expense = Debit - Credit
+        // Liability/Equity/Revenue = Credit - Debit
+        if matches!(
+            account.account_type,
+            AccountType::Asset | AccountType::Expense
+        ) {
+            Ok(total_debit - total_credit)
+        } else {
+            Ok(total_credit - total_debit)
+        }
     }
 
     /// Counts ledger entries for an account.
@@ -482,8 +526,7 @@ impl AccountRepository {
 
     /// Gets the balance for an account at a specific date.
     ///
-    /// Returns the `account_current_balance` from the most recent ledger entry
-    /// on or before the given date, or zero if no entries exist before that date.
+    /// Returns the sum of all debits minus credits for the account on or before the given date.
     ///
     /// # Arguments
     /// * `account_id` - The account ID
@@ -497,21 +540,7 @@ impl AccountRepository {
         account_id: Uuid,
         as_of: NaiveDate,
     ) -> Result<Decimal, AccountError> {
-        // Join with transactions to filter by transaction_date
-        let latest_entry = ledger_entries::Entity::find()
-            .filter(ledger_entries::Column::AccountId.eq(account_id))
-            .join(
-                JoinType::InnerJoin,
-                ledger_entries::Relation::Transactions.def(),
-            )
-            .filter(transactions::Column::TransactionDate.lte(as_of))
-            .filter(transactions::Column::Status.eq(TransactionStatus::Posted))
-            .order_by_desc(transactions::Column::TransactionDate)
-            .order_by_desc(ledger_entries::Column::AccountVersion)
-            .one(&self.db)
-            .await?;
-
-        Ok(latest_entry.map_or(Decimal::ZERO, |e| e.account_current_balance))
+        self.calculate_sum_balance(account_id, Some(as_of)).await
     }
 
     /// Gets ledger entries for an account with pagination.
@@ -555,6 +584,8 @@ impl AccountRepository {
             account_version: i64,
             account_previous_balance: Decimal,
             account_current_balance: Decimal,
+            entry_hash: Option<String>,
+            previous_entry_hash: Option<String>,
             memo: Option<String>,
             event_at: chrono::DateTime<chrono::FixedOffset>,
             created_at: chrono::DateTime<chrono::FixedOffset>,
@@ -634,6 +665,8 @@ impl AccountRepository {
                     account_version: row.account_version,
                     account_previous_balance: row.account_previous_balance,
                     account_current_balance: row.account_current_balance,
+                    entry_hash: row.entry_hash,
+                    previous_entry_hash: row.previous_entry_hash,
                     memo: row.memo,
                     event_at: row.event_at,
                     created_at: row.created_at,

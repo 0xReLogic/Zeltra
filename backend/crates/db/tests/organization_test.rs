@@ -911,6 +911,9 @@ async fn test_data_preservation_on_user_removal() {
             reference_number: Some("EXP-001".to_string()),
             memo: None,
             created_by: member_id, // Created by member
+            timezone: "UTC".to_string(),
+            idempotency_key: None,
+            iso_metadata: None,
             entries: vec![
                 CreateLedgerEntryInput {
                     account_id: expense_account.id,

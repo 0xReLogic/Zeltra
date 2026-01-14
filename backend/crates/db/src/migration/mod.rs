@@ -10,6 +10,7 @@ mod m20260108_000003_force_rls;
 mod m20260108_000004_email_verification;
 mod m20260113_000001_fix_constraints;
 mod m20260113_000002_audit_trigger;
+mod m20260113_000003_advanced_foundation;
 
 /// Migrator for running database migrations.
 pub struct Migrator;
@@ -24,6 +25,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20260108_000004_email_verification::Migration),
             Box::new(m20260113_000001_fix_constraints::Migration),
             Box::new(m20260113_000002_audit_trigger::Migration),
+            Box::new(m20260113_000003_advanced_foundation::Migration),
         ]
     }
 }

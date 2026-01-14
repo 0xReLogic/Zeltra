@@ -163,7 +163,9 @@ async fn pay_invoice(
         memo: None,
         entries,
         created_by: auth.user_id(),
-        timezone: "UTC".to_string(), // Default
+        timezone: payload.timezone.clone(),
+        idempotency_key: payload.idempotency_key,
+        iso_metadata: payload.iso_metadata.clone(),
     };
 
     match tx_repo.create_transaction(input).await {
@@ -210,6 +212,8 @@ async fn pay_invoice(
                 total_debit: total_debit.to_string(),
                 total_credit: total_credit.to_string(),
                 timezone: result.transaction.timezone,
+                idempotency_key: result.transaction.idempotency_key,
+                iso_metadata: result.transaction.iso_metadata.clone(),
             };
 
             (StatusCode::CREATED, Json(response)).into_response()
@@ -271,6 +275,10 @@ pub struct CreateTransactionRequest {
     /// Timezone for the transaction (e.g., "UTC", "Asia/Jakarta").
     #[schema(example = "UTC")]
     pub timezone: String,
+    /// Optional idempotency key for preventing duplicate transactions.
+    pub idempotency_key: Option<Uuid>,
+    /// Optional ISO 20022 metadata.
+    pub iso_metadata: Option<serde_json::Value>,
 }
 
 /// Request body for a single ledger entry.
@@ -324,6 +332,13 @@ pub struct PayInvoiceRequest {
     pub gain_loss_account_id: Uuid,
     /// Optional description.
     pub description: Option<String>,
+    /// Timezone for the transaction.
+    #[schema(example = "UTC")]
+    pub timezone: String,
+    /// Optional idempotency key.
+    pub idempotency_key: Option<Uuid>,
+    /// Optional ISO 20022 metadata.
+    pub iso_metadata: Option<serde_json::Value>,
 }
 
 /// Response for a transaction.
@@ -361,6 +376,10 @@ pub struct TransactionResponse {
     /// Timezone for the transaction.
     #[schema(example = "UTC")]
     pub timezone: String,
+    /// Optional idempotency key.
+    pub idempotency_key: Option<Uuid>,
+    /// Optional ISO 20022 metadata.
+    pub iso_metadata: Option<serde_json::Value>,
 }
 
 /// Response for a ledger entry.
@@ -765,6 +784,8 @@ async fn create_transaction(
         entries,
         created_by: auth.user_id(),
         timezone: payload.timezone,
+        idempotency_key: payload.idempotency_key,
+        iso_metadata: payload.iso_metadata,
     };
 
     match tx_repo.create_transaction(input).await {
@@ -809,6 +830,8 @@ async fn create_transaction(
                 total_debit: total_debit.to_string(),
                 total_credit: total_credit.to_string(),
                 timezone: result.transaction.timezone,
+                idempotency_key: result.transaction.idempotency_key,
+                iso_metadata: result.transaction.iso_metadata.clone(),
             };
 
             (StatusCode::CREATED, Json(response)).into_response()
@@ -923,6 +946,8 @@ async fn get_transaction(
                 total_debit: total_debit.to_string(),
                 total_credit: total_credit.to_string(),
                 timezone: result.transaction.timezone,
+                idempotency_key: result.transaction.idempotency_key,
+                iso_metadata: result.transaction.iso_metadata.clone(),
             };
 
             (StatusCode::OK, Json(response)).into_response()

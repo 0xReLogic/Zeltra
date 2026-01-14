@@ -137,7 +137,12 @@ mod tests {
             let status = TransactionStatus::Posted;
 
             // Void (posted → voided)
-            let void_result = WorkflowService::void(status, user_id, void_reason.clone());
+            let void_result = WorkflowService::void(
+                status,
+                zeltra_core::ledger::types::TransactionType::Journal,
+                user_id,
+                void_reason.clone(),
+            );
             prop_assert!(void_result.is_ok(), "Void should succeed from posted");
             let action = void_result.unwrap();
             prop_assert_eq!(action.new_status(), TransactionStatus::Voided);
@@ -423,7 +428,12 @@ mod tests {
             prop_assert!(post_result.is_err(), "Post should fail for posted");
 
             // Void should succeed
-            let void_result = WorkflowService::void(status, user_id, "reason".to_string());
+            let void_result = WorkflowService::void(
+                status,
+                zeltra_core::ledger::types::TransactionType::Journal,
+                user_id,
+                "reason".to_string(),
+            );
             prop_assert!(void_result.is_ok(), "Void should succeed for posted");
         }
 
@@ -451,7 +461,12 @@ mod tests {
             let post_result = WorkflowService::post(status, user_id);
             prop_assert!(post_result.is_err(), "Post should fail for voided");
 
-            let void_result = WorkflowService::void(status, user_id, "reason".to_string());
+            let void_result = WorkflowService::void(
+                status,
+                zeltra_core::ledger::types::TransactionType::Journal,
+                user_id,
+                "reason".to_string(),
+            );
             prop_assert!(void_result.is_err(), "Void should fail for voided");
         }
 
@@ -503,14 +518,24 @@ mod tests {
     #[test]
     fn test_empty_void_reason_fails() {
         let user_id = Uuid::new_v4();
-        let result = WorkflowService::void(TransactionStatus::Posted, user_id, String::new());
+        let result = WorkflowService::void(
+            TransactionStatus::Posted,
+            zeltra_core::ledger::types::TransactionType::Journal,
+            user_id,
+            String::new(),
+        );
         assert!(matches!(result, Err(WorkflowError::VoidReasonRequired)));
     }
 
     #[test]
     fn test_whitespace_void_reason_fails() {
         let user_id = Uuid::new_v4();
-        let result = WorkflowService::void(TransactionStatus::Posted, user_id, "   ".to_string());
+        let result = WorkflowService::void(
+            TransactionStatus::Posted,
+            zeltra_core::ledger::types::TransactionType::Journal,
+            user_id,
+            "   ".to_string(),
+        );
         assert!(matches!(result, Err(WorkflowError::VoidReasonRequired)));
     }
 
@@ -531,9 +556,13 @@ mod tests {
         assert_eq!(post.new_status(), TransactionStatus::Posted);
 
         // Posted → Voided
-        let void =
-            WorkflowService::void(TransactionStatus::Posted, user_id, "Test void".to_string())
-                .unwrap();
+        let void = WorkflowService::void(
+            TransactionStatus::Posted,
+            zeltra_core::ledger::types::TransactionType::Journal,
+            user_id,
+            "Test void".to_string(),
+        )
+        .unwrap();
         assert_eq!(void.new_status(), TransactionStatus::Voided);
     }
 

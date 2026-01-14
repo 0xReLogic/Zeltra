@@ -9,6 +9,7 @@ use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, DatabaseTransaction, DbErr, EntityTrait,
     QueryFilter, QueryOrder, QuerySelect, Set, TransactionTrait,
 };
+use sha2::{Digest, Sha256};
 use std::collections::HashMap;
 use uuid::Uuid;
 
@@ -103,6 +104,10 @@ pub struct CreateTransactionInput {
     pub created_by: Uuid,
     /// Timezone of the transaction date.
     pub timezone: String,
+    /// Idempotency key to prevent duplicate processing.
+    pub idempotency_key: Option<Uuid>,
+    /// ISO 20022 compliant metadata.
+    pub iso_metadata: Option<serde_json::Value>,
 }
 
 /// Input for a single ledger entry.
@@ -190,6 +195,19 @@ impl TransactionRepository {
         &self,
         input: CreateTransactionInput,
     ) -> Result<TransactionWithEntries, TransactionError> {
+        // Idempotency Check (Requirement 2026.1)
+        if let Some(key) = input.idempotency_key {
+            let existing = transactions::Entity::find()
+                .filter(transactions::Column::OrganizationId.eq(input.organization_id))
+                .filter(transactions::Column::IdempotencyKey.eq(key))
+                .one(&self.db)
+                .await?;
+
+            if let Some(tx) = existing {
+                return self.get_transaction(input.organization_id, tx.id).await;
+            }
+        }
+
         // Find fiscal period for the transaction date (Requirement 5.9)
         let fiscal_period = self
             .find_fiscal_period(input.organization_id, input.transaction_date)
@@ -257,6 +275,8 @@ impl TransactionRepository {
             status: Set(TransactionStatus::Draft), // Requirement 5.8
             created_by: Set(input.created_by),
             timezone: Set(input.timezone.clone()),
+            idempotency_key: Set(input.idempotency_key),
+            iso_metadata: Set(input.iso_metadata.clone()),
             created_at: Set(now),
             updated_at: Set(now),
             ..Default::default()
@@ -330,9 +350,9 @@ impl TransactionRepository {
         let now = Utc::now().into();
         let mut result = Vec::with_capacity(entries.len());
 
-        // Track balance changes per account within this transaction
-        // Key: account_id, Value: (latest_version, latest_balance)
-        let mut account_balances: std::collections::HashMap<Uuid, (i64, Decimal)> =
+        // Track balance changes and latest hashes per account within this transaction
+        // Key: account_id, Value: (latest_version, latest_balance, latest_hash)
+        let mut account_states: std::collections::HashMap<Uuid, (i64, Decimal, Option<String>)> =
             std::collections::HashMap::with_capacity(accounts.len());
 
         for (i, entry_input) in entries.iter().enumerate() {
@@ -361,27 +381,40 @@ impl TransactionRepository {
             let balance_change =
                 calculate_balance_change(&account.account_type, current_debit, current_credit);
 
-            // Get or fetch the current balance for this account
-            let (account_version, previous_balance) =
-                if let Some(&(ver, bal)) = account_balances.get(&entry_input.account_id) {
-                    // We already have an entry for this account in this transaction
-                    (ver + 1, bal)
+            // Get or fetch the current balance and LATEST HASH for this account
+            let (account_version, previous_balance, previous_hash) =
+                if let Some(&(ver, bal, ref hash)) = account_states.get(&entry_input.account_id) {
+                    (ver + 1, bal, hash.clone())
                 } else {
-                    // Fetch the latest balance from the database (Requirement 8.1, 8.2)
                     let latest = self
-                        .get_latest_account_balance(txn, entry_input.account_id)
+                        .get_latest_account_state(txn, entry_input.account_id)
                         .await?;
-                    (latest.0 + 1, latest.1)
+                    (latest.0 + 1, latest.1, latest.2)
                 };
 
-            // Calculate current balance (Requirement 8.3)
+            // Calculate current balance
             let current_balance = previous_balance + balance_change;
 
+            // --- Mata Dewa Logic: Hash Generation (Requirement 2026.2) ---
+            let mut hasher = Sha256::new();
+            hasher.update(entry_id.as_bytes());
+            hasher.update(transaction_id.as_bytes());
+            hasher.update(entry_input.account_id.as_bytes());
+            hasher.update(format!("{:.4}", current_debit));
+            hasher.update(format!("{:.4}", current_credit));
+            if let Some(ref prev) = previous_hash {
+                hasher.update(prev.as_bytes());
+            }
+            let entry_hash = hex::encode(hasher.finalize());
+
             // Update our tracking map
-            account_balances.insert(entry_input.account_id, (account_version, current_balance));
+            account_states.insert(
+                entry_input.account_id,
+                (account_version, current_balance, Some(entry_hash.clone())),
+            );
 
             // --- Issue 3: Budget Tracking Dimension Mismatch (Validation) ---
-            // Find if any budget lines exist for this account and period that require dimensions
+            // ... (keeping budget check)
             let budget_lines = budget_lines::Entity::find()
                 .filter(budget_lines::Column::AccountId.eq(entry_input.account_id))
                 .filter(budget_lines::Column::FiscalPeriodId.eq(fiscal_period_id))
@@ -398,7 +431,6 @@ impl TransactionRepository {
                     .collect();
 
                 if !required_dims.is_empty() {
-                    // Check if entry dimensions match
                     if zeltra_core::budget::service::BudgetService::check_dimension_compliance(
                         &entry_input.dimensions,
                         &required_dims,
@@ -412,9 +444,8 @@ impl TransactionRepository {
                     }
                 }
             }
-            // --- End Issue 3 ---
 
-            // Insert ledger entry with balance tracking
+            // Insert ledger entry with balance tracking and HASH
             let entry = ledger_entries::ActiveModel {
                 id: Set(entry_id),
                 transaction_id: Set(transaction_id),
@@ -429,24 +460,23 @@ impl TransactionRepository {
                 memo: Set(entry_input.memo.clone()),
                 event_at: Set(now),
                 created_at: Set(now),
-                // Balance tracking fields (Requirements 8.1-8.3)
                 account_version: Set(account_version),
                 account_previous_balance: Set(previous_balance),
                 account_current_balance: Set(current_balance),
+                entry_hash: Set(Some(entry_hash.clone())),
+                previous_entry_hash: Set(previous_hash.clone()),
             };
 
             entry_models.push(entry);
 
-            // Collect dimension models for batch insertion (Requirement 7.4)
+            // Collect dimension models
             for dimension_value_id in &entry_input.dimensions {
-                // --- Issue: Dimension is_active Check ---
-                let dim_val =
-                    dim_values
-                        .get(dimension_value_id)
-                        .ok_or(TransactionError::Database(DbErr::RecordNotFound(format!(
-                            "Dimension value {}",
-                            dimension_value_id
-                        ))))?;
+                let dim_val = dim_values.get(dimension_value_id).ok_or(
+                    TransactionError::Database(DbErr::RecordNotFound(format!(
+                        "Dimension value {}",
+                        dimension_value_id
+                    ))),
+                )?;
 
                 if !dim_val.is_active {
                     return Err(TransactionError::DisabledDimension(*dimension_value_id));
@@ -460,10 +490,6 @@ impl TransactionRepository {
                 });
             }
 
-            // Capture results for return
-            // We need to store these because we'll batch insert later
-            // Since we use ActiveModel::insert_many, we won't get the returning models here
-            // but for financial integrity, we probably want to return what we actually sent
             result.push(LedgerEntryWithDimensions {
                 entry: ledger_entries::Model {
                     id: entry_id,
@@ -479,6 +505,8 @@ impl TransactionRepository {
                     account_version,
                     account_previous_balance: previous_balance,
                     account_current_balance: current_balance,
+                    entry_hash: Some(entry_hash),
+                    previous_entry_hash: previous_hash,
                     memo: entry_input.memo.clone(),
                     event_at: now,
                     created_at: now,
@@ -504,14 +532,14 @@ impl TransactionRepository {
         Ok(result)
     }
 
-    /// Gets the latest account balance (version and balance).
+    /// Gets the latest account state (version, balance, and hash).
     ///
-    /// Returns (0, 0) if no entries exist for the account.
-    pub async fn get_latest_account_balance<C>(
+    /// Returns (0, 0, None) if no entries exist for the account.
+    pub async fn get_latest_account_state<C>(
         &self,
         conn: &C,
         account_id: Uuid,
-    ) -> Result<(i64, Decimal), TransactionError>
+    ) -> Result<(i64, Decimal, Option<String>), TransactionError>
     where
         C: sea_orm::ConnectionTrait,
     {
@@ -524,8 +552,12 @@ impl TransactionRepository {
             .await?;
 
         match latest_entry {
-            Some(entry) => Ok((entry.account_version, entry.account_current_balance)),
-            None => Ok((0, Decimal::ZERO)),
+            Some(entry) => Ok((
+                entry.account_version,
+                entry.account_current_balance,
+                entry.entry_hash,
+            )),
+            None => Ok((0, Decimal::ZERO, None)),
         }
     }
 
@@ -569,6 +601,64 @@ impl TransactionRepository {
             .await?;
 
         Ok(transactions)
+    }
+
+    /// Verifies the integrity of the entire ledger for an organization.
+    ///
+    /// Recalculates all hashes and checks the cryptographic chain linkage.
+    /// Returns a list of corrupted entry IDs if any are found.
+    ///
+    /// Requirements: Mata Dewa Ultra - Security Hardening
+    pub async fn verify_ledger_integrity(
+        &self,
+        organization_id: Uuid,
+    ) -> Result<Vec<Uuid>, TransactionError> {
+        let accounts = chart_of_accounts::Entity::find()
+            .filter(chart_of_accounts::Column::OrganizationId.eq(organization_id))
+            .all(&self.db)
+            .await?;
+
+        let mut corrupted_entries = Vec::new();
+
+        for account in accounts {
+            let entries = ledger_entries::Entity::find()
+                .filter(ledger_entries::Column::AccountId.eq(account.id))
+                .order_by_asc(ledger_entries::Column::AccountVersion)
+                .all(&self.db)
+                .await?;
+
+            let mut expected_previous_hash: Option<String> = None;
+
+            for entry in entries {
+                // 1. Verify previous hash linkage
+                if entry.previous_entry_hash != expected_previous_hash {
+                    corrupted_entries.push(entry.id);
+                    expected_previous_hash = entry.entry_hash.clone();
+                    continue;
+                }
+
+                // 2. Recalculate hash
+                let mut hasher = Sha256::new();
+                hasher.update(entry.id.as_bytes());
+                hasher.update(entry.transaction_id.as_bytes());
+                hasher.update(entry.account_id.as_bytes());
+                hasher.update(format!("{:.4}", entry.debit));
+                hasher.update(format!("{:.4}", entry.credit));
+                if let Some(ref prev) = entry.previous_entry_hash {
+                    hasher.update(prev.as_bytes());
+                }
+                let calculated_hash = hex::encode(hasher.finalize());
+
+                // 3. Compare with stored hash
+                if entry.entry_hash.as_deref() != Some(&calculated_hash) {
+                    corrupted_entries.push(entry.id);
+                }
+
+                expected_previous_hash = entry.entry_hash.clone();
+            }
+        }
+
+        Ok(corrupted_entries)
     }
 
     /// Gets a transaction by ID with all entries and dimensions.

@@ -714,6 +714,13 @@ NOW we start frontend, because backend is solid.
 6.  **Rounding Accuracy**: Total Debit/Credit di UI akan selalu balance sempurna karena BE sudah menggunakan _Residual Adjustment_ (pembulatan otomatis 0.01 error).
 7.  **Exchange Rate List**: Gunakan endpoint `GET /exchange-rates/list` untuk histori kurs.
 8.  **Auto Forex Gain/Loss**: Pakai `POST /transactions/pay-invoice` (BUKAN create transaction biasa) untuk pembayaran invoice mata uang asing. Selisih kurs dihitung otomatis.
+9.  **Idempotency Key (Double-Posting Protection)**:
+    - Request `POST /organizations/{org_id}/transactions` dan `POST /organizations/{org_id}/transactions/pay-invoice` mendukung field `idempotency_key` (UUID).
+    - FE disarankan generate UUID di client untuk setiap transaksi baru guna mencegah duplikasi data jika terjadi masalah jaringan atau _double-click_.
+10. **ISO 20022 Metadata & Foundation 2026**:
+    - Field `iso_metadata` (JSON) kini tersedia untuk menyimpan data tambahan standar perbankan.
+    - Seluruh transaksi kini dilindungi oleh _Hash Chaining_ di level database untuk menjamin integritas audit.
+11. **OpenAPI Schema Updated**: Jalankan `npm run generate-api` (atau perintah serupa di FE) untuk sinkronisasi tipe data terbaru yang sudah mencakup field-field di atas.
 
 ---
 

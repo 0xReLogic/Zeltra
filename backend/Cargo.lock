@@ -5900,6 +5900,7 @@ dependencies = [
  "chrono",
  "chrono-tz",
  "futures",
+ "hex",
  "moka",
  "proptest",
  "rand 0.9.2",

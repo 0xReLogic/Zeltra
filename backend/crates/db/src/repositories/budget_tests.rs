@@ -53,6 +53,8 @@ fn mock_entry(debit: Decimal, credit: Decimal) -> ledger_entries::Model {
         account_version: 1,
         account_previous_balance: dec!(0),
         account_current_balance: debit - credit,
+        entry_hash: None,
+        previous_entry_hash: None,
     }
 }
 

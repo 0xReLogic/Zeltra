@@ -48,6 +48,8 @@ async fn test_unique_account_version_constraint() {
         status: Set(TransactionStatus::Draft),
         created_by: Set(user_id),
         timezone: Set("UTC".to_string()),
+        idempotency_key: Set(None),
+        iso_metadata: Set(None),
         ..Default::default()
     };
 
@@ -65,6 +67,8 @@ async fn test_unique_account_version_constraint() {
         account_version: Set(777222),
         account_previous_balance: Set(dec!(0)),
         account_current_balance: Set(dec!(100)),
+        entry_hash: Set(None),
+        previous_entry_hash: Set(None),
         ..Default::default()
     };
 
@@ -82,6 +86,8 @@ async fn test_unique_account_version_constraint() {
         account_version: Set(777222), // Same version!
         account_previous_balance: Set(dec!(100)),
         account_current_balance: Set(dec!(200)),
+        entry_hash: Set(None),
+        previous_entry_hash: Set(None),
         ..Default::default()
     };
 
@@ -177,6 +183,8 @@ async fn test_residual_adjustment_insertion() {
         ],
         created_by: user_id,
         timezone: "UTC".to_string(),
+        idempotency_key: None,
+        iso_metadata: None,
     };
 
     // Total functional debit: 33.33 + 33.33 = 66.66

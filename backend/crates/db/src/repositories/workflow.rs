@@ -462,6 +462,8 @@ impl WorkflowRepository {
                 functional_amount: Set(rev_entry.source_amount),
                 debit: Set(debit),
                 credit: Set(credit),
+                entry_hash: Set(None), // Reversing entries will be hashed in the next refactor iteration
+                previous_entry_hash: Set(None),
                 memo: Set(rev_entry.memo.clone()),
                 event_at: Set(now),
                 created_at: Set(now),

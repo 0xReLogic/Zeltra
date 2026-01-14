@@ -111,6 +111,8 @@ async fn test_budget_dimension_validation() {
         ],
         created_by: user_id,
         timezone: "UTC".to_string(),
+        idempotency_key: None,
+        iso_metadata: None,
     };
 
     let res = repo.create_transaction(input).await;
@@ -162,6 +164,8 @@ async fn test_budget_dimension_validation() {
         ],
         created_by: user_id,
         timezone: "UTC".to_string(),
+        idempotency_key: None,
+        iso_metadata: None,
     };
 
     let res_ok = repo.create_transaction(input_with_dim).await;
@@ -194,8 +198,8 @@ async fn test_sequential_account_versions() {
     let dimension_value_id = Uuid::parse_str("1823eb97-e83c-4997-bd42-5f65a1212d7c").unwrap();
 
     // 1. Get current version
-    let (v_initial, _) = repo
-        .get_latest_account_balance::<DatabaseConnection>(&db, account_id)
+    let (v_initial, _, _) = repo
+        .get_latest_account_state::<DatabaseConnection>(&db, account_id)
         .await
         .unwrap();
 
@@ -235,6 +239,8 @@ async fn test_sequential_account_versions() {
         ],
         created_by: user_id,
         timezone: "UTC".to_string(),
+        idempotency_key: None,
+        iso_metadata: None,
     };
     let res1 = repo.create_transaction(input1).await.unwrap();
     let entry1 = res1
@@ -269,6 +275,8 @@ async fn test_sequential_account_versions() {
         ],
         created_by: user_id,
         timezone: "UTC".to_string(),
+        idempotency_key: None,
+        iso_metadata: None,
     };
     let _ = repo.create_transaction(input_fail).await;
 
@@ -308,6 +316,8 @@ async fn test_sequential_account_versions() {
         ],
         created_by: user_id,
         timezone: "UTC".to_string(),
+        idempotency_key: None,
+        iso_metadata: None,
     };
     let res2 = repo.create_transaction(input2).await.unwrap();
     let entry2 = res2

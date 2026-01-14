@@ -1230,6 +1230,14 @@ components:
           items:
             $ref: '#/components/schemas/CreateEntryRequest'
           type: array
+        idempotency_key:
+          description: Optional idempotency key for preventing duplicate transactions.
+          format: uuid
+          type:
+          - string
+          - 'null'
+        iso_metadata:
+          description: Optional ISO 20022 metadata.
         memo:
           description: Optional memo.
           type:
@@ -2178,10 +2186,18 @@ components:
           description: Account ID for Realized Gain/Loss.
           format: uuid
           type: string
+        idempotency_key:
+          description: Optional idempotency key.
+          format: uuid
+          type:
+          - string
+          - 'null'
         invoice_id:
           description: ID of the invoice (transaction) being paid.
           format: uuid
           type: string
+        iso_metadata:
+          description: Optional ISO 20022 metadata.
         payment_account_id:
           description: Account ID to pay from (e.g., Bank).
           format: uuid
@@ -2190,6 +2206,10 @@ components:
           description: Payment date.
           format: date
           type: string
+        timezone:
+          description: Timezone for the transaction.
+          example: UTC
+          type: string
       required:
       - invoice_id
       - payment_account_id
@@ -2197,6 +2217,7 @@ components:
       - exchange_rate
       - payment_date
       - gain_loss_account_id
+      - timezone
       type: object
     PendingApprovalsResponse:
       description: Pending approvals response.
@@ -2561,6 +2582,14 @@ components:
           description: Transaction ID.
           format: uuid
           type: string
+        idempotency_key:
+          description: Optional idempotency key.
+          format: uuid
+          type:
+          - string
+          - 'null'
+        iso_metadata:
+          description: Optional ISO 20022 metadata.
         memo:
           description: Memo.
           type:

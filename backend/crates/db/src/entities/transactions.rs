@@ -40,6 +40,8 @@ pub struct Model {
     pub reverses_transaction_id: Option<Uuid>,
     pub created_at: DateTimeWithTimeZone,
     pub updated_at: DateTimeWithTimeZone,
+    pub idempotency_key: Option<Uuid>,
+    pub iso_metadata: Option<Json>,
     pub timezone: String,
 }
 
@@ -69,6 +71,8 @@ pub enum Column {
     ReversesTransactionId,
     CreatedAt,
     UpdatedAt,
+    IdempotencyKey,
+    IsoMetadata,
     Timezone,
 }
 
@@ -133,6 +137,8 @@ impl ColumnTrait for Column {
             Self::ReversesTransactionId => ColumnType::Uuid.def().null(),
             Self::CreatedAt => ColumnType::TimestampWithTimeZone.def(),
             Self::UpdatedAt => ColumnType::TimestampWithTimeZone.def(),
+            Self::IdempotencyKey => ColumnType::Uuid.def().null().unique(),
+            Self::IsoMetadata => ColumnType::JsonBinary.def().null(),
             Self::Timezone => ColumnType::String(StringLen::N(50u32)).def(),
         }
     }
