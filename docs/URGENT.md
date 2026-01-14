@@ -46,6 +46,6 @@
 
 ## 🔧 ACTION ITEMS (Before Launch)
 
-1. [ ] Add `has_simulation` tier check in `simulation.rs` line ~260
-2. [ ] Add `max_budgets` limit check in `budgets.rs` create_budget()
-3. [ ] Add `attachment_storage_gb` quota check in `attachments.rs` request_upload()
+1. [x] Add `has_simulation` tier check in `simulation.rs` ✅ DONE
+2. [x] Add `max_budgets` limit check in `budgets.rs` ✅ DONE
+3. [x] Add `attachment_storage_gb` quota check in `attachments.rs` ✅ DONE

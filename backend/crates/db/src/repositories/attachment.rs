@@ -30,6 +30,23 @@ impl AttachmentRepository {
     pub fn new(db: DatabaseConnection) -> Self {
         Self { db }
     }
+
+    /// Get total storage used by an organization in bytes.
+    pub async fn get_total_storage_used(&self, organization_id: Uuid) -> Result<i64, AttachmentError> {
+        use sea_orm::sea_query::Expr;
+        use sea_orm::QuerySelect;
+
+        let result: Option<i64> = attachments::Entity::find()
+            .filter(attachments::Column::OrganizationId.eq(organization_id))
+            .select_only()
+            .column_as(Expr::col(attachments::Column::FileSize).sum(), "total")
+            .into_tuple()
+            .one(&self.db)
+            .await
+            .map_err(|e| AttachmentError::repository(e.to_string()))?;
+
+        Ok(result.unwrap_or(0))
+    }
 }
 
 impl AttachmentRepoTrait for AttachmentRepository {

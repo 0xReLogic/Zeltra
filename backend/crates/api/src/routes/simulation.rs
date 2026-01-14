@@ -171,6 +171,55 @@ async fn check_membership(
     }
 }
 
+/// Checks if organization tier has access to a feature.
+async fn check_tier_feature(
+    org_repo: &OrganizationRepository,
+    org_id: Uuid,
+    feature: &str,
+) -> Result<(), axum::response::Response> {
+    match org_repo.get_tier_limits(org_id).await {
+        Ok(Some(limits)) => {
+            let has_access = match feature {
+                "has_simulation" => limits.has_simulation,
+                _ => false,
+            };
+
+            if has_access {
+                Ok(())
+            } else {
+                Err((
+                    StatusCode::PAYMENT_REQUIRED,
+                    Json(json!({
+                        "error": "tier_limit_reached",
+                        "message": format!("Your current tier does not include the '{}' feature. Please upgrade to unlock.", feature.replace("has_", "").replace('_', " ")),
+                        "feature": feature
+                    })),
+                )
+                    .into_response())
+            }
+        }
+        Ok(None) => Err((
+            StatusCode::PAYMENT_REQUIRED,
+            Json(json!({
+                "error": "tier_limit_reached",
+                "message": "Organization tier limits not found"
+            })),
+        )
+            .into_response()),
+        Err(e) => {
+            error!(error = %e, "Failed to get tier limits");
+            Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": "internal_error",
+                    "message": "An error occurred"
+                })),
+            )
+                .into_response())
+        }
+    }
+}
+
 /// Formats a Decimal as a string with 4 decimal places.
 fn format_money(amount: Decimal) -> String {
     format!("{amount:.4}")
@@ -259,6 +308,11 @@ async fn run_simulation(
 
     // Check membership
     if let Err(response) = check_membership(&org_repo, org_id, auth_user.user_id()).await {
+        return response;
+    }
+
+    // Check tier feature - simulation is Enterprise only
+    if let Err(response) = check_tier_feature(&org_repo, org_id, "has_simulation").await {
         return response;
     }
 

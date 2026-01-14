@@ -249,7 +249,30 @@ async fn request_upload(
             .into_response();
     };
 
+    // Check storage quota
     let attachment_repo = AttachmentRepository::new((*state.db).clone());
+    if let Ok(Some(limits)) = org_repo.get_tier_limits(org_id).await {
+        // Get current storage used (sum of file_size from attachments)
+        if let Ok(current_storage_bytes) = attachment_repo.get_total_storage_used(org_id).await {
+            let storage_limit_bytes = i64::from(limits.attachment_storage_gb) * 1024 * 1024 * 1024;
+            let new_total = current_storage_bytes + payload.file_size as i64;
+            
+            if new_total > storage_limit_bytes {
+                let used_gb = current_storage_bytes as f64 / (1024.0 * 1024.0 * 1024.0);
+                return (
+                    StatusCode::PAYMENT_REQUIRED,
+                    Json(json!({
+                        "error": "storage_quota_exceeded",
+                        "message": format!("Storage quota exceeded. Your tier allows {} GB, currently using {:.2} GB. Please upgrade or delete files.", limits.attachment_storage_gb, used_gb),
+                        "limit_gb": limits.attachment_storage_gb,
+                        "used_gb": used_gb
+                    })),
+                )
+                    .into_response();
+            }
+        }
+    }
+
     let service = AttachmentService::new(storage.clone(), std::sync::Arc::new(attachment_repo));
 
     let input = RequestUploadInput {
