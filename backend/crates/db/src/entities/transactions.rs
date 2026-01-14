@@ -40,9 +40,9 @@ pub struct Model {
     pub reverses_transaction_id: Option<Uuid>,
     pub created_at: DateTimeWithTimeZone,
     pub updated_at: DateTimeWithTimeZone,
+    pub timezone: String,
     pub idempotency_key: Option<Uuid>,
     pub iso_metadata: Option<Json>,
-    pub timezone: String,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveColumn)]
@@ -71,9 +71,9 @@ pub enum Column {
     ReversesTransactionId,
     CreatedAt,
     UpdatedAt,
+    Timezone,
     IdempotencyKey,
     IsoMetadata,
-    Timezone,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DerivePrimaryKey)]
@@ -90,10 +90,12 @@ impl PrimaryKeyTrait for PrimaryKey {
 
 #[derive(Copy, Clone, Debug, EnumIter)]
 pub enum Relation {
+    AccrualSchedules,
     Attachments,
     FiscalPeriods,
     LedgerEntries,
     Organizations,
+    RevaluationLogs,
     SelfRef2,
     SelfRef1,
     Users5,
@@ -137,9 +139,9 @@ impl ColumnTrait for Column {
             Self::ReversesTransactionId => ColumnType::Uuid.def().null(),
             Self::CreatedAt => ColumnType::TimestampWithTimeZone.def(),
             Self::UpdatedAt => ColumnType::TimestampWithTimeZone.def(),
+            Self::Timezone => ColumnType::String(StringLen::N(50u32)).def(),
             Self::IdempotencyKey => ColumnType::Uuid.def().null().unique(),
             Self::IsoMetadata => ColumnType::JsonBinary.def().null(),
-            Self::Timezone => ColumnType::String(StringLen::N(50u32)).def(),
         }
     }
 }
@@ -147,6 +149,7 @@ impl ColumnTrait for Column {
 impl RelationTrait for Relation {
     fn def(&self) -> RelationDef {
         match self {
+            Self::AccrualSchedules => Entity::has_many(super::accrual_schedules::Entity).into(),
             Self::Attachments => Entity::has_many(super::attachments::Entity).into(),
             Self::FiscalPeriods => Entity::belongs_to(super::fiscal_periods::Entity)
                 .from(Column::FiscalPeriodId)
@@ -157,6 +160,7 @@ impl RelationTrait for Relation {
                 .from(Column::OrganizationId)
                 .to(super::organizations::Column::Id)
                 .into(),
+            Self::RevaluationLogs => Entity::has_many(super::revaluation_logs::Entity).into(),
             Self::SelfRef2 => Entity::belongs_to(Entity)
                 .from(Column::ReversedByTransactionId)
                 .to(Column::Id)
@@ -189,6 +193,12 @@ impl RelationTrait for Relation {
     }
 }
 
+impl Related<super::accrual_schedules::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::AccrualSchedules.def()
+    }
+}
+
 impl Related<super::attachments::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::Attachments.def()
@@ -210,6 +220,12 @@ impl Related<super::ledger_entries::Entity> for Entity {
 impl Related<super::organizations::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::Organizations.def()
+    }
+}
+
+impl Related<super::revaluation_logs::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::RevaluationLogs.def()
     }
 }
 

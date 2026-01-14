@@ -27,11 +27,12 @@ pub struct Model {
     pub account_version: i64,
     pub account_previous_balance: Decimal,
     pub account_current_balance: Decimal,
-    pub entry_hash: Option<String>,
-    pub previous_entry_hash: Option<String>,
     pub memo: Option<String>,
     pub event_at: DateTimeWithTimeZone,
     pub created_at: DateTimeWithTimeZone,
+    pub entry_hash: Option<String>,
+    pub previous_entry_hash: Option<String>,
+    pub compliance_metadata: Option<Json>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveColumn)]
@@ -49,11 +50,12 @@ pub enum Column {
     AccountVersion,
     AccountPreviousBalance,
     AccountCurrentBalance,
-    EntryHash,
-    PreviousEntryHash,
     Memo,
     EventAt,
     CreatedAt,
+    EntryHash,
+    PreviousEntryHash,
+    ComplianceMetadata,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DerivePrimaryKey)]
@@ -94,11 +96,12 @@ impl ColumnTrait for Column {
             Self::AccountVersion => ColumnType::BigInteger.def(),
             Self::AccountPreviousBalance => ColumnType::Decimal(Some((19u32, 4u32))).def(),
             Self::AccountCurrentBalance => ColumnType::Decimal(Some((19u32, 4u32))).def(),
-            Self::EntryHash => ColumnType::String(StringLen::N(64u32)).def().null(),
-            Self::PreviousEntryHash => ColumnType::String(StringLen::N(64u32)).def().null(),
             Self::Memo => ColumnType::String(StringLen::N(500u32)).def().null(),
             Self::EventAt => ColumnType::TimestampWithTimeZone.def(),
             Self::CreatedAt => ColumnType::TimestampWithTimeZone.def(),
+            Self::EntryHash => ColumnType::String(StringLen::N(64u32)).def().null(),
+            Self::PreviousEntryHash => ColumnType::String(StringLen::N(64u32)).def().null(),
+            Self::ComplianceMetadata => ColumnType::JsonBinary.def().null(),
         }
     }
 }

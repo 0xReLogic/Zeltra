@@ -10,10 +10,12 @@ publish = false
 zeltra-shared = { path = "../shared" }
 
 rust_decimal = { workspace = true }
+rust_decimal_macros = { workspace = true }
 chrono = { workspace = true }
 thiserror = { workspace = true }
 serde = { workspace = true }
 uuid = { workspace = true }
+utoipa = { workspace = true }
 
 # Auth (minimal deps for password hashing)
 argon2 = { workspace = true }
@@ -43,7 +45,6 @@ tracing = { workspace = true }
 # NO database deps, NO web deps - pure business logic
 
 [dev-dependencies]
-rust_decimal_macros = { workspace = true }
 proptest = { workspace = true }
 rstest = { workspace = true }
 

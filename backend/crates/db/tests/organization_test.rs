@@ -926,6 +926,7 @@ async fn test_data_preservation_on_user_removal() {
                     credit: dec!(0),
                     memo: None,
                     dimensions: vec![],
+                    compliance_metadata: None,
                 },
                 CreateLedgerEntryInput {
                     account_id: cash_account.id,
@@ -938,6 +939,7 @@ async fn test_data_preservation_on_user_removal() {
                     credit: dec!(100.00),
                     memo: None,
                     dimensions: vec![],
+                    compliance_metadata: None,
                 },
             ],
         })

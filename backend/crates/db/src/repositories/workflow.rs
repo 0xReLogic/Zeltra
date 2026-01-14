@@ -470,6 +470,7 @@ impl WorkflowRepository {
                 account_version: Set(prev_version + 1),
                 account_previous_balance: Set(prev_balance),
                 account_current_balance: Set(current_balance),
+                compliance_metadata: Set(None),
             };
 
             entry
@@ -821,6 +822,9 @@ fn db_tx_type_to_core(tx_type: &TransactionType) -> CoreTransactionType {
         TransactionType::Adjustment => CoreTransactionType::Adjustment,
         TransactionType::OpeningBalance => CoreTransactionType::OpeningBalance,
         TransactionType::Reversal => CoreTransactionType::Reversal,
+        TransactionType::Accrual => CoreTransactionType::Accrual,
+        TransactionType::Revaluation => CoreTransactionType::Revaluation,
+        TransactionType::Intercompany => CoreTransactionType::Intercompany,
     }
 }
 
@@ -836,5 +840,8 @@ fn db_tx_type_to_string(tx_type: &TransactionType) -> String {
         TransactionType::Adjustment => "adjustment".to_string(),
         TransactionType::OpeningBalance => "opening_balance".to_string(),
         TransactionType::Reversal => "reversal".to_string(),
+        TransactionType::Accrual => "accrual".to_string(),
+        TransactionType::Revaluation => "revaluation".to_string(),
+        TransactionType::Intercompany => "intercompany".to_string(),
     }
 }

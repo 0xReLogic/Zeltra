@@ -127,7 +127,12 @@ proptest! {
         // Skip empty strings after trim
         prop_assume!(!reason.trim().is_empty());
 
-        let result = WorkflowService::void(TransactionStatus::Posted, user_id, reason.clone());
+        let result = WorkflowService::void(
+            TransactionStatus::Posted,
+            crate::ledger::types::TransactionType::Journal,
+            user_id,
+            reason.clone(),
+        );
         prop_assert!(result.is_ok());
         let action = result.unwrap();
         prop_assert_eq!(action.new_status(), TransactionStatus::Voided);
@@ -230,7 +235,12 @@ proptest! {
         prop_assume!(status != TransactionStatus::Posted);
         prop_assume!(!reason.trim().is_empty());
 
-        let result = WorkflowService::void(status, user_id, reason);
+        let result = WorkflowService::void(
+            status,
+            crate::ledger::types::TransactionType::Journal,
+            user_id,
+            reason,
+        );
         match result {
             Err(WorkflowError::InvalidTransition { from, to }) => {
                 prop_assert_eq!(from, status);
@@ -301,21 +311,36 @@ mod edge_case_tests {
     #[test]
     fn test_void_empty_reason_fails() {
         let user_id = Uuid::new_v4();
-        let result = WorkflowService::void(TransactionStatus::Posted, user_id, String::new());
+        let result = WorkflowService::void(
+            TransactionStatus::Posted,
+            crate::ledger::types::TransactionType::Journal,
+            user_id,
+            String::new(),
+        );
         assert!(matches!(result, Err(WorkflowError::VoidReasonRequired)));
     }
 
     #[test]
     fn test_void_whitespace_only_reason_fails() {
         let user_id = Uuid::new_v4();
-        let result = WorkflowService::void(TransactionStatus::Posted, user_id, "   ".to_string());
+        let result = WorkflowService::void(
+            TransactionStatus::Posted,
+            crate::ledger::types::TransactionType::Journal,
+            user_id,
+            "   ".to_string(),
+        );
         assert!(matches!(result, Err(WorkflowError::VoidReasonRequired)));
     }
 
     #[test]
     fn test_void_newline_only_reason_fails() {
         let user_id = Uuid::new_v4();
-        let result = WorkflowService::void(TransactionStatus::Posted, user_id, "\n\n".to_string());
+        let result = WorkflowService::void(
+            TransactionStatus::Posted,
+            crate::ledger::types::TransactionType::Journal,
+            user_id,
+            "\n\n".to_string(),
+        );
         assert!(matches!(result, Err(WorkflowError::VoidReasonRequired)));
     }
 

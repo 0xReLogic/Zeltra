@@ -17,6 +17,7 @@ use sea_orm::{
 use std::env;
 use uuid::Uuid;
 
+use zeltra_core::currency::calculate_forex_variance;
 use zeltra_db::entities::{
     chart_of_accounts, fiscal_periods, fiscal_years, ledger_entries, organization_users,
     organizations,
@@ -26,7 +27,6 @@ use zeltra_db::entities::{
     },
     transactions, users,
 };
-use zeltra_core::currency::calculate_forex_variance;
 
 fn get_database_url() -> String {
     env::var("DATABASE_URL").unwrap_or_else(|_| {
@@ -284,8 +284,10 @@ async fn test_audit_immutability() {
     if let Err(e) = update_result {
         let err_str = e.to_string().to_lowercase();
         assert!(
-            err_str.contains("ledger entries are immutable") || err_str.contains("cannot update ledger"),
-            "Error unexpected: {}", e
+            err_str.contains("ledger entries are immutable")
+                || err_str.contains("cannot update ledger"),
+            "Error unexpected: {}",
+            e
         );
     }
 
@@ -354,28 +356,31 @@ async fn test_audit_truncate_protection() {
             debit: Set(Decimal::ZERO),
             credit: Set(Decimal::new(100, 2)),
             ..Default::default()
-        }
+        },
     ])
     .exec(&db)
     .await
     .expect("Failed to insert balanced entries");
 
     // 2. Attempt TRUNCATE (Should FAIL if protected, but likely PASS currently)
-    let truncate_result = db.execute(sea_orm::Statement::from_string(
-        sea_orm::DatabaseBackend::Postgres,
-        "TRUNCATE TABLE ledger_entries".to_string(),
-    ))
-    .await;
+    let truncate_result = db
+        .execute(sea_orm::Statement::from_string(
+            sea_orm::DatabaseBackend::Postgres,
+            "TRUNCATE TABLE ledger_entries".to_string(),
+        ))
+        .await;
 
     // Report vulnerability if successful
     if truncate_result.is_ok() {
-         eprintln!("CRITICAL VULNERABILITY: TRUNCATE TABLE ledger_entries succeeded! Audit trail bypassed.");
+        eprintln!(
+            "CRITICAL VULNERABILITY: TRUNCATE TABLE ledger_entries succeeded! Audit trail bypassed."
+        );
     }
 
     match truncate_result {
         Ok(_) => {
-             // We intentionally fail the test if TRUNCATE succeeds to vividly demonstrate the flaw.
-             panic!("VULNERABILITY CONFIRMED: TRUNCATE TABLE bypassed the audit trigger.");
+            // We intentionally fail the test if TRUNCATE succeeds to vividly demonstrate the flaw.
+            panic!("VULNERABILITY CONFIRMED: TRUNCATE TABLE bypassed the audit trigger.");
         }
         Err(e) => {
             println!("Protected: TRUNCATE failed as expected. Reason: {}", e);
@@ -423,7 +428,8 @@ async fn test_concurrent_aggregation_integrity() {
                 ..Default::default()
             }
             .insert(&db)
-            .await.unwrap();
+            .await
+            .unwrap();
 
             // Insert BALANCED entries
             ledger_entries::Entity::insert_many(vec![
@@ -452,7 +458,7 @@ async fn test_concurrent_aggregation_integrity() {
                     debit: Set(Decimal::ZERO),
                     credit: Set(Decimal::new(100, 2)),
                     ..Default::default()
-                }
+                },
             ])
             .exec(&db)
             .await
@@ -467,7 +473,7 @@ async fn test_concurrent_aggregation_integrity() {
 
     // Verify Sum
     // We expect 10 entries of 1.00 = 10.00
-    
+
     use sea_orm::{EntityTrait, QuerySelect};
     let sum_debit: Option<Decimal> = ledger_entries::Entity::find()
         .filter(ledger_entries::Column::AccountId.eq(data.expense_account_id))
@@ -505,8 +511,8 @@ async fn test_forex_gain_loss_logic_simulation() {
     // Result: Paid 120 USD for a 110 USD liability. Loss of 10 USD.
 
     let invoice_amount_eur = Decimal::new(10000, 2); // 100.00
-    let original_rate = Decimal::new(11000, 4);      // 1.1000
-    let payment_rate = Decimal::new(12000, 4);       // 1.2000
+    let original_rate = Decimal::new(11000, 4); // 1.1000
+    let payment_rate = Decimal::new(12000, 4); // 1.2000
 
     // 1. Verify Variance Calculation (Unit Test-ish)
     let variance = calculate_forex_variance(invoice_amount_eur, original_rate, payment_rate);
@@ -518,7 +524,7 @@ async fn test_forex_gain_loss_logic_simulation() {
     // We manually construct balanced entries as the handler would.
     let bank_functional = invoice_amount_eur * payment_rate; // 100 * 1.2 = 120
     let clearing_functional = invoice_amount_eur * original_rate; // 100 * 1.1 = 110
-    
+
     // Variance is +10 (Loss)
     // Entries:
     // 1. Credit Bank (Payment): 120
@@ -587,14 +593,14 @@ async fn test_forex_gain_loss_logic_simulation() {
             credit: Set(Decimal::ZERO),
             memo: Set(Some("Realized Loss".to_string())),
             ..Default::default()
-        }
+        },
     ])
     .exec(&db)
     .await
     .expect("Failed to insert balanced batch");
 
     // Pass implies DB accepted the transaction (balanced).
-    
+
     cleanup_test_data(&db, &data).await.expect("Cleanup failed");
 }
 
@@ -627,7 +633,9 @@ async fn test_backdated_balance_reporting() {
         created_by: Set(data.user_id),
         ..Default::default()
     }
-    .insert(&db).await.unwrap();
+    .insert(&db)
+    .await
+    .unwrap();
 
     ledger_entries::Entity::insert_many(vec![
         ledger_entries::ActiveModel {
@@ -661,9 +669,11 @@ async fn test_backdated_balance_reporting() {
             account_previous_balance: Set(Decimal::ZERO),
             account_current_balance: Set(Decimal::new(-10000, 2)),
             ..Default::default()
-        }
+        },
     ])
-    .exec(&db).await.unwrap();
+    .exec(&db)
+    .await
+    .unwrap();
 
     // 2. Transaction 2: Backdated (Yesterday 2026-01-12) - $50
     let tx2_id = Uuid::new_v4();
@@ -678,7 +688,9 @@ async fn test_backdated_balance_reporting() {
         created_by: Set(data.user_id),
         ..Default::default()
     }
-    .insert(&db).await.unwrap();
+    .insert(&db)
+    .await
+    .unwrap();
 
     // Simulating backdated entry that gets HIGH VERSION but PAST DATE
     ledger_entries::Entity::insert_many(vec![
@@ -713,17 +725,33 @@ async fn test_backdated_balance_reporting() {
             account_previous_balance: Set(Decimal::new(-10000, 2)),
             account_current_balance: Set(Decimal::new(-15000, 2)),
             ..Default::default()
-        }
+        },
     ])
-    .exec(&db).await.unwrap();
+    .exec(&db)
+    .await
+    .unwrap();
 
     // 3. Verify Balance as of "Yesterday" (2026-01-12)
-    let balance_yesterday = repo.get_balance_at_date(data.expense_account_id, NaiveDate::from_ymd_opt(2026, 1, 12).unwrap()).await.unwrap();
-    
-    println!("Balance Yesterday (Found: {}, Expected: 50.00)", balance_yesterday);
-    
+    let balance_yesterday = repo
+        .get_balance_at_date(
+            data.expense_account_id,
+            NaiveDate::from_ymd_opt(2026, 1, 12).unwrap(),
+        )
+        .await
+        .unwrap();
+
+    println!(
+        "Balance Yesterday (Found: {}, Expected: 50.00)",
+        balance_yesterday
+    );
+
     // Proving the flaw:
-    assert_eq!(balance_yesterday, Decimal::new(5000, 2), "Mata Dewa Result: Point-in-Time reporting is WRONG. It found {} instead of 50.00", balance_yesterday);
+    assert_eq!(
+        balance_yesterday,
+        Decimal::new(5000, 2),
+        "Mata Dewa Result: Point-in-Time reporting is WRONG. It found {} instead of 50.00",
+        balance_yesterday
+    );
 
     cleanup_test_data(&db, &data).await.expect("Cleanup failed");
 }

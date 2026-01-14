@@ -95,6 +95,7 @@ async fn test_budget_dimension_validation() {
                 credit: dec!(0),
                 memo: None,
                 dimensions: vec![], // Missing required dimension!
+                compliance_metadata: None,
             },
             CreateLedgerEntryInput {
                 account_id: bank_account_id,
@@ -107,6 +108,7 @@ async fn test_budget_dimension_validation() {
                 credit: dec!(100),
                 memo: None,
                 dimensions: vec![],
+                compliance_metadata: None,
             },
         ],
         created_by: user_id,
@@ -148,6 +150,7 @@ async fn test_budget_dimension_validation() {
                 credit: dec!(0),
                 memo: None,
                 dimensions: vec![dimension_value_id], // Dimension provided!
+                compliance_metadata: None,
             },
             CreateLedgerEntryInput {
                 account_id: bank_account_id,
@@ -160,6 +163,7 @@ async fn test_budget_dimension_validation() {
                 credit: dec!(200),
                 memo: None,
                 dimensions: vec![],
+                compliance_metadata: None,
             },
         ],
         created_by: user_id,
@@ -223,6 +227,7 @@ async fn test_sequential_account_versions() {
                 credit: dec!(0),
                 memo: None,
                 dimensions: vec![],
+                compliance_metadata: None,
             },
             CreateLedgerEntryInput {
                 account_id: other_account_id,
@@ -234,6 +239,7 @@ async fn test_sequential_account_versions() {
                 debit: dec!(0),
                 credit: dec!(10),
                 memo: None,
+                compliance_metadata: None,
                 dimensions: vec![dimension_value_id], // Added to satisfy budget constraint
             },
         ],
@@ -270,6 +276,7 @@ async fn test_sequential_account_versions() {
                 credit: dec!(0),
                 memo: None,
                 dimensions: vec![],
+                compliance_metadata: None,
             },
             // UNBALANCED!
         ],
@@ -300,6 +307,7 @@ async fn test_sequential_account_versions() {
                 credit: dec!(0),
                 memo: None,
                 dimensions: vec![],
+                compliance_metadata: None,
             },
             CreateLedgerEntryInput {
                 account_id: other_account_id,
@@ -311,6 +319,7 @@ async fn test_sequential_account_versions() {
                 debit: dec!(0),
                 credit: dec!(20),
                 memo: None,
+                compliance_metadata: None,
                 dimensions: vec![dimension_value_id], // Added to satisfy budget constraint
             },
         ],

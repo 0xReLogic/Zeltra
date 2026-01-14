@@ -52,8 +52,8 @@ Zeltra fills the gap between:
 | Approval workflow                   | ✅        | ✅           | Basic | ✅         | ✅           | ✅                |
 | Financial reports                   | ❌        | ❌           | ✅    | ✅         | ✅           | ✅                |
 | Self-hosted                         | ❌        | ❌           | ❌    | ❌         | ❌           | ✅                |
-| **Mata Dewa 1.0 (Audit Integrity)** | ❌        | ❌           | ❌    | ❌         | ❌           | ✅ **(Standard)** |
-| **Mata Dewa 2.0 (Automation)**      | ❌        | ❌           | ❌    | ❌         | ❌           | ✅ **(Premium)**  |
+| **Sentinel Integrity (Standard)**   | ❌        | ❌           | ❌    | ❌         | ❌           | ✅ **(Standard)** |
+| **Sentinel Intelligence (Premium)** | ❌        | ❌           | ❌    | ❌         | ❌           | ✅ **(Premium)**  |
 
 ---
 
@@ -96,14 +96,14 @@ Zeltra fills the gap between:
 - Lower infrastructure costs
 - **Matters for high-volume customers**
 
-### 6. Mata Dewa 1.0: Immutable Trust (Standard)
+### 6. Sentinel Integrity: Immutable Trust (Standard)
 
 - **Hash Chaining**: Every ledger entry is cryptographically linked.
 - **Tamper Protection**: Prohibits any unauthorized modification or deletion at the DB level.
 - **Idempotency**: Prevents double-posting errors 100%.
 - **Differentiator**: Enterprise-grade integrity that established players lack.
 
-### 7. Mata Dewa 2.0: The AI-Native Controller (Premium)
+### 7. Sentinel Intelligence: The AI-Native Controller (Premium)
 
 - **Real-Time Revaluation**: Unrealized G/L calculated every tick.
 - **Auto-Accruals**: Set-it-and-forget-it revenue/expense recognition.
@@ -196,11 +196,11 @@ Why Zeltra:
 
 ### Cloud SaaS Pricing (Tiered Flat Monthly)
 
-| Tier           | Price     | User Limits     | Target              | Key Features                                                               |
-| -------------- | --------- | --------------- | ------------------- | -------------------------------------------------------------------------- |
-| **Starter**    | $12/month | Up to 50 users  | Small teams (5-50)  | Basic expense, single currency, 2 dimensions, **Mata Dewa 1.0 (Security)** |
-| **Growth**     | $25/month | Up to 200 users | Mid-market (50-200) | Multi-currency, unlimited dimensions, budgets, **Real-time Revaluation**   |
-| **Enterprise** | $45/month | Unlimited users | Large (200+)        | Simulation, API, SSO, **Mata Dewa 2.0 (Full Suite)**                       |
+| Tier           | Price     | User Limits     | Target              | Key Features                                                              |
+| -------------- | --------- | --------------- | ------------------- | ------------------------------------------------------------------------- |
+| **Starter**    | $12/month | Up to 50 users  | Small teams (5-50)  | Basic expense, single currency, 2 dimensions, **Sentinel Integrity Core** |
+| **Growth**     | $25/month | Up to 200 users | Mid-market (50-200) | Multi-currency, unlimited dimensions, budgets, **Real-time Revaluation**  |
+| **Enterprise** | $45/month | Unlimited users | Large (200+)        | Simulation, API, SSO, **Sentinel Intelligence Suite**                     |
 
 **Effective Per-User Cost:**
 

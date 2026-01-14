@@ -96,6 +96,8 @@ impl ReversalService {
                         "Reversal: {}",
                         entry.memo.clone().unwrap_or_default()
                     )),
+                    functional_amount: None,
+                    compliance_metadata: None,
                     dimensions: entry.dimensions.clone(),
                 }
             })

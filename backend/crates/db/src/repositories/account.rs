@@ -468,7 +468,6 @@ impl AccountRepository {
         account_id: Uuid,
         as_of: Option<NaiveDate>,
     ) -> Result<Decimal, AccountError> {
-
         // 1. Get account type to determine normal balance
         let account = chart_of_accounts::Entity::find_by_id(account_id)
             .one(&self.db)
@@ -589,6 +588,7 @@ impl AccountRepository {
             memo: Option<String>,
             event_at: chrono::DateTime<chrono::FixedOffset>,
             created_at: chrono::DateTime<chrono::FixedOffset>,
+            compliance_metadata: Option<serde_json::Value>,
             // Transaction fields (aliased)
             txn_date: NaiveDate,
             txn_ref: Option<String>,
@@ -670,6 +670,7 @@ impl AccountRepository {
                     memo: row.memo,
                     event_at: row.event_at,
                     created_at: row.created_at,
+                    compliance_metadata: row.compliance_metadata,
                 },
                 transaction_date: row.txn_date,
                 reference_number: row.txn_ref,

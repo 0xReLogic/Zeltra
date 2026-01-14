@@ -85,9 +85,8 @@ components:
           type: string
         baseline_amount:
           description: Average monthly amount from historical period.
-          type: string
-        change_percent:
-          description: Percentage change from baseline.
+      Successfully generated OpenAPI specification at ../contracts/openapi.yaml
+ change from baseline.
           type: string
         period_end:
           description: Period end date.
@@ -167,6 +166,83 @@ components:
       - balance
       - is_active
       - allow_direct_posting
+      type: object
+    AccrualScheduleResponse:
+      description: Response for an accrual schedule.
+      properties:
+        created_at:
+          description: Created at.
+          type: string
+        credit_account_id:
+          description: Credit account ID.
+          format: uuid
+          type: string
+        currency_id:
+          description: Currency ID.
+          type: string
+        debit_account_id:
+          description: Debit account ID.
+          format: uuid
+          type: string
+        description:
+          description: Description.
+          type:
+          - string
+          - 'null'
+        end_date:
+          description: End date.
+          type: string
+        frequency:
+          description: Frequency.
+          type: string
+        id:
+          description: Schedule ID.
+          format: uuid
+          type: string
+        name:
+          description: Name.
+          type: string
+        next_run_date:
+          description: Next run date.
+          type:
+          - string
+          - 'null'
+        organization_id:
+          description: Organization ID.
+          format: uuid
+          type: string
+        periods_processed:
+          description: Periods processed.
+          format: int32
+          type: integer
+        start_date:
+          description: Start date.
+          type: string
+        status:
+          description: Status.
+          type: string
+        total_amount:
+          description: Total amount.
+          type: string
+        total_periods:
+          description: Total periods.
+          format: int32
+          type: integer
+      required:
+      - id
+      - organization_id
+      - name
+      - total_amount
+      - currency_id
+      - debit_account_id
+      - credit_account_id
+      - start_date
+      - end_date
+      - frequency
+      - total_periods
+      - periods_processed
+      - status
+      - created_at
       type: object
     ActivityItemResponse:
       description: Activity item response.
@@ -941,6 +1017,62 @@ components:
       - type
       - currency
       type: object
+    CreateAccrualScheduleRequest:
+      description: Request body for creating an accrual schedule.
+      properties:
+        credit_account_id:
+          description: Credit account ID.
+          format: uuid
+          type: string
+        currency_id:
+          description: Currency ID (ISO code).
+          example: USD
+          type: string
+        debit_account_id:
+          description: Debit account ID.
+          format: uuid
+          type: string
+        description:
+          description: Optional description.
+          type:
+          - string
+          - 'null'
+        end_date:
+          description: End date (YYYY-MM-DD).
+          example: 2026-12-31
+          type: string
+        frequency:
+          description: 'Frequency: daily, weekly, monthly, quarterly, yearly.'
+          example: monthly
+          type: string
+        name:
+          description: Name of the accrual schedule.
+          example: Prepaid Insurance
+          type: string
+        start_date:
+          description: Start date (YYYY-MM-DD).
+          example: 2026-01-01
+          type: string
+        total_amount:
+          description: Total amount to accrue.
+          example: '12000.00'
+          type: string
+        total_periods:
+          description: Total number of periods.
+          example: 12
+          format: int32
+          type: integer
+      required:
+      - name
+      - total_amount
+      - currency_id
+      - debit_account_id
+      - credit_account_id
+      - start_date
+      - end_date
+      - frequency
+      - total_periods
+      type: object
     CreateApprovalRuleRequest:
       description: Request body for creating an approval rule.
       properties:
@@ -1197,6 +1329,26 @@ components:
       - name
       - start_date
       - end_date
+      type: object
+    CreateIntercompanyMappingRequest:
+      description: Request body for creating an intercompany mapping.
+      properties:
+        source_account_id:
+          description: Source account ID (in current organization).
+          format: uuid
+          type: string
+        target_account_id:
+          description: Target account ID (in target organization).
+          format: uuid
+          type: string
+        target_org_id:
+          description: Target organization ID.
+          format: uuid
+          type: string
+      required:
+      - source_account_id
+      - target_org_id
+      - target_account_id
       type: object
     CreateOrganizationRequest:
       description: Create organization request.
@@ -1786,6 +1938,48 @@ components:
       required:
       - accounts
       - total
+      type: object
+    IntercompanyMappingResponse:
+      description: Response for an intercompany mapping.
+      properties:
+        auto_post:
+          description: Whether to auto-post transactions.
+          type: boolean
+        created_at:
+          description: Created at.
+          type: string
+        id:
+          description: Mapping ID.
+          format: uuid
+          type: string
+        mapping_type:
+          description: Mapping type.
+          type: string
+        source_account_id:
+          description: Source account ID.
+          format: uuid
+          type: string
+        source_org_id:
+          description: Source organization ID.
+          format: uuid
+          type: string
+        target_account_id:
+          description: Target account ID.
+          format: uuid
+          type: string
+        target_org_id:
+          description: Target organization ID.
+          format: uuid
+          type: string
+      required:
+      - id
+      - source_org_id
+      - source_account_id
+      - target_org_id
+      - target_account_id
+      - auto_post
+      - mapping_type
+      - created_at
       type: object
     LedgerEntryResponse:
       description: Ledger entry response.
@@ -2415,6 +2609,64 @@ components:
           type: string
       required:
       - email
+      type: object
+    RevaluationLogResponse:
+      description: Response for a revaluation log.
+      properties:
+        account_id:
+          description: Account ID.
+          format: uuid
+          type: string
+        carrying_balance:
+          description: Carrying balance before revaluation.
+          type: string
+        created_at:
+          description: Created at.
+          type: string
+        exchange_rate:
+          description: Exchange rate used.
+          type: string
+        functional_currency:
+          description: Functional currency.
+          type: string
+        gain_loss_amount:
+          description: Gain/loss amount.
+          type: string
+        id:
+          description: Log ID.
+          format: uuid
+          type: string
+        organization_id:
+          description: Organization ID.
+          format: uuid
+          type: string
+        revaluation_date:
+          description: Revaluation date.
+          type: string
+        revalued_balance:
+          description: Revalued balance.
+          type: string
+        source_currency:
+          description: Account currency.
+          type: string
+        transaction_id:
+          description: Related transaction ID.
+          format: uuid
+          type:
+          - string
+          - 'null'
+      required:
+      - id
+      - account_id
+      - organization_id
+      - revaluation_date
+      - source_currency
+      - functional_currency
+      - exchange_rate
+      - carrying_balance
+      - revalued_balance
+      - gain_loss_amount
+      - created_at
       type: object
     RunSimulationRequest:
       description: Request body for running a simulation.
@@ -3531,6 +3783,99 @@ paths:
       summary: PATCH `/organizations/{org_id}/accounts/{account_id}/status` - Toggle account status.
       tags:
       - Accounts
+  /organizations/{org_id}/accrual-schedules:
+    get:
+      operationId: list_accrual_schedules
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/AccrualScheduleResponse'
+                type: array
+          description: List of accrual schedules
+        '403':
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: GET `/organizations/{org_id}/accrual-schedules` - List accrual schedules.
+      tags:
+      - Sentinel
+    post:
+      operationId: create_accrual_schedule
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAccrualScheduleRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccrualScheduleResponse'
+          description: Accrual schedule created
+        '400':
+          description: Invalid input
+        '403':
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: POST `/organizations/{org_id}/accrual-schedules` - Create accrual schedule.
+      tags:
+      - Sentinel
+  /organizations/{org_id}/accrual-schedules/{schedule_id}:
+    get:
+      operationId: get_accrual_schedule
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Schedule ID
+        in: path
+        name: schedule_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccrualScheduleResponse'
+          description: Accrual schedule details
+        '403':
+          description: Forbidden
+        '404':
+          description: Schedule not found
+      security:
+      - bearerAuth: []
+      summary: GET `/organizations/{org_id}/accrual-schedules/{schedule_id}` - Get accrual schedule.
+      tags:
+      - Sentinel
   /organizations/{org_id}/approval-rules:
     get:
       operationId: list_approval_rules
@@ -4722,6 +5067,66 @@ paths:
       summary: POST `/organizations/{org_id}/fiscal-years` - Create a fiscal year with auto-generated periods.
       tags:
       - Fiscal
+  /organizations/{org_id}/intercompany/connect:
+    post:
+      operationId: create_intercompany_mapping
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateIntercompanyMappingRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IntercompanyMappingResponse'
+          description: Intercompany mapping created
+        '400':
+          description: Invalid input
+        '403':
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: POST `/organizations/{org_id}/intercompany/connect` - Create intercompany mapping.
+      tags:
+      - Sentinel
+  /organizations/{org_id}/intercompany/mappings:
+    get:
+      operationId: list_intercompany_mappings
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/IntercompanyMappingResponse'
+                type: array
+          description: List of intercompany mappings
+        '403':
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: GET `/organizations/{org_id}/intercompany/mappings` - List intercompany mappings.
+      tags:
+      - Sentinel
   /organizations/{org_id}/reports/balance-sheet:
     get:
       description: 'Requirement 14.2: Balance sheet report endpoint'
@@ -4930,6 +5335,33 @@ paths:
       summary: GET /organizations/{org_id}/reports/trial-balance
       tags:
       - Reports
+  /organizations/{org_id}/revaluation-logs:
+    get:
+      operationId: list_revaluation_logs
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/RevaluationLogResponse'
+                type: array
+          description: List of revaluation logs
+        '403':
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: GET `/organizations/{org_id}/revaluation-logs` - List revaluation logs.
+      tags:
+      - Sentinel
   /organizations/{org_id}/simulation/run:
     post:
       description: 'Requirements 15.1-15.4: Run simulation endpoint'
@@ -5747,3 +6179,5 @@ tags:
   name: Dashboard
 - description: Scenario planning and projection endpoints
   name: Simulation
+- description: Sentinel Intelligence - Revaluation, Accruals, Intercompany
+  name: Sentinel

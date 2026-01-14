@@ -131,6 +131,8 @@ pub struct CreateLedgerEntryInput {
     pub credit: Decimal,
     /// Optional memo.
     pub memo: Option<String>,
+    /// Compliance metadata (ESG, Pillar Two).
+    pub compliance_metadata: Option<serde_json::Value>,
     /// Dimension value IDs.
     pub dimensions: Vec<Uuid>,
 }
@@ -430,18 +432,17 @@ impl TransactionRepository {
                     .map(|d| d.dimension_value_id)
                     .collect();
 
-                if !required_dims.is_empty() {
-                    if zeltra_core::budget::service::BudgetService::check_dimension_compliance(
+                if !required_dims.is_empty()
+                    && zeltra_core::budget::service::BudgetService::check_dimension_compliance(
                         &entry_input.dimensions,
                         &required_dims,
                     )
                     .is_err()
-                    {
-                        return Err(TransactionError::BudgetConstraintViolation {
-                            account_id: entry_input.account_id,
-                            missing_dimensions: required_dims,
-                        });
-                    }
+                {
+                    return Err(TransactionError::BudgetConstraintViolation {
+                        account_id: entry_input.account_id,
+                        missing_dimensions: required_dims,
+                    });
                 }
             }
 
@@ -460,6 +461,7 @@ impl TransactionRepository {
                 memo: Set(entry_input.memo.clone()),
                 event_at: Set(now),
                 created_at: Set(now),
+                compliance_metadata: Set(entry_input.compliance_metadata.clone()),
                 account_version: Set(account_version),
                 account_previous_balance: Set(previous_balance),
                 account_current_balance: Set(current_balance),
@@ -471,12 +473,13 @@ impl TransactionRepository {
 
             // Collect dimension models
             for dimension_value_id in &entry_input.dimensions {
-                let dim_val = dim_values.get(dimension_value_id).ok_or(
-                    TransactionError::Database(DbErr::RecordNotFound(format!(
-                        "Dimension value {}",
-                        dimension_value_id
-                    ))),
-                )?;
+                let dim_val =
+                    dim_values
+                        .get(dimension_value_id)
+                        .ok_or(TransactionError::Database(DbErr::RecordNotFound(format!(
+                            "Dimension value {}",
+                            dimension_value_id
+                        ))))?;
 
                 if !dim_val.is_active {
                     return Err(TransactionError::DisabledDimension(*dimension_value_id));
@@ -507,6 +510,7 @@ impl TransactionRepository {
                     account_current_balance: current_balance,
                     entry_hash: Some(entry_hash),
                     previous_entry_hash: previous_hash,
+                    compliance_metadata: None, // Assuming None for new entries, or it should come from input
                     memo: entry_input.memo.clone(),
                     event_at: now,
                     created_at: now,

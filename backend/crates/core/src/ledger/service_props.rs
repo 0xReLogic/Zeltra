@@ -48,6 +48,8 @@ fn make_entry(entry_type: EntryType, amount: Decimal, currency: &str) -> LedgerE
         source_amount: amount,
         entry_type,
         memo: None,
+        functional_amount: None,
+        compliance_metadata: None,
         dimensions: vec![],
     }
 }

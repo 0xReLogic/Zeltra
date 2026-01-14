@@ -537,9 +537,9 @@ async fn add_user(
     let org_repo = OrganizationRepository::new((*state.db).clone());
     let user_repo = UserRepository::new((*state.db).clone());
 
-    // Check if current user has admin or owner role
+    // Check if current user has owner role
     match org_repo
-        .has_role(org_id, auth.user_id(), UserRole::Admin)
+        .has_role(org_id, auth.user_id(), UserRole::Owner)
         .await
     {
         Ok(false) => {
@@ -547,7 +547,7 @@ async fn add_user(
                 StatusCode::FORBIDDEN,
                 Json(json!({
                     "error": "forbidden",
-                    "message": "You need admin or owner role to add users"
+                    "message": "You need owner role to add users"
                 })),
             )
                 .into_response();
@@ -748,13 +748,13 @@ async fn remove_user(
         }
     };
 
-    // Check if requester has admin or owner role
-    if !matches!(requester_membership.role, UserRole::Admin | UserRole::Owner) {
+    // Check if requester has owner role
+    if !matches!(requester_membership.role, UserRole::Owner) {
         return (
             StatusCode::FORBIDDEN,
             Json(json!({
                 "error": "forbidden",
-                "message": "You need admin or owner role to remove users"
+                "message": "You need owner role to remove users"
             })),
         )
             .into_response();
@@ -887,13 +887,13 @@ async fn update_member(
         }
     };
 
-    // Check if requester has admin or owner role
-    if !matches!(requester_membership.role, UserRole::Admin | UserRole::Owner) {
+    // Check if requester has owner role
+    if !matches!(requester_membership.role, UserRole::Owner) {
         return (
             StatusCode::FORBIDDEN,
             Json(json!({
                 "error": "forbidden",
-                "message": "You need admin or owner role to update users"
+                "message": "You need owner role to update users"
             })),
         )
             .into_response();

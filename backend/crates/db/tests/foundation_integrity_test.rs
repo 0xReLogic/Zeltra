@@ -1,9 +1,9 @@
 //! Foundation integrity tests for Zeltra 2026.
 use chrono::{NaiveDate, Utc};
 use rust_decimal::Decimal;
-use sea_orm::{Database, DatabaseConnection, Set, ActiveModelTrait};
+use sea_orm::{ActiveModelTrait, Database, DatabaseConnection, Set};
 use uuid::Uuid;
-use zeltra_db::entities::sea_orm_active_enums::{TransactionType};
+use zeltra_db::entities::sea_orm_active_enums::TransactionType;
 use zeltra_db::repositories::transaction::{
     CreateLedgerEntryInput, CreateTransactionInput, TransactionRepository,
 };
@@ -27,7 +27,9 @@ async fn setup_test_data(db: &DatabaseConnection) -> Result<TestData, Box<dyn st
         full_name: Set("Foundation User".to_string()),
         is_active: Set(true),
         ..Default::default()
-    }.insert(db).await?;
+    }
+    .insert(db)
+    .await?;
 
     // Create Org
     use zeltra_db::entities::organizations;
@@ -40,7 +42,9 @@ async fn setup_test_data(db: &DatabaseConnection) -> Result<TestData, Box<dyn st
         created_at: Set(Utc::now().into()),
         updated_at: Set(Utc::now().into()),
         ..Default::default()
-    }.insert(db).await?;
+    }
+    .insert(db)
+    .await?;
 
     // Create Fiscal Year
     use zeltra_db::entities::fiscal_years;
@@ -54,7 +58,9 @@ async fn setup_test_data(db: &DatabaseConnection) -> Result<TestData, Box<dyn st
         created_at: Set(Utc::now().into()),
         updated_at: Set(Utc::now().into()),
         ..Default::default()
-    }.insert(db).await?;
+    }
+    .insert(db)
+    .await?;
 
     // Create Fiscal Period
     use zeltra_db::entities::fiscal_periods;
@@ -71,7 +77,9 @@ async fn setup_test_data(db: &DatabaseConnection) -> Result<TestData, Box<dyn st
         created_at: Set(Utc::now().into()),
         updated_at: Set(Utc::now().into()),
         ..Default::default()
-    }.insert(db).await?;
+    }
+    .insert(db)
+    .await?;
 
     // Create Accounts
     use zeltra_db::entities::chart_of_accounts;
@@ -88,7 +96,9 @@ async fn setup_test_data(db: &DatabaseConnection) -> Result<TestData, Box<dyn st
         created_at: Set(Utc::now().into()),
         updated_at: Set(Utc::now().into()),
         ..Default::default()
-    }.insert(db).await?;
+    }
+    .insert(db)
+    .await?;
 
     let expense_id = Uuid::new_v4();
     chart_of_accounts::ActiveModel {
@@ -102,12 +112,14 @@ async fn setup_test_data(db: &DatabaseConnection) -> Result<TestData, Box<dyn st
         created_at: Set(Utc::now().into()),
         updated_at: Set(Utc::now().into()),
         ..Default::default()
-    }.insert(db).await?;
+    }
+    .insert(db)
+    .await?;
 
     Ok(TestData {
         org_id,
         user_id,
-        fiscal_period_id,
+        _fiscal_period_id: fiscal_period_id,
         asset_id,
         expense_id,
     })
@@ -151,6 +163,7 @@ async fn test_foundation_idempotency() {
                 credit: Decimal::ZERO,
                 memo: None,
                 dimensions: vec![],
+                compliance_metadata: None,
             },
             CreateLedgerEntryInput {
                 account_id: data.asset_id,
@@ -163,18 +176,25 @@ async fn test_foundation_idempotency() {
                 credit: Decimal::new(100, 0),
                 memo: None,
                 dimensions: vec![],
+                compliance_metadata: None,
             },
         ],
     };
 
     // 1. First call
     let tx1 = repo.create_transaction(input.clone()).await.unwrap();
-    
+
     // 2. Second call with same key
     let tx2 = repo.create_transaction(input).await.unwrap();
 
-    assert_eq!(tx1.transaction.id, tx2.transaction.id, "Mata Dewa Result: Idempotency FAILED. Created two different transactions for same key.");
-    println!("Idempotency OK: Returned same transaction ID {}", tx1.transaction.id);
+    assert_eq!(
+        tx1.transaction.id, tx2.transaction.id,
+        "Mata Dewa Result: Idempotency FAILED. Created two different transactions for same key."
+    );
+    println!(
+        "Idempotency OK: Returned same transaction ID {}",
+        tx1.transaction.id
+    );
 }
 
 #[tokio::test]
@@ -207,6 +227,7 @@ async fn test_foundation_hash_chaining() {
                 credit: Decimal::ZERO,
                 memo: None,
                 dimensions: vec![],
+                compliance_metadata: None,
             },
             CreateLedgerEntryInput {
                 account_id: data.asset_id,
@@ -219,15 +240,19 @@ async fn test_foundation_hash_chaining() {
                 credit: Decimal::new(100, 0),
                 memo: None,
                 dimensions: vec![],
+                compliance_metadata: None,
             },
         ],
     };
 
     let tx1 = repo.create_transaction(input1).await.unwrap();
     let entry1 = &tx1.entries[0].entry;
-    
+
     assert!(entry1.entry_hash.is_some(), "Entry 1 hash should exist");
-    assert!(entry1.previous_entry_hash.is_none(), "Entry 1 previous hash should be None");
+    assert!(
+        entry1.previous_entry_hash.is_none(),
+        "Entry 1 previous hash should be None"
+    );
 
     // Transaction 2 (same account)
     let input2 = CreateTransactionInput {
@@ -253,6 +278,7 @@ async fn test_foundation_hash_chaining() {
                 credit: Decimal::ZERO,
                 memo: None,
                 dimensions: vec![],
+                compliance_metadata: None,
             },
             CreateLedgerEntryInput {
                 account_id: data.asset_id,
@@ -265,15 +291,26 @@ async fn test_foundation_hash_chaining() {
                 credit: Decimal::new(50, 0),
                 memo: None,
                 dimensions: vec![],
+                compliance_metadata: None,
             },
         ],
     };
 
     let tx2 = repo.create_transaction(input2).await.unwrap();
-    let entry2_expense = tx2.entries.iter().find(|e| e.entry.account_id == data.expense_id).unwrap();
-    
-    assert_eq!(entry2_expense.entry.previous_entry_hash, entry1.entry_hash, "Mata Dewa Result: Hash Chaining FAILED. Entry 2 didn't point to Entry 1.");
-    println!("Hash Chaining OK: Entry {} points to Entry {}", tx2.transaction.id, tx1.transaction.id);
+    let entry2_expense = tx2
+        .entries
+        .iter()
+        .find(|e| e.entry.account_id == data.expense_id)
+        .unwrap();
+
+    assert_eq!(
+        entry2_expense.entry.previous_entry_hash, entry1.entry_hash,
+        "Mata Dewa Result: Hash Chaining FAILED. Entry 2 didn't point to Entry 1."
+    );
+    println!(
+        "Hash Chaining OK: Entry {} points to Entry {}",
+        tx2.transaction.id, tx1.transaction.id
+    );
 }
 
 #[tokio::test]
@@ -306,6 +343,7 @@ async fn test_foundation_tamper_detection() {
                 credit: Decimal::ZERO,
                 memo: None,
                 dimensions: vec![],
+                compliance_metadata: None,
             },
             CreateLedgerEntryInput {
                 account_id: data.asset_id,
@@ -318,6 +356,7 @@ async fn test_foundation_tamper_detection() {
                 credit: Decimal::new(100, 0),
                 memo: None,
                 dimensions: vec![],
+                compliance_metadata: None,
             },
         ],
     };
@@ -327,7 +366,10 @@ async fn test_foundation_tamper_detection() {
 
     // 2. Initial verification should pass
     let initial_corrupted = repo.verify_ledger_integrity(data.org_id).await.unwrap();
-    assert!(initial_corrupted.is_empty(), "Ledger should be healthy initially");
+    assert!(
+        initial_corrupted.is_empty(),
+        "Ledger should be healthy initially"
+    );
 
     // 3. TAMPER! (Simulate out-of-band DB update)
     // We update the debit amount without updating the hash.
@@ -342,7 +384,10 @@ async fn test_foundation_tamper_detection() {
 
     db.execute(Statement::from_string(
         db.get_database_backend(),
-        format!("UPDATE ledger_entries SET debit = 999.99, functional_amount = 999.99 WHERE id = '{}'", entry_id),
+        format!(
+            "UPDATE ledger_entries SET debit = 999.99, functional_amount = 999.99 WHERE id = '{}'",
+            entry_id
+        ),
     ))
     .await
     .unwrap();
@@ -356,8 +401,17 @@ async fn test_foundation_tamper_detection() {
 
     // 4. Verification should now FAIL
     let corrupted = repo.verify_ledger_integrity(data.org_id).await.unwrap();
-    assert!(!corrupted.is_empty(), "Mata Dewa Result: Tamper Detection FAILED. Ledger verified as healthy despite modified amount.");
-    assert_eq!(corrupted[0], entry_id, "Corrupted entry ID should match the tampered one");
-    
-    println!("Tamper Detection OK: Successfully detected corruption in entry {}", entry_id);
+    assert!(
+        !corrupted.is_empty(),
+        "Mata Dewa Result: Tamper Detection FAILED. Ledger verified as healthy despite modified amount."
+    );
+    assert_eq!(
+        corrupted[0], entry_id,
+        "Corrupted entry ID should match the tampered one"
+    );
+
+    println!(
+        "Tamper Detection OK: Successfully detected corruption in entry {}",
+        entry_id
+    );
 }

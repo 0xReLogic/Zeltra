@@ -46,6 +46,12 @@ pub enum TransactionType {
     OpeningBalance,
     /// Reversal of a previous transaction.
     Reversal,
+    /// Automated accrual entry.
+    Accrual,
+    /// Automated revaluation entry.
+    Revaluation,
+    /// Intercompany transaction.
+    Intercompany,
 }
 
 /// Transaction status in the approval workflow.
@@ -108,6 +114,30 @@ impl FiscalPeriodStatus {
     }
 }
 
+/// Frequency for automated accrual schedules.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum AccrualFrequency {
+    /// Monthly accrual.
+    Monthly,
+    /// Quarterly accrual.
+    Quarterly,
+    /// Yearly accrual.
+    Yearly,
+}
+
+/// Status of an automated accrual schedule.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum AccrualStatus {
+    /// Schedule is active and will process entries.
+    Active,
+    /// Schedule has completed its total periods.
+    Completed,
+    /// Schedule is manually paused.
+    Paused,
+}
+
 /// Input for a single ledger entry in a transaction.
 ///
 /// This is the input format for creating new transactions.
@@ -124,6 +154,10 @@ pub struct LedgerEntryInput {
     pub entry_type: EntryType,
     /// Optional memo/description for this entry.
     pub memo: Option<String>,
+    /// Optional functional amount override (e.g. for revaluation/adjustments).
+    pub functional_amount: Option<Decimal>,
+    /// Metadata for ESG and Pillar Two compliance.
+    pub compliance_metadata: Option<serde_json::Value>,
     /// Dimension value IDs to tag this entry with.
     pub dimensions: Vec<Uuid>,
 }
@@ -176,6 +210,8 @@ pub struct ResolvedEntry {
     pub credit: Decimal,
     /// Optional memo/description.
     pub memo: Option<String>,
+    /// Metadata for ESG and Pillar Two compliance.
+    pub compliance_metadata: Option<serde_json::Value>,
     /// Dimension value IDs.
     pub dimensions: Vec<Uuid>,
 }
@@ -277,4 +313,40 @@ mod tests {
         assert!(!totals.is_balanced);
         assert_eq!(totals.difference(), Decimal::new(5000, 2));
     }
+}
+
+/// Metadata for ESG and Pillar Two compliance.
+#[derive(Debug, Clone, Serialize, Deserialize, Default, utoipa::ToSchema)]
+pub struct ComplianceMetadata {
+    /// ESG related metadata.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub esg: Option<EsgMetadata>,
+    /// Pillar Two (Global Minimum Tax) related metadata.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pillar_two: Option<PillarTwoMetadata>,
+    /// Custom metadata.
+    #[serde(flatten)]
+    pub custom: serde_json::Map<String, serde_json::Value>,
+}
+
+/// ESG (Environmental, Social, and Governance) metadata.
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
+pub struct EsgMetadata {
+    /// Carbon footprint in metric tons of CO2e.
+    pub carbon_footprint: Option<Decimal>,
+    /// Primary energy source for the underlying transaction.
+    pub energy_source: Option<String>,
+    /// Social impact score (0-100).
+    pub social_impact_score: Option<u8>,
+}
+
+/// Pillar Two (OECD Global Minimum Tax) metadata.
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
+pub struct PillarTwoMetadata {
+    /// Tax jurisdiction (ISO 3166-1 alpha-2).
+    pub jurisdiction: String,
+    /// Whether the income/expense is qualified for Pillar Two calculations.
+    pub is_qualified: bool,
+    /// Specific tax adjustment amount if applicable.
+    pub tax_adjustment: Option<Decimal>,
 }

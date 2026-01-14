@@ -11,8 +11,16 @@ impl MigrationTrait for Migration {
             .alter_table(
                 Table::alter()
                     .table(LedgerEntries::Table)
-                    .add_column(ColumnDef::new(LedgerEntries::EntryHash).string_len(64).null())
-                    .add_column(ColumnDef::new(LedgerEntries::PreviousEntryHash).string_len(64).null())
+                    .add_column(
+                        ColumnDef::new(LedgerEntries::EntryHash)
+                            .string_len(64)
+                            .null(),
+                    )
+                    .add_column(
+                        ColumnDef::new(LedgerEntries::PreviousEntryHash)
+                            .string_len(64)
+                            .null(),
+                    )
                     .to_owned(),
             )
             .await?;
@@ -22,8 +30,17 @@ impl MigrationTrait for Migration {
             .alter_table(
                 Table::alter()
                     .table(Transactions::Table)
-                    .add_column(ColumnDef::new(Transactions::IdempotencyKey).uuid().unique_key().null())
-                    .add_column(ColumnDef::new(Transactions::IsoMetadata).json_binary().null())
+                    .add_column(
+                        ColumnDef::new(Transactions::IdempotencyKey)
+                            .uuid()
+                            .unique_key()
+                            .null(),
+                    )
+                    .add_column(
+                        ColumnDef::new(Transactions::IsoMetadata)
+                            .json_binary()
+                            .null(),
+                    )
                     .to_owned(),
             )
             .await?;

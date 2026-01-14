@@ -462,6 +462,9 @@ fn rule_to_response(rule: zeltra_db::entities::approval_rules::Model) -> Approva
             TransactionType::Adjustment => "adjustment".to_string(),
             TransactionType::OpeningBalance => "opening_balance".to_string(),
             TransactionType::Reversal => "reversal".to_string(),
+            TransactionType::Accrual => "accrual".to_string(),
+            TransactionType::Revaluation => "revaluation".to_string(),
+            TransactionType::Intercompany => "intercompany".to_string(),
         })
         .collect();
 

@@ -283,27 +283,27 @@ This is the MOST CRITICAL phase. It ensures the mathematical foundation of Zeltr
 
 ---
 
-## Phase 2b: Advanced Ledger Core (Mata Dewa 2.0) 🟢 STRATEGIC
+## Phase 2b: Advanced Ledger Core (Sentinel Intelligence) 🟢 STRATEGIC
 
 This adds intelligence and automation to the core ledger.
 
 ### Automation & Intelligence
 
-- [ ] **Real-time Revaluation Engine**: Daily background job to revalue foreign balances (unrealized G/L).
-- [ ] **Automated Accruals Engine**: Schedule-based recognition for prepayments/deferred revenue.
-- [ ] **Intercompany Transactions**: Automated mirrored entries between linked organizations.
+- [x] **Real-time Revaluation Engine**: Daily background job to revalue foreign balances (unrealized G/L).
+- [x] **Automated Accruals Engine**: Schedule-based recognition for prepayments/deferred revenue.
+- [x] **Intercompany Transactions**: Automated mirrored entries between linked organizations.
 - [ ] **Usage-Based Ledger API**: Real-time posting from telemetry/usage data.
 
 ### Compliance & ESG
 
-- [ ] **ESG Reporting Metadata**: Structure support for carbon/social impact tagging in ledger.
-- [ ] **Pillar Two Readiness**: Schema support for global minimum tax per jurisdiction.
+- [x] **ESG Reporting Metadata**: Structure support for carbon/social impact tagging in ledger.
+- [x] **Pillar Two Readiness**: Schema support for global minimum tax per jurisdiction.
 
 ### API Endpoints
 
-- [ ] `GET /organizations/{org_id}/revaluation-logs`
-- [ ] `POST /organizations/{org_id}/accrual-schedules`
-- [ ] `POST /organizations/{org_id}/intercompany/connect`
+- [x] `GET /organizations/{org_id}/revaluation-logs`
+- [x] `POST /organizations/{org_id}/accrual-schedules`
+- [x] `POST /organizations/{org_id}/intercompany/connect`
 
 ---
 
@@ -703,18 +703,15 @@ NOW we start frontend, because backend is solid.
 9.  **Idempotency Key (Double-Posting Protection)**:
     - Request `POST /organizations/{org_id}/transactions` dan `POST /organizations/{org_id}/transactions/pay-invoice` mendukung field `idempotency_key` (UUID).
     - FE disarankan generate UUID di client untuk setiap transaksi baru guna mencegah duplikasi data jika terjadi masalah jaringan atau _double-click_.
-10. **ISO 20022 Metadata & Foundation 2026**:
-    - Field `iso_metadata` (JSON) kini tersedia untuk menyimpan data tambahan standar perbankan.
-    - Seluruh transaksi kini dilindungi oleh _Hash Chaining_ di level database untuk menjamin integritas audit.
-11. **OpenAPI Schema Updated**: Jalankan `npm run generate-api` (atau perintah serupa di FE) untuk sinkronisasi tipe data terbaru yang sudah mencakup field-field di atas.
-12. **Mata Dewa 2.0 (Intelligence Add-ons)**:
-    - Akan ada halaman baru untuk `Accrual Schedules`, `Intercompany`, dan `ESG Dashboard`.
-    - Struktur utama transaksi TIDAK BERUBAH. Fitur 2.0 bersifat additive (menambah menu, bukan merusak yang ada).
-    - **Endpoint Baru (Drafting)**:
-      - `GET /organizations/{org_id}/revaluation-logs` (Log selisih kurs otomatis).
-      - `POST /organizations/{org_id}/accrual-schedules` (Jadwal otomatisasi biaya/pendapatan).
-      - `POST /organizations/{org_id}/intercompany/connect` (Hubungkan dengan cabang lain).
-      - `POST /usage-events` (API untuk integrasi data pemakaian/telemetry).
+10. **Sentinel Intelligence (ESG & Pillar Two)**:
+    - Field `compliance_metadata` (JSON) kini tersedia di setiap `LedgerEntry`.
+    - FE bisa mengirim object `esg` (carbon_offset, water_usage, social_impact) dan `pillar_two` (jurisdiction, local_tax_amount) untuk reporting global otomatis.
+11. **OpenAPI Schema Sync**: Jalankan `pnpm run generate-api` untuk mendapatkan tipe data terbaru. Skema `ComplianceMetadata` dan endpoint Sentinel sudah masuk (`contracts/openapi.yaml`).
+12. **Sentinel Intelligence Endpoints (LIVE)**:
+    - **Revaluation**: `GET /organizations/{org_id}/revaluation-logs` - Riwayat gain/loss selisih kurs.
+    - **Accruals**: `POST /organizations/{org_id}/accrual-schedules` - Registrasi biaya dibayar dimuka (Prepaid) / Accrual.
+    - **Intercompany**: `POST /organizations/{org_id}/intercompany/connect` - Mapping akun antar cabang.
+    - **Manual Override**: `LedgerEntryInput` kini mendukung field `functional_amount`. FE bisa override nilai kurs manual (misal untuk penyesuaian audit/pajak).
 
 ---
 
@@ -725,7 +722,7 @@ NOW we start frontend, because backend is solid.
   - Tombol "Void" atau "Delete" permanen disembunyikan untuk role `Viewer` / `Submitter`.
   - **Tujuan**: Mengurangi kognitif load dan menjaga keamanan operasional.
 - **Tier-Based Visibility (Lock 🔒)**:
-  - Fitur **Mata Dewa 2.0** (Accruals, Revaluation, ESG) ditampilkan di sidebar tapi dengan ikon gembok emas 🔒.
+  - Fitur **Sentinel Intelligence** (Accruals, Revaluation, ESG) ditampilkan di sidebar tapi dengan ikon gembok emas 🔒.
   - Saat diklik, tampilkan modal "Upgrade to Enterprise/Growth" untuk upsell.
   - **Tujuan**: Drive revenue secara organik melalui rasa penasaran user.
 

@@ -155,6 +155,7 @@ async fn test_residual_adjustment_insertion() {
                 credit: dec!(0),
                 memo: None,
                 dimensions: vec![],
+                compliance_metadata: None,
             },
             CreateLedgerEntryInput {
                 account_id: acc2,
@@ -167,6 +168,7 @@ async fn test_residual_adjustment_insertion() {
                 credit: dec!(66.67),
                 memo: None,
                 dimensions: vec![],
+                compliance_metadata: None,
             },
             CreateLedgerEntryInput {
                 account_id: acc1,
@@ -179,6 +181,7 @@ async fn test_residual_adjustment_insertion() {
                 credit: dec!(0),
                 memo: None,
                 dimensions: vec![],
+                compliance_metadata: None,
             },
         ],
         created_by: user_id,

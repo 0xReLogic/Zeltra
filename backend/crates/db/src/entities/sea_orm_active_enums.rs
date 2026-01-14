@@ -214,6 +214,12 @@ pub enum TransactionType {
     OpeningBalance,
     #[sea_orm(string_value = "reversal")]
     Reversal,
+    #[sea_orm(string_value = "accrual")]
+    Accrual,
+    #[sea_orm(string_value = "revaluation")]
+    Revaluation,
+    #[sea_orm(string_value = "intercompany")]
+    Intercompany,
 }
 #[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
 #[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "user_role")]

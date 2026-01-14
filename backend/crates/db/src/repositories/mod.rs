@@ -4,6 +4,7 @@
 //! hiding the `SeaORM` implementation details from the rest of the application.
 
 pub mod account;
+pub mod accrual;
 pub mod approval_rule;
 pub mod attachment;
 pub mod budget;
@@ -12,8 +13,10 @@ pub mod dimension;
 pub mod email_verification;
 pub mod exchange_rate;
 pub mod fiscal;
+pub mod intercompany;
 pub mod organization;
 pub mod report;
+pub mod revaluation;
 pub mod session;
 pub mod simulation;
 pub mod subscription;
@@ -40,6 +43,7 @@ pub use account::{
     AccountError, AccountFilter, AccountRepository, AccountWithBalance, CreateAccountInput,
     UpdateAccountInput,
 };
+pub use accrual::{AccrualError, AccrualRepository, CreateAccrualScheduleInput};
 pub use approval_rule::{
     ApprovalRuleError, ApprovalRuleRepository, CreateApprovalRuleInput, UpdateApprovalRuleInput,
 };
@@ -65,11 +69,13 @@ pub use exchange_rate::{
     RateLookupMethod,
 };
 pub use fiscal::{CreateFiscalYearInput, FiscalError, FiscalRepository, FiscalYearWithPeriods};
+pub use intercompany::{IntercompanyError, IntercompanyRepository};
 pub use organization::{OrganizationError, OrganizationRepository};
 pub use report::{
     AccountBalance, AccountLedgerEntry, DimensionInfo, DimensionalReportRow, ReportError,
     ReportRepository, calculate_balance, is_debit_normal,
 };
+pub use revaluation::{CreateRevaluationLogInput, RevaluationError, RevaluationRepository};
 pub use session::SessionRepository;
 pub use simulation::{HistoricalAccountData, SimulationRepoError, SimulationRepository};
 pub use subscription::{Feature, LimitCheckResult, ResourceLimit, SubscriptionRepository};

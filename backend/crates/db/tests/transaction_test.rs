@@ -41,6 +41,7 @@ fn create_balanced_entries(
             credit: Decimal::ZERO,
             memo: Some("Debit entry".to_string()),
             dimensions: vec![],
+            compliance_metadata: None,
         },
         CreateLedgerEntryInput {
             account_id: credit_account_id,
@@ -52,6 +53,7 @@ fn create_balanced_entries(
             debit: Decimal::ZERO,
             credit: amount,
             memo: Some("Credit entry".to_string()),
+            compliance_metadata: None,
             dimensions: vec![],
         },
     ]

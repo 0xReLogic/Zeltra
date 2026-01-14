@@ -128,12 +128,17 @@ async fn pay_invoice(
     let functional_currency = org.base_currency;
 
     // 1. Fetch Invoice Details
-    let (invoice, original_rate, original_currency, ar_ap_account_id): (TransactionWithEntries, Decimal, String, Uuid) =
-        match fetch_invoice_details(&tx_repo, org_id, payload.invoice_id, &functional_currency).await
-        {
-            Ok(details) => details,
-            Err(e) => return e.into_response(),
-        };
+    let (invoice, original_rate, original_currency, ar_ap_account_id): (
+        TransactionWithEntries,
+        Decimal,
+        String,
+        Uuid,
+    ) = match fetch_invoice_details(&tx_repo, org_id, payload.invoice_id, &functional_currency)
+        .await
+    {
+        Ok(details) => details,
+        Err(e) => return e.into_response(),
+    };
 
     // 2. Calculate Variance
     let variance = calculate_forex_variance(payload.amount, original_rate, payload.exchange_rate);
@@ -757,6 +762,7 @@ async fn create_transaction(
             credit,
             memo: entry_req.memo.clone(),
             dimensions: entry_req.dimensions.clone(),
+            compliance_metadata: None,
         });
     }
 
@@ -1824,6 +1830,9 @@ fn tx_type_to_string(tx_type: &TransactionType) -> String {
         TransactionType::Adjustment => "adjustment".to_string(),
         TransactionType::OpeningBalance => "opening_balance".to_string(),
         TransactionType::Reversal => "reversal".to_string(),
+        TransactionType::Accrual => "accrual".to_string(),
+        TransactionType::Revaluation => "revaluation".to_string(),
+        TransactionType::Intercompany => "intercompany".to_string(),
     }
 }
 
@@ -1838,6 +1847,9 @@ fn string_to_tx_type(s: &str) -> Option<TransactionType> {
         "adjustment" => Some(TransactionType::Adjustment),
         "opening_balance" => Some(TransactionType::OpeningBalance),
         "reversal" => Some(TransactionType::Reversal),
+        "accrual" => Some(TransactionType::Accrual),
+        "revaluation" => Some(TransactionType::Revaluation),
+        "intercompany" => Some(TransactionType::Intercompany),
         _ => None,
     }
 }
@@ -1866,6 +1878,7 @@ fn construct_payment_entries(
         credit: bank_functional,
         memo: Some("Payment".to_string()),
         dimensions: vec![],
+        compliance_metadata: None,
     });
 
     // B. AP/AR Clearing Entry
@@ -1881,6 +1894,7 @@ fn construct_payment_entries(
         credit: Decimal::ZERO,
         memo: Some("Clearing".to_string()),
         dimensions: vec![],
+        compliance_metadata: None,
     });
 
     // C. Variance Entry
@@ -1904,6 +1918,7 @@ fn construct_payment_entries(
             credit: v_credit,
             memo: Some("Realized Forex Gain/Loss".to_string()),
             dimensions: vec![],
+            compliance_metadata: None,
         });
     }
 
@@ -1916,7 +1931,8 @@ async fn fetch_invoice_details(
     org_id: Uuid,
     invoice_id: Uuid,
     functional_currency: &str,
-) -> Result<(TransactionWithEntries, Decimal, String, Uuid), (StatusCode, Json<serde_json::Value>)> {
+) -> Result<(TransactionWithEntries, Decimal, String, Uuid), (StatusCode, Json<serde_json::Value>)>
+{
     let Ok(invoice) = tx_repo.get_transaction(org_id, invoice_id).await else {
         return Err((
             StatusCode::NOT_FOUND,

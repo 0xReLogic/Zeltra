@@ -2,6 +2,7 @@
 
 pub mod prelude;
 
+pub mod accrual_schedules;
 pub mod approval_rules;
 pub mod attachments;
 pub mod budget_line_dimensions;
@@ -16,10 +17,12 @@ pub mod entry_dimensions;
 pub mod exchange_rates;
 pub mod fiscal_periods;
 pub mod fiscal_years;
+pub mod intercompany_mappings;
 pub mod ledger_entries;
 pub mod organization_usage;
 pub mod organization_users;
 pub mod organizations;
+pub mod revaluation_logs;
 pub mod sea_orm_active_enums;
 pub mod sessions;
 pub mod tier_limits;

@@ -30,6 +30,7 @@ async fn test_send_verification_email_build() {
         from_email: "test@example.com".to_string(),
         from_name: "Test".to_string(),
         frontend_url: "http://localhost:3000".to_string(),
+        smtp_tls: false,
     };
 
     let service = EmailService::new(config);

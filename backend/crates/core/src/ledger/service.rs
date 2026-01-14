@@ -119,7 +119,7 @@ impl LedgerService {
         D: Fn(&[Uuid]) -> Result<(), LedgerError>,
     {
         // Validate amount
-        if entry.source_amount == Decimal::ZERO {
+        if entry.source_amount == Decimal::ZERO && entry.functional_amount.is_none() {
             return Err(LedgerError::ZeroAmount);
         }
         if entry.source_amount < Decimal::ZERO {
@@ -140,20 +140,30 @@ impl LedgerService {
             dimension_validator(&entry.dimensions)?;
         }
 
-        // Get exchange rate
-        let exchange_rate = if entry.source_currency == org_base_currency {
-            Decimal::ONE
+        // Get exchange rate and functional amount
+        let (exchange_rate, functional_amount) = if let Some(fa) = entry.functional_amount {
+            // If functional amount is provided, calculate implied rate if source > 0
+            let rate = if entry.source_amount.is_zero() {
+                exchange_rate_lookup(&entry.source_currency, org_base_currency, transaction_date)
+                    .unwrap_or(Decimal::ONE)
+            } else {
+                fa / entry.source_amount
+            };
+            (rate, fa)
         } else {
-            exchange_rate_lookup(&entry.source_currency, org_base_currency, transaction_date)
-                .ok_or_else(|| LedgerError::NoExchangeRate {
-                    from: entry.source_currency.clone(),
-                    to: org_base_currency.to_string(),
-                    date: transaction_date,
-                })?
+            let rate = if entry.source_currency == org_base_currency {
+                Decimal::ONE
+            } else {
+                exchange_rate_lookup(&entry.source_currency, org_base_currency, transaction_date)
+                    .ok_or_else(|| LedgerError::NoExchangeRate {
+                        from: entry.source_currency.clone(),
+                        to: org_base_currency.to_string(),
+                        date: transaction_date,
+                    })?
+            };
+            let fa = CurrencyService::convert(entry.source_amount, rate);
+            (rate, fa)
         };
-
-        // Calculate functional amount with Banker's Rounding (4 decimal places)
-        let functional_amount = CurrencyService::convert(entry.source_amount, exchange_rate);
 
         // Determine debit/credit amounts
         let (debit, credit) = match entry.entry_type {
@@ -171,6 +181,7 @@ impl LedgerService {
             debit,
             credit,
             memo: entry.memo.clone(),
+            compliance_metadata: entry.compliance_metadata.clone(),
             dimensions: entry.dimensions.clone(),
         })
     }
@@ -237,6 +248,8 @@ mod tests {
             source_amount: amount,
             entry_type,
             memo: None,
+            functional_amount: None,
+            compliance_metadata: None,
             dimensions: vec![],
         }
     }

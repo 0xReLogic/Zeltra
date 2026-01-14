@@ -44,8 +44,10 @@ impl PrimaryKeyTrait for PrimaryKey {
 
 #[derive(Copy, Clone, Debug, EnumIter)]
 pub enum Relation {
+    AccrualSchedules,
     Budgets,
     ChartOfAccounts,
+    RevaluationLogs,
 }
 
 impl ColumnTrait for Column {
@@ -64,9 +66,17 @@ impl ColumnTrait for Column {
 impl RelationTrait for Relation {
     fn def(&self) -> RelationDef {
         match self {
+            Self::AccrualSchedules => Entity::has_many(super::accrual_schedules::Entity).into(),
             Self::Budgets => Entity::has_many(super::budgets::Entity).into(),
             Self::ChartOfAccounts => Entity::has_many(super::chart_of_accounts::Entity).into(),
+            Self::RevaluationLogs => Entity::has_many(super::revaluation_logs::Entity).into(),
         }
+    }
+}
+
+impl Related<super::accrual_schedules::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::AccrualSchedules.def()
     }
 }
 
@@ -79,6 +89,12 @@ impl Related<super::budgets::Entity> for Entity {
 impl Related<super::chart_of_accounts::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::ChartOfAccounts.def()
+    }
+}
+
+impl Related<super::revaluation_logs::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::RevaluationLogs.def()
     }
 }
 

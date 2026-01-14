@@ -18,6 +18,7 @@ pub mod fiscal;
 pub mod health;
 pub mod organizations;
 pub mod reports;
+pub mod sentinel;
 pub mod simulation;
 pub mod transactions;
 
@@ -104,6 +105,12 @@ use utoipa_swagger_ui::SwaggerUi;
         dashboard::get_cash_flow,
         dashboard::get_dashboard_budget_vs_actual,
         simulation::run_simulation,
+        sentinel::list_revaluation_logs,
+        sentinel::list_accrual_schedules,
+        sentinel::create_accrual_schedule,
+        sentinel::get_accrual_schedule,
+        sentinel::list_intercompany_mappings,
+        sentinel::create_intercompany_mapping,
     ),
     components(
         schemas(
@@ -205,6 +212,11 @@ use utoipa_swagger_ui::SwaggerUi;
             simulation::AccountProjectionResponse,
             simulation::AnnualSummaryResponse,
             simulation::MonthlySummaryResponse,
+            sentinel::CreateAccrualScheduleRequest,
+            sentinel::AccrualScheduleResponse,
+            sentinel::RevaluationLogResponse,
+            sentinel::IntercompanyMappingResponse,
+            sentinel::CreateIntercompanyMappingRequest,
         )
     ),
     tags(
@@ -222,7 +234,8 @@ use utoipa_swagger_ui::SwaggerUi;
         (name = "Approval Rules", description = "Approval rule management endpoints"),
         (name = "Reports", description = "Financial report generation endpoints"),
         (name = "Dashboard", description = "Dashboard and analytics endpoints"),
-        (name = "Simulation", description = "Scenario planning and projection endpoints")
+        (name = "Simulation", description = "Scenario planning and projection endpoints"),
+        (name = "Sentinel", description = "Sentinel Intelligence - Revaluation, Accruals, Intercompany")
     ),
     modifiers(&SecurityAddon)
 )]
@@ -270,6 +283,7 @@ pub fn api_routes_with_state(state: AppState) -> Router<AppState> {
         .merge(simulation::routes())
         .merge(dashboard::routes())
         .merge(attachments::routes())
+        .merge(sentinel::routes())
         .layer(middleware::from_fn_with_state(
             state.clone(),
             auth_middleware,

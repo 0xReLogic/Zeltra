@@ -68,6 +68,7 @@ impl PrimaryKeyTrait for PrimaryKey {
 
 #[derive(Copy, Clone, Debug, EnumIter)]
 pub enum Relation {
+    AccrualSchedules,
     ApprovalRules,
     Attachments,
     Budgets,
@@ -79,6 +80,7 @@ pub enum Relation {
     FiscalYears,
     OrganizationUsage,
     OrganizationUsers,
+    RevaluationLogs,
     Sessions,
     Transactions,
 }
@@ -116,6 +118,7 @@ impl ColumnTrait for Column {
 impl RelationTrait for Relation {
     fn def(&self) -> RelationDef {
         match self {
+            Self::AccrualSchedules => Entity::has_many(super::accrual_schedules::Entity).into(),
             Self::ApprovalRules => Entity::has_many(super::approval_rules::Entity).into(),
             Self::Attachments => Entity::has_many(super::attachments::Entity).into(),
             Self::Budgets => Entity::has_many(super::budgets::Entity).into(),
@@ -127,9 +130,16 @@ impl RelationTrait for Relation {
             Self::FiscalYears => Entity::has_many(super::fiscal_years::Entity).into(),
             Self::OrganizationUsage => Entity::has_many(super::organization_usage::Entity).into(),
             Self::OrganizationUsers => Entity::has_many(super::organization_users::Entity).into(),
+            Self::RevaluationLogs => Entity::has_many(super::revaluation_logs::Entity).into(),
             Self::Sessions => Entity::has_many(super::sessions::Entity).into(),
             Self::Transactions => Entity::has_many(super::transactions::Entity).into(),
         }
+    }
+}
+
+impl Related<super::accrual_schedules::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::AccrualSchedules.def()
     }
 }
 
@@ -196,6 +206,12 @@ impl Related<super::organization_usage::Entity> for Entity {
 impl Related<super::organization_users::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::OrganizationUsers.def()
+    }
+}
+
+impl Related<super::revaluation_logs::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::RevaluationLogs.def()
     }
 }
 
