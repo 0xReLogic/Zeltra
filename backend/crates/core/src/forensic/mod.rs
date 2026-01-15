@@ -1,4 +1,5 @@
 use crate::reports::types::BalanceSheetReport;
+
 use rust_decimal::Decimal;
 use rust_decimal::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -104,14 +105,22 @@ pub struct BeneishMScoreResult {
 /// Details of the 8 Beneish M-Score variables.
 #[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct BeneishDetails {
-    pub dsri: f64, // Days Sales in Receivables Index
-    pub gmi: f64,  // Gross Margin Index
-    pub aqi: f64,  // Asset Quality Index
-    pub sgi: f64,  // Sales Growth Index
-    pub depi: f64, // Depreciation Index
-    pub sgai: f64, // SGA Index
-    pub lvgi: f64, // Leverage Index
-    pub tata: f64, // Total Accruals to Total Assets
+    /// Days Sales in Receivables Index.
+    pub dsri: f64,
+    /// Gross Margin Index.
+    pub gmi: f64,
+    /// Asset Quality Index.
+    pub aqi: f64,
+    /// Sales Growth Index.
+    pub sgi: f64,
+    /// Depreciation Index.
+    pub depi: f64,
+    /// Sales, General, and Administrative Expenses Index.
+    pub sgai: f64,
+    /// Leverage Index.
+    pub lvgi: f64,
+    /// Total Accruals to Total Assets.
+    pub tata: f64,
 }
 
 // ============================================================================
@@ -123,6 +132,9 @@ pub struct ForensicService;
 
 impl ForensicService {
     /// Perform Advanced Benford's Law analysis (1st and 2nd Digit + MAD).
+    #[allow(clippy::float_arithmetic)] // Statistical analysis requires float division
+    #[allow(clippy::cast_precision_loss)] // u64 -> f64 conversion is fine for statistical counts
+    #[allow(clippy::cast_possible_truncation)] // u32 -> u8 safe for digits 0-9
     pub fn calculate_benford_law(amounts: Vec<Decimal>) -> BenfordAnalysis {
         let mut first_digit_counts: HashMap<u8, u64> = HashMap::new();
         let mut second_digit_counts: HashMap<u8, u64> = HashMap::new();
@@ -239,6 +251,8 @@ impl ForensicService {
     }
 
     /// Calculate Altman Z-Score.
+    #[allow(clippy::float_arithmetic)] // Financial model requires weighted float sum
+    #[allow(clippy::too_many_arguments)] // 5-factor model input
     pub fn calculate_altman_z_score(
         _bs: &BalanceSheetReport, // Kept for API compatibility/future extraction
         total_assets: Decimal,
@@ -306,6 +320,12 @@ impl ForensicService {
     /// Calculate Beneish M-Score.
     /// This requires current year (t) and previous year (t-1) values.
     /// Uses 8-variable model.
+    /// Calculate Beneish M-Score.
+    /// This requires current year (t) and previous year (t-1) values.
+    /// Uses 8-variable model.
+    #[allow(clippy::similar_names)] // sgi vs sgai
+    #[allow(clippy::too_many_arguments)] // 8-var model requires many args
+    #[allow(clippy::float_arithmetic)] // Financial model requires complex float formula
     pub fn calculate_beneish_m_score(
         // Receivables
         receivables_t: Decimal,
@@ -384,6 +404,7 @@ impl ForensicService {
 
         // 6. SGAI (SGA Index)
         // (SGA_t / Sales_t) / (SGA_t1 / Sales_t1)
+        #[allow(clippy::similar_names)] // sgi vs sgai
         let sgai = div(
             div(to_f64(sga_t), to_f64(sales_t)),
             div(to_f64(sga_t1), to_f64(sales_t1)),
@@ -441,14 +462,15 @@ impl ForensicService {
 }
 
 /// Simple approximation of Standard Normal CDF.
+#[allow(clippy::float_arithmetic)] // Approximation formula requires float math
 fn norm_cdf_approx(x: f64) -> f64 {
     // Constants for approximation
-    let a1 = 0.254829592;
-    let a2 = -0.284496736;
-    let a3 = 1.421413741;
-    let a4 = -1.453152027;
-    let a5 = 1.061405429;
-    let p = 0.3275911;
+    let a1 = 0.254_829_592;
+    let a2 = -0.284_496_736;
+    let a3 = 1.421_413_741;
+    let a4 = -1.453_152_027;
+    let a5 = 1.061_405_429;
+    let p = 0.327_591_1;
 
     let sign = if x < 0.0 { -1.0 } else { 1.0 };
     let x_abs = x.abs() / 2.0_f64.sqrt();
@@ -474,7 +496,9 @@ mod tests {
         let amounts = vec![dec!(100), dec!(100), dec!(100)];
         let result = ForensicService::calculate_benford_law(amounts);
 
-        assert_eq!(result.first_digit_distribution[0].actual_percentage, 100.0);
+        assert!(
+            (result.first_digit_distribution[0].actual_percentage - 100.0).abs() < f64::EPSILON
+        );
         assert!(result.mad_score > 0.015);
         assert_eq!(result.mad_verdict, "Nonconformity");
     }

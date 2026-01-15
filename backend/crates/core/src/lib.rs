@@ -25,6 +25,7 @@ pub mod currency;
 pub mod dashboard;
 pub mod dimension;
 pub mod fiscal;
+/// Forensic analysis module (Benford's Law, Altman Z-Score, Beneish M-Score).
 pub mod forensic;
 pub mod ledger;
 pub mod reports;

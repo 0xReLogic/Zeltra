@@ -308,6 +308,8 @@ async fn list_budgets(
     tag = "Budgets",
     security(("bearerAuth" = []))
 )]
+#[axum::debug_handler]
+#[allow(clippy::too_many_lines)]
 async fn create_budget(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -350,7 +352,7 @@ async fn create_budget(
     // Check budget limit
     let budget_repo = BudgetRepository::new((*state.db).clone());
     let current_budget_count = match budget_repo.list_budgets(org_id).await {
-        Ok(budgets) => budgets.len() as i32,
+        Ok(budgets) => i32::try_from(budgets.len()).unwrap_or(i32::MAX),
         Err(e) => {
             error!(error = %e, "Failed to count budgets");
             return (

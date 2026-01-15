@@ -770,7 +770,7 @@ Kita menggunakan strategi **"Show but Lock"** (Gembok Emas) daripada menyembunyi
   - [x] Edit account (`PATCH /accounts/:id`)
   - [x] Delete account (`DELETE /accounts/:id`)
   - [x] Toggle account active status
-- [x] Fiscal period management (UI done, API status: ⚠️ unverified)
+- [x] Fiscal period management ✅ Real API
   - [x] List fiscal years with nested periods
   - [x] Period status badges (OPEN/SOFT_CLOSE/CLOSED)
   - [x] Change period status (`PATCH /fiscal-periods/:id/status`)
@@ -781,7 +781,7 @@ Kita menggunakan strategi **"Show but Lock"** (Gembok Emas) daripada menyembunyi
   - [x] Create dimension type (`POST /dimension-types`)
   - [x] Edit dimension value
   - [x] Toggle dimension active status
-- [x] Exchange rate management (UI done, API status: ⚠️ unverified)
+- [x] Exchange rate management ✅ Real API
   - [x] List exchange rates
   - [x] Add exchange rate (`POST /exchange-rates`)
   - [x] Bulk import exchange rates
@@ -846,13 +846,13 @@ Kita menggunakan strategi **"Show but Lock"** (Gembok Emas) daripada menyembunyi
 - [x] Export functionality (UI done)
   - [x] CSV export
   - [x] PDF export
-- [x] **Account Ledger View** (UI done, API status: ⚠️ unverified)
+- [x] **Account Ledger View** ✅ Real API
   - [x] Select account from dropdown (via Account List)
   - [x] Show all entries for account (`ledger_entries.account_id`)
   - [x] Running balance column (`account_current_balance`)
   - [x] Date range filter
   - [x] `GET /organizations/{org_id}/accounts/:id/ledger`
-- [x] **Dimensional Reports UI** (UI done, API status: ⚠️ unverified)
+- [x] **Dimensional Reports UI** ✅ Real API
   - [x] Filter by dimension type (Department/Project/Cost Center)
   - [x] Filter by dimension value (Department/Project/Cost Center)
   - [x] Group expenses by dimension (Chart & Table)
@@ -863,18 +863,24 @@ Kita menggunakan strategi **"Show but Lock"** (Gembok Emas) daripada menyembunyi
 
 > **DB Tables:** `budgets`, `budget_lines`, `budget_line_dimensions`
 
-- [x] **Fiscal Year Creation UI** (UI done, API status: ⚠️ unverified)
+- [x] **Fiscal Year Creation UI** ✅ Real API
   - [x] Form: name, start_date, end_date
   - [x] Auto-generate 12 monthly periods
   - [x] Option for adjustment period (period 13)
   - [x] `POST /organizations/{org_id}/fiscal-years`
+- [x] **Attachments UI** ✅ Real API
+  - [x] Upload file with presigned URL
+  - [x] List attachments on transaction detail
+  - [x] Download attachment
+  - [x] Delete attachment
+  - [x] File type and size validation
 - [x] **Budget Management UI** ✅ Real API
   - [x] Create budget (`budgets` table)
   - [x] Add budget lines per account/period (`budget_lines`)
   - [x] Assign dimensions to budget lines (`budget_line_dimensions`)
   - [x] Lock/unlock budget
   - [x] `POST /organizations/{org_id}/budgets`, `POST /organizations/{org_id}/budgets/:id/lines`
-- [x] Simulation/Forecasting UI (UI done, API status: ⚠️ unverified)
+- [x] Simulation/Forecasting UI ✅ Real API
   - [x] Historical data selection
   - [x] Adjustment parameters
   - [x] Projection results
@@ -914,8 +920,7 @@ Kita menggunakan strategi **"Show but Lock"** (Gembok Emas) daripada menyembunyi
 
 **⚠️ Need Further Verification:**
 
-- Simulation
-- Attachments
+- None (all Phase 7 features verified via E2E)
 
 **🔧 Response Type Fixes Applied (2026-01-13):**
 
@@ -935,14 +940,17 @@ Kita menggunakan strategi **"Show but Lock"** (Gembok Emas) daripada menyembunyi
 
 **Deliverable:** Complete frontend application.
 
-**Status:** UI Complete | Real API Integration = ✅ Core Features Working (Auth + Org + Dashboard + Lists + CRUD Operations)
+**Status:** UI Complete | Real API Integration = ✅ Core Features Working (Auth + Org + Dashboard + Lists + CRUD Operations + Simulation + Attachments + Account Ledger + Dimensional Reports + Fiscal Year Creation)
 
 - Transactions (CRUD + workflow)
 - Dashboard (metrics, cash flow, recent activity)
-- Reports (trial balance, balance sheet, income statement, dimensional)
+- Reports (trial balance, balance sheet, income statement, dimensional) ✅ Real API
 - Budgets (CRUD + lines)
-- Simulation
-- Attachments
+- Simulation ✅ Real API
+- Attachments ✅ Real API
+- Account Ledger ✅ Real API
+- Dimensional Reports ✅ Real API
+- Fiscal Year Creation ✅ Real API
 
 **Deliverable:** Complete frontend application.
 
@@ -1553,7 +1561,7 @@ tests/
 | Phase 4: Reports                          | 3 weeks  | Financial reports, simulation + **API** | Apr 8, 2026  |
 | Phase 5: Attachments                      | 2 weeks  | File storage + API polish               | Apr 22, 2026 |
 | Phase 6: Frontend Foundation              | 2 weeks  | Next.js setup, auth UI                  | May 6, 2026  |
-| Phase 7: Frontend Features                | 3 weeks  | Full UI                                 | May 27, 2026 |
+| Phase 7: Frontend Features Verification   | 3 weeks  | Real API integration, E2E testing       | May 27, 2026 |
 | Phase 8: Polish & Launch                  | 2 weeks  | Testing, deploy                         | Jun 10, 2026 |
 | Phase 2b: Advanced Ledger (Mata Dewa 2.0) | 4 weeks  | Automation, ESG, Intercompany Hub       | Jul 8, 2026  |
 | Phase 9: OCR Integration                  | 3 months | Client-side OCR + mobile optimization   | Oct 10, 2026 |

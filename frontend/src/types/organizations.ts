@@ -6,6 +6,8 @@ export interface Organization {
   timezone: string
   created_at: string
   subscription_tier: string
+  subscription_status: string
+  trial_ends_at?: string | null
 }
 
 // All 6 roles as defined in backend OpenAPI spec

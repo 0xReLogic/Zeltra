@@ -713,7 +713,7 @@ export interface paths {
         };
         /**
          * GET /organizations/{org_id}/forensic/benford
-         * @description Performs Benford's Law analysis on all ledger entries.
+         * @description Performs Advanced Benford's Law analysis (1st & 2nd Digit, MAD).
          */
         get: operations["get_benford"];
         put?: never;
@@ -733,9 +733,9 @@ export interface paths {
         };
         /**
          * GET /organizations/{org_id}/forensic/health-score
-         * @description Calculates Altman Z-Score based on Balance Sheet.
+         * @description Calculates Financial Health Metrics (Altman Z-Score & Beneish M-Score).
          */
-        get: operations["get_z_score"];
+        get: operations["get_health_score"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1371,32 +1371,26 @@ export interface components {
             /**
              * Format: double
              * @description X1: Working Capital / Total Assets.
-             * @example 0.4
              */
             x1_working_capital: number;
             /**
              * Format: double
              * @description X2: Retained Earnings / Total Assets.
-             * @example 0.3
              */
             x2_retained_earnings: number;
             /**
              * Format: double
              * @description X3: EBIT / Total Assets.
-             * @example 0.2
              */
             x3_ebit: number;
             /**
              * Format: double
              * @description X4: Market Value of Equity / Total Liabilities.
-             *     Note: For private companies, we use Book Value of Equity.
-             * @example 1.5
              */
             x4_equity: number;
             /**
              * Format: double
              * @description X5: Sales / Total Assets.
-             * @example 1
              */
             x5_sales: number;
         };
@@ -1550,7 +1544,26 @@ export interface components {
             /** @description Section total. */
             total: string;
         };
-        /** @description Benford analysis result for a single digit. */
+        /** @description Details of the 8 Beneish M-Score variables. */
+        BeneishDetails: {
+            /** Format: double */
+            aqi: number;
+            /** Format: double */
+            depi: number;
+            /** Format: double */
+            dsri: number;
+            /** Format: double */
+            gmi: number;
+            /** Format: double */
+            lvgi: number;
+            /** Format: double */
+            sgai: number;
+            /** Format: double */
+            sgi: number;
+            /** Format: double */
+            tata: number;
+        };
+        /** @description Single digit record for Benford. */
         BenfordRecord: {
             /**
              * Format: double
@@ -1560,38 +1573,39 @@ export interface components {
             actual_percentage: number;
             /**
              * Format: double
-             * @description Difference between actual and expected.
-             * @example 0
+             * @description Difference.
              */
             difference: number;
             /**
              * Format: int32
-             * @description The leading digit (1-9).
+             * @description The digit (0-9).
              * @example 1
              */
             digit: number;
             /**
              * Format: double
-             * @description Expected frequency percentage according to Benford's Law.
+             * @description Expected frequency percentage.
              * @example 30.1
              */
             expected_percentage: number;
         };
-        /** @description Response for Benford's Law analysis. */
+        /** @description Response for Advanced Benford's Law analysis. */
         BenfordResponse: {
+            /** @description 1st Digit Distribution. */
+            distribution_1st_digit: components["schemas"]["BenfordRecord"][];
+            /** @description 2nd Digit Distribution (New). */
+            distribution_2nd_digit: components["schemas"]["BenfordRecord"][];
             /**
              * Format: double
-             * @description Overall anomaly score (simplified for UI).
-             * @example 0.05
+             * @description Mean Absolute Deviation Score.
+             * @example 0.005
              */
-            anomaly_score: number;
-            /** @description Analysis results per digit. */
-            distribution: components["schemas"]["BenfordRecord"][];
+            mad_score: number;
             /**
-             * @description Verdict: Safe, Suspicious, Danger.
-             * @example Safe
+             * @description MAD Verdict (Conform/Nonconform).
+             * @example Close Conformity
              */
-            verdict: string;
+            mad_verdict: string;
         };
         /** @description Input for a single budget line. */
         BudgetLineInput: {
@@ -2530,6 +2544,25 @@ export interface components {
              */
             version: string;
         };
+        /** @description Combined Health Score Response (Altman Z + Beneish M). */
+        HealthScoreResponse: {
+            m_details: components["schemas"]["BeneishDetails"];
+            /** Format: double */
+            m_prob: number;
+            m_risk_level: string;
+            /**
+             * Format: double
+             * @description Beneish M-Score Result (New).
+             */
+            m_score: number;
+            z_details: components["schemas"]["AltmanDetails"];
+            /**
+             * Format: double
+             * @description Altman Z-Score Result.
+             */
+            z_score: number;
+            z_zone: string;
+        };
         /** @description Response for income statement report. */
         IncomeStatementResponse: {
             /** @description Cost of goods sold section. */
@@ -2751,6 +2784,11 @@ export interface components {
             subscription_tier: string;
             /** @description Timezone for reports. */
             timezone: string;
+            /**
+             * Format: date-time
+             * @description Trial expiration date (if applicable).
+             */
+            trial_ends_at?: string | null;
         };
         /** @description Pagination metadata. */
         PageMeta: {
@@ -3420,22 +3458,6 @@ export interface components {
             original_transaction: components["schemas"]["TransactionResponse"];
             /** @description Reversing transaction (posted). */
             reversing_transaction: components["schemas"]["TransactionResponse"];
-        };
-        /** @description Response for Altman Z-Score. */
-        ZScoreResponse: {
-            /** @description Detailed breakdown. */
-            details: components["schemas"]["AltmanDetails"];
-            /**
-             * Format: double
-             * @description The calculated Z-Score.
-             * @example 4.2
-             */
-            score: number;
-            /**
-             * @description The Zone (Safe, Grey, Distress).
-             * @example Safe
-             */
-            zone: string;
         };
     };
     responses: never;
@@ -5556,7 +5578,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Benford analysis result */
+            /** @description Advanced Benford analysis */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -5588,7 +5610,7 @@ export interface operations {
             };
         };
     };
-    get_z_score: {
+    get_health_score: {
         parameters: {
             query?: never;
             header?: never;
@@ -5600,13 +5622,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Z-Score result */
+            /** @description Health Score Results */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ZScoreResponse"];
+                    "application/json": components["schemas"]["HealthScoreResponse"];
                 };
             };
             /** @description Payment Required (Enterprise Only) */

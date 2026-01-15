@@ -271,6 +271,7 @@ fn format_money(amount: Decimal) -> String {
     security(("bearerAuth" = []))
 )]
 #[axum::debug_handler]
+#[allow(clippy::cast_precision_loss)] // UI percentage display
 async fn get_dashboard_metrics(
     State(state): State<AppState>,
     Path(org_id): Path<Uuid>,
@@ -646,6 +647,7 @@ async fn get_cash_flow(
     security(("bearerAuth" = []))
 )]
 #[axum::debug_handler]
+#[allow(clippy::cast_precision_loss)] // UI percentage display
 async fn get_dashboard_budget_vs_actual(
     State(state): State<AppState>,
     Path(org_id): Path<Uuid>,

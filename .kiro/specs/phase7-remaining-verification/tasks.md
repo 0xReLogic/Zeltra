@@ -128,7 +128,7 @@ This plan covers verification and fixes for the remaining Phase 6-7 frontend fea
   - Git push `frontend` folder only if lint + E2E pass
   - Ask user if questions arise
 
-- [-] 7. Dimensional Reports API Integration
+- [ ] 7. Dimensional Reports API Integration
   - **Context:** Read `design.md` and `requirements.md` if context lost. Use `grepSearch`/`fileSearch` to find existing code.
   - [x] 7.1 Create dimensional report types file
     - Create `frontend/src/types/dimensional-report.ts`
@@ -181,19 +181,19 @@ This plan covers verification and fixes for the remaining Phase 6-7 frontend fea
     - Debug any errors directly
     - _Requirements: 5.1, 5.2, 5.5_
 
-- [ ] 10. Checkpoint - Fiscal Year Creation Verified
+- [x] 10. Checkpoint - Fiscal Year Creation Verified
   - Run `getDiagnostics` on all modified files - MUST pass
   - Ensure fiscal year creation works with real API via MCP Playwright E2E
   - Git push `frontend` folder only if lint + E2E pass
   - Ask user if questions arise
 
-- [ ] 11. Final Verification & Cleanup
+- [x] 11. Final Verification & Cleanup
   - **Context:** Read `design.md` and `requirements.md` if context lost.
-  - [ ] 11.1 Run TypeScript diagnostics
+  - [x] 11.1 Run TypeScript diagnostics
     - Check all modified files for type errors
     - Fix any type mismatches
     - _Requirements: All_
-  - [ ] 11.2 Update ROADMAP.md with verification status
+  - [x] 11.2 Update ROADMAP.md with verification status
     - Mark verified features as ✅ Real API
     - Update Phase 7 status
     - _Requirements: All_

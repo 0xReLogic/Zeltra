@@ -224,6 +224,7 @@ async fn check_membership(
     tag = "Attachments",
     security(("bearerAuth" = []))
 )]
+#[allow(clippy::too_many_lines)]
 async fn request_upload(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -255,9 +256,13 @@ async fn request_upload(
         // Get current storage used (sum of file_size from attachments)
         if let Ok(current_storage_bytes) = attachment_repo.get_total_storage_used(org_id).await {
             let storage_limit_bytes = i64::from(limits.attachment_storage_gb) * 1024 * 1024 * 1024;
+            #[allow(clippy::cast_possible_wrap)] // File sizes < 9EB
             let new_total = current_storage_bytes + payload.file_size as i64;
 
             if new_total > storage_limit_bytes {
+                #[allow(clippy::float_arithmetic)] // GB Calc requires float
+                #[allow(clippy::cast_precision_loss)]
+                // i64 -> f64 loss acceptable for stats
                 let used_gb = current_storage_bytes as f64 / (1024.0 * 1024.0 * 1024.0);
                 return (
                     StatusCode::PAYMENT_REQUIRED,

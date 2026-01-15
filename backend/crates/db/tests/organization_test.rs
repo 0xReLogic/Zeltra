@@ -858,6 +858,7 @@ async fn test_data_preservation_on_user_removal() {
             name: "FY 2026".to_string(),
             start_date: NaiveDate::from_ymd_opt(2026, 1, 1).unwrap(),
             end_date: NaiveDate::from_ymd_opt(2026, 12, 31).unwrap(),
+            include_adjustment_period: false,
         })
         .await
         .expect("Failed to create fiscal year");

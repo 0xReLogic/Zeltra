@@ -60,13 +60,18 @@ pub struct BenfordResponse {
 pub struct HealthScoreResponse {
     /// Altman Z-Score Result.
     pub z_score: f64,
-    pub z_zone: String, // Safe, Grey, Distress
+    /// Altman Zone (Safe, Grey, Distress).
+    pub z_zone: String,
+    /// Detailed Altman Z-Score Factors.
     pub z_details: AltmanDetails,
 
     /// Beneish M-Score Result (New).
     pub m_score: f64,
-    pub m_risk_level: String, // Safe, Possible Manipulation
-    pub m_prob: f64,          // Manipulation Probability
+    /// Beneish Risk Level (Safe, Possible Manipulation).
+    pub m_risk_level: String,
+    /// Manipulation Probability (Standard Normal CDF approx).
+    pub m_prob: f64,
+    /// Detailed Beneish M-Score Components.
     pub m_details: BeneishDetails,
 }
 
@@ -221,6 +226,7 @@ async fn get_benford(
     security(("bearerAuth" = []))
 )]
 #[axum::debug_handler]
+#[allow(clippy::too_many_lines)] // Orchestration logic is lengthy
 async fn get_health_score(
     State(state): State<AppState>,
     Path(org_id): Path<Uuid>,
