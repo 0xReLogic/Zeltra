@@ -725,13 +725,10 @@ NOW we start frontend, because backend is solid.
     - Gunakan field ini untuk menampilkan **Usage Meter** (e.g. "Users: 3 / 5") dan secara proaktif mengatur UI (hide/disable menu) sebelum user klik.
 15. **Dimension Quotas (Starter Tier Limit)**:
     - Tier **Starter** dibatasi maksimal **2 Dimensi**. Cek field `limits.max_dimensions` untuk validasi sisi client.
-16. **Forensic Suite (Handover)** ⚠️:
-    - **Update**: Features upgraded to "2026 Audit-Grade" (Math Hardening).
-    - **Sidebar**: Add "Forensic" item to Main Sidebar Navigation.
-    - **Pending Tasks**:
-      - **Benford Page**: Add 2nd Chart for `distribution_2nd_digit` & Widget for `mad_score` (Verdict: Safe/Suspicious).
-      - **Health Page**: Logic update. `ZScoreResponse` replaced by `HealthScoreResponse` containing both `z_score` and `m_score` (Beneish).
-    - **NOTE**: All API endpoints require `org_id` context: `GET /organizations/{org_id}/forensic/...`
+16. **Forensic Suite (COMPLETED)** ✅:
+    - **Status**: Full module (Reconciliation, Benford, Health Score) implemented.
+    - **Implementation**: Multi-tab analysis UI with interactive charts and automated health scores.
+    - **Navigation**: Integrated into Main Sidebar.
 
 ---
 

@@ -20,6 +20,49 @@ interface AccountDiscrepancy {
   status: 'Matched' | 'WithinTolerance' | 'Discrepancy'
 }
 
+interface BenfordRecord {
+  digit: number
+  actual_frequency: number
+  expected_frequency: number
+  deviation: number
+}
+
+interface BenfordResponse {
+  distribution_1st_digit: BenfordRecord[]
+  distribution_2nd_digit: BenfordRecord[]
+  mad_score: number
+  mad_verdict: string
+}
+
+interface AltmanDetails {
+  x1_liquidity: number
+  x2_profitability: number
+  x3_leverage: number
+  x4_solvency: number
+  x5_activity: number
+}
+
+interface BeneishDetails {
+  dsri: number
+  gmi: number
+  aqi: number
+  sgi: number
+  depi: number
+  sgai: number
+  lvgi: number
+  tata: number
+}
+
+interface HealthScoreResponse {
+  z_score: number
+  z_zone: string
+  z_details: AltmanDetails
+  m_score: number
+  m_risk_level: string
+  m_prob: number
+  m_details: BeneishDetails
+}
+
 interface ReconciliationResponse {
   organization_id: string
   run_at: string
@@ -42,4 +85,26 @@ export function useReconciliation() {
   })
 }
 
-export type { ReconciliationResponse, AccountDiscrepancy }
+/**
+ * GET /organizations/{org_id}/forensic/benford
+ * Run Benford's Law analysis (Enterprise only)
+ */
+export function useBenford() {
+  return useQuery({
+    queryKey: FORENSIC_KEYS.benford(),
+    queryFn: () => apiClient<BenfordResponse>('/forensic/benford'),
+  })
+}
+
+/**
+ * GET /organizations/{org_id}/forensic/health-score
+ * Run Financial Health checks (Enterprise only)
+ */
+export function useHealthScore() {
+  return useQuery({
+    queryKey: FORENSIC_KEYS.healthScore(),
+    queryFn: () => apiClient<HealthScoreResponse>('/forensic/health-score'),
+  })
+}
+
+export type { ReconciliationResponse, AccountDiscrepancy, BenfordResponse, BenfordRecord, HealthScoreResponse }
