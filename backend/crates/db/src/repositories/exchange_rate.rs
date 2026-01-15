@@ -10,7 +10,10 @@ use sea_orm::{
 };
 use uuid::Uuid;
 
-use crate::entities::{currencies, exchange_rates, sea_orm_active_enums::RateSource};
+use crate::entities::{
+    currencies, exchange_rates, fiscal_periods,
+    sea_orm_active_enums::{FiscalPeriodStatus, RateSource},
+};
 
 /// Error types for exchange rate operations.
 #[derive(Debug, thiserror::Error)]
@@ -30,6 +33,10 @@ pub enum ExchangeRateError {
     /// Exchange rate not found.
     #[error("No exchange rate found for {0}/{1} on or before {2}")]
     RateNotFound(String, String, NaiveDate),
+
+    /// Fiscal period closed.
+    #[error("Cannot modify exchange rate in closed fiscal period covering {0}")]
+    PeriodClosed(NaiveDate),
 
     /// Database error.
     #[error("Database error: {0}")]
@@ -140,6 +147,20 @@ impl ExchangeRateRepository {
             .await?;
         if to_currency.is_none() {
             return Err(ExchangeRateError::CurrencyNotFound(input.to_currency));
+        }
+
+        // Validate fiscal period status (Requirement 5: Immutability)
+        let fiscal_period = fiscal_periods::Entity::find()
+            .filter(fiscal_periods::Column::OrganizationId.eq(input.organization_id))
+            .filter(fiscal_periods::Column::StartDate.lte(input.effective_date))
+            .filter(fiscal_periods::Column::EndDate.gte(input.effective_date))
+            .one(&self.db)
+            .await?;
+
+        if let Some(period) = fiscal_period {
+            if period.status == FiscalPeriodStatus::Closed {
+                return Err(ExchangeRateError::PeriodClosed(input.effective_date));
+            }
         }
 
         // Check if rate already exists for this currency pair and date (Requirement 4.5)

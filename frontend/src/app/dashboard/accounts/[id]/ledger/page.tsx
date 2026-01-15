@@ -157,7 +157,7 @@ export default function AccountLedgerPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {ledger.entries.map((entry) => (
+                  {ledger.entries.map((entry: { id: string; transaction_date: string; description?: string; debit?: string; credit?: string; running_balance?: string }) => (
                     <TableRow key={entry.id}>
                       <TableCell className="font-medium">
                         {formatDate(entry.transaction_date)}

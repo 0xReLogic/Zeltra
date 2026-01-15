@@ -28,6 +28,8 @@ pub mod fiscal;
 /// Forensic analysis module (Benford's Law, Altman Z-Score, Beneish M-Score).
 pub mod forensic;
 pub mod ledger;
+/// Reconciliation module for balance drift detection.
+pub mod reconciliation;
 pub mod reports;
 pub mod simulation;
 pub mod storage;

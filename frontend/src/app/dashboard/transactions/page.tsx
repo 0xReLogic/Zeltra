@@ -21,7 +21,7 @@ import {
     SelectTrigger,
     SelectValue,
   } from '@/components/ui/select'
-import { useDimensions } from '@/lib/queries/dimensions'
+import { useDimensions, useDimensionValues } from '@/lib/queries/dimensions'
 import { useState } from 'react'
 
 export default function TransactionsPage() {
@@ -35,6 +35,18 @@ export default function TransactionsPage() {
   
   // Ensure dimensionsData is an array
   const dimensions = Array.isArray(dimensionsData) ? dimensionsData : []
+  
+  // Get dimension type IDs
+  const deptTypeId = dimensions.find(d => d.code === 'DEPT')?.id
+  const projTypeId = dimensions.find(d => d.code === 'PROJ')?.id
+  
+  // Fetch values
+  const { data: deptValues } = useDimensionValues(deptTypeId)
+  const { data: projValues } = useDimensionValues(projTypeId)
+  
+  const departmentOptions = Array.isArray(deptValues) ? deptValues : []
+  const projectOptions = Array.isArray(projValues) ? projValues : []
+
   // Backend returns array directly
   const txnList = Array.isArray(transactions) ? transactions : []
 
@@ -76,12 +88,12 @@ export default function TransactionsPage() {
                     <SelectValue placeholder="Filter by Dept" />
                 </SelectTrigger>
                 <SelectContent>
-                    <SelectItem value="all">All Departments</SelectItem>
-                    {dimensions.find(d => d.code === 'DEPT')?.values.map((v) => (
-                        <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>
+                    <SelectItem value="all">All</SelectItem>
+                    {departmentOptions.map((v) => (
+                        <SelectItem key={v.code} value={v.code}>{v.name}</SelectItem>
                     ))}
-                     {dimensions.find(d => d.code === 'PROJ')?.values.map((v) => (
-                        <SelectItem key={v.id} value={v.id}>Proj: {v.name}</SelectItem>
+                    {projectOptions.map((v) => (
+                        <SelectItem key={v.code} value={v.code}>Proj: {v.name}</SelectItem>
                     ))}
                 </SelectContent>
             </Select>

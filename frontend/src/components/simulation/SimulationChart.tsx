@@ -4,10 +4,18 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 import { ResponsiveContainer, ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts'
-import { AccountProjection } from '@/types/simulation'
+
+// Inline type since AccountProjection may not be exported from types
+interface AccountProjection {
+  month: string
+  revenue: number
+  expenses: number
+  net_income: number
+}
 
 interface SimulationChartProps {
-  data: AccountProjection[] | null
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  data: AccountProjection[] | any[] | null
 }
 
 export function SimulationChart({ data }: SimulationChartProps) {

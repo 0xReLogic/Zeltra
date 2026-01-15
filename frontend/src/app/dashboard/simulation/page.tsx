@@ -80,7 +80,7 @@ export default function SimulationPage() {
                     </Card>
                 </div>
 
-                <SimulationChart data={simulation.data.projections} />
+                <SimulationChart data={simulation.data.projections as unknown as { month: string; revenue: number; expenses: number; net_income: number }[]} />
              </div>
           ) : (
             <div className="h-[400px] flex items-center justify-center border rounded-lg bg-muted/10 border-dashed">

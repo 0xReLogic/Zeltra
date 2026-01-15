@@ -87,16 +87,25 @@ export function usePendingTransactions() {
 /**
  * POST /organizations/{org_id}/transactions
  * Create a new transaction
+ * 
+ * Includes Idempotency-Key header to prevent duplicate transactions on network retries.
  */
 export function useCreateTransaction() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (data: CreateTransactionRequest) =>
-      apiClient<Transaction>('/transactions', {
+    mutationFn: (data: CreateTransactionRequest) => {
+      // Generate unique idempotency key for this request
+      const idempotencyKey = crypto.randomUUID()
+      
+      return apiClient<Transaction>('/transactions', {
         method: 'POST',
         body: JSON.stringify(data),
-      }),
+        headers: {
+          'Idempotency-Key': idempotencyKey,
+        },
+      })
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: TRANSACTION_KEYS.all })
     },

@@ -1,5 +1,4 @@
-// Ledger types from OpenAPI spec
-export type {
-  AccountLedgerResponse,
-  LedgerEntryResponse,
-} from './api.generated';
+import type { components } from './api.generated';
+
+export type AccountLedgerResponse = components['schemas']['AccountLedgerResponse'];
+export type LedgerEntryResponse = components['schemas']['LedgerEntryResponse'];

@@ -30,7 +30,7 @@ export function AttachmentUpload({ transactionId, onUploadComplete }: Attachment
   const requestUpload = useRequestUpload(transactionId);
   const confirmUpload = useConfirmUpload(transactionId);
 
-  const onDrop = useCallback((acceptedFiles: File[], rejectedFiles: { errors: { message: string }[] }[]) => {
+  const onDrop = useCallback((acceptedFiles: File[], rejectedFiles: { errors: readonly { message: string }[] }[]) => {
     setError(null);
     if (rejectedFiles.length > 0) {
       const err = rejectedFiles[0].errors[0];
@@ -83,6 +83,10 @@ export function AttachmentUpload({ transactionId, onUploadComplete }: Attachment
       await confirmUpload.mutateAsync({
         attachment_id: uploadResponse.attachment_id,
         attachment_type: 'document',
+        content_type: file.type,
+        file_size: file.size,
+        filename: file.name,
+        storage_key: uploadResponse.storage_key,
       });
 
       setFile(null);

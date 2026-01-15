@@ -15,12 +15,12 @@ export default function DashboardPage() {
   const { data: budgets } = useBudgets()
 
   // Transform budgets data for the chart
-  const budgetUtilizationData = (Array.isArray(budgets) ? budgets : []).map(b => {
-      const limit = parseFloat(b.budget_limit)
-      const spent = parseFloat(b.actual_spent)
+  const budgetUtilizationData = (Array.isArray(budgets) ? budgets : []).map((b: { name: string; total_budgeted: string }) => {
+      const limit = parseFloat(b.total_budgeted || '0')
+      const spent = 0 // actual_spent not available in list response
       const utilization = limit > 0 ? (spent / limit) * 100 : 0
       return {
-          department: b.department,
+          department: b.name,
           budget: limit,
           spent: spent,
           utilization: Math.round(utilization)

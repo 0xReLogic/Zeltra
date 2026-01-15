@@ -78,7 +78,7 @@ export default function DimensionalReportPage() {
   })
 
   const chartData = report?.rows.map((row: DimensionalReportRowResponse) => {
-    const dimensionLabel = row.dimensions.map((d: DimensionValueResponse) => d.value).join(' - ')
+    const dimensionLabel = row.dimensions.map((d: DimensionValueResponse) => d.name).join(' - ')
     return {
       name: dimensionLabel,
       Debit: parseFloat(row.total_debit),
@@ -228,7 +228,7 @@ export default function DimensionalReportPage() {
                         </TableHeader>
                         <TableBody>
                             {report.rows.map((row: DimensionalReportRowResponse, idx: number) => {
-                              const dimensionLabel = row.dimensions.map((d: DimensionValueResponse) => `${d.dimension_type}: ${d.value}`).join(', ')
+                              const dimensionLabel = row.dimensions.map((d: DimensionValueResponse) => `${d.dimension_type}: ${d.name}`).join(', ')
                               return (
                                 <TableRow key={idx}>
                                     <TableCell className="font-medium">{dimensionLabel || 'No dimensions'}</TableCell>

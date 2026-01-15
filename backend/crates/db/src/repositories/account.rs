@@ -687,6 +687,48 @@ impl AccountRepository {
             total_pages,
         })
     }
+
+    /// Gets balance comparisons for all active accounts in an organization.
+    ///
+    /// Returns tuples of (account_id, code, name, stored_balance, calculated_balance)
+    /// for use with the ReconciliationService::analyze() method.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the database query fails.
+    pub async fn get_balance_comparisons(
+        &self,
+        organization_id: Uuid,
+    ) -> Result<Vec<(Uuid, String, String, Decimal, Decimal)>, AccountError> {
+        // 1. Get all active accounts for the organization
+        let accounts = chart_of_accounts::Entity::find()
+            .filter(chart_of_accounts::Column::OrganizationId.eq(organization_id))
+            .filter(chart_of_accounts::Column::IsActive.eq(true))
+            .all(&self.db)
+            .await?;
+
+        let mut comparisons = Vec::with_capacity(accounts.len());
+
+        // 2. For each account, calculate the balance from ledger entries
+        // Note: chart_of_accounts does not store current_balance; we compute it on the fly.
+        // The "stored" value here is Decimal::ZERO as a baseline comparison.
+        // A real reconciliation would compare against an external source or cached snapshot.
+        for account in accounts {
+            let calculated = self.calculate_sum_balance(account.id, None).await?;
+            // Use ZERO as "stored" since there's no persisted balance column
+            let stored = Decimal::ZERO;
+
+            comparisons.push((
+                account.id,
+                account.code,
+                account.name,
+                stored,
+                calculated,
+            ));
+        }
+
+        Ok(comparisons)
+    }
 }
 
 // ============================================================================

@@ -42,7 +42,7 @@ import { Calendar } from '@/components/ui/calendar'
 import { cn } from '@/lib/utils'
 import { useCreateTransaction } from '@/lib/queries/transactions'
 import { useAccounts } from '@/lib/queries/accounts'
-import { useDimensions } from '@/lib/queries/dimensions'
+import { useDimensions, useDimensionValues } from '@/lib/queries/dimensions'
 import { toast } from 'sonner'
 import type { CreateTransactionRequest, CreateEntryRequest } from '@/types/transactions'
 
@@ -73,6 +73,18 @@ export function CreateTransactionDialog() {
   // Ensure data is arrays - handle wrapper objects
   const accounts = accountsData?.accounts ?? []
   const dimensions = Array.isArray(dimensionsData) ? dimensionsData : []
+  
+  // Get dimension type IDs for DEPT and PROJ
+  const deptTypeId = dimensions.find(d => d.code === 'DEPT')?.id
+  const projTypeId = dimensions.find(d => d.code === 'PROJ')?.id
+  
+  // Fetch dimension values for each type
+  const { data: deptValues } = useDimensionValues(deptTypeId)
+  const { data: projValues } = useDimensionValues(projTypeId)
+  
+  // Extract values arrays
+  const departmentOptions = Array.isArray(deptValues) ? deptValues : []
+  const projectOptions = Array.isArray(projValues) ? projValues : []
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -157,14 +169,14 @@ export function CreateTransactionDialog() {
       ]
     }
 
-    const request: CreateTransactionRequest = {
+    const request = {
       type: values.type,
       transaction_date: format(values.transaction_date, 'yyyy-MM-dd'),
       description: values.description,
       entries,
       reference_number: values.reference_number || undefined,
       memo: values.memo || undefined,
-    }
+    } as CreateTransactionRequest
 
     createMutation.mutate(request, {
       onSuccess: () => {
@@ -300,13 +312,11 @@ export function CreateTransactionDialog() {
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="none">None</SelectItem>
-                        {dimensions
-                          .find((d) => d.code === 'DEPT')
-                          ?.values?.map((v) => (
-                            <SelectItem key={v.id} value={v.id}>
-                              {v.name}
-                            </SelectItem>
-                          ))}
+                        {departmentOptions.map((v) => (
+                          <SelectItem key={v.code} value={v.code}>
+                            {v.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -328,13 +338,11 @@ export function CreateTransactionDialog() {
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="none">None</SelectItem>
-                        {dimensions
-                          .find((d) => d.code === 'PROJ')
-                          ?.values?.map((v) => (
-                            <SelectItem key={v.id} value={v.id}>
-                              {v.name}
-                            </SelectItem>
-                          ))}
+                        {projectOptions.map((v) => (
+                          <SelectItem key={v.code} value={v.code}>
+                            {v.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />

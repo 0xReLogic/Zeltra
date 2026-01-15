@@ -59,7 +59,7 @@ export default function ApprovalsPage() {
   }
 
   const handleReject = (id: string) => {
-    rejectMutation.mutate(id, {
+    rejectMutation.mutate({ id, reason: 'Rejected by approver' }, {
       onSuccess: () => {
         toast.error("Transaction Rejected", {
           description: "Transaction has been rejected.",
@@ -83,7 +83,7 @@ export default function ApprovalsPage() {
         <CardHeader>
           <CardTitle>Pending Transactions</CardTitle>
           <CardDescription>
-            {data?.data.length || 0} transactions waiting for your review.
+            {data?.length || 0} transactions waiting for your review.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -112,13 +112,13 @@ export default function ApprovalsPage() {
                         type="checkbox" 
                         className="translate-y-[2px]"
                         onChange={(e) => {
-                            if (e.target.checked && data?.data) {
-                                setSelectedIds(data.data.map(t => t.id))
+                            if (e.target.checked && data) {
+                                setSelectedIds(data.map(t => t.id))
                             } else {
                                 setSelectedIds([])
                             }
                         }}
-                        checked={data?.data?.length ? selectedIds.length === data.data.length && data.data.length > 0 : false}
+                        checked={data?.length ? selectedIds.length === data.length && data.length > 0 : false}
                     />
                  </TableHead>
                  <TableHead>Date</TableHead>
@@ -135,11 +135,11 @@ export default function ApprovalsPage() {
                       Loading...
                     </TableCell>
                   </TableRow>
-                ) : data?.data && data.data.length > 0 ? (
-                  data.data.map((txn) => {
-                     const totalAmount = Math.max(
-                        ...txn.entries.map(e => parseFloat(e.debit) || parseFloat(e.credit))
-                     )
+                ) : data && data.length > 0 ? (
+                  data.map((txn: { id: string; transaction_date: string; reference_number?: string | null; description: string; entries?: { debit: string; credit: string }[] }) => {
+                     const totalAmount = txn.entries?.length 
+                       ? Math.max(...txn.entries.map(e => parseFloat(e.debit) || parseFloat(e.credit)))
+                       : 0
                      const isSelected = selectedIds.includes(txn.id)
 
                      return (

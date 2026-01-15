@@ -19,11 +19,12 @@ use uuid::Uuid;
 use crate::{AppState, middleware::AuthUser};
 use sea_orm::{ColumnTrait, EntityTrait, QueryFilter, QuerySelect, RelationTrait};
 use zeltra_core::forensic::{AltmanDetails, BeneishDetails, BenfordRecord, ForensicService};
+use zeltra_core::reconciliation::{AccountDiscrepancy, ReconciliationReport, ReconciliationService};
 use zeltra_core::reports::ReportService;
 use zeltra_db::{
     OrganizationRepository,
     entities::{ledger_entries, sea_orm_active_enums::SubscriptionTier},
-    repositories::report::ReportRepository,
+    repositories::{account::AccountRepository, report::ReportRepository},
 };
 
 /// Creates the forensic routes.
@@ -33,6 +34,10 @@ pub fn routes() -> Router<AppState> {
         .route(
             "/organizations/{org_id}/forensic/health-score",
             get(get_health_score),
+        )
+        .route(
+            "/organizations/{org_id}/forensic/reconciliation",
+            get(get_reconciliation),
         )
 }
 
@@ -391,4 +396,116 @@ fn account_type_to_string(t: &zeltra_db::entities::sea_orm_active_enums::Account
         zeltra_db::entities::sea_orm_active_enums::AccountType::Revenue => "revenue".to_string(),
         zeltra_db::entities::sea_orm_active_enums::AccountType::Expense => "expense".to_string(),
     }
+}
+
+// ============================================================================
+// Reconciliation Endpoint
+// ============================================================================
+
+/// Response for Reconciliation report.
+#[derive(Debug, Serialize, utoipa::ToSchema)]
+pub struct ReconciliationResponse {
+    /// Organization ID.
+    pub organization_id: String,
+    /// Timestamp when reconciliation was run.
+    pub run_at: String,
+    /// Total accounts checked.
+    pub total_accounts: usize,
+    /// Accounts with exact match.
+    pub matched_count: usize,
+    /// Accounts within tolerance.
+    pub within_tolerance_count: usize,
+    /// Accounts with discrepancies.
+    pub discrepancy_count: usize,
+    /// Whether all accounts reconcile correctly.
+    pub is_clean: bool,
+    /// Detailed account results.
+    pub accounts: Vec<AccountDiscrepancyDto>,
+}
+
+/// DTO for account discrepancy.
+#[derive(Debug, Serialize, utoipa::ToSchema)]
+pub struct AccountDiscrepancyDto {
+    pub account_id: String,
+    pub account_code: String,
+    pub account_name: String,
+    pub stored_balance: String,
+    pub calculated_balance: String,
+    pub difference: String,
+    pub status: String,
+}
+
+/// GET /organizations/{org_id}/forensic/reconciliation
+///
+/// Runs balance reconciliation comparing stored vs calculated balances.
+#[utoipa::path(
+    get,
+    path = "/organizations/{org_id}/forensic/reconciliation",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID")
+    ),
+    responses(
+        (status = 200, description = "Reconciliation report", body = ReconciliationResponse),
+        (status = 403, description = "Forbidden - Enterprise only"),
+        (status = 404, description = "Organization not found")
+    ),
+    tag = "Forensic",
+    security(("bearerAuth" = []))
+)]
+#[axum::debug_handler]
+async fn get_reconciliation(
+    State(state): State<AppState>,
+    Path(org_id): Path<Uuid>,
+    _auth_user: AuthUser,
+) -> impl IntoResponse {
+    let org_repo = OrganizationRepository::new((*state.db).clone());
+
+    // Tier check
+    if let Err(e) = check_tier(&org_repo, org_id).await {
+        return e;
+    }
+
+    // Fetch balance comparisons
+    let account_repo = AccountRepository::new((*state.db).clone());
+    let comparisons = match account_repo.get_balance_comparisons(org_id).await {
+        Ok(c) => c,
+        Err(e) => {
+            error!("Failed to get balance comparisons: {:?}", e);
+            return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({
+                "error": { "message": "Failed to fetch account balances" }
+            }))).into_response();
+        }
+    };
+
+    // Analyze with ReconciliationService
+    let service = ReconciliationService::new();
+    let report = service.analyze(org_id, comparisons);
+
+    // Convert to response DTO
+    let accounts_dto: Vec<AccountDiscrepancyDto> = report
+        .accounts
+        .into_iter()
+        .map(|a| AccountDiscrepancyDto {
+            account_id: a.account_id.to_string(),
+            account_code: a.account_code,
+            account_name: a.account_name,
+            stored_balance: a.stored_balance.to_string(),
+            calculated_balance: a.calculated_balance.to_string(),
+            difference: a.difference.to_string(),
+            status: format!("{:?}", a.status),
+        })
+        .collect();
+
+    let response = ReconciliationResponse {
+        organization_id: org_id.to_string(),
+        run_at: report.run_at.to_rfc3339(),
+        total_accounts: report.total_accounts,
+        matched_count: report.matched_count,
+        within_tolerance_count: report.within_tolerance_count,
+        discrepancy_count: report.discrepancy_count,
+        is_clean: report.is_clean,
+        accounts: accounts_dto,
+    };
+
+    (StatusCode::OK, Json(response)).into_response()
 }
