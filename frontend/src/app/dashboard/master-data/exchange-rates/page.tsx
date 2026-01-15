@@ -11,9 +11,9 @@ import {
 } from '@/components/ui/table'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Plus, Loader2 } from 'lucide-react'
+import { Plus, Loader2, RefreshCw } from 'lucide-react'
 import { BulkImportDialog } from './BulkImportDialog'
-import { useExchangeRates, useCreateExchangeRate } from '@/lib/queries/exchange-rates'
+import { useExchangeRates, useCreateExchangeRate, useFetchLiveRates } from '@/lib/queries/exchange-rates'
 import {
   Dialog,
   DialogContent,
@@ -53,7 +53,33 @@ const formSchema = z.object({
 export default function ExchangeRatesPage() {
   const { data, isLoading } = useExchangeRates()
   const createRate = useCreateExchangeRate()
+  const fetchLiveRates = useFetchLiveRates()
   const [open, setOpen] = React.useState(false)
+
+  const handleSync = async () => {
+    toast.promise(
+      // Fetch major currencies to IDR
+      Promise.all([
+        fetchLiveRates.mutateAsync({
+          base_currency: 'USD',
+          target_currencies: ['IDR'],
+        }),
+        fetchLiveRates.mutateAsync({
+          base_currency: 'EUR',
+          target_currencies: ['IDR', 'USD'],
+        }),
+        fetchLiveRates.mutateAsync({
+          base_currency: 'SGD',
+          target_currencies: ['IDR'],
+        }),
+      ]),
+      {
+        loading: 'Syncing live rates for USD, EUR, SGD...',
+        success: 'Exchange rates synced successfully',
+        error: 'Failed to sync rates',
+      }
+    )
+  }
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -99,6 +125,10 @@ export default function ExchangeRatesPage() {
           </p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" onClick={handleSync} disabled={fetchLiveRates.isPending}>
+            <RefreshCw className={`mr-2 h-4 w-4 ${fetchLiveRates.isPending ? 'animate-spin' : ''}`} />
+            Sync Live Rates
+          </Button>
           <BulkImportDialog />
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>

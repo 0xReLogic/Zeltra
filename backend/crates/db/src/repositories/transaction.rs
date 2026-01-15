@@ -620,7 +620,7 @@ impl TransactionRepository {
         filter: TransactionFilter,
         page: u64,
         limit: u64,
-    ) -> Result<(Vec<transactions::Model>, u64), TransactionError> {
+    ) -> Result<(Vec<TransactionWithEntries>, u64), TransactionError> {
         let mut query = transactions::Entity::find()
             .filter(transactions::Column::OrganizationId.eq(organization_id));
 
@@ -640,8 +640,6 @@ impl TransactionRepository {
             query = query.filter(transactions::Column::TransactionDate.lte(date_to));
         }
 
-        // TODO: Filter by dimension_value_id requires a join with entry_dimensions
-
         let paginator = query
             .order_by_desc(transactions::Column::TransactionDate)
             .order_by_desc(transactions::Column::CreatedAt)
@@ -650,7 +648,47 @@ impl TransactionRepository {
         let total_items = paginator.num_items().await?;
         let transactions = paginator.fetch_page(page).await?;
 
-        Ok((transactions, total_items))
+        // Load entries for these transactions
+        let tx_ids: Vec<Uuid> = transactions.iter().map(|t| t.id).collect();
+        let entries = ledger_entries::Entity::find()
+            .filter(ledger_entries::Column::TransactionId.is_in(tx_ids))
+            .all(&self.db)
+            .await?;
+
+        // Load dimensions for entries
+        let entry_ids: Vec<Uuid> = entries.iter().map(|e| e.id).collect();
+        let all_dims = entry_dimensions::Entity::find()
+            .filter(entry_dimensions::Column::LedgerEntryId.is_in(entry_ids))
+            .all(&self.db)
+            .await?;
+
+        // Group dimensions by entry
+        let mut dims_map: HashMap<Uuid, Vec<Uuid>> = HashMap::new();
+        for dim in all_dims {
+            dims_map.entry(dim.ledger_entry_id).or_default().push(dim.dimension_value_id);
+        }
+
+        // Group entries by transaction
+        let mut entries_map: HashMap<Uuid, Vec<LedgerEntryWithDimensions>> = HashMap::new();
+        for entry in entries {
+            let dims = dims_map.remove(&entry.id).unwrap_or_default();
+            let tid = entry.transaction_id; // Linked to transaction
+            let entry_with_dims = LedgerEntryWithDimensions {
+                entry,
+                dimensions: dims,
+            };
+            entries_map.entry(tid).or_default().push(entry_with_dims);
+        }
+
+        let result = transactions.into_iter().map(|t| {
+             let t_entries = entries_map.remove(&t.id).unwrap_or_default();
+             TransactionWithEntries {
+                 transaction: t,
+                 entries: t_entries,
+             }
+        }).collect();
+
+        Ok((result, total_items))
     }
 
     /// Verifies the integrity of the entire ledger for an organization.

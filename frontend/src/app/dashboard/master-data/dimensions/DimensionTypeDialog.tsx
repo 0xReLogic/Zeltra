@@ -24,7 +24,9 @@ import {
     FormMessage,
 } from '@/components/ui/form'
 import { toast } from 'sonner'
-import { useCreateDimensionType } from '@/lib/queries/dimensions'
+import { useCreateDimensionType, useDimensions } from '@/lib/queries/dimensions'
+import { useOrganization } from '@/lib/queries/organizations'
+import { useUpgradeStore } from '@/lib/stores/upgradeStore'
 
 const typeSchema = z.object({
     code: z.string().min(2, 'Code must be at least 2 chars').max(10).toUpperCase(),
@@ -34,6 +36,23 @@ const typeSchema = z.object({
 export function DimensionTypeDialog() {
     const [open, setOpen] = React.useState(false)
     const createType = useCreateDimensionType()
+    const { data: dimensions } = useDimensions()
+    const { data: org } = useOrganization()
+    const { openModal } = useUpgradeStore()
+
+    const handleOpenChange = (newOpen: boolean) => {
+        if (newOpen) {
+            const currentDimensions = Array.isArray(dimensions) ? dimensions : []
+            // If checking fails or types are off, default to allowing usage (fail open) unless we are sure
+            const maxDimensions = org?.limits?.max_dimensions
+            
+            if (maxDimensions !== null && maxDimensions !== undefined && currentDimensions.length >= maxDimensions) {
+                openModal(`Your plan is limited to ${maxDimensions} dimensions. Upgrade to add more.`)
+                return
+            }
+        }
+        setOpen(newOpen)
+    }
 
     const form = useForm<z.infer<typeof typeSchema>>({
         resolver: zodResolver(typeSchema),
@@ -52,7 +71,7 @@ export function DimensionTypeDialog() {
     }
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
                 <Button variant="outline">
                     <Plus className="mr-2 h-4 w-4" />

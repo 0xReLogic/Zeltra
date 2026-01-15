@@ -12,8 +12,10 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CreateTransactionDialog } from '@/components/transactions/CreateTransactionDialog'
+import { PayInvoiceDialog } from '@/components/transactions/PayInvoiceDialog'
+import { TransactionListItem } from '@/types/transactions'
 import { Button } from '@/components/ui/button'
-import { Loader2, Filter } from 'lucide-react'
+import { Loader2, Filter, CreditCard } from 'lucide-react'
 import Link from 'next/link'
 import {
     Select,
@@ -28,6 +30,11 @@ import { useState } from 'react'
 export default function TransactionsPage() {
   const [filterDim, setFilterDim] = useState<string>('all')
   const [page, setPage] = useState(0)
+  
+  // Pay Invoice State
+  const [selectedInvoice, setSelectedInvoice] = useState<TransactionListItem | null>(null)
+  const [payOpen, setPayOpen] = useState(false)
+
   const { data, isLoading, isError } = useTransactions({
     page,
     limit: 50,
@@ -116,12 +123,13 @@ export default function TransactionsPage() {
                 <TableHead>Description</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {txnList.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                     No transactions found. Create your first transaction to get started.
                   </TableCell>
                 </TableRow>
@@ -146,6 +154,26 @@ export default function TransactionsPage() {
                         {txn.status}
                       </Badge>
                     </TableCell>
+                     <TableCell>
+                      {/* Only show Pay button for posted expenses/bills */}
+                      {txn.status === 'posted' && ['expense', 'journal'].includes(txn.transaction_type) && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            setSelectedInvoice(txn)
+                            setPayOpen(true)
+                          }}
+                          className="h-8 w-8 p-0"
+                          title="Pay Invoice"
+                        >
+                          <CreditCard className="h-4 w-4 text-primary" />
+                          <span className="sr-only">Pay</span>
+                        </Button>
+                      )}
+                    </TableCell>
                   </TableRow>
                   </Link>
                 ))
@@ -154,6 +182,12 @@ export default function TransactionsPage() {
           </Table>
         </CardContent>
       </Card>
+      
+      <PayInvoiceDialog 
+        invoice={selectedInvoice} 
+        open={payOpen} 
+        onOpenChange={setPayOpen} 
+      />
 
       <div className="flex items-center justify-end space-x-2">
         <Button

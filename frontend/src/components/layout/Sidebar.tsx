@@ -16,9 +16,14 @@ import {
   FileText,
   TrendingUp,
   SearchCode,
-  Lock
+  Lock,
+  CalendarClock,
+  Building2,
+  Scale
 } from 'lucide-react'
 import { useOrganization } from '@/lib/queries/organizations'
+import { useUpgradeStore } from '@/lib/stores/upgradeStore'
+import { UsageMeter } from '@/components/dashboard/UsageMeter'
 
 const navItems = [
   { label: 'Overview', href: '/dashboard', icon: LayoutDashboard },
@@ -26,6 +31,9 @@ const navItems = [
   { label: 'Transactions', href: '/dashboard/transactions', icon: ArrowRightLeft },
   { label: 'Approvals', href: '/dashboard/approvals', icon: CheckSquare },
   { label: 'Budgeting', href: '/dashboard/budgets', icon: PieChart },
+  { label: 'Accruals', href: '/dashboard/accruals', icon: CalendarClock, tier: 'enterprise' },
+  { label: 'Intercompany', href: '/dashboard/intercompany', icon: Building2, tier: 'enterprise' },
+  { label: 'Revaluation', href: '/dashboard/revaluation', icon: Scale, tier: 'enterprise' },
   { label: 'Simulation', href: '/dashboard/simulation', icon: TrendingUp, tier: 'enterprise' },
   { label: 'Forensic', href: '/dashboard/forensic', icon: SearchCode, tier: 'enterprise' },
   { label: 'Reports', href: '/dashboard/reports/trial-balance', icon: FileText },
@@ -36,6 +44,7 @@ const navItems = [
 export function Sidebar() {
   const pathname = usePathname()
   const { data: org } = useOrganization()
+  const { openModal } = useUpgradeStore()
 
   return (
     <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r bg-background hidden md:block">
@@ -50,6 +59,25 @@ export function Sidebar() {
           {navItems.map((item) => {
             const isActive = pathname === item.href
             const isLocked = item.tier === 'enterprise' && org?.subscription_tier !== 'enterprise'
+
+            if (isLocked) {
+              return (
+                <button
+                  key={item.href}
+                  onClick={() => openModal(`Unlock ${item.label} and other Enterprise features.`)}
+                  className={cn(
+                    "flex w-full items-center justify-between rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                    "text-muted-foreground hover:bg-muted hover:text-foreground text-left"
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <item.icon className="h-4 w-4" />
+                    {item.label}
+                  </div>
+                  <Lock className="h-3 w-3 text-amber-500" />
+                </button>
+              )
+            }
 
             return (
               <Link
@@ -66,15 +94,13 @@ export function Sidebar() {
                   <item.icon className="h-4 w-4" />
                   {item.label}
                 </div>
-                {isLocked && (
-                  <Lock className="h-3 w-3 text-amber-500" />
-                )}
               </Link>
             )
           })}
         </nav>
 
-        <div className="border-t pt-4">
+         <div className="border-t pt-4">
+           <UsageMeter className="mb-4 px-2" />
            <Link
               href="/dashboard/help"
               className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"

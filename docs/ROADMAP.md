@@ -788,17 +788,17 @@ Kita menggunakan strategi **"Show but Lock"** (Gembok Emas) daripada menyembunyi
   - [x] Filter by date range
   - [x] Filter by transaction type
   - [x] Filter by dimension (department/project)
-- [x] Transaction entry form (UI done, API status: ⚠️ unverified)
+- [x] Transaction entry form ✅ Real API
   - [x] Multi-line journal entry (debit/credit)
   - [x] Account selector
   - [x] Dimension assignment per entry (`entry_dimensions`)
   - [x] Multi-currency support (source_currency, exchange_rate)
   - [x] Attachment upload
-- [x] Approval queue (UI done, API status: ⚠️ unverified)
+- [x] Approval queue ✅ Real API
   - [x] List pending transactions
   - [x] Approve/Reject actions
   - [x] Bulk approve
-- [x] Transaction detail (UI done, API status: ⚠️ unverified)
+- [x] Transaction detail ✅ Real API
   - [x] View entries with debit/credit
   - [x] View dimension assignments
   - [x] View attachments
@@ -913,9 +913,10 @@ Kita menggunakan strategi **"Show but Lock"** (Gembok Emas) daripada menyembunyi
 
 **⚠️ Need Further Verification:**
 
-- None (all Phase 7 features verified via E2E)
+- Forensic Suite (partially verified)
+- Mobile responsiveness (Phase 10)
 
-**🔧 Response Type Fixes Applied (2026-01-13):**
+**🔧 Response Type Fixes Applied (2026-01-13 - 2026-01-15):**
 
 - Transactions: Changed from `{ data: [], pagination: {} }` to `TransactionListItem[]`
 - Accounts: Changed from `{ data: [] }` to `Account[]`

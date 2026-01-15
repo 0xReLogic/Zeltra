@@ -267,6 +267,11 @@ pub struct CreateEntryRequest {
     /// Dimension value IDs.
     #[serde(default)]
     pub dimensions: Vec<Uuid>,
+    /// Optional exchange rate override.
+    #[schema(example = "1.0850")]
+    pub exchange_rate: Option<String>,
+    /// Optional compliance/ESG metadata.
+    pub metadata: Option<serde_json::Value>,
 }
 
 /// Request body for updating a transaction.
@@ -336,6 +341,8 @@ pub struct TransactionListItem {
     pub status: String,
     /// Created at timestamp.
     pub created_at: String,
+    /// Total amount.
+    pub total_amount: String,
 }
 
 /// Response for a paginated list of transactions.
@@ -560,14 +567,19 @@ async fn list_transactions(
         Ok((transactions, total)) => {
             let items: Vec<TransactionListItem> = transactions
                 .into_iter()
-                .map(|t| TransactionListItem {
-                    id: t.id,
-                    reference_number: t.reference_number,
-                    transaction_type: tx_type_to_string(&t.transaction_type),
-                    transaction_date: t.transaction_date.to_string(),
-                    description: t.description,
-                    status: status_to_string(&t.status),
-                    created_at: t.created_at.to_rfc3339(),
+                .map(|t| {
+                    let total_debit: Decimal = t.entries.iter().map(|e| e.entry.debit).sum();
+
+                    TransactionListItem {
+                        id: t.transaction.id,
+                        reference_number: t.transaction.reference_number,
+                        transaction_type: tx_type_to_string(&t.transaction.transaction_type),
+                        transaction_date: t.transaction.transaction_date.to_string(),
+                        description: t.transaction.description,
+                        status: status_to_string(&t.transaction.status),
+                        created_at: t.transaction.created_at.to_rfc3339(),
+                        total_amount: total_debit.to_string(),
+                    }
                 })
                 .collect();
 
@@ -757,9 +769,20 @@ async fn create_transaction(
             }
         };
 
-        // Get exchange rate (simplified - same currency = 1.0)
-        // TODO: Lookup from exchange_rates table for different currencies
-        let exchange_rate = if entry_req.source_currency == functional_currency {
+        // Get exchange rate logic with Override support
+        // Item 43: Advanced Transaction Fields (Manual Rate Override)
+        let exchange_rate = if let Some(rate_str) = entry_req.exchange_rate {
+             Decimal::from_str(&rate_str).map_err(|_| {
+                (
+                    StatusCode::BAD_REQUEST,
+                    Json(json!({
+                        "error": "invalid_exchange_rate",
+                        "message": "Invalid exchange rate format"
+                    })),
+                )
+                    .into_response()
+            })?
+        } else if entry_req.source_currency == functional_currency {
             Decimal::ONE
         } else {
             // For now, require same currency or return error
@@ -806,7 +829,7 @@ async fn create_transaction(
             credit,
             memo: entry_req.memo.clone(),
             dimensions: entry_req.dimensions.clone(),
-            compliance_metadata: None,
+            compliance_metadata: entry_req.metadata.clone(),
         });
     }
 

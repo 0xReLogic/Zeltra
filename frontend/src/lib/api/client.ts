@@ -1,6 +1,7 @@
 import { QueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { useAuthStore } from '../stores/authStore'
+import { useUpgradeStore } from '../stores/upgradeStore'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || ''
 
@@ -173,6 +174,12 @@ export async function apiClient<T>(
         case 401:
           toast.error('Session expired, please login again')
           throw new UnauthorizedError(message)
+        case 402:
+          // Payment Required - Trigger Upgrade Modal
+          useUpgradeStore.getState().openModal(message)
+          // We don't throw an error that triggers a toast here, as the modal is the UI feedback
+          // But we throw to stop execution flow
+          throw new ApiError(message, 402, 'PAYMENT_REQUIRED')
         case 403:
           toast.error('Permission denied')
           throw new PermissionDeniedError(message)

@@ -12,6 +12,8 @@ export type BulkImportResponse = components['schemas']['BulkImportResponse']
 export type BulkRateItem = components['schemas']['BulkRateItem']
 export type ExchangeRateListItem = components['schemas']['ExchangeRateListItem']
 export type PageResponseExchangeRateListItem = components['schemas']['PageResponse_ExchangeRateListItem']
+export type FetchRatesRequest = components['schemas']['FetchRatesRequest']
+export type FetchRatesResponse = components['schemas']['FetchRatesResponse']
 
 // Type aliases for backward compatibility
 export type ExchangeRate = ExchangeRateResponse

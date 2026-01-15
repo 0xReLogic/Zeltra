@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import * as z from 'zod'
 import { format } from 'date-fns'
-import { CalendarIcon, Loader2 } from 'lucide-react'
+import { CalendarIcon, Loader2, ChevronsUpDown, Leaf, Scale } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -44,6 +44,7 @@ import { useCreateTransaction } from '@/lib/queries/transactions'
 import { useAccounts } from '@/lib/queries/accounts'
 import { useDimensions, useDimensionValues } from '@/lib/queries/dimensions'
 import { toast } from 'sonner'
+import { ApiError } from '@/lib/api/client'
 import type { CreateTransactionRequest, CreateEntryRequest } from '@/types/transactions'
 
 const formSchema = z.object({
@@ -60,12 +61,18 @@ const formSchema = z.object({
   department: z.string().optional(),
   project: z.string().optional(),
   currency: z.string(),
+  // Advanced Fields
+  exchange_rate: z.string().optional(),
+  esg_enabled: z.boolean().default(false),
+  carbon_impact: z.string().optional(),
+  vendor_score: z.string().optional(),
 })
 
 type FormValues = z.infer<typeof formSchema>
 
 export function CreateTransactionDialog() {
   const [open, setOpen] = useState(false)
+  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false)
   const createMutation = useCreateTransaction()
   const { data: accountsData } = useAccounts()
   const { data: dimensionsData } = useDimensions()
@@ -100,12 +107,28 @@ export function CreateTransactionDialog() {
       department: '',
       project: '',
       currency: 'USD',
+      exchange_rate: '',
+      esg_enabled: false,
+      carbon_impact: '',
+      vendor_score: '',
     },
   })
 
   function onSubmit(values: FormValues) {
     const amount = values.amount
     const currency = values.currency
+
+    // Prepare Metadata
+    let metadata: Record<string, any> | undefined = undefined
+    if (values.esg_enabled) {
+        metadata = {
+            esg: {
+                carbon_impact: parseFloat(values.carbon_impact || '0'),
+                vendor_score: parseFloat(values.vendor_score || '0'),
+                verified: true
+            }
+        }
+    }
 
     // Collect dimension IDs
     const dims: string[] = []
@@ -116,21 +139,26 @@ export function CreateTransactionDialog() {
     // API expects: account_id, entry_type ("debit" | "credit"), source_amount, source_currency
     let entries: CreateEntryRequest[] = []
 
+    const commonProps = {
+        source_amount: amount,
+        source_currency: currency,
+        exchange_rate: values.exchange_rate, // Pass override if present
+    }
+
     if (values.type === 'expense') {
       // Expense: Debit Expense account, Credit Asset account
       entries = [
         {
           account_id: values.contra_account_id, // Expense account
           entry_type: 'debit',
-          source_amount: amount,
-          source_currency: currency,
           dimensions: dims.length > 0 ? dims : undefined,
+          metadata: metadata, // Attach ESG to Expense
+          ...commonProps
         },
         {
           account_id: values.main_account_id, // Asset/Bank account
           entry_type: 'credit',
-          source_amount: amount,
-          source_currency: currency,
+          ...commonProps
         },
       ]
     } else if (values.type === 'revenue') {
@@ -139,15 +167,14 @@ export function CreateTransactionDialog() {
         {
           account_id: values.main_account_id, // Asset/Bank account
           entry_type: 'debit',
-          source_amount: amount,
-          source_currency: currency,
+          ...commonProps
         },
         {
           account_id: values.contra_account_id, // Revenue account
           entry_type: 'credit',
-          source_amount: amount,
-          source_currency: currency,
           dimensions: dims.length > 0 ? dims : undefined,
+          metadata: metadata, // Attach ESG to Revenue (Impact of sales?)
+          ...commonProps
         },
       ]
     } else {
@@ -156,15 +183,15 @@ export function CreateTransactionDialog() {
         {
           account_id: values.main_account_id,
           entry_type: 'debit',
-          source_amount: amount,
-          source_currency: currency,
           dimensions: dims.length > 0 ? dims : undefined,
+          metadata: metadata,
+          ...commonProps
         },
         {
           account_id: values.contra_account_id,
           entry_type: 'credit',
-          source_amount: amount,
-          source_currency: currency,
+          metadata: metadata, // Attach to both or just one?
+          ...commonProps
         },
       ]
     }
@@ -176,6 +203,7 @@ export function CreateTransactionDialog() {
       entries,
       reference_number: values.reference_number || undefined,
       memo: values.memo || undefined,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     } as CreateTransactionRequest
 
     createMutation.mutate(request, {
@@ -185,6 +213,13 @@ export function CreateTransactionDialog() {
         form.reset()
       },
       onError: (error) => {
+        // Handle specific budget dimension validation errors
+        if (error instanceof ApiError && error.status === 400 && error.details?.missing_dimensions) {
+          const missing = error.details.missing_dimensions.join(', ')
+          toast.error(`Dimension '${missing}' is required because this account is tied to a budget.`)
+          return
+        }
+        
         // Error toast is already shown by apiClient
         console.error('Failed to create transaction:', error)
       },
@@ -460,6 +495,106 @@ export function CreateTransactionDialog() {
                 </FormItem>
               )}
             />
+
+            <div className="w-full space-y-2 border rounded-md p-2">
+              <div className="flex items-center justify-between px-2">
+                <h4 className="text-sm font-semibold">Advanced Options</h4>
+                <Button
+                  variant="ghost" 
+                  size="sm" 
+                  className="w-9 p-0"
+                  type="button"
+                  onClick={() => setIsAdvancedOpen(!isAdvancedOpen)}
+                >
+                  <ChevronsUpDown className="h-4 w-4" />
+                  <span className="sr-only">Toggle</span>
+                </Button>
+              </div>
+              
+              {isAdvancedOpen && (
+                <div className="space-y-4 px-2 pt-2">
+                   <div className="grid grid-cols-2 gap-4">
+                     <FormField
+                      control={form.control}
+                      name="exchange_rate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Exchange Rate Override</FormLabel>
+                          <FormControl>
+                            <Input placeholder="1.0000" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                   </div>
+
+                   <div className="space-y-4 border-t pt-4">
+                      <FormField
+                        control={form.control}
+                        name="esg_enabled"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                            <FormControl>
+                              <input
+                                type="checkbox"
+                                className="h-4 w-4"
+                                checked={field.value}
+                                onChange={field.onChange}
+                              />
+                            </FormControl>
+                            <div className="space-y-1 leading-none">
+                              <FormLabel>
+                                Include Sentinel Intelligence (ESG Data)
+                              </FormLabel>
+                              <p className="text-sm text-muted-foreground">
+                                Attach Carbon Impact and Vendor Score metadata.
+                              </p>
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+
+                      {form.watch('esg_enabled') && (
+                        <div className="grid grid-cols-2 gap-4">
+                          <FormField
+                            control={form.control}
+                            name="carbon_impact"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Carbon Impact (kgCO2e)</FormLabel>
+                                <FormControl>
+                                  <div className="relative">
+                                    <Leaf className="absolute left-2 top-2.5 h-4 w-4 text-green-600" />
+                                    <Input className="pl-8" placeholder="0.00" {...field} />
+                                  </div>
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="vendor_score"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Vendor ESG Score (0-100)</FormLabel>
+                                <FormControl>
+                                  <div className="relative">
+                                    <Scale className="absolute left-2 top-2.5 h-4 w-4 text-blue-600" />
+                                    <Input className="pl-8" placeholder="85" {...field} />
+                                  </div>
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      )}
+                   </div>
+                </div>
+              )}
+            </div>
 
             <DialogFooter>
               <Button type="submit" disabled={createMutation.isPending}>

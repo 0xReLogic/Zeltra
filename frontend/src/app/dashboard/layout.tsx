@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { Header } from '@/components/layout/Header'
+import { UpgradeModal } from '@/components/modals/UpgradeModal'
 import { useAuthStore } from '@/lib/stores/authStore'
 import { Loader2 } from 'lucide-react'
 
@@ -65,6 +66,7 @@ export default function DashboardLayout({
           </div>
         </main>
       </div>
+      <UpgradeModal />
     </div>
   )
 }

@@ -35,6 +35,7 @@ const TYPE_LABELS = {
   revenue: 'Revenue',
   transfer: 'Transfer',
   journal: 'Journal Entry',
+  reversal: 'Reversal',
 }
 
 export default function TransactionDetailPage() {
@@ -89,6 +90,7 @@ export default function TransactionDetailPage() {
   const totalCredit = transaction.entries.reduce((sum, e) => sum + parseFloat(e.credit || '0'), 0)
   const isBalanced = Math.abs(totalDebit - totalCredit) < 0.01
   const isDraft = transaction.status === 'draft'
+  const isReversal = transaction.type === 'reversal'
 
   return (
     <div className="space-y-6">
@@ -313,7 +315,8 @@ export default function TransactionDetailPage() {
             <Button
               variant="destructive"
               onClick={() => setShowVoidDialog(true)}
-              disabled={voidTx.isPending}
+              disabled={voidTx.isPending || isReversal}
+              title={isReversal ? "Reversal transactions cannot be voided" : "Void this transaction"}
             >
               {voidTx.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Ban className="h-4 w-4 mr-2" />}
               Void Transaction

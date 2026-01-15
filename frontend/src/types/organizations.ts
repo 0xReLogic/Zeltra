@@ -1,3 +1,15 @@
+export interface TierLimitsResponse {
+  max_users: number | null
+  max_transactions_per_month: number | null
+  max_dimensions: number | null
+  has_auto_sync: boolean
+  has_revaluation: boolean
+  has_accruals: boolean
+  has_budget_simulation: boolean
+  has_intercompany: boolean
+  has_forensic: boolean
+}
+
 export interface Organization {
   id: string
   name: string
@@ -8,6 +20,7 @@ export interface Organization {
   subscription_tier: string
   subscription_status: string
   trial_ends_at?: string | null
+  limits?: TierLimitsResponse
 }
 
 // All 6 roles as defined in backend OpenAPI spec

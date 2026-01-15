@@ -8,10 +8,12 @@ import type {
   CreateExchangeRateRequest,
   BulkImportRequest,
   BulkImportResponse,
+  FetchRatesRequest,
+  FetchRatesResponse,
 } from '@/types/exchange-rates'
 
 // Re-export types for backward compatibility
-export type { ExchangeRate, CreateExchangeRateRequest }
+export type { ExchangeRate, CreateExchangeRateRequest, FetchRatesRequest }
 
 // Query keys for cache management
 const EXCHANGE_RATE_KEYS = {
@@ -99,9 +101,10 @@ export function useFetchLiveRates() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: () =>
-      apiClient('/exchange-rates/fetch', {
+    mutationFn: (data: FetchRatesRequest) =>
+      apiClient<FetchRatesResponse>('/exchange-rates/fetch', {
         method: 'POST',
+        body: JSON.stringify(data),
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: EXCHANGE_RATE_KEYS.all })

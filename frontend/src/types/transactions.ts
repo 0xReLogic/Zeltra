@@ -10,7 +10,7 @@ import type {
   TransactionListItem as ApiTransactionListItem,
   CreateTransactionRequest as ApiCreateTransactionRequest,
   UpdateTransactionRequest as ApiUpdateTransactionRequest,
-  CreateEntryRequest,
+  CreateEntryRequest as ApiCreateEntryRequest,
   EntryResponse,
   RejectRequest,
   VoidRequest,
@@ -21,13 +21,22 @@ import type {
 // Re-export OpenAPI types
 export type {
   TransactionResponse,
-  CreateEntryRequest,
+  ApiCreateEntryRequest,
   EntryResponse,
   RejectRequest,
   VoidRequest,
   BulkApproveRequest,
   BulkApproveResponse,
 }
+
+// Extend CreateEntryRequest manually since we just modified backend
+export interface CreateEntryRequest extends Omit<components['schemas']['CreateEntryRequest'], 'dimensions'> {
+    dimensions?: string[]
+    exchange_rate?: string
+    metadata?: Record<string, unknown>
+}
+
+export type PayInvoiceRequest = components['schemas']['PayInvoiceRequest']
 
 // Transaction status enum (for type safety)
 export type TransactionStatus = 'draft' | 'pending' | 'approved' | 'posted' | 'voided'
@@ -42,7 +51,9 @@ export type TransactionListItem = ApiTransactionListItem
 export type Transaction = TransactionResponse
 
 // Create transaction request
-export type CreateTransactionRequest = ApiCreateTransactionRequest
+export type CreateTransactionRequest = Omit<ApiCreateTransactionRequest, 'entries'> & {
+    entries: CreateEntryRequest[]
+}
 
 // Update transaction request
 export type UpdateTransactionRequest = ApiUpdateTransactionRequest

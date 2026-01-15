@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { CheckCircle, XCircle } from 'lucide-react'
 
 import { usePendingTransactions, useApproveTransaction, useRejectTransaction } from '@/lib/queries/transactions'
+import { useOrganizationUsers } from '@/lib/queries/organizations'
+import { useAuthStore } from '@/lib/stores/authStore'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -26,11 +28,20 @@ import {
 import { toast } from "sonner"
 
 export default function ApprovalsPage() {
-  const { data, isLoading } = usePendingTransactions()
+  const { data: transactionsData, isLoading } = usePendingTransactions()
+  const { data: usersData } = useOrganizationUsers()
+  const { user } = useAuthStore()
+  
   const approveMutation = useApproveTransaction()
   const rejectMutation = useRejectTransaction()
 
   const [selectedIds, setSelectedIds] = React.useState<string[]>([])
+
+  const transactions = transactionsData?.transactions || []
+
+  const currentUser = usersData?.data?.find(u => u.email === user?.email)
+  // If approval_limit is null/undefined in DB, treat as 0 (Safe Mode)
+  const approvalLimit = currentUser?.approval_limit ? Number(currentUser.approval_limit) : 0
 
   const handleApprove = (id: string) => {
     approveMutation.mutate(id, {
@@ -83,7 +94,7 @@ export default function ApprovalsPage() {
         <CardHeader>
           <CardTitle>Pending Transactions</CardTitle>
           <CardDescription>
-            {data?.length || 0} transactions waiting for your review.
+            {transactions.length} transactions waiting for your review.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -112,13 +123,13 @@ export default function ApprovalsPage() {
                         type="checkbox" 
                         className="translate-y-[2px]"
                         onChange={(e) => {
-                            if (e.target.checked && data) {
-                                setSelectedIds(data.map(t => t.id))
+                            if (e.target.checked && transactions.length > 0) {
+                                setSelectedIds(transactions.map(t => t.id))
                             } else {
                                 setSelectedIds([])
                             }
                         }}
-                        checked={data?.length ? selectedIds.length === data.length && data.length > 0 : false}
+                        checked={transactions.length > 0 ? selectedIds.length === transactions.length : false}
                     />
                  </TableHead>
                  <TableHead>Date</TableHead>
@@ -135,12 +146,13 @@ export default function ApprovalsPage() {
                       Loading...
                     </TableCell>
                   </TableRow>
-                ) : data && data.length > 0 ? (
-                  data.map((txn: { id: string; transaction_date: string; reference_number?: string | null; description: string; entries?: { debit: string; credit: string }[] }) => {
-                     const totalAmount = txn.entries?.length 
-                       ? Math.max(...txn.entries.map(e => parseFloat(e.debit) || parseFloat(e.credit)))
-                       : 0
+                ) : transactions.length > 0 ? (
+                  transactions.map((txn: any) => {
+                     // Total amount is now available in transaction list item
+                     const totalAmount = parseFloat(txn.total_amount) || 0
+                     
                      const isSelected = selectedIds.includes(txn.id)
+                     const isOverLimit = totalAmount > approvalLimit
 
                      return (
                        <TableRow key={txn.id} data-state={isSelected ? "selected" : undefined}>
@@ -174,7 +186,8 @@ export default function ApprovalsPage() {
                                 variant="outline" 
                                 className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
                                 onClick={() => handleApprove(txn.id)}
-                                disabled={approveMutation.isPending}
+                                disabled={approveMutation.isPending || isOverLimit}
+                                title={isOverLimit ? `Amount exceeds your approval limit` : ''}
                             >
                                 <CheckCircle className="h-4 w-4 mr-1" />
                                 Approve

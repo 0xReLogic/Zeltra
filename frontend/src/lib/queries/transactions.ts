@@ -9,6 +9,7 @@ import type {
   VoidRequest,
   BulkApproveRequest,
   BulkApproveResponse,
+  PayInvoiceRequest,
 } from '@/types/transactions'
 
 // Query keys for cache management
@@ -198,6 +199,21 @@ export function useApproveTransaction() {
  * POST /organizations/{org_id}/transactions/{id}/reject
  * Reject a pending transaction (pending → draft)
  */
+export function usePayInvoice() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (data: PayInvoiceRequest) =>
+      apiClient<Transaction>('/transactions/pay-invoice', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: TRANSACTION_KEYS.all })
+    },
+  })
+}
+
 export function useRejectTransaction() {
   const queryClient = useQueryClient()
 
