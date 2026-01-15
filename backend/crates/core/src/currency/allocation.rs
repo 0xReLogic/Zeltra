@@ -35,6 +35,10 @@ impl AllocationUtil {
     ///
     /// A vector of allocated amounts where sum == total.
     ///
+    /// # Panics
+    ///
+    /// Panics if the remainder calculation results in a value that cannot be represented as a u64, or if internal decimal operations fail.
+    ///
     /// # Example
     ///
     /// ```
@@ -77,15 +81,25 @@ impl AllocationUtil {
         let remainder = total_rounded - allocated;
 
         // How many recipients get an extra unit
-        let extra_count = (remainder / unit)
-            .round_dp_with_strategy(0, RoundingStrategy::ToZero)
+        let extra_count_dec =
+            (remainder.abs() / unit).round_dp_with_strategy(0, RoundingStrategy::ToZero);
+
+        let extra_count = extra_count_dec
             .to_u64()
-            .unwrap_or(0);
+            .expect("Critical: Allocation remainder count exceeded u64 limit");
+
         let extra_count = usize::try_from(extra_count).unwrap_or(0);
+        let adjustment_unit = unit * remainder.signum();
 
         // Distribute: first N items get extra unit
         (0..count)
-            .map(|i| if i < extra_count { base + unit } else { base })
+            .map(|i| {
+                if i < extra_count {
+                    base + adjustment_unit
+                } else {
+                    base
+                }
+            })
             .collect()
     }
 

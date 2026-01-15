@@ -6,6 +6,7 @@
 use axum::{
     Json, Router,
     extract::{Path, Query, State},
+    http::HeaderMap,
     http::StatusCode,
     response::IntoResponse,
     routing::{delete, get, patch, post},
@@ -603,6 +604,7 @@ fn check_monthly_transaction_limit(
 async fn create_transaction(
     State(state): State<AppState>,
     auth: AuthUser,
+    headers: HeaderMap,
     Path(org_id): Path<Uuid>,
     Json(payload): Json<CreateTransactionRequest>,
 ) -> impl IntoResponse {
@@ -788,6 +790,28 @@ async fn create_transaction(
 
     let tx_repo = TransactionRepository::new((*state.db).clone());
 
+    // Extract idempotency key from header or body (header takes precedence)
+    let idempotency_key = if let Some(key_str) = headers
+        .get("Idempotency-Key")
+        .or_else(|| headers.get("idempotency-key"))
+    {
+        match key_str.to_str().ok().and_then(|k| Uuid::parse_str(k).ok()) {
+            Some(key) => Some(key),
+            None => {
+                return (
+                    StatusCode::BAD_REQUEST,
+                    Json(json!({
+                        "error": "invalid_idempotency_key",
+                        "message": "Invalid Idempotency-Key header format (must be UUID)"
+                    })),
+                )
+                    .into_response();
+            }
+        }
+    } else {
+        payload.idempotency_key
+    };
+
     let input = CreateTransactionInput {
         organization_id: org_id,
         transaction_type,
@@ -798,7 +822,7 @@ async fn create_transaction(
         entries,
         created_by: auth.user_id(),
         timezone: payload.timezone,
-        idempotency_key: payload.idempotency_key,
+        idempotency_key,
         iso_metadata: payload.iso_metadata,
     };
 
