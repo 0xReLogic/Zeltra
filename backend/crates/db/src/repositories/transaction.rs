@@ -618,7 +618,9 @@ impl TransactionRepository {
         &self,
         organization_id: Uuid,
         filter: TransactionFilter,
-    ) -> Result<Vec<transactions::Model>, TransactionError> {
+        page: u64,
+        limit: u64,
+    ) -> Result<(Vec<transactions::Model>, u64), TransactionError> {
         let mut query = transactions::Entity::find()
             .filter(transactions::Column::OrganizationId.eq(organization_id));
 
@@ -640,13 +642,15 @@ impl TransactionRepository {
 
         // TODO: Filter by dimension_value_id requires a join with entry_dimensions
 
-        let transactions = query
+        let paginator = query
             .order_by_desc(transactions::Column::TransactionDate)
             .order_by_desc(transactions::Column::CreatedAt)
-            .all(&self.db)
-            .await?;
+            .paginate(&self.db, limit);
+            
+        let total_items = paginator.num_items().await?;
+        let transactions = paginator.fetch_page(page).await?;
 
-        Ok(transactions)
+        Ok((transactions, total_items))
     }
 
     /// Verifies the integrity of the entire ledger for an organization.

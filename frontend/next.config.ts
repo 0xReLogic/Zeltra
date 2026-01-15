@@ -5,6 +5,14 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
   allowedDevOrigins: ["localhost:3000", "100.65.129.108:3000", "10.0.0.5:3000"],
   productionBrowserSourceMaps: false,
+  rewrites: async () => {
+    return [
+      {
+        source: "/api/v1/:path*",
+        destination: "http://localhost:8080/api/v1/:path*",
+      },
+    ];
+  },
   experimental: {
     workerThreads: false,
     cpus: 2,

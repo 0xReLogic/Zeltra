@@ -75,6 +75,8 @@ pub struct AccountLedgerEntry {
     pub transaction_id: Uuid,
     /// Transaction date.
     pub transaction_date: NaiveDate,
+    /// Reference number.
+    pub reference_number: Option<String>,
     /// Description.
     pub description: String,
     /// Source currency.
@@ -432,9 +434,9 @@ impl ReportRepository {
                 .one(&self.db)
                 .await?;
 
-            let (transaction_date, description) = transaction
-                .map(|t| (t.transaction_date, t.description))
-                .unwrap_or((from, String::new()));
+            let (transaction_date, reference_number, description) = transaction
+                .map(|t| (t.transaction_date, t.reference_number, t.description))
+                .unwrap_or((from, None, String::new()));
 
             // Get dimensions for this entry (Requirement 8.4)
             let dimensions = self.get_entry_dimensions(entry.id).await?;
@@ -443,6 +445,7 @@ impl ReportRepository {
                 id: entry.id,
                 transaction_id: entry.transaction_id,
                 transaction_date,
+                reference_number,
                 description,
                 source_currency: entry.source_currency,
                 source_amount: entry.source_amount,

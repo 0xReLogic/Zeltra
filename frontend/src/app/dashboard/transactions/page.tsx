@@ -26,8 +26,9 @@ import { useState } from 'react'
 
 export default function TransactionsPage() {
   const [filterDim, setFilterDim] = useState<string>('all')
-  const { data: transactions, isLoading, isError } = useTransactions({
-    page: 1,
+  const [page, setPage] = useState(0)
+  const { data, isLoading, isError } = useTransactions({
+    page,
     limit: 50,
     dimension_value_id: filterDim !== 'all' ? filterDim : undefined,
   })
@@ -47,8 +48,8 @@ export default function TransactionsPage() {
   const departmentOptions = Array.isArray(deptValues) ? deptValues : []
   const projectOptions = Array.isArray(projValues) ? projValues : []
 
-  // Backend returns array directly
-  const txnList = Array.isArray(transactions) ? transactions : []
+  // Backend returns structured object with transactions array
+  const txnList = data?.transactions || []
 
   if (isLoading) {
     return (

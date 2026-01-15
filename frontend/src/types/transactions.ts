@@ -3,6 +3,8 @@
  * with backward compatibility aliases
  */
 
+import { components } from './api.generated'
+
 import type {
   TransactionResponse,
   TransactionListItem as ApiTransactionListItem,
@@ -45,8 +47,8 @@ export type CreateTransactionRequest = ApiCreateTransactionRequest
 // Update transaction request
 export type UpdateTransactionRequest = ApiUpdateTransactionRequest
 
-// Backend returns array directly, no pagination wrapper
-export type GetTransactionsResponse = TransactionListItem[]
+// Backend returns structured response with pagination
+export type GetTransactionsResponse = components['schemas']['PaginatedTransactionsResponse']
 
 // Legacy alias for backward compatibility
 export interface TransactionEntry {

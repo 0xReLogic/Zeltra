@@ -902,7 +902,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** GET `/organizations/{org_id}/transactions` - List transactions with filters. */
+        /** GET `/organizations/{org_id}/transactions` - List transactions. */
         get: operations["list_transactions"];
         put?: never;
         /** POST `/organizations/{org_id}/transactions` - Create a new transaction. */
@@ -1546,21 +1546,45 @@ export interface components {
         };
         /** @description Details of the 8 Beneish M-Score variables. */
         BeneishDetails: {
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Asset Quality Index.
+             */
             aqi: number;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Depreciation Index.
+             */
             depi: number;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Days Sales in Receivables Index.
+             */
             dsri: number;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Gross Margin Index.
+             */
             gmi: number;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Leverage Index.
+             */
             lvgi: number;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Sales, General, and Administrative Expenses Index.
+             */
             sgai: number;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Sales Growth Index.
+             */
             sgi: number;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Total Accruals to Total Assets.
+             */
             tata: number;
         };
         /** @description Single digit record for Benford. */
@@ -2546,21 +2570,28 @@ export interface components {
         };
         /** @description Combined Health Score Response (Altman Z + Beneish M). */
         HealthScoreResponse: {
+            /** @description Detailed Beneish M-Score Components. */
             m_details: components["schemas"]["BeneishDetails"];
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Manipulation Probability (Standard Normal CDF approx).
+             */
             m_prob: number;
+            /** @description Beneish Risk Level (Safe, Possible Manipulation). */
             m_risk_level: string;
             /**
              * Format: double
              * @description Beneish M-Score Result (New).
              */
             m_score: number;
+            /** @description Detailed Altman Z-Score Factors. */
             z_details: components["schemas"]["AltmanDetails"];
             /**
              * Format: double
              * @description Altman Z-Score Result.
              */
             z_score: number;
+            /** @description Altman Zone (Safe, Grey, Distress). */
             z_zone: string;
         };
         /** @description Response for income statement report. */
@@ -2651,6 +2682,8 @@ export interface components {
              * @description Entry ID.
              */
             id: string;
+            /** @description Reference number. */
+            reference_number?: string | null;
             /** @description Running balance. */
             running_balance: string;
             /** @description Source amount. */
@@ -2865,6 +2898,13 @@ export interface components {
             /** @description Pagination metadata. */
             meta: components["schemas"]["PageMeta"];
         };
+        /** @description Response for a paginated list of transactions. */
+        PaginatedTransactionsResponse: {
+            /** @description Pagination metadata. */
+            pagination: components["schemas"]["PaginationMeta"];
+            /** @description List of transaction items. */
+            transactions: components["schemas"]["TransactionListItem"][];
+        };
         /** @description Pagination info. */
         PaginationInfo: {
             /** @description Has more results. */
@@ -2876,6 +2916,24 @@ export interface components {
             limit: number;
             /** @description Next cursor. */
             next_cursor?: string | null;
+        };
+        /** @description Pagination metadata. */
+        PaginationMeta: {
+            /**
+             * Format: int64
+             * @description Items per page.
+             */
+            limit: number;
+            /**
+             * Format: int64
+             * @description Current page number (0-indexed).
+             */
+            page: number;
+            /**
+             * Format: int64
+             * @description Total number of items.
+             */
+            total: number;
         };
         /** @description Pagination response. */
         PaginationResponse: {
@@ -3210,25 +3268,16 @@ export interface components {
             /** @description Whether the account should be active. */
             is_active: boolean;
         };
-        /** @description Response for transaction list item (without entries). */
+        /** @description Transaction list item (lightweight). */
         TransactionListItem: {
-            /** @description Created at timestamp. */
             created_at: string;
-            /** @description Description. */
             description: string;
-            /**
-             * Format: uuid
-             * @description Transaction ID.
-             */
+            /** Format: uuid */
             id: string;
-            /** @description Reference number. */
             reference_number?: string | null;
-            /** @description Status. */
             status: string;
-            /** @description Transaction date. */
             transaction_date: string;
-            /** @description Transaction type. */
-            type: string;
+            transaction_type: string;
         };
         /** @description Response for a transaction. */
         TransactionResponse: {
@@ -6004,13 +6053,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description List of transactions */
+            /** @description Transactions retrieved successfully */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TransactionListItem"][];
+                    "application/json": components["schemas"]["PaginatedTransactionsResponse"];
                 };
             };
             /** @description Forbidden */

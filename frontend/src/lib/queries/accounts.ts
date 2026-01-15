@@ -63,7 +63,7 @@ export interface LedgerEntry {
 }
 
 export interface GetLedgerResponse {
-  data: LedgerEntry[]
+  entries: LedgerEntry[]
   pagination: {
     page: number
     limit: number
@@ -76,8 +76,8 @@ export function useAccountLedger(id: string, params?: { page?: number; limit?: n
     queryKey: ['account-ledger', id, params],
     queryFn: () => {
       const queryParams = new URLSearchParams()
-      if (params?.page) queryParams.set('page', params.page.toString())
-      if (params?.limit) queryParams.set('limit', params.limit.toString())
+      if (params?.page !== undefined) queryParams.set('page', params.page.toString())
+      if (params?.limit !== undefined) queryParams.set('limit', params.limit.toString())
       if (params?.from) queryParams.set('from', params.from)
       if (params?.to) queryParams.set('to', params.to)
 

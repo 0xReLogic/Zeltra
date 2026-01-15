@@ -36,14 +36,14 @@ interface TransactionFilters {
  * List transactions with optional filters
  */
 export function useTransactions(filters: TransactionFilters = {}) {
-  const { page = 1, limit = 50, status, start_date, end_date, account_id, dimension_value_id } = filters
+  const { page = 0, limit = 50, status, start_date, end_date, account_id, dimension_value_id } = filters
 
   return useQuery({
     queryKey: TRANSACTION_KEYS.list(filters),
     queryFn: () => {
       const params = new URLSearchParams()
-      params.set('page', page.toString())
-      params.set('limit', limit.toString())
+      if (page !== undefined) params.set('page', page.toString())
+      if (limit !== undefined) params.set('limit', limit.toString())
       if (status) params.set('status', status)
       if (start_date) params.set('start_date', start_date)
       if (end_date) params.set('end_date', end_date)

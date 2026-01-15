@@ -312,6 +312,8 @@ pub struct LedgerEntryResponse {
     pub transaction_id: Uuid,
     /// Transaction date.
     pub transaction_date: String,
+    /// Reference number.
+    pub reference_number: Option<String>,
     /// Description.
     pub description: String,
     /// Source currency.
@@ -1137,6 +1139,7 @@ async fn get_account_ledger(
                 id: e.id,
                 transaction_id: e.transaction_id,
                 transaction_date: e.transaction_date.to_string(),
+                reference_number: e.reference_number.clone(),
                 description: e.description.clone(),
                 source_currency: e.source_currency.clone(),
                 source_amount: format_money(e.source_amount),

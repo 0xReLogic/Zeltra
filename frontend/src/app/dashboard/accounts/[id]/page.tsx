@@ -43,7 +43,7 @@ export default function AccountDetailPage() {
   const id = params.id as string
 
   // Query State
-  const [page] = useState(1)
+  const [page] = useState(0)
   const [isEditOpen, setIsEditOpen] = useState(false)
   
   const { data: account, isLoading: isLoadingAccount } = useAccount(id)
@@ -185,7 +185,7 @@ export default function AccountDetailPage() {
                      </TableRow>
                   </TableHeader>
                   <TableBody>
-                     {ledger?.data.map((entry) => (
+                     {ledger?.entries?.map((entry) => (
                         <TableRow key={entry.id}>
                            <TableCell>{entry.transaction_date}</TableCell>
                            <TableCell className="font-mono text-xs">{entry.reference_number}</TableCell>
@@ -203,7 +203,7 @@ export default function AccountDetailPage() {
                            </TableCell>
                         </TableRow>
                      ))}
-                     {ledger?.data.length === 0 && (
+                     {(!ledger?.entries || ledger.entries.length === 0) && (
                         <TableRow>
                            <TableCell colSpan={6} className="h-24 text-center">
                               No transactions found for this period.

@@ -308,6 +308,38 @@ pub struct PayInvoiceRequest {
     pub iso_metadata: Option<serde_json::Value>,
 }
 
+/// Pagination metadata.
+#[derive(Debug, Serialize, utoipa::ToSchema)]
+pub struct PaginationMeta {
+    /// Current page number (0-indexed).
+    pub page: u64,
+    /// Items per page.
+    pub limit: u64,
+    /// Total number of items.
+    pub total: u64,
+}
+
+/// Transaction list item (lightweight).
+#[derive(Debug, Serialize, utoipa::ToSchema)]
+pub struct TransactionListItem {
+    pub id: Uuid,
+    pub reference_number: Option<String>,
+    pub transaction_type: String,
+    pub transaction_date: String,
+    pub description: String,
+    pub status: String,
+    pub created_at: String,
+}
+
+/// Response for a paginated list of transactions.
+#[derive(Debug, Serialize, utoipa::ToSchema)]
+pub struct PaginatedTransactionsResponse {
+    /// List of transaction items.
+    pub transactions: Vec<TransactionListItem>,
+    /// Pagination metadata.
+    pub pagination: PaginationMeta,
+}
+
 /// Response for a transaction.
 #[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct TransactionResponse {
@@ -376,25 +408,6 @@ pub struct EntryResponse {
     pub dimensions: Vec<Uuid>,
 }
 
-/// Response for transaction list item (without entries).
-#[derive(Debug, Serialize, utoipa::ToSchema)]
-pub struct TransactionListItem {
-    /// Transaction ID.
-    pub id: Uuid,
-    /// Reference number.
-    pub reference_number: Option<String>,
-    /// Transaction type.
-    #[serde(rename = "type")]
-    pub transaction_type: String,
-    /// Transaction date.
-    pub transaction_date: String,
-    /// Description.
-    pub description: String,
-    /// Status.
-    pub status: String,
-    /// Created at timestamp.
-    pub created_at: String,
-}
 
 // ============================================================================
 // Workflow Request/Response Types
@@ -489,7 +502,7 @@ pub struct PendingTransactionResponse {
 // Route Handlers
 // ============================================================================
 
-/// GET `/organizations/{org_id}/transactions` - List transactions with filters.
+/// GET `/organizations/{org_id}/transactions` - List transactions.
 #[utoipa::path(
     get,
     path = "/organizations/{org_id}/transactions",
@@ -498,11 +511,13 @@ pub struct PendingTransactionResponse {
         ListTransactionsQuery
     ),
     responses(
-        (status = 200, description = "List of transactions", body = [TransactionListItem]),
+        (status = 200, description = "Transactions retrieved successfully", body = PaginatedTransactionsResponse),
         (status = 403, description = "Forbidden")
     ),
     tag = "Transactions",
-    security(("bearerAuth" = []))
+    security(
+        ("bearerAuth" = [])
+    )
 )]
 async fn list_transactions(
     State(state): State<AppState>,
@@ -531,8 +546,11 @@ async fn list_transactions(
         dimension_value_id: query.dimension,
     };
 
-    match tx_repo.list_transactions(org_id, filter).await {
-        Ok(transactions) => {
+    let page = query.page.unwrap_or(0);
+    let limit = query.limit.unwrap_or(50);
+
+    match tx_repo.list_transactions(org_id, filter, page, limit).await {
+        Ok((transactions, total)) => {
             let items: Vec<TransactionListItem> = transactions
                 .into_iter()
                 .map(|t| TransactionListItem {
@@ -546,7 +564,16 @@ async fn list_transactions(
                 })
                 .collect();
 
-            (StatusCode::OK, Json(json!({ "transactions": items }))).into_response()
+            let response = PaginatedTransactionsResponse {
+                transactions: items,
+                pagination: PaginationMeta {
+                    page,
+                    limit,
+                    total,
+                },
+            };
+
+            (StatusCode::OK, Json(response)).into_response()
         }
         Err(e) => {
             error!(error = %e, "Failed to list transactions");

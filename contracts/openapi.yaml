@@ -581,27 +581,35 @@ components:
       description: Details of the 8 Beneish M-Score variables.
       properties:
         aqi:
+          description: Asset Quality Index.
           format: double
           type: number
         depi:
+          description: Depreciation Index.
           format: double
           type: number
         dsri:
+          description: Days Sales in Receivables Index.
           format: double
           type: number
         gmi:
+          description: Gross Margin Index.
           format: double
           type: number
         lvgi:
+          description: Leverage Index.
           format: double
           type: number
         sgai:
+          description: Sales, General, and Administrative Expenses Index.
           format: double
           type: number
         sgi:
+          description: Sales Growth Index.
           format: double
           type: number
         tata:
+          description: Total Accruals to Total Assets.
           format: double
           type: number
       required:
@@ -2007,10 +2015,13 @@ components:
       properties:
         m_details:
           $ref: '#/components/schemas/BeneishDetails'
+          description: Detailed Beneish M-Score Components.
         m_prob:
+          description: Manipulation Probability (Standard Normal CDF approx).
           format: double
           type: number
         m_risk_level:
+          description: Beneish Risk Level (Safe, Possible Manipulation).
           type: string
         m_score:
           description: Beneish M-Score Result (New).
@@ -2018,11 +2029,13 @@ components:
           type: number
         z_details:
           $ref: '#/components/schemas/AltmanDetails'
+          description: Detailed Altman Z-Score Factors.
         z_score:
           description: Altman Z-Score Result.
           format: double
           type: number
         z_zone:
+          description: Altman Zone (Safe, Grey, Distress).
           type: string
       required:
       - z_score
@@ -2167,6 +2180,11 @@ components:
           description: Entry ID.
           format: uuid
           type: string
+        reference_number:
+          description: Reference number.
+          type:
+          - string
+          - 'null'
         running_balance:
           description: Running balance.
           type: string
@@ -2481,6 +2499,21 @@ components:
       - data
       - meta
       type: object
+    PaginatedTransactionsResponse:
+      description: Response for a paginated list of transactions.
+      properties:
+        pagination:
+          $ref: '#/components/schemas/PaginationMeta'
+          description: Pagination metadata.
+        transactions:
+          description: List of transaction items.
+          items:
+            $ref: '#/components/schemas/TransactionListItem'
+          type: array
+      required:
+      - transactions
+      - pagination
+      type: object
     PaginationInfo:
       description: Pagination info.
       properties:
@@ -2500,6 +2533,29 @@ components:
       required:
       - limit
       - has_more
+      type: object
+    PaginationMeta:
+      description: Pagination metadata.
+      properties:
+        limit:
+          description: Items per page.
+          format: int64
+          minimum: 0
+          type: integer
+        page:
+          description: Current page number (0-indexed).
+          format: int64
+          minimum: 0
+          type: integer
+        total:
+          description: Total number of items.
+          format: int64
+          minimum: 0
+          type: integer
+      required:
+      - page
+      - limit
+      - total
       type: object
     PaginationResponse:
       description: Pagination response.
@@ -2990,35 +3046,28 @@ components:
       - is_active
       type: object
     TransactionListItem:
-      description: Response for transaction list item (without entries).
+      description: Transaction list item (lightweight).
       properties:
         created_at:
-          description: Created at timestamp.
           type: string
         description:
-          description: Description.
           type: string
         id:
-          description: Transaction ID.
           format: uuid
           type: string
         reference_number:
-          description: Reference number.
           type:
           - string
           - 'null'
         status:
-          description: Status.
           type: string
         transaction_date:
-          description: Transaction date.
           type: string
-        type:
-          description: Transaction type.
+        transaction_type:
           type: string
       required:
       - id
-      - type
+      - transaction_type
       - transaction_date
       - description
       - status
@@ -5751,15 +5800,13 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/TransactionListItem'
-                type: array
-          description: List of transactions
+                $ref: '#/components/schemas/PaginatedTransactionsResponse'
+          description: Transactions retrieved successfully
         '403':
           description: Forbidden
       security:
       - bearerAuth: []
-      summary: GET `/organizations/{org_id}/transactions` - List transactions with filters.
+      summary: GET `/organizations/{org_id}/transactions` - List transactions.
       tags:
       - Transactions
     post:
