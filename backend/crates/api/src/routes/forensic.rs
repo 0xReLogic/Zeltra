@@ -19,7 +19,7 @@ use uuid::Uuid;
 use crate::{AppState, middleware::AuthUser};
 use sea_orm::{ColumnTrait, EntityTrait, QueryFilter, QuerySelect, RelationTrait};
 use zeltra_core::forensic::{AltmanDetails, BeneishDetails, BenfordRecord, ForensicService};
-use zeltra_core::reconciliation::{AccountDiscrepancy, ReconciliationReport, ReconciliationService};
+use zeltra_core::reconciliation::ReconciliationService;
 use zeltra_core::reports::ReportService;
 use zeltra_db::{
     OrganizationRepository,
@@ -426,12 +426,19 @@ pub struct ReconciliationResponse {
 /// DTO for account discrepancy.
 #[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct AccountDiscrepancyDto {
+    /// Account ID.
     pub account_id: String,
+    /// Account code.
     pub account_code: String,
+    /// Account name.
     pub account_name: String,
+    /// Stored balance.
     pub stored_balance: String,
+    /// Calculated balance from ledger entries.
     pub calculated_balance: String,
+    /// Difference amount.
     pub difference: String,
+    /// Reconciliation status.
     pub status: String,
 }
 

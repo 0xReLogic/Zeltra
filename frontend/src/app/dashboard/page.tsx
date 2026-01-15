@@ -2,30 +2,15 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { DollarSign, TrendingDown, Clock, Activity } from 'lucide-react'
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts'
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 
 import { useDashboardMetrics, useCashFlowData } from '@/lib/queries/dashboard'
-import { useBudgets } from '@/lib/queries/budgets'
 import { formatCurrency } from '@/lib/utils/format'
 import { RecentActivity } from '@/components/dashboard/RecentActivity'
 
 export default function DashboardPage() {
   const { data: metrics } = useDashboardMetrics()
   const { data: cashFlow } = useCashFlowData()
-  const { data: budgets } = useBudgets()
-
-  // Transform budgets data for the chart
-  const budgetUtilizationData = (Array.isArray(budgets) ? budgets : []).map((b: { name: string; total_budgeted: string }) => {
-      const limit = parseFloat(b.total_budgeted || '0')
-      const spent = 0 // actual_spent not available in list response
-      const utilization = limit > 0 ? (spent / limit) * 100 : 0
-      return {
-          department: b.name,
-          budget: limit,
-          spent: spent,
-          utilization: Math.round(utilization)
-      }
-  })
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">

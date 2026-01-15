@@ -157,10 +157,8 @@ impl ExchangeRateRepository {
             .one(&self.db)
             .await?;
 
-        if let Some(period) = fiscal_period {
-            if period.status == FiscalPeriodStatus::Closed {
-                return Err(ExchangeRateError::PeriodClosed(input.effective_date));
-            }
+        if matches!(fiscal_period, Some(ref p) if p.status == FiscalPeriodStatus::Closed) {
+            return Err(ExchangeRateError::PeriodClosed(input.effective_date));
         }
 
         // Check if rate already exists for this currency pair and date (Requirement 4.5)

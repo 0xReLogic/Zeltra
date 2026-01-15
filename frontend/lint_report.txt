@@ -1,0 +1,46 @@
+
+> frontend@0.1.0 lint /home/azureuser/Zeltra/frontend
+> eslint
+
+
+/home/azureuser/Zeltra/frontend/public/mockServiceWorker.js
+  1:1  warning  Unused eslint-disable directive (no problems were reported)
+
+/home/azureuser/Zeltra/frontend/src/app/dashboard/budgets/page.tsx
+  14:16  warning  'AlertCircle' is defined but never used       @typescript-eslint/no-unused-vars
+  14:29  warning  'TrendingDown' is defined but never used      @typescript-eslint/no-unused-vars
+  18:10  warning  'Progress' is defined but never used          @typescript-eslint/no-unused-vars
+  19:10  warning  'Alert' is defined but never used             @typescript-eslint/no-unused-vars
+  19:17  warning  'AlertDescription' is defined but never used  @typescript-eslint/no-unused-vars
+  19:35  warning  'AlertTitle' is defined but never used        @typescript-eslint/no-unused-vars
+
+/home/azureuser/Zeltra/frontend/src/app/dashboard/forensic/page.tsx
+   43:3   warning  'Cell' is defined but never used                                 @typescript-eslint/no-unused-vars
+   87:9   warning  'isGlobalLoading' is assigned a value but never used             @typescript-eslint/no-unused-vars
+  114:20  error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+  164:67  error    Unexpected any. Specify a different type                         @typescript-eslint/no-explicit-any
+  176:49  error    Unexpected any. Specify a different type                         @typescript-eslint/no-explicit-any
+  237:42  error    Unexpected any. Specify a different type                         @typescript-eslint/no-explicit-any
+  259:42  error    Unexpected any. Specify a different type                         @typescript-eslint/no-explicit-any
+  268:35  error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+  322:41  error    Unexpected any. Specify a different type                         @typescript-eslint/no-explicit-any
+
+/home/azureuser/Zeltra/frontend/src/app/dashboard/page.tsx
+   5:86   warning  'BarChart' is defined but never used                        @typescript-eslint/no-unused-vars
+   5:96   warning  'Bar' is defined but never used                             @typescript-eslint/no-unused-vars
+   5:101  warning  'Cell' is defined but never used                            @typescript-eslint/no-unused-vars
+  18:9    warning  'budgetUtilizationData' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/azureuser/Zeltra/frontend/src/app/dashboard/transactions/page.tsx
+  29:16  warning  'setPage' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/azureuser/Zeltra/frontend/src/components/attachments/AttachmentUpload.tsx
+  10:7  warning  'ALLOWED_TYPES' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/azureuser/Zeltra/frontend/src/components/dashboard/RecentActivity.tsx
+  4:74  warning  'Clock' is defined but never used  @typescript-eslint/no-unused-vars
+
+✖ 23 problems (7 errors, 16 warnings)
+  0 errors and 1 warning potentially fixable with the `--fix` option.
+
+ ELIFECYCLE  Command failed with exit code 1.

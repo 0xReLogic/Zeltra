@@ -11,12 +11,10 @@ import {
   ResponsiveContainer,
   Legend
 } from 'recharts'
-import { Plus, AlertCircle, TrendingDown, TrendingUp, DollarSign, Lock } from 'lucide-react'
+import { Plus, TrendingUp, DollarSign, Lock } from 'lucide-react'
 import { useBudgets, useCreateBudget } from '@/lib/queries/budgets'
 import { useFiscalYears } from '@/lib/queries/fiscal'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Progress } from '@/components/ui/progress'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {

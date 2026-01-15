@@ -7,14 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useRequestUpload, useConfirmUpload } from '@/lib/queries/attachments';
 
-const ALLOWED_TYPES = [
-  'application/pdf',
-  'image/png',
-  'image/jpeg',
-  'image/jpg',
-  'application/msword',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-];
 const MAX_SIZE = 10 * 1024 * 1024; // 10MB
 
 interface AttachmentUploadProps {

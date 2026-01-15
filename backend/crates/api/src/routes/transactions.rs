@@ -322,12 +322,19 @@ pub struct PaginationMeta {
 /// Transaction list item (lightweight).
 #[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct TransactionListItem {
+    /// Transaction ID.
     pub id: Uuid,
+    /// Reference number.
     pub reference_number: Option<String>,
+    /// Transaction type.
     pub transaction_type: String,
+    /// Transaction date.
     pub transaction_date: String,
+    /// Description.
     pub description: String,
+    /// Status.
     pub status: String,
+    /// Created at timestamp.
     pub created_at: String,
 }
 

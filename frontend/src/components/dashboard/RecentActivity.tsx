@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import Link from 'next/link'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Activity, CreditCard, FileText, UserPlus, CheckCircle, XCircle, Clock } from 'lucide-react'
+import { Activity, CreditCard, FileText, UserPlus, CheckCircle, XCircle } from 'lucide-react'
 import { useRecentActivity } from '@/lib/queries/dashboard'
 import { formatDistanceToNow } from 'date-fns'
 

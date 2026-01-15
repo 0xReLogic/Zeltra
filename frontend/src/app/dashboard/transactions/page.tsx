@@ -12,6 +12,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CreateTransactionDialog } from '@/components/transactions/CreateTransactionDialog'
+import { Button } from '@/components/ui/button'
 import { Loader2, Filter } from 'lucide-react'
 import Link from 'next/link'
 import {
@@ -137,7 +138,7 @@ export default function TransactionsPage() {
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className="capitalize">
-                        {txn.type}
+                        {txn.transaction_type}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -153,6 +154,28 @@ export default function TransactionsPage() {
           </Table>
         </CardContent>
       </Card>
+
+      <div className="flex items-center justify-end space-x-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setPage((p) => Math.max(0, p - 1))}
+          disabled={page === 0}
+        >
+          Previous
+        </Button>
+        <div className="text-sm text-muted-foreground">
+          Page {page + 1} of {data?.pagination ? Math.ceil(data.pagination.total / data.pagination.limit) : 1}
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setPage((p) => p + 1)}
+          disabled={!data?.pagination || page >= Math.ceil(data.pagination.total / data.pagination.limit) - 1}
+        >
+          Next
+        </Button>
+      </div>
     </div>
   )
 }
