@@ -13,14 +13,15 @@ import { Loader2 } from 'lucide-react'
  * This ensures we don't read stale state before localStorage is loaded.
  */
 function useHydration() {
-  const [hydrated, setHydrated] = useState(false)
+  const [hydrated, setHydrated] = useState(() => {
+    // Check if already hydrated on initial render (SSR safety)
+    if (typeof window === 'undefined') return false
+    return useAuthStore.persist?.hasHydrated() ?? false
+  })
 
   useEffect(() => {
-    // Check if already hydrated
-    if (useAuthStore.persist?.hasHydrated()) {
-      setHydrated(true)
-      return
-    }
+    // If already hydrated, nothing to do
+    if (hydrated) return
 
     // Wait for hydration to complete
     const unsub = useAuthStore.persist?.onFinishHydration(() => {
@@ -28,7 +29,7 @@ function useHydration() {
     })
 
     return () => unsub?.()
-  }, [])
+  }, [hydrated])
 
   return hydrated
 }
