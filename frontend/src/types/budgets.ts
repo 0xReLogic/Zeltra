@@ -7,10 +7,13 @@ import type {
   BudgetSummary,
   BudgetLineItemResponse,
   BudgetLineInput,
+  BudgetLineResponse,
   CreateBudgetRequest as ApiCreateBudgetRequest,
   CreateBudgetLinesRequest,
   UpdateBudgetRequest,
   BudgetVsActualResponse,
+  GetBudgetsResponse as ApiGetBudgetsResponse,
+  GetBudgetLinesResponse as ApiGetBudgetLinesResponse,
 } from './api-helpers'
 
 // Re-export OpenAPI types
@@ -19,6 +22,7 @@ export type {
   BudgetSummary,
   BudgetLineItemResponse,
   BudgetLineInput,
+  BudgetLineResponse,
   CreateBudgetLinesRequest,
   UpdateBudgetRequest,
   BudgetVsActualResponse,
@@ -29,7 +33,7 @@ export type Budget = BudgetResponse
 
 // Budget with lines (from GET /budgets/{id})
 export interface BudgetWithLines extends BudgetResponse {
-  lines?: BudgetLineItemResponse[]
+  lines?: BudgetLineResponse[]
 }
 
 // Create budget request
@@ -38,5 +42,6 @@ export type CreateBudgetRequest = ApiCreateBudgetRequest
 // Budget type enum
 export type BudgetType = 'annual' | 'quarterly' | 'monthly' | 'project'
 
-// Backend returns array directly
-export type GetBudgetsResponse = BudgetResponse[]
+// Response wrappers from API
+export type GetBudgetsResponse = ApiGetBudgetsResponse
+export type GetBudgetLinesResponse = ApiGetBudgetLinesResponse

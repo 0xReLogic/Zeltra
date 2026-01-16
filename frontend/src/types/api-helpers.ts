@@ -96,10 +96,13 @@ export type BudgetResponse = Schema<'BudgetResponse'>
 export type BudgetSummary = Schema<'BudgetSummary'>
 export type BudgetLineItemResponse = Schema<'BudgetLineItemResponse'>
 export type BudgetLineInput = Schema<'BudgetLineInput'>
+export type BudgetLineResponse = Schema<'BudgetLineResponse'>
 export type CreateBudgetRequest = Schema<'CreateBudgetRequest'>
 export type CreateBudgetLinesRequest = Schema<'CreateBudgetLinesRequest'>
 export type UpdateBudgetRequest = Schema<'UpdateBudgetRequest'>
 export type BudgetVsActualResponse = Schema<'BudgetVsActualResponse'>
+export type GetBudgetsResponse = Schema<'GetBudgetsResponse'>
+export type GetBudgetLinesResponse = Schema<'GetBudgetLinesResponse'>
 
 // Dimensions
 export type DimensionTypeResponse = Schema<'DimensionTypeResponse'>

@@ -4,11 +4,11 @@ import type {
   Budget,
   BudgetWithLines,
   GetBudgetsResponse,
+  GetBudgetLinesResponse,
   CreateBudgetRequest,
   CreateBudgetLinesRequest,
   UpdateBudgetRequest,
   BudgetVsActualResponse,
-  BudgetLineItemResponse,
 } from '@/types/budgets'
 
 // Query keys for cache management
@@ -30,16 +30,18 @@ interface BudgetFilters {
 /**
  * GET /organizations/{org_id}/budgets
  * List budgets with summary totals
+ * Returns { budgets: BudgetResponse[] }
  */
 export function useBudgets(filters?: BudgetFilters) {
   return useQuery({
     queryKey: BUDGET_KEYS.list(filters),
-    queryFn: () => {
+    queryFn: async () => {
       const params = new URLSearchParams()
       if (filters?.fiscal_year_id) params.set('fiscal_year_id', filters.fiscal_year_id)
       if (filters?.is_active !== undefined) params.set('is_active', String(filters.is_active))
       const queryString = params.toString()
-      return apiClient<GetBudgetsResponse>(`/budgets${queryString ? `?${queryString}` : ''}`)
+      const response = await apiClient<GetBudgetsResponse>(`/budgets${queryString ? `?${queryString}` : ''}`)
+      return response.budgets
     },
   })
 }
@@ -59,11 +61,15 @@ export function useBudget(id: string) {
 /**
  * GET /organizations/{org_id}/budgets/{id}/lines
  * Get budget lines
+ * Returns { lines: BudgetLineResponse[] }
  */
 export function useBudgetLines(budgetId: string) {
   return useQuery({
     queryKey: BUDGET_KEYS.lines(budgetId),
-    queryFn: () => apiClient<BudgetLineItemResponse[]>(`/budgets/${budgetId}/lines`),
+    queryFn: async () => {
+      const response = await apiClient<GetBudgetLinesResponse>(`/budgets/${budgetId}/lines`)
+      return response.lines
+    },
     enabled: !!budgetId,
   })
 }
@@ -110,16 +116,19 @@ export function useUpdateBudget() {
 /**
  * POST /organizations/{org_id}/budgets/{id}/lines
  * Create budget lines in bulk
+ * Returns { lines: BudgetLineResponse[] }
  */
 export function useCreateBudgetLines() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ budgetId, data }: { budgetId: string; data: CreateBudgetLinesRequest }) =>
-      apiClient<BudgetLineItemResponse[]>(`/budgets/${budgetId}/lines`, {
+    mutationFn: async ({ budgetId, data }: { budgetId: string; data: CreateBudgetLinesRequest }) => {
+      const response = await apiClient<GetBudgetLinesResponse>(`/budgets/${budgetId}/lines`, {
         method: 'POST',
         body: JSON.stringify(data),
-      }),
+      })
+      return response.lines
+    },
     onSuccess: (_, { budgetId }) => {
       queryClient.invalidateQueries({ queryKey: BUDGET_KEYS.detail(budgetId) })
       queryClient.invalidateQueries({ queryKey: BUDGET_KEYS.lines(budgetId) })

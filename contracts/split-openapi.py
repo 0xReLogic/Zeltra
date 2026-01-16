@@ -40,7 +40,7 @@ schema_groups = {
     ],
     '04-budgets': [
         'BudgetResponse', 'CreateBudgetRequest', 'UpdateBudgetRequest', 'CreateBudgetLinesRequest', 
-        'BudgetLineInput', 'LockBudgetRequest',
+        'BudgetLineInput', 'LockBudgetRequest', 'GetBudgetsResponse', 'GetBudgetLinesResponse', 'BudgetLineResponse',
         'BudgetVsActualResponse', 'BudgetLineItemResponse', 'BudgetSummary'
     ],
     '05-reports': [

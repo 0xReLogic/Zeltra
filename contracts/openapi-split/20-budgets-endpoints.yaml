@@ -15,9 +15,7 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/BudgetResponse'
-                type: array
+                $ref: '#/components/schemas/GetBudgetsResponse'
           description: List of budgets
         '403':
           description: Forbidden
@@ -140,6 +138,10 @@ paths:
           type: string
       responses:
         '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetBudgetLinesResponse'
           description: List of budget lines
         '403':
           description: Forbidden
@@ -176,6 +178,10 @@ paths:
         required: true
       responses:
         '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetBudgetLinesResponse'
           description: Budget lines created successfully
         '403':
           description: Forbidden
@@ -236,22 +242,18 @@ paths:
           format: uuid
           type: string
       - description: Filter by fiscal period ID.
-        in: path
+        in: query
         name: fiscal_period_id
-        required: true
+        required: false
         schema:
           format: uuid
-          type:
-          - string
-          - 'null'
+          type: string
       - description: Filter by dimension value IDs (comma-separated).
-        in: path
+        in: query
         name: dimensions
-        required: true
+        required: false
         schema:
-          type:
-          - string
-          - 'null'
+          type: string
       responses:
         '200':
           description: Budget vs actual comparison

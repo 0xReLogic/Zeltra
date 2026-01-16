@@ -137,6 +137,37 @@ pub struct BudgetResponse {
     pub updated_at: String,
 }
 
+/// Response wrapper for list budgets.
+#[derive(Debug, Serialize, utoipa::ToSchema)]
+pub struct GetBudgetsResponse {
+    /// List of budgets.
+    pub budgets: Vec<BudgetResponse>,
+}
+
+/// Response for a single budget line.
+#[derive(Debug, Serialize, utoipa::ToSchema)]
+pub struct BudgetLineResponse {
+    /// Line ID.
+    pub id: Uuid,
+    /// Account ID.
+    pub account_id: Uuid,
+    /// Fiscal period ID.
+    pub fiscal_period_id: Uuid,
+    /// Budgeted amount.
+    pub amount: String,
+    /// Notes.
+    pub notes: Option<String>,
+    /// Dimension value IDs.
+    pub dimensions: Vec<Uuid>,
+}
+
+/// Response wrapper for budget lines.
+#[derive(Debug, Serialize, utoipa::ToSchema)]
+pub struct GetBudgetLinesResponse {
+    /// List of budget lines.
+    pub lines: Vec<BudgetLineResponse>,
+}
+
 // ============================================================================
 // Helper Functions
 // ============================================================================
@@ -236,7 +267,7 @@ fn budget_type_to_string(bt: &zeltra_db::entities::sea_orm_active_enums::BudgetT
         ("org_id" = Uuid, Path, description = "Organization ID")
     ),
     responses(
-        (status = 200, description = "List of budgets", body = [BudgetResponse]),
+        (status = 200, description = "List of budgets", body = GetBudgetsResponse),
         (status = 403, description = "Forbidden")
     ),
     tag = "Budgets",
@@ -618,7 +649,7 @@ async fn update_budget(
         ("budget_id" = Uuid, Path, description = "Budget ID")
     ),
     responses(
-        (status = 200, description = "List of budget lines"),
+        (status = 200, description = "List of budget lines", body = GetBudgetLinesResponse),
         (status = 403, description = "Forbidden"),
         (status = 404, description = "Budget not found")
     ),
@@ -704,7 +735,7 @@ async fn list_budget_lines(
     ),
     request_body = CreateBudgetLinesRequest,
     responses(
-        (status = 201, description = "Budget lines created successfully"),
+        (status = 201, description = "Budget lines created successfully", body = GetBudgetLinesResponse),
         (status = 403, description = "Forbidden"),
         (status = 404, description = "Budget not found")
     ),
@@ -832,6 +863,7 @@ async fn lock_budget(
 
 /// Query parameters for budget vs actual.
 #[derive(Debug, serde::Deserialize, utoipa::IntoParams)]
+#[into_params(parameter_in = Query)]
 pub struct BudgetVsActualQuery {
     /// Filter by fiscal period ID.
     pub fiscal_period_id: Option<Uuid>,
@@ -871,6 +903,12 @@ async fn get_budget_vs_actual(
 
     let budget_repo = BudgetRepository::new((*state.db).clone());
 
+    // Get budget name first
+    let budget_name = match budget_repo.get_budget(org_id, budget_id).await {
+        Ok(budget) => Some(budget.name),
+        Err(_) => None,
+    };
+
     // Parse dimension filters
     let dimension_filters: Vec<Uuid> = query
         .dimensions
@@ -896,22 +934,13 @@ async fn get_budget_vs_actual(
                 .into_iter()
                 .map(|l| {
                     json!({
-                        "id": l.line.id,
                         "account_id": l.line.account_id,
                         "account_code": l.account_code,
                         "account_name": l.account_name,
-                        "fiscal_period_id": l.line.fiscal_period_id,
-                        "period_name": l.period_name,
                         "budgeted": l.line.amount.to_string(),
                         "actual": l.actual.to_string(),
                         "variance": l.variance.to_string(),
-                        "utilization_percent": l.utilization_percent.to_string(),
-                        "status": l.status,
-                        "dimensions": l.dimensions.iter().map(|d| json!({
-                            "dimension_type": d.dimension_type,
-                            "code": d.code,
-                            "name": d.name
-                        })).collect::<Vec<_>>()
+                        "variance_percent": l.utilization_percent
                     })
                 })
                 .collect();
@@ -920,12 +949,13 @@ async fn get_budget_vs_actual(
                 StatusCode::OK,
                 Json(json!({
                     "budget_id": budget_id,
-                    "lines": line_responses,
+                    "budget_name": budget_name,
+                    "line_items": line_responses,
                     "summary": {
                         "total_budgeted": summary.total_budgeted.to_string(),
                         "total_actual": summary.total_actual.to_string(),
-                        "total_variance": summary.total_variance.to_string(),
-                        "overall_utilization": summary.overall_utilization.to_string()
+                        "variance": summary.total_variance.to_string(),
+                        "variance_percent": summary.overall_utilization
                     }
                 })),
             )

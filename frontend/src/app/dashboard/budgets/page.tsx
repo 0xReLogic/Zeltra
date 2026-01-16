@@ -68,10 +68,11 @@ export default function BudgetsPage() {
     })
   }
 
-  const budgets = Array.isArray(data) ? data : []
-  const fiscalYearList = Array.isArray(fiscalYears) ? fiscalYears : []
+  // useBudgets now returns budgets array directly (extracted from wrapper)
+  const budgets = data ?? []
+  const fiscalYearList = fiscalYears ?? []
 
-  // Calculate totals - handle both old and new API format
+  // Calculate totals
   const totalBudget = budgets.reduce((acc, curr) => {
     const amount = parseFloat(curr.total_budgeted || '0')
     return acc + (isNaN(amount) ? 0 : amount)

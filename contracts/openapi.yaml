@@ -749,6 +749,42 @@ components:
       - variance
       - variance_percent
       type: object
+    BudgetLineResponse:
+      description: Response for a single budget line.
+      properties:
+        account_id:
+          description: Account ID.
+          format: uuid
+          type: string
+        amount:
+          description: Budgeted amount.
+          type: string
+        dimensions:
+          description: Dimension value IDs.
+          items:
+            format: uuid
+            type: string
+          type: array
+        fiscal_period_id:
+          description: Fiscal period ID.
+          format: uuid
+          type: string
+        id:
+          description: Line ID.
+          format: uuid
+          type: string
+        notes:
+          description: Notes.
+          type:
+          - string
+          - 'null'
+      required:
+      - id
+      - account_id
+      - fiscal_period_id
+      - amount
+      - dimensions
+      type: object
     BudgetResponse:
       description: Response for a budget.
       properties:
@@ -2028,6 +2064,28 @@ components:
           type: array
       required:
       - accounts
+      type: object
+    GetBudgetLinesResponse:
+      description: Response wrapper for budget lines.
+      properties:
+        lines:
+          description: List of budget lines.
+          items:
+            $ref: '#/components/schemas/BudgetLineResponse'
+          type: array
+      required:
+      - lines
+      type: object
+    GetBudgetsResponse:
+      description: Response wrapper for list budgets.
+      properties:
+        budgets:
+          description: List of budgets.
+          items:
+            $ref: '#/components/schemas/BudgetResponse'
+          type: array
+      required:
+      - budgets
       type: object
     HealthResponse:
       description: Health check response.
@@ -4488,9 +4546,7 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/BudgetResponse'
-                type: array
+                $ref: '#/components/schemas/GetBudgetsResponse'
           description: List of budgets
         '403':
           description: Forbidden
@@ -4612,6 +4668,10 @@ paths:
           type: string
       responses:
         '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetBudgetLinesResponse'
           description: List of budget lines
         '403':
           description: Forbidden
@@ -4647,6 +4707,10 @@ paths:
         required: true
       responses:
         '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetBudgetLinesResponse'
           description: Budget lines created successfully
         '403':
           description: Forbidden
@@ -4706,22 +4770,18 @@ paths:
           format: uuid
           type: string
       - description: Filter by fiscal period ID.
-        in: path
+        in: query
         name: fiscal_period_id
-        required: true
+        required: false
         schema:
           format: uuid
-          type:
-          - string
-          - 'null'
+          type: string
       - description: Filter by dimension value IDs (comma-separated).
-        in: path
+        in: query
         name: dimensions
-        required: true
+        required: false
         schema:
-          type:
-          - string
-          - 'null'
+          type: string
       responses:
         '200':
           description: Budget vs actual comparison
