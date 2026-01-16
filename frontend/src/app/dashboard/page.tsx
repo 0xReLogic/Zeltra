@@ -7,6 +7,7 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { useDashboardMetrics, useCashFlowData } from '@/lib/queries/dashboard'
 import { formatCurrency } from '@/lib/utils/format'
 import { RecentActivity } from '@/components/dashboard/RecentActivity'
+import { BudgetVsActual } from '@/components/dashboard/BudgetVsActual'
 
 export default function DashboardPage() {
   const { data: metrics } = useDashboardMetrics()
@@ -101,6 +102,11 @@ export default function DashboardPage() {
         </Card>
         
         <RecentActivity />
+      </div>
+
+      {/* Budget vs Actual */}
+      <div className="grid gap-4 md:grid-cols-1">
+        <BudgetVsActual />
       </div>
     </div>
   )

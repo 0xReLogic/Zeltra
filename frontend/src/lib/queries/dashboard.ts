@@ -25,24 +25,41 @@ export function useDashboardMetrics() {
   })
 }
 
+// Raw response from backend (Decimal as string)
+export interface CashFlowDataPointRaw {
+  month: string
+  period_name: string
+  inflow: string
+  outflow: string
+  net: string
+}
+
+// Parsed for chart consumption
 export interface CashFlowDataPoint {
   month: string
+  period_name: string
   inflow: number
   outflow: number
+  net: number
 }
 
 export interface CashFlowResponse {
-  data: CashFlowDataPoint[]
+  data: CashFlowDataPointRaw[]
 }
 
-// TODO: Add mock endpoint for this if not exists
 export function useCashFlowData() {
   return useQuery({
     queryKey: ['dashboard', 'cash-flow'],
     queryFn: async () => {
       const response = await apiClient<CashFlowResponse>('/dashboard/cash-flow')
-      // Return the data array directly for easier consumption
-      return response.data || []
+      // Parse string decimals to numbers for chart rendering
+      return (response.data || []).map(point => ({
+        month: point.month,
+        period_name: point.period_name,
+        inflow: parseFloat(point.inflow) || 0,
+        outflow: parseFloat(point.outflow) || 0,
+        net: parseFloat(point.net) || 0,
+      }))
     },
   })
 }
@@ -73,5 +90,39 @@ export function useRecentActivity() {
         queryKey: ['dashboard', 'recent-activity'],
         queryFn: () => apiClient<ActivityResponse>('/dashboard/recent-activity'),
         refetchInterval: 30000 // Real-time feed, refresh every 30s
+    })
+}
+
+// Budget vs Actual types
+export interface BudgetSummary {
+    total_budgeted: string
+    total_actual: string
+    variance: string
+    variance_percent: number
+}
+
+export interface BudgetLineItem {
+    account_id: string
+    account_code: string
+    account_name: string
+    budgeted: string
+    actual: string
+    variance: string
+    variance_percent: number
+}
+
+export interface BudgetVsActualResponse {
+    budget_id: string | null
+    budget_name: string | null
+    summary: BudgetSummary
+    line_items: BudgetLineItem[]
+}
+
+export function useBudgetVsActual(budgetId?: string) {
+    return useQuery({
+        queryKey: ['dashboard', 'budget-vs-actual', budgetId],
+        queryFn: () => apiClient<BudgetVsActualResponse>(
+            `/dashboard/budget-vs-actual${budgetId ? `?budget_id=${budgetId}` : ''}`
+        ),
     })
 }

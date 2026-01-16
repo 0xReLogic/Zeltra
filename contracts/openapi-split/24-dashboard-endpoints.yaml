@@ -12,14 +12,13 @@ paths:
           format: uuid
           type: string
       - description: Fiscal period ID for budget status.
-        in: path
+        in: query
         name: period_id
-        required: true
+        required: false
         schema:
           format: uuid
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
       responses:
         '200':
           content:
@@ -48,24 +47,22 @@ paths:
           type: string
       - description: Number of months to include.
         example: 6
-        in: path
+        in: query
         name: months
-        required: true
+        required: false
         schema:
           format: int32
           minimum: 0
-          type:
-          - integer
-          - 'null'
+          type: integer
+          nullable: true
       - description: Fiscal period ID.
-        in: path
+        in: query
         name: period_id
-        required: true
+        required: false
         schema:
           format: uuid
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
       responses:
         '200':
           content:
@@ -94,32 +91,29 @@ paths:
           type: string
       - description: Maximum number of items to return.
         example: 10
-        in: path
+        in: query
         name: limit
-        required: true
+        required: false
         schema:
           format: int64
           minimum: 0
-          type:
-          - integer
-          - 'null'
+          type: integer
+          nullable: true
       - description: Activity type filter.
         example: transaction
-        in: path
+        in: query
         name: type
-        required: true
+        required: false
         schema:
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
       - description: Cursor for pagination.
-        in: path
+        in: query
         name: cursor
-        required: true
+        required: false
         schema:
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
       responses:
         '200':
           content:
@@ -147,14 +141,13 @@ paths:
           format: uuid
           type: string
       - description: Budget ID (optional, uses first active budget if not provided).
-        in: path
+        in: query
         name: budget_id
-        required: true
+        required: false
         schema:
           format: uuid
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
       responses:
         '200':
           content:
