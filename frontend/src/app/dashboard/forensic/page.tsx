@@ -316,8 +316,8 @@ function BenfordLayout({ data }: { data: BenfordResponse | undefined }) {
                   formatter={(value: number | string | undefined) => value ? (Number(value) * 100).toFixed(1) + '%' : '0%'}
                 />
                 <Legend />
-                <Bar name="Actual" dataKey="actual_frequency" fill="#0ea5e9" radius={[4, 4, 0, 0]} />
-                <Bar name="Expected" dataKey="expected_frequency" fill="#94a3b8" radius={[4, 4, 0, 0]} />
+                <Bar name="Actual" dataKey="actual_percentage" fill="#0ea5e9" radius={[4, 4, 0, 0]} />
+                <Bar name="Expected" dataKey="expected_percentage" fill="#94a3b8" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -362,11 +362,11 @@ function HealthLayout({ data }: { data: HealthScoreResponse | undefined }) {
           <div className="space-y-3">
             <h4 className="text-sm font-semibold">Z-Score Coefficients</h4>
             <div className="grid grid-cols-2 gap-2 text-xs">
-              <div className="flex justify-between border-b pb-1"><span>Working Capital/TA (X1)</span> <span>{data.z_details?.x1_liquidity?.toFixed(2)}</span></div>
-              <div className="flex justify-between border-b pb-1"><span>Retained Earnings/TA (X2)</span> <span>{data.z_details?.x2_profitability?.toFixed(2)}</span></div>
-              <div className="flex justify-between border-b pb-1"><span>EBIT/TA (X3)</span> <span>{data.z_details?.x3_leverage?.toFixed(2)}</span></div>
-              <div className="flex justify-between border-b pb-1"><span>Equity/TL (X4)</span> <span>{data.z_details?.x4_solvency?.toFixed(2)}</span></div>
-              <div className="flex justify-between border-b pb-1"><span>Sales/TA (X5)</span> <span>{data.z_details?.x5_activity?.toFixed(2)}</span></div>
+              <div className="flex justify-between border-b pb-1"><span>Working Capital/TA (X1)</span> <span>{data.z_details?.x1_working_capital?.toFixed(2)}</span></div>
+              <div className="flex justify-between border-b pb-1"><span>Retained Earnings/TA (X2)</span> <span>{data.z_details?.x2_retained_earnings?.toFixed(2)}</span></div>
+              <div className="flex justify-between border-b pb-1"><span>EBIT/TA (X3)</span> <span>{data.z_details?.x3_ebit?.toFixed(2)}</span></div>
+              <div className="flex justify-between border-b pb-1"><span>Equity/TL (X4)</span> <span>{data.z_details?.x4_equity?.toFixed(2)}</span></div>
+              <div className="flex justify-between border-b pb-1"><span>Sales/TA (X5)</span> <span>{data.z_details?.x5_sales?.toFixed(2)}</span></div>
             </div>
           </div>
         </CardContent>

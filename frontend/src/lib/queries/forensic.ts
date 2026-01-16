@@ -22,9 +22,9 @@ interface AccountDiscrepancy {
 
 interface BenfordRecord {
   digit: number
-  actual_frequency: number
-  expected_frequency: number
-  deviation: number
+  actual_percentage: number
+  expected_percentage: number
+  difference: number
 }
 
 interface BenfordResponse {
@@ -35,11 +35,11 @@ interface BenfordResponse {
 }
 
 interface AltmanDetails {
-  x1_liquidity: number
-  x2_profitability: number
-  x3_leverage: number
-  x4_solvency: number
-  x5_activity: number
+  x1_working_capital: number
+  x2_retained_earnings: number
+  x3_ebit: number
+  x4_equity: number
+  x5_sales: number
 }
 
 interface BeneishDetails {
