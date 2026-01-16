@@ -1512,6 +1512,7 @@ async fn void_transaction(
     }
 
     let workflow_repo = WorkflowRepository::new((*state.db).clone());
+    let tx_repo = TransactionRepository::new((*state.db).clone());
 
     match workflow_repo
         .void_transaction(org_id, transaction_id, auth.user_id(), payload.reason)
@@ -1525,32 +1526,50 @@ async fn void_transaction(
                 "Transaction voided"
             );
 
-            let voided_at = result
-                .original_transaction
-                .voided_at
-                .as_ref()
-                .map(chrono::DateTime::to_rfc3339);
+            // Fetch full transaction data for both original and reversing transactions
+            let original_full = match tx_repo
+                .get_transaction(org_id, result.original_transaction.id)
+                .await
+            {
+                Ok(tx) => tx,
+                Err(e) => {
+                    error!(error = %e, "Failed to fetch voided transaction details");
+                    return (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(json!({
+                            "error": "internal_error",
+                            "message": "Failed to fetch transaction details"
+                        })),
+                    )
+                        .into_response();
+                }
+            };
 
-            (
-                StatusCode::OK,
-                Json(json!({
-                    "original_transaction": {
-                        "id": result.original_transaction.id,
-                        "status": status_to_string(&result.original_transaction.status),
-                        "voided_at": voided_at,
-                        "voided_by": result.original_transaction.voided_by,
-                        "void_reason": result.original_transaction.void_reason,
-                        "reversed_by_transaction_id": result.original_transaction.reversed_by_transaction_id
-                    },
-                    "reversing_transaction": {
-                        "id": result.reversing_transaction.id,
-                        "status": status_to_string(&result.reversing_transaction.status),
-                        "transaction_type": tx_type_to_string(&result.reversing_transaction.transaction_type),
-                        "reverses_transaction_id": result.reversing_transaction.reverses_transaction_id
-                    }
-                })),
-            )
-                .into_response()
+            let reversing_full = match tx_repo
+                .get_transaction(org_id, result.reversing_transaction.id)
+                .await
+            {
+                Ok(tx) => tx,
+                Err(e) => {
+                    error!(error = %e, "Failed to fetch reversing transaction details");
+                    return (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(json!({
+                            "error": "internal_error",
+                            "message": "Failed to fetch transaction details"
+                        })),
+                    )
+                        .into_response();
+                }
+            };
+
+            // Return proper VoidResponse with full TransactionResponse for both
+            let response = VoidResponse {
+                original_transaction: map_transaction_to_response(original_full),
+                reversing_transaction: map_transaction_to_response(reversing_full),
+            };
+
+            (StatusCode::OK, Json(response)).into_response()
         }
         Err(e) => {
             error!(error = %e, "Failed to void transaction");

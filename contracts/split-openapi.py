@@ -30,7 +30,9 @@ schema_groups = {
         'CreateTransactionRequest', 'CreateEntryRequest', 'TransactionResponse', 'TransactionListItem',
         'UpdateTransactionRequest', 'ApproveRequest', 'RejectRequest', 'VoidRequest', 'VoidResponse',
         'BulkApproveRequest', 'BulkApproveResponse', 'BulkApproveItemResponse',
-        'PayInvoiceRequest', 'PendingApprovalsResponse', 'EntryResponse', 'LedgerEntryResponse'
+        'PayInvoiceRequest', 'EntryResponse',
+        # Pagination schemas for transactions
+        'PaginatedTransactionsResponse', 'PaginationMeta', 'PendingTransactionResponse'
     ],
     '03-accounts-ledger': [
         'AccountResponse', 'CreateAccountRequest', 'UpdateAccountRequest', 'ToggleAccountStatusRequest',
@@ -44,7 +46,9 @@ schema_groups = {
     '05-reports': [
         'TrialBalanceResponse', 'TrialBalanceTotals', 'BalanceSheetResponse', 'BalanceSheetSectionResponse',
         'IncomeStatementResponse', 'IncomeStatementSectionResponse', 'DimensionalReportResponse',
-        'DimensionalReportItem', 'DimensionalReportRowResponse'
+        'DimensionalReportItem', 'DimensionalReportRowResponse',
+        # LedgerEntryResponse is used in account ledger reports
+        'LedgerEntryResponse'
     ],
     '06-sentinel': [
         'AccrualScheduleResponse', 'CreateAccrualScheduleRequest', 'RevaluationLogResponse',
@@ -65,7 +69,11 @@ schema_groups = {
     ],
     '09-dashboard': [
         'DashboardMetricsResponse', 'CashPositionResponse', 'BurnRateResponse',
-        'CashFlowResponse', 'CashFlowDataPoint', 'ActivityItemResponse', 'RecentActivityResponse'
+        'CashFlowResponse', 'CashFlowDataPoint', 'ActivityItemResponse', 'RecentActivityResponse',
+        # PendingApprovalsResponse is a dashboard widget schema
+        'PendingApprovalsResponse',
+        # DashboardUserInfo is used in dashboard metrics
+        'DashboardUserInfo'
     ],
     '10-simulation-attachments': [
         'SimulationRequest', 'RunSimulationRequest', 'SimulationResponse', 'MonthlySummaryResponse',
@@ -73,8 +81,7 @@ schema_groups = {
         'AttachmentResponse', 'RequestUploadRequest', 'RequestUploadResponse', 'ConfirmUploadRequest'
     ],
     '11-common': [
-        'ApiError', 'PaginationResponse', 'PaginationInfo', 'PaginationMeta',
-        'PaginatedTransactionsResponse', 'PendingTransactionResponse',
+        'ApiError', 'PaginationResponse', 'PaginationInfo',
         'PageMeta', 'PageRequest', 'PageResponse_ExchangeRateListItem',
         'SuccessResponse', 'HealthResponse', 'ToggleStatusRequest'
     ],

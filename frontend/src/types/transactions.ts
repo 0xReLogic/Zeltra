@@ -14,8 +14,13 @@ import type {
   EntryResponse,
   RejectRequest,
   VoidRequest,
+  VoidResponse,
   BulkApproveRequest,
   BulkApproveResponse,
+  PayInvoiceRequest as ApiPayInvoiceRequest,
+  PendingTransactionResponse,
+  PaginatedTransactionsResponse,
+  PaginationMeta,
 } from './api-helpers'
 
 // Re-export OpenAPI types
@@ -25,14 +30,18 @@ export type {
   EntryResponse,
   RejectRequest,
   VoidRequest,
+  VoidResponse,
   BulkApproveRequest,
   BulkApproveResponse,
+  PendingTransactionResponse,
+  PaginatedTransactionsResponse,
+  PaginationMeta,
 }
 
 // Use generated CreateEntryRequest directly
 export type CreateEntryRequest = components['schemas']['CreateEntryRequest']
 
-export type PayInvoiceRequest = components['schemas']['PayInvoiceRequest']
+export type PayInvoiceRequest = ApiPayInvoiceRequest
 
 // Transaction status enum (for type safety)
 export type TransactionStatus = 'draft' | 'pending' | 'approved' | 'posted' | 'voided'
@@ -55,11 +64,11 @@ export type CreateTransactionRequest = Omit<ApiCreateTransactionRequest, 'entrie
 export type UpdateTransactionRequest = ApiUpdateTransactionRequest
 
 // Backend returns structured response with pagination
-export type GetTransactionsResponse = components['schemas']['PaginatedTransactionsResponse']
+export type GetTransactionsResponse = PaginatedTransactionsResponse
 
-// Backend /transactions/pending returns { data: PendingTransaction[] }
-export interface GetPendingTransactionsResponse {
-  data: (ApiTransactionListItem & { can_approve?: boolean })[]
+// Backend /transactions/pending returns { data: PendingTransactionResponse[] }
+export type GetPendingTransactionsResponse = {
+  data: PendingTransactionResponse[]
 }
 
 // Legacy alias for backward compatibility

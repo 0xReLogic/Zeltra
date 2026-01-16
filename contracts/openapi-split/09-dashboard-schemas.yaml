@@ -175,3 +175,34 @@ components:
       - activities
       - pagination
       type: object
+    PendingApprovalsResponse:
+      description: Pending approvals response.
+      properties:
+        count:
+          description: Number of pending items.
+          example: 5
+          format: int32
+          type: integer
+        total_amount:
+          description: Total amount.
+          example: '1250.0000'
+          type: string
+      required:
+      - count
+      - total_amount
+      type: object
+    DashboardUserInfo:
+      description: Dashboard user info (simplified).
+      properties:
+        full_name:
+          description: Full name.
+          example: John Doe
+          type: string
+        id:
+          description: User ID.
+          format: uuid
+          type: string
+      required:
+      - id
+      - full_name
+      type: object

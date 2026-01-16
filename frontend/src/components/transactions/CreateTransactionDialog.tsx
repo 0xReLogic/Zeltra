@@ -156,9 +156,11 @@ export function CreateTransactionDialog() {
     return (tx >= startOfDay(start) && tx <= endOfDay(end))
   })
   
-  const isPeriodOpen = activePeriod?.status === 'OPEN'
+  // Case-insensitive status comparison (backend returns lowercase 'open', 'closed')
+  const periodStatus = activePeriod?.status?.toLowerCase()
+  const isPeriodOpen = periodStatus === 'open'
   const noPeriodFound = transactionDate && !activePeriod
-  const isPeriodClosed = activePeriod && activePeriod.status !== 'OPEN'
+  const isPeriodClosed = activePeriod && periodStatus !== 'open'
 
   function onSubmit(values: FormValues) {
     const amount = values.amount

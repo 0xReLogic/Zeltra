@@ -33,17 +33,36 @@ export function useFiscalYears() {
 }
 
 /**
- * GET /organizations/{org_id}/fiscal-periods
- * List fiscal periods, optionally filtered by year
+ * Get fiscal periods extracted from fiscal years response.
+ * Backend doesn't have a separate /fiscal-periods endpoint,
+ * so we extract periods from the /fiscal-years response.
  */
 export function useFiscalPeriods(fiscalYearId?: string) {
   return useQuery({
     queryKey: FISCAL_KEYS.periodsByYear(fiscalYearId || 'all'),
-    queryFn: () => {
-      const params = new URLSearchParams()
-      if (fiscalYearId) params.set('fiscal_year_id', fiscalYearId)
-      const queryString = params.toString()
-      return apiClient<FiscalPeriod[]>(`/fiscal-periods${queryString ? `?${queryString}` : ''}`)
+    queryFn: async () => {
+      // Fetch fiscal years which include nested periods
+      const fiscalYears = await apiClient<GetFiscalYearsResponse>('/fiscal-years')
+      
+      // Extract all periods from fiscal years
+      let allPeriods: FiscalPeriod[] = []
+      
+      if (Array.isArray(fiscalYears)) {
+        for (const year of fiscalYears) {
+          if (year.periods && Array.isArray(year.periods)) {
+            // Filter by fiscal year if specified
+            if (fiscalYearId) {
+              if (year.id === fiscalYearId) {
+                allPeriods = [...allPeriods, ...year.periods]
+              }
+            } else {
+              allPeriods = [...allPeriods, ...year.periods]
+            }
+          }
+        }
+      }
+      
+      return allPeriods
     },
   })
 }

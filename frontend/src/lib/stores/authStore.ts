@@ -39,7 +39,8 @@ export const useAuthStore = create<AuthState>()(
       isRefreshing: false,
       
       setAuth: (user, accessToken, refreshToken, expiresIn) => {
-        const tokenExpiresAt = Date.now() + (expiresIn * 1000) - 60000 // 1 min buffer
+        // Store actual expiry time - proactive refresh is handled by dashboard layout
+        const tokenExpiresAt = Date.now() + (expiresIn * 1000)
         set({ 
           user, 
           accessToken, 
@@ -50,7 +51,7 @@ export const useAuthStore = create<AuthState>()(
       },
       
       setTokens: (accessToken, refreshToken, expiresIn) => {
-        const tokenExpiresAt = Date.now() + (expiresIn * 1000) - 60000
+        const tokenExpiresAt = Date.now() + (expiresIn * 1000)
         set({ accessToken, refreshToken, tokenExpiresAt })
       },
       

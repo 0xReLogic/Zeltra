@@ -230,3 +230,65 @@ components:
       - total_credit
       - balance
       type: object
+    LedgerEntryResponse:
+      description: Ledger entry response.
+      properties:
+        credit:
+          description: Credit.
+          type: string
+        debit:
+          description: Debit.
+          type: string
+        description:
+          description: Description.
+          type: string
+        dimensions:
+          description: Dimensions.
+          items:
+            $ref: '#/components/schemas/DimensionValueResponse'
+          type: array
+        exchange_rate:
+          description: Exchange rate.
+          type: string
+        functional_amount:
+          description: Functional amount.
+          type: string
+        id:
+          description: Entry ID.
+          format: uuid
+          type: string
+        reference_number:
+          description: Reference number.
+          type:
+          - string
+          - 'null'
+        running_balance:
+          description: Running balance.
+          type: string
+        source_amount:
+          description: Source amount.
+          type: string
+        source_currency:
+          description: Source currency.
+          type: string
+        transaction_date:
+          description: Transaction date.
+          type: string
+        transaction_id:
+          description: Transaction ID.
+          format: uuid
+          type: string
+      required:
+      - id
+      - transaction_id
+      - transaction_date
+      - description
+      - source_currency
+      - source_amount
+      - exchange_rate
+      - functional_amount
+      - debit
+      - credit
+      - running_balance
+      - dimensions
+      type: object

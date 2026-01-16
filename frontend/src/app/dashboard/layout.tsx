@@ -8,34 +8,52 @@ import { UpgradeModal } from '@/components/modals/UpgradeModal'
 import { useAuthStore } from '@/lib/stores/authStore'
 import { Loader2 } from 'lucide-react'
 
+/**
+ * Custom hook to properly wait for Zustand persist hydration.
+ * This ensures we don't read stale state before localStorage is loaded.
+ */
+function useHydration() {
+  const [hydrated, setHydrated] = useState(false)
+
+  useEffect(() => {
+    // Check if already hydrated
+    if (useAuthStore.persist?.hasHydrated()) {
+      setHydrated(true)
+      return
+    }
+
+    // Wait for hydration to complete
+    const unsub = useAuthStore.persist?.onFinishHydration(() => {
+      setHydrated(true)
+    })
+
+    return () => unsub?.()
+  }, [])
+
+  return hydrated
+}
+
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
   const router = useRouter()
+  const isHydrated = useHydration()
+  
+  // Only read auth state AFTER hydration is complete
+  // This prevents reading stale null values before localStorage is loaded
   const accessToken = useAuthStore((state) => state.accessToken)
   const user = useAuthStore((state) => state.user)
-  const [isHydrated, setIsHydrated] = useState(() => useAuthStore.persist?.hasHydrated() ?? false)
 
   useEffect(() => {
-    if (isHydrated) return
-
-    // Wait for hydration to complete
-    const unsub = useAuthStore.persist.onFinishHydration(() => {
-      setIsHydrated(true)
-    })
-
-    return () => unsub()
-  }, [isHydrated])
-
-  useEffect(() => {
+    // Only check auth after hydration is complete
     if (isHydrated && (!accessToken || !user)) {
       router.replace('/login')
     }
   }, [isHydrated, accessToken, user, router])
 
-  // Show loading while checking auth
+  // Show loading while waiting for hydration
   if (!isHydrated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-muted/40">
@@ -44,7 +62,7 @@ export default function DashboardLayout({
     )
   }
 
-  // Don't render dashboard if not authenticated
+  // Don't render dashboard if not authenticated (after hydration)
   if (!accessToken || !user) {
     return null
   }

@@ -15,6 +15,42 @@ export const queryClient = new QueryClient({
   },
 })
 
+/**
+ * Wait for Zustand store to finish hydrating from localStorage.
+ * This prevents race conditions where API calls are made before
+ * the auth token is loaded from storage.
+ */
+async function waitForHydration(): Promise<void> {
+  // Skip on server-side
+  if (typeof window === 'undefined') {
+    return
+  }
+  
+  // Safety check for persist middleware
+  if (!useAuthStore.persist) {
+    return
+  }
+  
+  // If already hydrated, return immediately
+  if (useAuthStore.persist.hasHydrated()) {
+    return
+  }
+  
+  // Wait for hydration to complete with timeout
+  return new Promise((resolve) => {
+    const timeout = setTimeout(() => {
+      // Timeout after 5 seconds - proceed anyway
+      resolve()
+    }, 5000)
+    
+    const unsub = useAuthStore.persist.onFinishHydration(() => {
+      clearTimeout(timeout)
+      unsub()
+      resolve()
+    })
+  })
+}
+
 // Custom error classes for better error handling
 export class ApiError extends Error {
   constructor(
@@ -42,38 +78,57 @@ export class UnauthorizedError extends ApiError {
   }
 }
 
-// Token refresh function
+/**
+ * Mutex-based token refresh to prevent race conditions.
+ * When multiple requests get 401 simultaneously, only ONE refresh happens.
+ * Other requests wait for that refresh to complete.
+ */
+let refreshPromise: Promise<boolean> | null = null
+
 async function refreshAccessToken(): Promise<boolean> {
+  // If a refresh is already in progress, wait for it
+  if (refreshPromise) {
+    return refreshPromise
+  }
+  
   const state = useAuthStore.getState()
-  const { refreshToken, isRefreshing, setTokens, setRefreshing, logout } = state
+  const { refreshToken, setTokens, logout } = state
   
-  if (!refreshToken || isRefreshing) return false
+  if (!refreshToken) {
+    return false
+  }
   
-  setRefreshing(true)
-  
-  try {
-    const baseUrl = API_BASE || '/api/v1'
-    const res = await fetch(`${baseUrl}/auth/refresh`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refresh_token: refreshToken }),
-      signal: AbortSignal.timeout(10000)
-    })
-    
-    if (!res.ok) {
+  // Create the refresh promise - all concurrent callers will share this
+  refreshPromise = (async () => {
+    try {
+      const baseUrl = API_BASE || '/api/v1'
+      const res = await fetch(`${baseUrl}/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: refreshToken }),
+        signal: AbortSignal.timeout(10000)
+      })
+      
+      if (!res.ok) {
+        logout()
+        return false
+      }
+      
+      const data = await res.json()
+      // Backend /auth/refresh only returns { access_token, expires_in }
+      // It does NOT return a new refresh_token, so we keep the existing one
+      setTokens(data.access_token, refreshToken, data.expires_in)
+      return true
+    } catch {
       logout()
       return false
+    } finally {
+      // Clear the promise so future refreshes can happen
+      refreshPromise = null
     }
-    
-    const data = await res.json()
-    setTokens(data.access_token, data.refresh_token, data.expires_in)
-    return true
-  } catch {
-    logout()
-    return false
-  } finally {
-    setRefreshing(false)
-  }
+  })()
+  
+  return refreshPromise
 }
 
 interface ApiClientOptions extends RequestInit {
@@ -112,11 +167,14 @@ export async function apiClient<T>(
 ): Promise<T> {
   const baseUrl = API_BASE || '/api/v1'
   
-  // Get auth state
+  // Get auth state - wait for hydration first to prevent race conditions
   let token: string | null = null
   let orgId: string | null = null
   
   if (typeof window !== 'undefined' && !options?.skipAuth) {
+    // Wait for Zustand to hydrate from localStorage before reading state
+    await waitForHydration()
+    
     const state = useAuthStore.getState()
     token = state.accessToken
     orgId = state.currentOrgId

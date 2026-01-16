@@ -76,6 +76,10 @@ export type UpdateTransactionRequest = Schema<'UpdateTransactionRequest'>
 export type CreateEntryRequest = Schema<'CreateEntryRequest'>
 export type EntryResponse = Schema<'EntryResponse'>
 export type LedgerEntryResponse = Schema<'LedgerEntryResponse'>
+export type PayInvoiceRequest = Schema<'PayInvoiceRequest'>
+export type PendingTransactionResponse = Schema<'PendingTransactionResponse'>
+export type PaginatedTransactionsResponse = Schema<'PaginatedTransactionsResponse'>
+export type PaginationMeta = Schema<'PaginationMeta'>
 
 // Transaction Workflow
 export type ApproveRequest = Schema<'ApproveRequest'>
