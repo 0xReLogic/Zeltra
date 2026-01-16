@@ -17,5 +17,18 @@ export type FiscalPeriod = FiscalPeriodResponse
 // Response types
 export type GetFiscalYearsResponse = FiscalYearResponse[]
 
-// Period status enum
+// Period status enum - must match backend: "open", "soft_close", "closed"
 export type PeriodStatus = 'Open' | 'SoftClose' | 'Closed'
+
+// Backend expects lowercase with underscore
+export type PeriodStatusBackend = 'open' | 'soft_close' | 'closed'
+
+// Convert display status to backend format
+export function toBackendStatus(status: PeriodStatus): PeriodStatusBackend {
+  const map: Record<PeriodStatus, PeriodStatusBackend> = {
+    'Open': 'open',
+    'SoftClose': 'soft_close',
+    'Closed': 'closed',
+  }
+  return map[status]
+}

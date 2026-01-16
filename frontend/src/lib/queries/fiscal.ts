@@ -9,6 +9,7 @@ import type {
   CreateFiscalYearRequest,
   PeriodStatus,
 } from '@/types/fiscal'
+import { toBackendStatus } from '@/types/fiscal'
 
 // Re-export types for backward compatibility
 export type { FiscalYear, FiscalPeriod, CreateFiscalYearRequest }
@@ -97,7 +98,7 @@ export function useUpdatePeriodStatus() {
     mutationFn: ({ id, status }: { id: string; status: PeriodStatus }) =>
       apiClient<FiscalPeriod>(`/fiscal-periods/${id}/status`, {
         method: 'PATCH',
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ status: toBackendStatus(status) }),
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: FISCAL_KEYS.all })

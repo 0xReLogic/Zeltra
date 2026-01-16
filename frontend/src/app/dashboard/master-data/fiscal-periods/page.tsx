@@ -71,7 +71,13 @@ export default function FiscalPeriodsPage() {
     })
   }
 
-  if (isLoading) return <div>Loading...</div>
+  if (isLoading) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -181,12 +187,13 @@ export default function FiscalPeriodsPage() {
                                      <Badge 
                                       variant="outline"
                                       className={
-                                        period.status === 'Open' ? 'border-green-500 text-green-500' :
-                                        period.status === 'SoftClose' ? 'border-yellow-500 text-yellow-500' :
+                                        period.status === 'open' ? 'border-green-500 text-green-500' :
+                                        period.status === 'soft_close' ? 'border-yellow-500 text-yellow-500' :
                                         'border-gray-500 text-gray-500'
                                       }
                                      >
-                                      {period.status}
+                                      {period.status === 'soft_close' ? 'Soft Close' : 
+                                       period.status === 'open' ? 'Open' : 'Closed'}
                                      </Badge>
                                   </TableCell>
                                   <TableCell className="text-right">
