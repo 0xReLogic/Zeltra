@@ -117,3 +117,15 @@
   - Commit changes with descriptive message
   - Kalau ada bug aneh yang ditemukan, save ke Cognito project `zeltra-bug` untuk learning
   - _Requirements: All_
+
+- [x] 9. Populate Liabilities & Equity Data
+  - [x] 9.1 Created journal transaction for Accounts Payable (Liability) - $75.00
+    - Debit Rent Expense, Credit Accounts Payable
+  - [x] 9.2 Created journal transaction for Retained Earnings (Equity) - $50.00
+    - Debit Main Bank Account, Credit Retained Earnings
+  - [x] 9.3 Verified Balance Sheet displays all 3 sections with non-zero balances
+    - Assets: $200.00
+    - Liabilities: $75.00
+    - Equity: $50.00
+    - Total L+E: $125.00
+  - Note: "Unbalanced" status is expected (expenses not yet closed to retained earnings)
