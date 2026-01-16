@@ -41,6 +41,7 @@ import { useCreateTransaction } from '@/lib/queries/transactions'
 import { useAccounts } from '@/lib/queries/accounts'
 import { useDimensions, useDimensionValues } from '@/lib/queries/dimensions'
 import { useFiscalPeriods } from '@/lib/queries/fiscal'
+import { useCurrencies } from '@/lib/queries/exchange-rates'
 import { toast } from 'sonner'
 import { ApiError } from '@/lib/api/client'
 import { useOrganization } from '@/lib/queries/organizations'
@@ -78,6 +79,7 @@ export function CreateTransactionDialog() {
   const { data: valuesData } = useDimensionValues() // Fetch all values
   const { data: organization } = useOrganization()
   const { data: fiscalPeriodsData } = useFiscalPeriods()
+  const { data: currenciesData } = useCurrencies()
 
   // Custom Zod Resolver to bypass version mismatch
   const resolver = useCallback(async (values: FormValues) => {
@@ -141,6 +143,16 @@ export function CreateTransactionDialog() {
   const dimensions = dimensionsData?.dimension_types || []
   const allValues = valuesData?.dimension_values || []
   const fiscalPeriods = fiscalPeriodsData || []
+  
+  // Get currencies from API or fallback
+  const currencyOptions = currenciesData?.currencies?.length 
+    ? currenciesData.currencies.map(c => ({ code: c.code, symbol: c.symbol || c.code }))
+    : [
+        { code: 'USD', symbol: '$' },
+        { code: 'EUR', symbol: '€' },
+        { code: 'IDR', symbol: 'Rp' },
+        { code: 'SGD', symbol: 'S$' },
+      ]
   
   // Tier-aware exchange rate check
   const baseCurrency = organization?.base_currency || 'USD'
@@ -527,10 +539,9 @@ export function CreateTransactionDialog() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="USD">USD ($)</SelectItem>
-                        <SelectItem value="EUR">EUR (€)</SelectItem>
-                        <SelectItem value="IDR">IDR (Rp)</SelectItem>
-                        <SelectItem value="SGD">SGD (S$)</SelectItem>
+                        {currencyOptions.map(c => (
+                          <SelectItem key={c.code} value={c.code}>{c.code} ({c.symbol})</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />

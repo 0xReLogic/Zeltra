@@ -33,6 +33,7 @@ import {
 } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { useCreateOrganization } from '@/lib/queries/organizations'
+import { useCurrencies } from '@/lib/queries/exchange-rates'
 import { Organization } from '@/types/organizations'
 
 // Slug validation: lowercase letters, numbers, and hyphens only
@@ -50,17 +51,14 @@ const createOrgSchema = z.object({
 
 type CreateOrgValues = z.infer<typeof createOrgSchema>
 
-const COMMON_CURRENCIES = [
+// Fallback currencies if API fails
+const FALLBACK_CURRENCIES = [
   { code: 'USD', name: 'US Dollar' },
   { code: 'EUR', name: 'Euro' },
   { code: 'GBP', name: 'British Pound' },
   { code: 'JPY', name: 'Japanese Yen' },
   { code: 'IDR', name: 'Indonesian Rupiah' },
   { code: 'SGD', name: 'Singapore Dollar' },
-  { code: 'MYR', name: 'Malaysian Ringgit' },
-  { code: 'AUD', name: 'Australian Dollar' },
-  { code: 'CAD', name: 'Canadian Dollar' },
-  { code: 'CNY', name: 'Chinese Yuan' },
 ]
 
 const COMMON_TIMEZONES = [
@@ -88,6 +86,12 @@ export function CreateOrganizationDialog({
   onSuccess 
 }: CreateOrganizationDialogProps) {
   const createOrg = useCreateOrganization()
+  const { data: currenciesData } = useCurrencies()
+  
+  // Get currencies from API or fallback
+  const currencies = currenciesData?.currencies?.length 
+    ? currenciesData.currencies 
+    : FALLBACK_CURRENCIES
   
   const form = useForm<CreateOrgValues>({
     resolver: zodResolver(createOrgSchema),
@@ -184,7 +188,7 @@ export function CreateOrganizationDialog({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {COMMON_CURRENCIES.map((currency) => (
+                      {currencies.map((currency) => (
                         <SelectItem key={currency.code} value={currency.code}>
                           {currency.code} - {currency.name}
                         </SelectItem>

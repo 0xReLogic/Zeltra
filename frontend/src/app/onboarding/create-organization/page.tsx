@@ -8,10 +8,12 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useCreateOrganization } from '@/lib/queries/organizations'
+import { useCurrencies } from '@/lib/queries/exchange-rates'
 import { useAuthStore } from '@/lib/stores/authStore'
-import { Building2, Loader2 } from 'lucide-react'
+import { Building2, Loader2 }from 'lucide-react'
 
-const CURRENCIES = [
+// Fallback currencies if API fails
+const FALLBACK_CURRENCIES = [
   { value: 'USD', label: 'USD - US Dollar' },
   { value: 'EUR', label: 'EUR - Euro' },
   { value: 'GBP', label: 'GBP - British Pound' },
@@ -38,6 +40,12 @@ export default function CreateOrganizationPage() {
   const [timezone, setTimezone] = useState('UTC')
 
   const createOrg = useCreateOrganization()
+  const { data: currenciesData } = useCurrencies()
+  
+  // Get currencies from API or fallback
+  const currencies = currenciesData?.currencies?.length 
+    ? currenciesData.currencies.map(c => ({ value: c.code, label: `${c.code} - ${c.name}` }))
+    : FALLBACK_CURRENCIES
 
   // Auth protection
   useEffect(() => {
@@ -143,7 +151,7 @@ export default function CreateOrganizationPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {CURRENCIES.map((c) => (
+                    {currencies.map((c) => (
                       <SelectItem key={c.value} value={c.value}>
                         {c.label}
                       </SelectItem>
