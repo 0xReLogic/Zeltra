@@ -36,7 +36,7 @@ schema_groups = {
     ],
     '03-accounts-ledger': [
         'AccountResponse', 'CreateAccountRequest', 'UpdateAccountRequest', 'ToggleAccountStatusRequest',
-        'AccountLedgerResponse', 'AccountBalanceResponse'
+        'AccountLedgerResponse', 'AccountBalanceResponse', 'GetAccountsResponse'
     ],
     '04-budgets': [
         'BudgetResponse', 'CreateBudgetRequest', 'UpdateBudgetRequest', 'CreateBudgetLinesRequest', 

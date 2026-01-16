@@ -51,6 +51,7 @@ pub fn routes() -> Router<AppState> {
 
 /// Query parameters for listing accounts.
 #[derive(Debug, Deserialize, utoipa::IntoParams)]
+#[into_params(parameter_in = Query)]
 pub struct ListAccountsQuery {
     /// Filter by account type.
     #[serde(rename = "type")]
@@ -147,6 +148,13 @@ pub struct AccountResponse {
     pub allow_direct_posting: bool,
 }
 
+/// Response wrapper for list accounts endpoint.
+#[derive(Debug, Serialize, utoipa::ToSchema)]
+pub struct GetAccountsResponse {
+    /// List of accounts.
+    pub accounts: Vec<AccountResponse>,
+}
+
 /// Query parameters for getting account balance at a specific date.
 #[derive(Debug, Deserialize, utoipa::IntoParams)]
 pub struct BalanceQuery {
@@ -163,7 +171,7 @@ pub struct BalanceQuery {
         ListAccountsQuery
     ),
     responses(
-        (status = 200, description = "List of accounts", body = [AccountResponse]),
+        (status = 200, description = "List of accounts", body = GetAccountsResponse),
         (status = 403, description = "Forbidden")
     ),
     tag = "Accounts",

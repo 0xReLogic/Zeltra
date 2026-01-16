@@ -105,7 +105,7 @@ export default function AccountDetailPage() {
            <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-2xl font-bold tracking-tight">{account.code} - {account.name}</h2>
-                <Badge variant="outline">{(account.type ?? account.account_type ?? 'unknown').toUpperCase()}</Badge>
+                <Badge variant="outline">{(account.type ?? 'unknown').toUpperCase()}</Badge>
               </div>
               <p className="text-muted-foreground">General Ledger</p>
            </div>
@@ -227,7 +227,7 @@ export default function AccountDetailPage() {
             defaultValues={{
               code: account.code,
               name: account.name,
-              type: account.type ?? account.account_type,
+              type: account.type,
               currency: account.currency,
               description: account.description ?? '',
             }}

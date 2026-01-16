@@ -2575,6 +2575,11 @@ export interface components {
              */
             status: string;
         };
+        /** @description Response wrapper for list accounts endpoint. */
+        GetAccountsResponse: {
+            /** @description List of accounts. */
+            accounts: components["schemas"]["AccountResponse"][];
+        };
         /** @description Health check response. */
         HealthResponse: {
             /**
@@ -3906,17 +3911,18 @@ export interface operations {
     };
     list_accounts: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Filter by account type. */
+                type?: string;
+                /** @description Filter by active status. */
+                active?: boolean;
+                /** @description Filter by currency. */
+                currency?: string;
+            };
             header?: never;
             path: {
                 /** @description Organization ID */
                 org_id: string;
-                /** @description Filter by account type. */
-                type: string | null;
-                /** @description Filter by active status. */
-                active: boolean | null;
-                /** @description Filter by currency. */
-                currency: string | null;
             };
             cookie?: never;
         };
@@ -3928,7 +3934,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AccountResponse"][];
+                    "application/json": components["schemas"]["GetAccountsResponse"];
                 };
             };
             /** @description Forbidden */

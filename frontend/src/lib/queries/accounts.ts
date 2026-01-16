@@ -1,6 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '../api/client'
-import type { Account, CreateAccountRequest, GetAccountsResponse } from '@/types/accounts'
+import type { 
+  AccountResponse,
+  CreateAccountRequest, 
+  UpdateAccountRequest,
+  GetAccountsResponse 
+} from '@/types/accounts'
+import type { AccountLedgerResponse } from '@/types/ledger'
 
 export function useAccounts(type?: string) {
   return useQuery({
@@ -16,7 +22,7 @@ export function useCreateAccount() {
 
   return useMutation({
     mutationFn: (data: CreateAccountRequest) =>
-      apiClient<Account>('/accounts', {
+      apiClient<AccountResponse>('/accounts', {
         method: 'POST',
         body: JSON.stringify(data),
       }),
@@ -29,19 +35,17 @@ export function useCreateAccount() {
 export function useAccount(id: string) {
   return useQuery({
     queryKey: ['accounts', id],
-    queryFn: () => apiClient<Account>(`/accounts/${id}`),
+    queryFn: () => apiClient<AccountResponse>(`/accounts/${id}`),
     enabled: !!id,
   })
 }
-
-export type UpdateAccountRequest = Partial<CreateAccountRequest> & { id: string }
 
 export function useUpdateAccount() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ id, ...data }: UpdateAccountRequest) =>
-      apiClient<Account>(`/accounts/${id}`, {
+    mutationFn: ({ id, ...data }: { id: string } & Partial<UpdateAccountRequest>) =>
+      apiClient<AccountResponse>(`/accounts/${id}`, {
         method: 'PUT',
         body: JSON.stringify(data),
       }),
@@ -49,26 +53,6 @@ export function useUpdateAccount() {
       queryClient.invalidateQueries({ queryKey: ['accounts'] })
     },
   })
-}
-
-// ...existing code...
-export interface LedgerEntry {
-  id: string
-  transaction_date: string
-  reference_number: string
-  description: string
-  debit: string
-  credit: string
-  running_balance: string
-}
-
-export interface GetLedgerResponse {
-  entries: LedgerEntry[]
-  pagination: {
-    page: number
-    limit: number
-    total: number
-  }
 }
 
 export function useAccountLedger(id: string, params?: { page?: number; limit?: number; from?: string; to?: string }) {
@@ -81,7 +65,7 @@ export function useAccountLedger(id: string, params?: { page?: number; limit?: n
       if (params?.from) queryParams.set('from', params.from)
       if (params?.to) queryParams.set('to', params.to)
 
-      return apiClient<GetLedgerResponse>(`/accounts/${id}/ledger?${queryParams.toString()}`)
+      return apiClient<AccountLedgerResponse>(`/accounts/${id}/ledger?${queryParams.toString()}`)
     },
     enabled: !!id,
   })
@@ -92,7 +76,7 @@ export function useDeleteAccount() {
 
   return useMutation({
     mutationFn: (id: string) =>
-      apiClient<{ success: boolean }>(`/accounts/${id}`, {
+      apiClient<void>(`/accounts/${id}`, {
         method: 'DELETE',
       }),
     onSuccess: () => {
@@ -106,7 +90,7 @@ export function useToggleAccountActive() {
 
   return useMutation({
     mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
-      apiClient<{ success: boolean; is_active: boolean }>(`/accounts/${id}/status`, {
+      apiClient<AccountResponse>(`/accounts/${id}/status`, {
         method: 'PATCH',
         body: JSON.stringify({ is_active: isActive }),
       }),

@@ -218,3 +218,14 @@ components:
       - credit
       - balance
       type: object
+    GetAccountsResponse:
+      description: Response wrapper for list accounts endpoint.
+      properties:
+        accounts:
+          description: List of accounts.
+          items:
+            $ref: '#/components/schemas/AccountResponse'
+          type: array
+      required:
+      - accounts
+      type: object

@@ -22,12 +22,16 @@ import {
 } from '@/components/ui/select'
 import { CreateAccountRequest } from '@/types/accounts'
 
+const accountTypes = ['asset', 'liability', 'equity', 'revenue', 'expense'] as const
+
 const formSchema = z.object({
   code: z.string().min(1, 'Code is required'),
   name: z.string().min(2, 'Name must be at least 2 characters'),
-  type: z.enum(['asset', 'liability', 'equity', 'revenue', 'expense']),
+  type: z.string().min(1, 'Type is required'),
   currency: z.string().min(1, 'Currency is required'),
 })
+
+type FormValues = z.infer<typeof formSchema>
 
 interface AccountFormProps {
   mode?: 'create' | 'edit'
@@ -38,14 +42,13 @@ interface AccountFormProps {
 }
 
 export function AccountForm({ mode = 'create', defaultValues, onSubmit, isSubmitting, isLoading }: AccountFormProps) {
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      code: '',
-      name: '',
-      type: 'asset',
-      currency: 'USD',
-      ...defaultValues,
+      code: defaultValues?.code ?? '',
+      name: defaultValues?.name ?? '',
+      type: defaultValues?.type ?? 'asset',
+      currency: defaultValues?.currency ?? 'USD',
     },
   })
 

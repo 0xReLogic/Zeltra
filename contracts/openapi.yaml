@@ -2018,6 +2018,17 @@ components:
       - status
       - periods
       type: object
+    GetAccountsResponse:
+      description: Response wrapper for list accounts endpoint.
+      properties:
+        accounts:
+          description: List of accounts.
+          items:
+            $ref: '#/components/schemas/AccountResponse'
+          type: array
+      required:
+      - accounts
+      type: object
     HealthResponse:
       description: Health check response.
       properties:
@@ -3813,37 +3824,29 @@ paths:
           format: uuid
           type: string
       - description: Filter by account type.
-        in: path
+        in: query
         name: type
-        required: true
+        required: false
         schema:
-          type:
-          - string
-          - 'null'
+          type: string
       - description: Filter by active status.
-        in: path
+        in: query
         name: active
-        required: true
+        required: false
         schema:
-          type:
-          - boolean
-          - 'null'
+          type: boolean
       - description: Filter by currency.
-        in: path
+        in: query
         name: currency
-        required: true
+        required: false
         schema:
-          type:
-          - string
-          - 'null'
+          type: string
       responses:
         '200':
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/AccountResponse'
-                type: array
+                $ref: '#/components/schemas/GetAccountsResponse'
           description: List of accounts
         '403':
           description: Forbidden

@@ -67,6 +67,7 @@ export type AccountBalanceResponse = Schema<'AccountBalanceResponse'>
 export type AccountLedgerResponse = Schema<'AccountLedgerResponse'>
 export type CreateAccountRequest = Schema<'CreateAccountRequest'>
 export type UpdateAccountRequest = Schema<'UpdateAccountRequest'>
+export type GetAccountsResponse = Schema<'GetAccountsResponse'>
 
 // Transactions
 export type TransactionResponse = Schema<'TransactionResponse'>
