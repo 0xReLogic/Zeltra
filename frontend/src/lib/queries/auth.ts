@@ -54,10 +54,14 @@ export function useRegister() {
 
 export function useLogout() {
   const logout = useAuthStore((state) => state.logout)
+  const refreshToken = useAuthStore((state) => state.refreshToken)
   const router = useRouter()
 
   return useMutation({
-    mutationFn: () => apiClient('/auth/logout', { method: 'POST' }),
+    mutationFn: () => apiClient('/auth/logout', { 
+      method: 'POST',
+      body: JSON.stringify({ refresh_token: refreshToken || '' }),
+    }),
     onSuccess: () => {
       logout()
       router.push('/login')

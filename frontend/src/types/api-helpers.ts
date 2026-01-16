@@ -178,3 +178,18 @@ export type PaginationInfo = Schema<'PaginationInfo'>
 
 // Error
 export type ApiError = Schema<'ApiError'>
+
+// ============================================================================
+// Sentinel Intelligence Types
+// ============================================================================
+
+// Accruals
+export type AccrualScheduleResponse = Schema<'AccrualScheduleResponse'>
+export type CreateAccrualScheduleRequest = Schema<'CreateAccrualScheduleRequest'>
+
+// Revaluation
+export type RevaluationLogResponse = Schema<'RevaluationLogResponse'>
+
+// Intercompany
+export type IntercompanyMappingResponse = Schema<'IntercompanyMappingResponse'>
+export type CreateIntercompanyMappingRequest = Schema<'CreateIntercompanyMappingRequest'>
