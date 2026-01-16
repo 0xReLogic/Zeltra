@@ -13,7 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button'
 import { Plus, Loader2, RefreshCw } from 'lucide-react'
 import { BulkImportDialog } from './BulkImportDialog'
-import { useExchangeRates, useCreateExchangeRate, useFetchLiveRates } from '@/lib/queries/exchange-rates'
+import { useExchangeRates, useCreateExchangeRate, useFetchLiveRates, useCurrencies } from '@/lib/queries/exchange-rates'
 import {
   Dialog,
   DialogContent,
@@ -52,29 +52,39 @@ const formSchema = z.object({
 
 export default function ExchangeRatesPage() {
   const { data, isLoading } = useExchangeRates()
+  const { data: currenciesData } = useCurrencies()
   const createRate = useCreateExchangeRate()
   const fetchLiveRates = useFetchLiveRates()
   const [open, setOpen] = React.useState(false)
 
+  // Get currencies list, fallback to common ones if not loaded
+  const currencies = currenciesData?.currencies || []
+  const currencyOptions = currencies.length > 0 
+    ? currencies.map(c => ({ code: c.code, name: c.name }))
+    : [
+        { code: 'USD', name: 'US Dollar' },
+        { code: 'EUR', name: 'Euro' },
+        { code: 'SGD', name: 'Singapore Dollar' },
+        { code: 'IDR', name: 'Indonesian Rupiah' },
+      ]
+
   const handleSync = async () => {
+    // Get unique base currencies from the list (excluding IDR as target)
+    const baseCurrencies = currencyOptions
+      .filter(c => c.code !== 'IDR')
+      .slice(0, 5) // Limit to 5 currencies for sync
+    
     toast.promise(
-      // Fetch major currencies to IDR
-      Promise.all([
-        fetchLiveRates.mutateAsync({
-          base_currency: 'USD',
-          target_currencies: ['IDR'],
-        }),
-        fetchLiveRates.mutateAsync({
-          base_currency: 'EUR',
-          target_currencies: ['IDR', 'USD'],
-        }),
-        fetchLiveRates.mutateAsync({
-          base_currency: 'SGD',
-          target_currencies: ['IDR'],
-        }),
-      ]),
+      Promise.all(
+        baseCurrencies.map(c => 
+          fetchLiveRates.mutateAsync({
+            base_currency: c.code,
+            target_currencies: ['IDR'],
+          })
+        )
+      ),
       {
-        loading: 'Syncing live rates for USD, EUR, SGD...',
+        loading: `Syncing live rates for ${baseCurrencies.map(c => c.code).join(', ')}...`,
         success: 'Exchange rates synced successfully',
         error: 'Failed to sync rates',
       }
@@ -160,9 +170,11 @@ export default function ExchangeRatesPage() {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="USD">USD</SelectItem>
-                              <SelectItem value="SGD">SGD</SelectItem>
-                              <SelectItem value="EUR">EUR</SelectItem>
+                              {currencyOptions.map(c => (
+                                <SelectItem key={c.code} value={c.code}>
+                                  {c.code} - {c.name}
+                                </SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -175,9 +187,20 @@ export default function ExchangeRatesPage() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>To</FormLabel>
-                          <FormControl>
-                            <Input {...field} readOnly className="bg-muted" />
-                          </FormControl>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select currency" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {currencyOptions.map(c => (
+                                <SelectItem key={c.code} value={c.code}>
+                                  {c.code} - {c.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}

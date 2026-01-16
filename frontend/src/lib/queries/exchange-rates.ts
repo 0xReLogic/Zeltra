@@ -10,15 +10,18 @@ import type {
   BulkImportResponse,
   FetchRatesRequest,
   FetchRatesResponse,
+  GetCurrenciesResponse,
+  Currency,
 } from '@/types/exchange-rates'
 
 // Re-export types for backward compatibility
-export type { ExchangeRate, CreateExchangeRateRequest, FetchRatesRequest }
+export type { ExchangeRate, CreateExchangeRateRequest, FetchRatesRequest, Currency }
 
 // Query keys for cache management
 const EXCHANGE_RATE_KEYS = {
   all: ['exchange-rates'] as const,
   list: (filters?: ExchangeRateFilters) => [...EXCHANGE_RATE_KEYS.all, 'list', filters] as const,
+  currencies: () => ['currencies'] as const,
 }
 
 interface ExchangeRateFilters {
@@ -109,5 +112,19 @@ export function useFetchLiveRates() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: EXCHANGE_RATE_KEYS.all })
     },
+  })
+}
+
+
+/**
+ * GET /currencies
+ * List all available currencies
+ */
+export function useCurrencies() {
+  return useQuery({
+    queryKey: EXCHANGE_RATE_KEYS.currencies(),
+    queryFn: () => 
+      apiClient<GetCurrenciesResponse>('/currencies', { skipOrgPrefix: true }),
+    staleTime: 1000 * 60 * 60, // Cache for 1 hour - currencies rarely change
   })
 }

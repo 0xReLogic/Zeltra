@@ -14,9 +14,16 @@ export type ExchangeRateListItem = components['schemas']['ExchangeRateListItem']
 export type PageResponseExchangeRateListItem = components['schemas']['PageResponse_ExchangeRateListItem']
 export type FetchRatesRequest = components['schemas']['FetchRatesRequest']
 export type FetchRatesResponse = components['schemas']['FetchRatesResponse']
+export type CurrencyResponse = components['schemas']['CurrencyResponse']
 
 // Type aliases for backward compatibility
 export type ExchangeRate = ExchangeRateResponse
+export type Currency = CurrencyResponse
 
 // Response types - paginated response
 export type GetExchangeRatesResponse = PageResponseExchangeRateListItem
+
+// Currencies response
+export interface GetCurrenciesResponse {
+  currencies: CurrencyResponse[]
+}
