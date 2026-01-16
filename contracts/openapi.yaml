@@ -286,7 +286,7 @@ components:
           example: transaction_create
           type: string
         user:
-          $ref: '#/components/schemas/UserInfo'
+          $ref: '#/components/schemas/DashboardUserInfo'
           description: User info.
       required:
       - id
@@ -1387,11 +1387,19 @@ components:
           description: 'Entry type: "debit" or "credit".'
           example: debit
           type: string
+        exchange_rate:
+          description: Optional exchange rate override.
+          example: '1.0850'
+          type:
+          - string
+          - 'null'
         memo:
           description: Optional memo.
           type:
           - string
           - 'null'
+        metadata:
+          description: Optional compliance/ESG metadata.
         source_amount:
           description: Source amount (positive).
           example: '100.00'
@@ -1609,6 +1617,21 @@ components:
       - burn_rate
       - runway_days
       - pending_approvals
+      type: object
+    DashboardUserInfo:
+      description: Dashboard user info (simplified).
+      properties:
+        full_name:
+          description: Full name.
+          example: John Doe
+          type: string
+        id:
+          description: User ID.
+          format: uuid
+          type: string
+      required:
+      - id
+      - full_name
       type: object
     DimensionTypeResponse:
       description: Response for a dimension type.
@@ -2738,6 +2761,20 @@ components:
       required:
       - refresh_token
       type: object
+    RefreshResponse:
+      description: Refresh token response.
+      properties:
+        access_token:
+          description: New access token.
+          type: string
+        expires_in:
+          description: Token expiration in seconds.
+          format: int64
+          type: integer
+      required:
+      - access_token
+      - expires_in
+      type: object
     RegisterRequest:
       description: Registration request payload.
       properties:
@@ -2754,6 +2791,19 @@ components:
       - email
       - password
       - full_name
+      type: object
+    RegisterResponse:
+      description: Registration response payload.
+      properties:
+        message:
+          description: Success message.
+          type: string
+        user:
+          $ref: '#/components/schemas/UserInfo'
+          description: Registered user info.
+      required:
+      - user
+      - message
       type: object
     RejectRequest:
       description: Request body for rejecting a transaction.
@@ -2835,6 +2885,15 @@ components:
           type: string
       required:
       - email
+      type: object
+    ResendVerificationResponse:
+      description: Resend verification email response.
+      properties:
+        message:
+          description: Success message.
+          type: string
+      required:
+      - message
       type: object
     RevaluationLogResponse:
       description: Response for a revaluation log.
@@ -3049,21 +3108,31 @@ components:
       description: Transaction list item (lightweight).
       properties:
         created_at:
+          description: Created at timestamp.
           type: string
         description:
+          description: Description.
           type: string
         id:
+          description: Transaction ID.
           format: uuid
           type: string
         reference_number:
+          description: Reference number.
           type:
           - string
           - 'null'
         status:
+          description: Status.
+          type: string
+        total_amount:
+          description: Total amount.
           type: string
         transaction_date:
+          description: Transaction date.
           type: string
         transaction_type:
+          description: Transaction type.
           type: string
       required:
       - id
@@ -3072,6 +3141,7 @@ components:
       - description
       - status
       - created_at
+      - total_amount
       type: object
     TransactionResponse:
       description: Response for a transaction.
@@ -3394,19 +3464,31 @@ components:
           - 'null'
       type: object
     UserInfo:
-      description: User info.
+      description: User info returned in auth responses.
       properties:
+        email:
+          description: User email.
+          example: user@example.com
+          type: string
         full_name:
-          description: Full name.
+          description: User full name.
           example: John Doe
           type: string
         id:
           description: User ID.
+          example: 550e8400-e29b-41d4-a716-446655440000
           format: uuid
           type: string
+        organizations:
+          description: Organizations the user belongs to.
+          items:
+            $ref: '#/components/schemas/UserOrganization'
+          type: array
       required:
       - id
+      - email
       - full_name
+      - organizations
       type: object
     UserOrganization:
       description: Organization info for a user.
@@ -3534,6 +3616,10 @@ paths:
         required: true
       responses:
         '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefreshResponse'
           description: Token refreshed successfully
         '401':
           description: Invalid or expired refresh token
@@ -3551,6 +3637,10 @@ paths:
         required: true
       responses:
         '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterResponse'
           description: User registered successfully
         '409':
           description: Email already exists
@@ -3568,6 +3658,10 @@ paths:
         required: true
       responses:
         '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResendVerificationResponse'
           description: Verification email sent if account exists
       summary: POST /auth/resend-verification - Resend verification email.
       tags:
@@ -4883,7 +4977,7 @@ paths:
           type: string
       - description: Filter by dimension type ID.
         in: path
-        name: type
+        name: dimension_type_id
         required: true
         schema:
           format: uuid

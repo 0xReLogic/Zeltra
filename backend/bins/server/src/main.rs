@@ -2,6 +2,8 @@
 //!
 //! Main entry point for the Zeltra backend service.
 
+mod sync;
+
 use std::sync::Arc;
 
 use tokio::net::TcpListener;
@@ -55,9 +57,12 @@ async fn main() -> anyhow::Result<()> {
     // Create storage service (optional, based on environment)
     let storage = create_storage_service();
 
+    // Create Arc for database connection (shared with sync task)
+    let db_arc = Arc::new(db);
+
     // Create application state
     let state = AppState {
-        db: Arc::new(db),
+        db: db_arc.clone(),
         jwt_service: Arc::new(jwt_service),
         email_service: Arc::new(email_service),
         storage,
@@ -65,6 +70,17 @@ async fn main() -> anyhow::Result<()> {
 
     // Create router
     let app = create_router(state);
+
+    // Start exchange rate sync background task
+    {
+        use crate::sync::{run_sync_loop, SyncConfig};
+        let sync_config = SyncConfig::default();
+        info!(
+            interval_secs = sync_config.interval_secs,
+            "Starting exchange rate sync background task"
+        );
+        tokio::spawn(run_sync_loop(db_arc, sync_config));
+    }
 
     // Start server
     let addr = format!("{}:{}", config.server.host, config.server.port);

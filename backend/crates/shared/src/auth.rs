@@ -91,6 +91,15 @@ pub struct RegisterRequest {
     pub full_name: String,
 }
 
+/// Registration response payload.
+#[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
+pub struct RegisterResponse {
+    /// Registered user info.
+    pub user: UserInfo,
+    /// Success message.
+    pub message: String,
+}
+
 /// Login response payload.
 #[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
 pub struct LoginResponse {
@@ -108,10 +117,13 @@ pub struct LoginResponse {
 #[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
 pub struct UserInfo {
     /// User ID.
+    #[schema(example = "550e8400-e29b-41d4-a716-446655440000")]
     pub id: Uuid,
     /// User email.
+    #[schema(example = "user@example.com")]
     pub email: String,
     /// User full name.
+    #[schema(example = "John Doe")]
     pub full_name: String,
     /// Organizations the user belongs to.
     pub organizations: Vec<UserOrganization>,
@@ -135,6 +147,15 @@ pub struct UserOrganization {
 pub struct RefreshRequest {
     /// The refresh token.
     pub refresh_token: String,
+}
+
+/// Refresh token response.
+#[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
+pub struct RefreshResponse {
+    /// New access token.
+    pub access_token: String,
+    /// Token expiration in seconds.
+    pub expires_in: i64,
 }
 
 /// Logout request.
@@ -196,6 +217,13 @@ pub struct VerifyEmailRequest {
 pub struct ResendVerificationRequest {
     /// User email to resend verification to.
     pub email: String,
+}
+
+/// Resend verification email response.
+#[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
+pub struct ResendVerificationResponse {
+    /// Success message.
+    pub message: String,
 }
 
 /// Email verification response.

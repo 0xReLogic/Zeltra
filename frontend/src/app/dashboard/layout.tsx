@@ -16,33 +16,27 @@ export default function DashboardLayout({
   const router = useRouter()
   const accessToken = useAuthStore((state) => state.accessToken)
   const user = useAuthStore((state) => state.user)
-  const [isChecking, setIsChecking] = useState(true)
+  const [isHydrated, setIsHydrated] = useState(() => useAuthStore.persist?.hasHydrated() ?? false)
 
   useEffect(() => {
-    // Wait for hydration to complete before checking auth
-    const checkAuth = () => {
-      const state = useAuthStore.getState()
-      if (!state.accessToken || !state.user) {
-        router.replace('/login')
-      } else {
-        setIsChecking(false)
-      }
-    }
+    if (isHydrated) return
 
-    // Small delay to ensure Zustand has hydrated from localStorage
-    const timer = setTimeout(checkAuth, 100)
-    return () => clearTimeout(timer)
-  }, [router])
+    // Wait for hydration to complete
+    const unsub = useAuthStore.persist.onFinishHydration(() => {
+      setIsHydrated(true)
+    })
 
-  // Also check on state changes (e.g., after logout)
+    return () => unsub()
+  }, [isHydrated])
+
   useEffect(() => {
-    if (!isChecking && (!accessToken || !user)) {
+    if (isHydrated && (!accessToken || !user)) {
       router.replace('/login')
     }
-  }, [accessToken, user, isChecking, router])
+  }, [isHydrated, accessToken, user, router])
 
   // Show loading while checking auth
-  if (isChecking) {
+  if (!isHydrated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-muted/40">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />

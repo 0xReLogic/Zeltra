@@ -54,8 +54,8 @@ export function Sidebar() {
         </Link>
       </div>
       
-      <div className="flex flex-col justify-between h-[calc(100vh-64px)] p-4">
-        <nav className="space-y-1">
+      <div className="flex flex-col h-[calc(100vh-64px)]">
+        <nav className="flex-1 overflow-y-auto p-4 space-y-1 custom-scrollbar">
           {navItems.map((item) => {
             const isActive = pathname === item.href
             const isLocked = item.tier === 'enterprise' && org?.subscription_tier !== 'enterprise'
@@ -99,7 +99,7 @@ export function Sidebar() {
           })}
         </nav>
 
-         <div className="border-t pt-4">
+         <div className="border-t p-4 mt-auto">
            <UsageMeter className="mb-4 px-2" />
            <Link
               href="/dashboard/help"

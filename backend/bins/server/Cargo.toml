@@ -22,6 +22,8 @@ tracing-subscriber = { workspace = true }
 dotenvy = { workspace = true }
 anyhow = { workspace = true }
 axum = { workspace = true }
+chrono = { workspace = true }
+sea-orm = { workspace = true }
 
 [lints]
 workspace = true

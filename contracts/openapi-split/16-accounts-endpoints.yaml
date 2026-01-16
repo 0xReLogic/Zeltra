@@ -1,0 +1,345 @@
+paths:
+  /organizations/{org_id}/accounts:
+    get:
+      operationId: list_accounts
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Filter by account type.
+        in: path
+        name: type
+        required: true
+        schema:
+          type:
+          - string
+          - 'null'
+      - description: Filter by active status.
+        in: path
+        name: active
+        required: true
+        schema:
+          type:
+          - boolean
+          - 'null'
+      - description: Filter by currency.
+        in: path
+        name: currency
+        required: true
+        schema:
+          type:
+          - string
+          - 'null'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/AccountResponse'
+                type: array
+          description: List of accounts
+        '403':
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: GET `/organizations/{org_id}/accounts` - List accounts with balances.
+      tags:
+      - Accounts
+    post:
+      operationId: create_account
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAccountRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountResponse'
+          description: Account created successfully
+        '400':
+          description: Invalid input
+        '403':
+          description: Forbidden
+        '409':
+          description: Duplicate account code
+      security:
+      - bearerAuth: []
+      summary: POST `/organizations/{org_id}/accounts` - Create an account.
+      tags:
+      - Accounts
+  /organizations/{org_id}/accounts/{account_id}:
+    delete:
+      operationId: delete_account
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Account ID
+        in: path
+        name: account_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '204':
+          description: Account deleted (deactivated)
+        '403':
+          description: Forbidden
+        '404':
+          description: Account not found
+        '409':
+          description: Cannot delete account with transactions
+      security:
+      - bearerAuth: []
+      summary: DELETE `/organizations/{org_id}/accounts/{account_id}` - Delete (deactivate)
+        account.
+      tags:
+      - Accounts
+    get:
+      operationId: get_account
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Account ID
+        in: path
+        name: account_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountResponse'
+          description: Account details
+        '403':
+          description: Forbidden
+        '404':
+          description: Account not found
+      security:
+      - bearerAuth: []
+      summary: GET `/organizations/{org_id}/accounts/{account_id}` - Get account detail.
+      tags:
+      - Accounts
+    put:
+      operationId: update_account
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Account ID
+        in: path
+        name: account_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAccountRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountResponse'
+          description: Account updated successfully
+        '400':
+          description: Invalid input
+        '403':
+          description: Forbidden
+        '404':
+          description: Account not found
+      security:
+      - bearerAuth: []
+      summary: PUT `/organizations/{org_id}/accounts/{account_id}` - Update account.
+      tags:
+      - Accounts
+  /organizations/{org_id}/accounts/{account_id}/ledger:
+    get:
+      description: 'Requirement 14.4: Account ledger endpoint'
+      operationId: get_account_ledger
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Account ID
+        in: path
+        name: account_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Start date.
+        in: path
+        name: from
+        required: true
+        schema:
+          format: date
+          type:
+          - string
+          - 'null'
+      - description: End date.
+        in: path
+        name: to
+        required: true
+        schema:
+          format: date
+          type:
+          - string
+          - 'null'
+      - description: Page number (0-indexed).
+        example: 0
+        in: path
+        name: page
+        required: true
+        schema:
+          format: int64
+          minimum: 0
+          type:
+          - integer
+          - 'null'
+      - description: Items per page.
+        example: 50
+        in: path
+        name: limit
+        required: true
+        schema:
+          format: int64
+          minimum: 0
+          type:
+          - integer
+          - 'null'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountLedgerResponse'
+          description: Account ledger report
+        '403':
+          description: Forbidden
+        '404':
+          description: Account or organization not found
+      security:
+      - bearerAuth: []
+      summary: GET /organizations/{org_id}/accounts/{account_id}/ledger
+      tags:
+      - Reports
+  /organizations/{org_id}/accounts/{account_id}/balance:
+    get:
+      operationId: get_account_balance
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Account ID
+        in: path
+        name: account_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Date to get balance as of (YYYY-MM-DD format). Defaults to today.
+        in: path
+        name: as_of
+        required: true
+        schema:
+          format: date
+          type:
+          - string
+          - 'null'
+      responses:
+        '200':
+          description: Account balance
+        '403':
+          description: Forbidden
+        '404':
+          description: Account not found
+      security:
+      - bearerAuth: []
+      summary: GET `/organizations/{org_id}/accounts/{account_id}/balance` - Get account
+        balance at a specific date.
+      tags:
+      - Accounts
+  /organizations/{org_id}/accounts/{account_id}/status:
+    patch:
+      operationId: toggle_account_status
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Account ID
+        in: path
+        name: account_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ToggleStatusRequest'
+        required: true
+      responses:
+        '200':
+          description: Status toggled successfully
+        '403':
+          description: Forbidden
+        '404':
+          description: Account not found
+      security:
+      - bearerAuth: []
+      summary: PATCH `/organizations/{org_id}/accounts/{account_id}/status` - Toggle
+        account status.
+      tags:
+      - Accounts

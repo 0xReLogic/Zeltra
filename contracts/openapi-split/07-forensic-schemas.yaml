@@ -1,0 +1,170 @@
+components:
+  schemas:
+    BenfordResponse:
+      description: Response for Advanced Benford's Law analysis.
+      properties:
+        distribution_1st_digit:
+          description: 1st Digit Distribution.
+          items:
+            $ref: '#/components/schemas/BenfordRecord'
+          type: array
+        distribution_2nd_digit:
+          description: 2nd Digit Distribution (New).
+          items:
+            $ref: '#/components/schemas/BenfordRecord'
+          type: array
+        mad_score:
+          description: Mean Absolute Deviation Score.
+          example: 0.005
+          format: double
+          type: number
+        mad_verdict:
+          description: MAD Verdict (Conform/Nonconform).
+          example: Close Conformity
+          type: string
+      required:
+      - distribution_1st_digit
+      - distribution_2nd_digit
+      - mad_score
+      - mad_verdict
+      type: object
+    BenfordRecord:
+      description: Single digit record for Benford.
+      properties:
+        actual_percentage:
+          description: Actual frequency percentage (0.0 - 100.0).
+          example: 30.1
+          format: double
+          type: number
+        difference:
+          description: Difference.
+          format: double
+          type: number
+        digit:
+          description: The digit (0-9).
+          example: 1
+          format: int32
+          minimum: 0
+          type: integer
+        expected_percentage:
+          description: Expected frequency percentage.
+          example: 30.1
+          format: double
+          type: number
+      required:
+      - digit
+      - actual_percentage
+      - expected_percentage
+      - difference
+      type: object
+    HealthScoreResponse:
+      description: Combined Health Score Response (Altman Z + Beneish M).
+      properties:
+        m_details:
+          $ref: '#/components/schemas/BeneishDetails'
+          description: Detailed Beneish M-Score Components.
+        m_prob:
+          description: Manipulation Probability (Standard Normal CDF approx).
+          format: double
+          type: number
+        m_risk_level:
+          description: Beneish Risk Level (Safe, Possible Manipulation).
+          type: string
+        m_score:
+          description: Beneish M-Score Result (New).
+          format: double
+          type: number
+        z_details:
+          $ref: '#/components/schemas/AltmanDetails'
+          description: Detailed Altman Z-Score Factors.
+        z_score:
+          description: Altman Z-Score Result.
+          format: double
+          type: number
+        z_zone:
+          description: Altman Zone (Safe, Grey, Distress).
+          type: string
+      required:
+      - z_score
+      - z_zone
+      - z_details
+      - m_score
+      - m_risk_level
+      - m_prob
+      - m_details
+      type: object
+    AltmanDetails:
+      description: Details of the 5 Altman Z-Score factors.
+      properties:
+        x1_working_capital:
+          description: 'X1: Working Capital / Total Assets.'
+          format: double
+          type: number
+        x2_retained_earnings:
+          description: 'X2: Retained Earnings / Total Assets.'
+          format: double
+          type: number
+        x3_ebit:
+          description: 'X3: EBIT / Total Assets.'
+          format: double
+          type: number
+        x4_equity:
+          description: 'X4: Market Value of Equity / Total Liabilities.'
+          format: double
+          type: number
+        x5_sales:
+          description: 'X5: Sales / Total Assets.'
+          format: double
+          type: number
+      required:
+      - x1_working_capital
+      - x2_retained_earnings
+      - x3_ebit
+      - x4_equity
+      - x5_sales
+      type: object
+    BeneishDetails:
+      description: Details of the 8 Beneish M-Score variables.
+      properties:
+        aqi:
+          description: Asset Quality Index.
+          format: double
+          type: number
+        depi:
+          description: Depreciation Index.
+          format: double
+          type: number
+        dsri:
+          description: Days Sales in Receivables Index.
+          format: double
+          type: number
+        gmi:
+          description: Gross Margin Index.
+          format: double
+          type: number
+        lvgi:
+          description: Leverage Index.
+          format: double
+          type: number
+        sgai:
+          description: Sales, General, and Administrative Expenses Index.
+          format: double
+          type: number
+        sgi:
+          description: Sales Growth Index.
+          format: double
+          type: number
+        tata:
+          description: Total Accruals to Total Assets.
+          format: double
+          type: number
+      required:
+      - dsri
+      - gmi
+      - aqi
+      - sgi
+      - depi
+      - sgai
+      - lvgi
+      - tata
+      type: object

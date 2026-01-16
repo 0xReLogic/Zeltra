@@ -1,0 +1,209 @@
+paths:
+  /organizations/{org_id}/reports/trial-balance:
+    get:
+      description: 'Requirement 14.1: Trial balance report endpoint'
+      operationId: get_trial_balance
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: As of date (defaults to today).
+        in: path
+        name: as_of
+        required: true
+        schema:
+          format: date
+          type:
+          - string
+          - 'null'
+      - description: Dimension value IDs to filter by (comma-separated).
+        example: 550e8400-e29b-41d4-a716-446655440000
+        in: path
+        name: dimensions
+        required: true
+        schema:
+          type:
+          - string
+          - 'null'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrialBalanceResponse'
+          description: Trial balance report
+        '403':
+          description: Forbidden
+        '404':
+          description: Organization not found
+      security:
+      - bearerAuth: []
+      summary: GET /organizations/{org_id}/reports/trial-balance
+      tags:
+      - Reports
+  /organizations/{org_id}/reports/balance-sheet:
+    get:
+      description: 'Requirement 14.2: Balance sheet report endpoint'
+      operationId: get_balance_sheet
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: As of date (defaults to today).
+        in: path
+        name: as_of
+        required: true
+        schema:
+          format: date
+          type:
+          - string
+          - 'null'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BalanceSheetResponse'
+          description: Balance sheet report
+        '403':
+          description: Forbidden
+        '404':
+          description: Organization not found
+      security:
+      - bearerAuth: []
+      summary: GET /organizations/{org_id}/reports/balance-sheet
+      tags:
+      - Reports
+  /organizations/{org_id}/reports/income-statement:
+    get:
+      description: 'Requirement 14.3: Income statement report endpoint'
+      operationId: get_income_statement
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Start date.
+        in: path
+        name: from
+        required: true
+        schema:
+          format: date
+          type:
+          - string
+          - 'null'
+      - description: End date.
+        in: path
+        name: to
+        required: true
+        schema:
+          format: date
+          type:
+          - string
+          - 'null'
+      - description: Dimension value IDs to filter by (comma-separated).
+        example: 550e8400-e29b-41d4-a716-446655440000
+        in: path
+        name: dimensions
+        required: true
+        schema:
+          type:
+          - string
+          - 'null'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IncomeStatementResponse'
+          description: Income statement report
+        '400':
+          description: Invalid date range
+        '403':
+          description: Forbidden
+        '404':
+          description: Organization not found
+      security:
+      - bearerAuth: []
+      summary: GET /organizations/{org_id}/reports/income-statement
+      tags:
+      - Reports
+  /organizations/{org_id}/reports/dimensional:
+    get:
+      description: 'Requirement 14.5: Dimensional report endpoint'
+      operationId: get_dimensional_report
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Start date.
+        in: path
+        name: from
+        required: true
+        schema:
+          format: date
+          type:
+          - string
+          - 'null'
+      - description: End date.
+        in: path
+        name: to
+        required: true
+        schema:
+          format: date
+          type:
+          - string
+          - 'null'
+      - description: Dimension types to group by (comma-separated).
+        example: department,location
+        in: path
+        name: group_by
+        required: true
+        schema:
+          type: string
+      - description: Account type filter.
+        example: expense
+        in: path
+        name: account_type
+        required: true
+        schema:
+          type:
+          - string
+          - 'null'
+      - description: Dimension value IDs to filter by (comma-separated).
+        in: path
+        name: dimensions
+        required: true
+        schema:
+          type:
+          - string
+          - 'null'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DimensionalReportResponse'
+          description: Dimensional report
+        '403':
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: GET /organizations/{org_id}/reports/dimensional
+      tags:
+      - Reports

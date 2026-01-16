@@ -1,0 +1,35 @@
+paths:
+  /organizations/{org_id}/simulation/run:
+    post:
+      description: 'Requirements 15.1-15.4: Run simulation endpoint'
+      operationId: run_simulation
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RunSimulationRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimulationResponse'
+          description: Simulation run successfully
+        '400':
+          description: Invalid parameters or growth rates
+        '403':
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: POST /organizations/{org_id}/simulation/run
+      tags:
+      - Simulation

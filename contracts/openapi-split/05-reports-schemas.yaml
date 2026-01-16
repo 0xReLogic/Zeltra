@@ -1,0 +1,232 @@
+components:
+  schemas:
+    TrialBalanceResponse:
+      description: Response for trial balance report.
+      properties:
+        accounts:
+          description: Account balances.
+          items:
+            $ref: '#/components/schemas/AccountBalanceResponse'
+          type: array
+        as_of:
+          description: As of date.
+          example: 2023-12-31
+          type: string
+        currency:
+          description: Currency.
+          example: USD
+          type: string
+        report_type:
+          description: Report type.
+          example: trial_balance
+          type: string
+        totals:
+          $ref: '#/components/schemas/TrialBalanceTotals'
+          description: Totals.
+      required:
+      - report_type
+      - as_of
+      - currency
+      - accounts
+      - totals
+      type: object
+    TrialBalanceTotals:
+      description: Trial balance totals.
+      properties:
+        is_balanced:
+          description: Whether balanced.
+          type: boolean
+        total_credit:
+          description: Total credit.
+          type: string
+        total_debit:
+          description: Total debit.
+          type: string
+      required:
+      - total_debit
+      - total_credit
+      - is_balanced
+      type: object
+    BalanceSheetResponse:
+      description: Response for balance sheet report.
+      properties:
+        as_of:
+          description: As of date.
+          type: string
+        assets:
+          $ref: '#/components/schemas/BalanceSheetSectionResponse'
+          description: Assets section.
+        currency:
+          description: Currency.
+          type: string
+        equity:
+          $ref: '#/components/schemas/BalanceSheetSectionResponse'
+          description: Equity section.
+        is_balanced:
+          description: Whether balanced.
+          type: boolean
+        liabilities:
+          $ref: '#/components/schemas/BalanceSheetSectionResponse'
+          description: Liabilities section.
+        report_type:
+          description: Report type.
+          example: balance_sheet
+          type: string
+        total_assets:
+          description: Total assets.
+          type: string
+        total_liabilities_and_equity:
+          description: Total liabilities and equity.
+          type: string
+      required:
+      - report_type
+      - as_of
+      - currency
+      - assets
+      - liabilities
+      - equity
+      - total_assets
+      - total_liabilities_and_equity
+      - is_balanced
+      type: object
+    BalanceSheetSectionResponse:
+      description: Balance sheet section response.
+      properties:
+        accounts:
+          description: Section accounts.
+          items:
+            $ref: '#/components/schemas/AccountBalanceResponse'
+          type: array
+        total:
+          description: Section total.
+          type: string
+      required:
+      - accounts
+      - total
+      type: object
+    IncomeStatementResponse:
+      description: Response for income statement report.
+      properties:
+        cost_of_goods_sold:
+          $ref: '#/components/schemas/IncomeStatementSectionResponse'
+          description: Cost of goods sold section.
+        currency:
+          description: Currency.
+          type: string
+        gross_profit:
+          description: Gross profit.
+          type: string
+        net_income:
+          description: Net income.
+          type: string
+        operating_expenses:
+          $ref: '#/components/schemas/IncomeStatementSectionResponse'
+          description: Operating expenses section.
+        operating_income:
+          description: Operating income.
+          type: string
+        other_income_expenses:
+          $ref: '#/components/schemas/IncomeStatementSectionResponse'
+          description: Other income/expenses section.
+        period_end:
+          description: Period end.
+          type: string
+        period_start:
+          description: Period start.
+          type: string
+        report_type:
+          description: Report type.
+          example: income_statement
+          type: string
+        revenue:
+          $ref: '#/components/schemas/IncomeStatementSectionResponse'
+          description: Revenue section.
+      required:
+      - report_type
+      - period_start
+      - period_end
+      - currency
+      - revenue
+      - cost_of_goods_sold
+      - gross_profit
+      - operating_expenses
+      - operating_income
+      - other_income_expenses
+      - net_income
+      type: object
+    IncomeStatementSectionResponse:
+      description: Income statement section response.
+      properties:
+        accounts:
+          description: Section accounts.
+          items:
+            $ref: '#/components/schemas/AccountBalanceResponse'
+          type: array
+        total:
+          description: Section total.
+          type: string
+      required:
+      - accounts
+      - total
+      type: object
+    DimensionalReportResponse:
+      description: Response for dimensional report.
+      properties:
+        currency:
+          description: Currency.
+          type: string
+        grand_total:
+          description: Grand total.
+          type: string
+        group_by:
+          description: Grouped by dimensions.
+          items:
+            type: string
+          type: array
+        period_end:
+          description: Period end.
+          type: string
+        period_start:
+          description: Period start.
+          type: string
+        report_type:
+          description: Report type.
+          example: dimensional
+          type: string
+        rows:
+          description: Report rows.
+          items:
+            $ref: '#/components/schemas/DimensionalReportRowResponse'
+          type: array
+      required:
+      - report_type
+      - period_start
+      - period_end
+      - currency
+      - group_by
+      - rows
+      - grand_total
+      type: object
+    DimensionalReportRowResponse:
+      description: Dimensional report row response.
+      properties:
+        balance:
+          description: Balance.
+          type: string
+        dimensions:
+          description: Dimension values.
+          items:
+            $ref: '#/components/schemas/DimensionValueResponse'
+          type: array
+        total_credit:
+          description: Total credit.
+          type: string
+        total_debit:
+          description: Total debit.
+          type: string
+      required:
+      - dimensions
+      - total_debit
+      - total_credit
+      - balance
+      type: object

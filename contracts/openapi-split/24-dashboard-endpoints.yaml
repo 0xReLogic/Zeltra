@@ -1,0 +1,171 @@
+paths:
+  /organizations/{org_id}/dashboard/metrics:
+    get:
+      description: 'Requirement 16.1: Dashboard metrics endpoint'
+      operationId: get_dashboard_metrics
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Fiscal period ID for budget status.
+        in: path
+        name: period_id
+        required: true
+        schema:
+          format: uuid
+          type:
+          - string
+          - 'null'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardMetricsResponse'
+          description: Dashboard metrics
+        '403':
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: GET /organizations/{org_id}/dashboard/metrics
+      tags:
+      - Dashboard
+  /organizations/{org_id}/dashboard/cash-flow:
+    get:
+      description: 'Requirement 4.5: Cash flow chart data'
+      operationId: get_cash_flow
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Number of months to include.
+        example: 6
+        in: path
+        name: months
+        required: true
+        schema:
+          format: int32
+          minimum: 0
+          type:
+          - integer
+          - 'null'
+      - description: Fiscal period ID.
+        in: path
+        name: period_id
+        required: true
+        schema:
+          format: uuid
+          type:
+          - string
+          - 'null'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CashFlowResponse'
+          description: Cash flow historical data
+        '403':
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: GET /organizations/{org_id}/dashboard/cash-flow
+      tags:
+      - Dashboard
+  /organizations/{org_id}/dashboard/recent-activity:
+    get:
+      description: 'Requirement 17.1: Recent activity endpoint'
+      operationId: get_recent_activity
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Maximum number of items to return.
+        example: 10
+        in: path
+        name: limit
+        required: true
+        schema:
+          format: int64
+          minimum: 0
+          type:
+          - integer
+          - 'null'
+      - description: Activity type filter.
+        example: transaction
+        in: path
+        name: type
+        required: true
+        schema:
+          type:
+          - string
+          - 'null'
+      - description: Cursor for pagination.
+        in: path
+        name: cursor
+        required: true
+        schema:
+          type:
+          - string
+          - 'null'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecentActivityResponse'
+          description: Recent activity logs
+        '403':
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: GET /organizations/{org_id}/dashboard/recent-activity
+      tags:
+      - Dashboard
+  /organizations/{org_id}/dashboard/budget-vs-actual:
+    get:
+      description: 'Requirement 4.7: Budget vs actual summary'
+      operationId: get_dashboard_budget_vs_actual
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Budget ID (optional, uses first active budget if not provided).
+        in: path
+        name: budget_id
+        required: true
+        schema:
+          format: uuid
+          type:
+          - string
+          - 'null'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BudgetVsActualResponse'
+          description: Budget vs actual performance data
+        '403':
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: GET /organizations/{org_id}/dashboard/budget-vs-actual
+      tags:
+      - Dashboard

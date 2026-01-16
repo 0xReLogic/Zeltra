@@ -1,0 +1,566 @@
+components:
+  schemas:
+    FiscalYearResponse:
+      description: Response for a fiscal year with periods.
+      properties:
+        end_date:
+          description: End date.
+          format: date
+          type: string
+        id:
+          description: Fiscal year ID.
+          format: uuid
+          type: string
+        name:
+          description: Fiscal year name.
+          example: FY 2026
+          type: string
+        periods:
+          description: Nested periods.
+          items:
+            $ref: '#/components/schemas/FiscalPeriodResponse'
+          type: array
+        start_date:
+          description: Start date.
+          format: date
+          type: string
+        status:
+          description: 'Status: open or closed.'
+          example: open
+          type: string
+      required:
+      - id
+      - name
+      - start_date
+      - end_date
+      - status
+      - periods
+      type: object
+    FiscalPeriodResponse:
+      description: Response for a fiscal period.
+      properties:
+        end_date:
+          description: End date.
+          format: date
+          type: string
+        id:
+          description: Period ID.
+          format: uuid
+          type: string
+        is_adjustment_period:
+          description: Whether this is an adjustment period.
+          type: boolean
+        name:
+          description: Period name.
+          example: January 2026
+          type: string
+        period_number:
+          description: Period number within the fiscal year.
+          example: 1
+          format: int32
+          type: integer
+        start_date:
+          description: Start date.
+          format: date
+          type: string
+        status:
+          description: 'Status: open, soft_close, or closed.'
+          example: open
+          type: string
+      required:
+      - id
+      - name
+      - period_number
+      - start_date
+      - end_date
+      - status
+      - is_adjustment_period
+      type: object
+    CreateFiscalYearRequest:
+      description: Request body for creating a fiscal year.
+      properties:
+        end_date:
+          description: End date (YYYY-MM-DD).
+          example: 2026-12-31
+          format: date
+          type: string
+        include_adjustment_period:
+          description: Whether to include an adjustment period (period 13).
+          type: boolean
+        name:
+          description: Fiscal year name (e.g., "FY 2026").
+          example: FY 2026
+          type: string
+        start_date:
+          description: Start date (YYYY-MM-DD).
+          example: 2026-01-01
+          format: date
+          type: string
+      required:
+      - name
+      - start_date
+      - end_date
+      type: object
+    PeriodInfo:
+      description: Period info.
+      properties:
+        id:
+          description: Period ID.
+          format: uuid
+          type: string
+        name:
+          description: Period name.
+          example: December 2023
+          type: string
+      required:
+      - id
+      - name
+      type: object
+    UpdatePeriodStatusRequest:
+      description: Request body for updating period status.
+      properties:
+        status:
+          description: 'New status: "open", "soft_close", or "closed".'
+          example: closed
+          type: string
+      required:
+      - status
+      type: object
+    DimensionTypeResponse:
+      description: Response for a dimension type.
+      properties:
+        code:
+          description: Dimension type code.
+          type: string
+        description:
+          description: Description.
+          type:
+          - string
+          - 'null'
+        id:
+          description: Dimension type ID.
+          format: uuid
+          type: string
+        is_active:
+          description: Whether this dimension type is active.
+          type: boolean
+        is_required:
+          description: Whether this dimension is required.
+          type: boolean
+        name:
+          description: Dimension type name.
+          type: string
+        sort_order:
+          description: Sort order.
+          format: int32
+          type: integer
+      required:
+      - id
+      - code
+      - name
+      - is_required
+      - is_active
+      - sort_order
+      type: object
+    DimensionValueResponse:
+      description: Dimension value in response.
+      properties:
+        code:
+          description: Code.
+          example: SALES
+          type: string
+        dimension_type:
+          description: Dimension type.
+          example: department
+          type: string
+        name:
+          description: Name.
+          example: Sales Department
+          type: string
+      required:
+      - dimension_type
+      - code
+      - name
+      type: object
+    CreateDimensionTypeRequest:
+      description: Request body for creating a dimension type.
+      properties:
+        code:
+          description: Dimension type code (must be unique within organization).
+          example: DEPT
+          type: string
+        description:
+          description: Description.
+          type:
+          - string
+          - 'null'
+        is_active:
+          description: 'Whether this dimension type is active (default: true).'
+          type:
+          - boolean
+          - 'null'
+        is_required:
+          description: Whether this dimension is required on transactions.
+          type:
+          - boolean
+          - 'null'
+        name:
+          description: Dimension type name.
+          example: Department
+          type: string
+        sort_order:
+          description: 'Sort order for display (default: 0).'
+          format: int32
+          type:
+          - integer
+          - 'null'
+      required:
+      - code
+      - name
+      type: object
+    CreateDimensionValueRequest:
+      description: Request body for creating a dimension value.
+      properties:
+        code:
+          description: Dimension value code (must be unique within type).
+          example: MARKETING
+          type: string
+        description:
+          description: Description.
+          type:
+          - string
+          - 'null'
+        dimension_type_id:
+          description: Dimension type ID.
+          format: uuid
+          type: string
+        effective_from:
+          description: Effective from date.
+          format: date
+          type:
+          - string
+          - 'null'
+        effective_to:
+          description: Effective to date.
+          format: date
+          type:
+          - string
+          - 'null'
+        is_active:
+          description: 'Whether this value is active (default: true).'
+          type:
+          - boolean
+          - 'null'
+        name:
+          description: Dimension value name.
+          example: Marketing Department
+          type: string
+        parent_id:
+          description: Parent dimension value ID for hierarchical structure.
+          format: uuid
+          type:
+          - string
+          - 'null'
+      required:
+      - dimension_type_id
+      - code
+      - name
+      type: object
+    ToggleDimensionValueStatusRequest:
+      description: Request body for toggling dimension value status.
+      properties:
+        is_active:
+          description: Whether the dimension value should be active.
+          type: boolean
+      required:
+      - is_active
+      type: object
+    UpdateDimensionValueRequest:
+      description: Request body for updating a dimension value.
+      properties:
+        code:
+          description: Dimension value code.
+          type:
+          - string
+          - 'null'
+        description:
+          description: Description.
+          type:
+          - string
+          - 'null'
+        name:
+          description: Dimension value name.
+          type:
+          - string
+          - 'null'
+      type: object
+    ExchangeRateResponse:
+      description: Response for an exchange rate lookup.
+      properties:
+        effective_date:
+          description: Effective date of the rate.
+          format: date
+          type: string
+        from_currency:
+          description: Source currency code.
+          type: string
+        lookup_method:
+          description: 'How the rate was obtained: "direct", "inverse", "triangulated".'
+          type: string
+        rate:
+          description: Exchange rate.
+          type: string
+        to_currency:
+          description: Target currency code.
+          type: string
+      required:
+      - from_currency
+      - to_currency
+      - rate
+      - effective_date
+      - lookup_method
+      type: object
+    ExchangeRateListItem:
+      description: Response item for list endpoint.
+      properties:
+        created_at:
+          description: Date the rate was created.
+          format: date-time
+          type: string
+        effective_date:
+          description: Date the rate is effective.
+          format: date
+          type: string
+        from_currency:
+          description: Base currency code (e.g., USD).
+          type: string
+        id:
+          description: ID of the exchange rate.
+          format: uuid
+          type: string
+        rate:
+          description: Exchange rate value.
+          type: string
+        source:
+          description: Source of the rate (e.g., Frankfurter).
+          type: string
+        to_currency:
+          description: Target currency code (e.g., IDR).
+          type: string
+      required:
+      - id
+      - from_currency
+      - to_currency
+      - rate
+      - effective_date
+      - source
+      - created_at
+      type: object
+    CreateExchangeRateRequest:
+      description: Request body for creating/updating an exchange rate.
+      properties:
+        effective_date:
+          description: Effective date for this rate.
+          format: date
+          type: string
+        from_currency:
+          description: Source currency code.
+          example: EUR
+          type: string
+        rate:
+          description: Exchange rate (from_currency * rate = to_currency).
+          example: '1.0850'
+          type: string
+        source:
+          description: 'Source of the rate: "manual", "api", "bank_feed".'
+          type:
+          - string
+          - 'null'
+        source_reference:
+          description: Optional reference (e.g., API provider, bank name).
+          type:
+          - string
+          - 'null'
+        to_currency:
+          description: Target currency code.
+          example: USD
+          type: string
+      required:
+      - from_currency
+      - to_currency
+      - rate
+      - effective_date
+      type: object
+    BulkImportRequest:
+      description: Request body for bulk rate import.
+      properties:
+        rates:
+          description: Rates to import.
+          items:
+            $ref: '#/components/schemas/BulkRateItem'
+          type: array
+      required:
+      - rates
+      type: object
+    BulkImportResponse:
+      description: Response for bulk import operation.
+      properties:
+        errors:
+          description: Validation errors for individual rates.
+          items:
+            $ref: '#/components/schemas/BulkImportError'
+          type: array
+        imported_count:
+          description: Number of rates imported (new).
+          minimum: 0
+          type: integer
+        updated_count:
+          description: Number of rates updated (existing).
+          minimum: 0
+          type: integer
+      required:
+      - imported_count
+      - updated_count
+      type: object
+    BulkRateItem:
+      description: A single rate item for bulk import.
+      properties:
+        effective_date:
+          description: Effective date.
+          format: date
+          type: string
+        from_currency:
+          description: Source currency code.
+          type: string
+        rate:
+          description: Exchange rate (as string for precision).
+          example: '1.0850'
+          type: string
+        to_currency:
+          description: Target currency code.
+          type: string
+      required:
+      - from_currency
+      - to_currency
+      - rate
+      - effective_date
+      type: object
+    BulkImportError:
+      description: Error for a single rate in bulk import.
+      properties:
+        currency_pair:
+          description: Currency pair.
+          type: string
+        index:
+          description: Index of the rate in the input.
+          minimum: 0
+          type: integer
+        message:
+          description: Error message.
+          type: string
+      required:
+      - index
+      - currency_pair
+      - message
+      type: object
+    FetchRatesRequest:
+      description: Request body for fetching rates from external API.
+      properties:
+        base_currency:
+          description: Base currency code (e.g., "EUR").
+          example: EUR
+          type: string
+        date:
+          description: Optional date for historical rates (defaults to today).
+          format: date
+          type:
+          - string
+          - 'null'
+        target_currencies:
+          description: Target currency codes to fetch rates for.
+          example: '["USD", "GBP"]'
+          items:
+            type: string
+          type: array
+      required:
+      - base_currency
+      - target_currencies
+      type: object
+    FetchRatesResponse:
+      description: Response for fetch rates operation.
+      properties:
+        fetched_count:
+          description: Number of rates fetched.
+          minimum: 0
+          type: integer
+        imported_count:
+          description: Number of rates stored (new).
+          minimum: 0
+          type: integer
+        rates:
+          description: The fetched rates.
+          items:
+            $ref: '#/components/schemas/FetchedRateItem'
+          type: array
+        updated_count:
+          description: Number of rates updated (existing).
+          minimum: 0
+          type: integer
+      required:
+      - fetched_count
+      - imported_count
+      - updated_count
+      - rates
+      type: object
+    FetchedRateItem:
+      description: A single fetched rate item.
+      properties:
+        effective_date:
+          description: Effective date.
+          format: date
+          type: string
+        from_currency:
+          description: Source currency code.
+          type: string
+        rate:
+          description: Exchange rate.
+          type: string
+        source:
+          description: Source of the rate.
+          type: string
+        to_currency:
+          description: Target currency code.
+          type: string
+      required:
+      - from_currency
+      - to_currency
+      - rate
+      - effective_date
+      - source
+      type: object
+    CurrencyResponse:
+      description: Response for a currency.
+      properties:
+        code:
+          description: Currency code (ISO 4217).
+          example: USD
+          type: string
+        decimal_places:
+          description: Number of decimal places.
+          example: 2
+          format: int32
+          type: integer
+        name:
+          description: Currency name.
+          example: US Dollar
+          type: string
+        symbol:
+          description: Currency symbol.
+          example: $
+          type: string
+      required:
+      - code
+      - name
+      - symbol
+      - decimal_places
+      type: object

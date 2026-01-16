@@ -39,15 +39,15 @@ import { toast } from 'sonner'
 
 import { useAccounts } from '@/lib/queries/accounts'
 import { usePayInvoice } from '@/lib/queries/transactions'
-import { useFetchLiveRates } from '@/lib/queries/exchange-rates'
 import { TransactionListItem } from '@/types/transactions'
+import { Account } from '@/types/accounts'
 
-// Schema
+// Schema - Zod v4 compatible
 const formSchema = z.object({
   payment_account_id: z.string().min(1, 'Payment account is required'),
   amount: z.string().min(1, 'Amount is required'),
   exchange_rate: z.string().min(1, 'Exchange rate is required'),
-  payment_date: z.date({ required_error: 'Payment date is required' }),
+  payment_date: z.date(),
   gain_loss_account_id: z.string().min(1, 'Gain/Loss account is required'),
   description: z.string().optional(),
 })
@@ -61,7 +61,7 @@ interface PayInvoiceDialogProps {
 export function PayInvoiceDialog({ invoice, open, onOpenChange }: PayInvoiceDialogProps) {
   const { data: accountsData } = useAccounts()
   const payInvoice = usePayInvoice()
-  const fetchRates = useFetchLiveRates()
+  // const fetchRates = useFetchLiveRates() // TODO: Implement when currency field is added to TransactionListItem
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -82,7 +82,7 @@ export function PayInvoiceDialog({ invoice, open, onOpenChange }: PayInvoiceDial
       form.setValue('description', `Payment for ${invoice.reference_number || 'invoice'}`)
       
       // Attempt to auto-set Gain/Loss account if one exists with "Exchange" or "Forex" in name
-      const forexAccount = accountsData?.data?.find(a => 
+      const forexAccount = accountsData?.accounts?.find((a: { name: string; type: string }) => 
         (a.name.toLowerCase().includes('forex') || a.name.toLowerCase().includes('exchange')) && 
         (a.type.toLowerCase().includes('expense') || a.type.toLowerCase().includes('revenue'))
       )
@@ -118,13 +118,13 @@ export function PayInvoiceDialog({ invoice, open, onOpenChange }: PayInvoiceDial
   }
 
   // Assets (Bank/Cash)
-  const paymentAccounts = accountsData?.data?.filter(a => 
+  const paymentAccounts = accountsData?.accounts?.filter((a: Account) => 
     ['Asset', 'Bank', 'Cash'].some(t => a.type.includes(t))
   ) || []
 
   // Expense/Equity/Revenue for Gain/Loss
   // Usually "Realized Gain/Loss" is an Expense or Revenue account
-  const gainLossAccounts = accountsData?.data?.filter(a => 
+  const gainLossAccounts = accountsData?.accounts?.filter((a: Account) => 
     ['Expense', 'Revenue', 'Equity'].some(t => a.type.includes(t))
   ) || []
 

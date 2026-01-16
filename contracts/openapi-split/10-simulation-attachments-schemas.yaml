@@ -1,0 +1,347 @@
+components:
+  schemas:
+    RunSimulationRequest:
+      description: Request body for running a simulation.
+      properties:
+        account_adjustments:
+          additionalProperties:
+            type: string
+          description: Per-account growth rate overrides. Key is account_id (UUID),
+            value is growth rate.
+          propertyNames:
+            type: string
+          type:
+          - object
+          - 'null'
+        base_period_end:
+          description: End date of historical period for baseline calculation.
+          example: 2023-12-31
+          format: date
+          type: string
+        base_period_start:
+          description: Start date of historical period for baseline calculation.
+          example: 2023-01-01
+          format: date
+          type: string
+        dimension_filters:
+          description: Filter historical data by dimension value IDs.
+          items:
+            format: uuid
+            type: string
+          type:
+          - array
+          - 'null'
+        expense_growth_rate:
+          description: Global growth rate for expense accounts (decimal, e.g. "0.05"
+            for 5%).
+          example: '0.05'
+          type:
+          - string
+          - 'null'
+        projection_months:
+          description: Number of months to project into the future (1-60).
+          example: 12
+          format: int32
+          minimum: 0
+          type: integer
+        revenue_growth_rate:
+          description: Global growth rate for revenue accounts (decimal, e.g. "0.10"
+            for 10%).
+          example: '0.10'
+          type:
+          - string
+          - 'null'
+      required:
+      - base_period_start
+      - base_period_end
+      - projection_months
+      type: object
+    SimulationResponse:
+      description: Response for simulation result.
+      properties:
+        annual_summary:
+          $ref: '#/components/schemas/AnnualSummaryResponse'
+          description: Annual summary.
+        cached:
+          description: Whether this result was returned from cache.
+          type: boolean
+        monthly_summary:
+          description: Monthly summary for charts.
+          items:
+            $ref: '#/components/schemas/MonthlySummaryResponse'
+          type: array
+        parameters_hash:
+          description: Hash of simulation parameters for caching.
+          type: string
+        projections:
+          description: Account projections.
+          items:
+            $ref: '#/components/schemas/AccountProjectionResponse'
+          type: array
+        simulation_id:
+          description: Unique identifier for this simulation run.
+          format: uuid
+          type: string
+      required:
+      - simulation_id
+      - parameters_hash
+      - cached
+      - projections
+      - annual_summary
+      - monthly_summary
+      type: object
+    MonthlySummaryResponse:
+      description: Monthly summary response for charts.
+      properties:
+        expenses:
+          description: Total expenses.
+          type: string
+        month:
+          description: Month label for chart.
+          example: Jan
+          type: string
+        net_income:
+          description: Net income.
+          type: string
+        period_name:
+          description: Full period identifier.
+          example: 2024-01
+          type: string
+        revenue:
+          description: Total revenue.
+          type: string
+      required:
+      - month
+      - period_name
+      - revenue
+      - expenses
+      - net_income
+      type: object
+    AccountProjectionResponse:
+      description: Account projection response.
+      properties:
+        account_code:
+          description: Account code.
+          type: string
+        account_id:
+          description: Account ID.
+          format: uuid
+          type: string
+        account_name:
+          description: Account name.
+          type: string
+        account_type:
+          description: Account type.
+          type: string
+        baseline_amount:
+          description: Average monthly amount from historical period.
+          type: string
+        change_percent:
+          description: Percentage change from baseline.
+          type: string
+        period_end:
+          description: Period end date.
+          type: string
+        period_name:
+          description: Period identifier (YYYY-MM format).
+          example: 2024-01
+          type: string
+        period_start:
+          description: Period start date.
+          type: string
+        projected_amount:
+          description: Projected amount after applying growth rate.
+          type: string
+      required:
+      - period_name
+      - period_start
+      - period_end
+      - account_id
+      - account_code
+      - account_name
+      - account_type
+      - baseline_amount
+      - projected_amount
+      - change_percent
+      type: object
+    AnnualSummaryResponse:
+      description: Annual summary response.
+      properties:
+        net_profit_margin:
+          description: Net income / Revenue * 100.
+          type: string
+        projected_net_income:
+          description: Revenue minus expenses.
+          type: string
+        total_projected_expenses:
+          description: Sum of all projected expense amounts.
+          type: string
+        total_projected_revenue:
+          description: Sum of all projected revenue amounts.
+          type: string
+      required:
+      - total_projected_revenue
+      - total_projected_expenses
+      - projected_net_income
+      - net_profit_margin
+      type: object
+    AttachmentResponse:
+      description: Response for an attachment.
+      properties:
+        attachment_type:
+          description: Attachment type.
+          example: invoice
+          type: string
+        created_at:
+          description: Created at timestamp (ISO 8601).
+          type: string
+        download_url:
+          description: Download URL (presigned, optional).
+          type:
+          - string
+          - 'null'
+        download_url_expires_at:
+          description: Download URL expiration (ISO 8601, optional).
+          type:
+          - string
+          - 'null'
+        file_size:
+          description: File size in bytes.
+          example: 1024
+          format: int64
+          type: integer
+        filename:
+          description: Original filename.
+          example: invoice.pdf
+          type: string
+        id:
+          description: Attachment ID.
+          format: uuid
+          type: string
+        mime_type:
+          description: MIME type.
+          example: application/pdf
+          type: string
+        storage_provider:
+          description: Storage provider.
+          example: s3
+          type: string
+        transaction_id:
+          description: Transaction ID.
+          format: uuid
+          type:
+          - string
+          - 'null'
+        uploaded_by:
+          description: Uploaded by user ID.
+          format: uuid
+          type: string
+      required:
+      - id
+      - attachment_type
+      - filename
+      - file_size
+      - mime_type
+      - storage_provider
+      - uploaded_by
+      - created_at
+      type: object
+    RequestUploadRequest:
+      description: Request body for requesting an upload URL.
+      properties:
+        attachment_type:
+          description: Attachment type classification.
+          example: invoice
+          type:
+          - string
+          - 'null'
+        content_type:
+          description: MIME type of the file.
+          example: application/pdf
+          type: string
+        file_size:
+          description: File size in bytes.
+          example: 1024
+          format: int64
+          minimum: 0
+          type: integer
+        filename:
+          description: Original filename.
+          example: invoice.pdf
+          type: string
+      required:
+      - filename
+      - content_type
+      - file_size
+      type: object
+    RequestUploadResponse:
+      description: Response for upload URL request.
+      properties:
+        attachment_id:
+          description: Generated attachment ID.
+          format: uuid
+          type: string
+        expires_at:
+          description: When the URL expires (ISO 8601).
+          type: string
+        storage_key:
+          description: Storage key for confirmation.
+          type: string
+        upload_headers:
+          additionalProperties:
+            type: string
+          description: Required headers for the upload.
+          propertyNames:
+            type: string
+          type: object
+        upload_method:
+          description: HTTP method to use (PUT).
+          example: PUT
+          type: string
+        upload_url:
+          description: Presigned upload URL.
+          type: string
+      required:
+      - attachment_id
+      - upload_url
+      - upload_method
+      - upload_headers
+      - expires_at
+      - storage_key
+      type: object
+    ConfirmUploadRequest:
+      description: Request body for confirming an upload.
+      properties:
+        attachment_id:
+          description: Attachment ID from request_upload.
+          format: uuid
+          type: string
+        attachment_type:
+          description: Attachment type classification.
+          example: invoice
+          type:
+          - string
+          - 'null'
+        content_type:
+          description: MIME type.
+          example: application/pdf
+          type: string
+        file_size:
+          description: File size in bytes.
+          example: 1024
+          format: int64
+          type: integer
+        filename:
+          description: Original filename.
+          example: invoice.pdf
+          type: string
+        storage_key:
+          description: Storage key from request_upload.
+          type: string
+      required:
+      - attachment_id
+      - filename
+      - content_type
+      - file_size
+      - storage_key
+      type: object

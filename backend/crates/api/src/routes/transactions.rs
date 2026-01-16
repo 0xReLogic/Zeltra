@@ -771,30 +771,44 @@ async fn create_transaction(
 
         // Get exchange rate logic with Override support
         // Item 43: Advanced Transaction Fields (Manual Rate Override)
-        let exchange_rate = if let Some(rate_str) = entry_req.exchange_rate {
-             Decimal::from_str(&rate_str).map_err(|_| {
-                (
+        let exchange_rate = if let Some(rate_str) = &entry_req.exchange_rate {
+             match Decimal::from_str(rate_str) {
+                Ok(rate) => rate,
+                Err(_) => return (
                     StatusCode::BAD_REQUEST,
                     Json(json!({
                         "error": "invalid_exchange_rate",
                         "message": "Invalid exchange rate format"
                     })),
-                )
-                    .into_response()
-            })?
+                ).into_response()
+             }
         } else if entry_req.source_currency == functional_currency {
             Decimal::ONE
         } else {
-            // For now, require same currency or return error
-            // In production, lookup from ExchangeRateRepository
-            return (
-                StatusCode::BAD_REQUEST,
-                Json(json!({
-                    "error": "no_exchange_rate",
-                    "message": format!("No exchange rate found for {} to {}", entry_req.source_currency, functional_currency)
-                })),
-            )
-                .into_response();
+            // Lookup rate from database
+            use zeltra_db::repositories::exchange_rate::ExchangeRateRepository;
+            
+            let rate_repo = ExchangeRateRepository::new((*state.db).clone());
+            let tx_date = payload.transaction_date;
+            
+            match rate_repo.find_rate(
+                org_id,
+                &entry_req.source_currency,
+                &functional_currency,
+                tx_date,
+            ).await {
+                Ok(lookup) => lookup.rate,
+                Err(e) => {
+                    info!(
+                        from = %entry_req.source_currency,
+                        to = %functional_currency,
+                        error = %e,
+                        "Exchange rate not found in database, using fallback 1.0"
+                    );
+                    // Fallback to 1.0 if rate not found (user should override)
+                    Decimal::ONE
+                }
+            }
         };
 
         let functional_amount = source_amount * exchange_rate;
@@ -918,6 +932,20 @@ async fn create_transaction(
                     Json(json!({
                         "error": "account_not_found",
                         "message": format!("Account not found: {}", id)
+                    })),
+                )
+                    .into_response(),
+                zeltra_db::repositories::transaction::TransactionError::BudgetConstraintViolation {
+                    account_id,
+                    missing_dimensions,
+                } => (
+                    StatusCode::BAD_REQUEST,
+                    Json(json!({
+                        "error": "budget_constraint_violation",
+                        "message": format!("Budget constraint violation for account {}", account_id),
+                        "details": {
+                            "missing_dimensions": missing_dimensions,
+                        }
                     })),
                 )
                     .into_response(),
@@ -1578,7 +1606,7 @@ async fn get_pending_transactions(
                         transaction_date: p.transaction.transaction_date.to_string(),
                         description: p.transaction.description,
                         status: status_to_string(&p.transaction.status),
-                        total_amount: "0.0000".to_string(), // TODO: Calculate from entries
+                        total_amount: p.total_amount.to_string(),
                         submitted_at,
                         can_approve: p.can_approve,
                     }

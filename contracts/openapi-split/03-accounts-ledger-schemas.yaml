@@ -1,0 +1,220 @@
+components:
+  schemas:
+    AccountResponse:
+      description: Response for an account.
+      properties:
+        allow_direct_posting:
+          description: Whether direct posting is allowed.
+          type: boolean
+        balance:
+          description: Current balance.
+          type: string
+        code:
+          description: Account code.
+          type: string
+        currency:
+          description: Currency code.
+          type: string
+        description:
+          description: Account description.
+          type:
+          - string
+          - 'null'
+        id:
+          description: Account ID.
+          format: uuid
+          type: string
+        is_active:
+          description: Whether the account is active.
+          type: boolean
+        name:
+          description: Account name.
+          type: string
+        parent_id:
+          description: Parent account ID.
+          format: uuid
+          type:
+          - string
+          - 'null'
+        subtype:
+          description: Account subtype.
+          type:
+          - string
+          - 'null'
+        type:
+          description: Account type.
+          type: string
+      required:
+      - id
+      - code
+      - name
+      - type
+      - currency
+      - balance
+      - is_active
+      - allow_direct_posting
+      type: object
+    CreateAccountRequest:
+      description: Request body for creating an account.
+      properties:
+        allow_direct_posting:
+          description: 'Whether direct posting is allowed (default: true).'
+          type:
+          - boolean
+          - 'null'
+        code:
+          description: Account code (must be unique within organization).
+          example: '1000'
+          type: string
+        currency:
+          description: Currency code.
+          example: USD
+          type: string
+        description:
+          description: Account description.
+          type:
+          - string
+          - 'null'
+        is_active:
+          description: 'Whether the account is active (default: true).'
+          type:
+          - boolean
+          - 'null'
+        name:
+          description: Account name.
+          example: Petty Cash
+          type: string
+        parent_id:
+          description: Parent account ID for hierarchical structure.
+          format: uuid
+          type:
+          - string
+          - 'null'
+        subtype:
+          description: Account subtype for more specific categorization.
+          example: cash
+          type:
+          - string
+          - 'null'
+        type:
+          description: 'Account type: asset, liability, equity, revenue, expense.'
+          example: asset
+          type: string
+      required:
+      - code
+      - name
+      - type
+      - currency
+      type: object
+    UpdateAccountRequest:
+      description: Request body for updating an account.
+      properties:
+        allow_direct_posting:
+          description: Whether direct posting is allowed.
+          type:
+          - boolean
+          - 'null'
+        code:
+          description: Account code.
+          type:
+          - string
+          - 'null'
+        description:
+          description: Account description.
+          type:
+          - string
+          - 'null'
+        is_active:
+          description: Whether the account is active.
+          type:
+          - boolean
+          - 'null'
+        name:
+          description: Account name.
+          type:
+          - string
+          - 'null'
+        parent_id:
+          description: Parent account ID.
+          format: uuid
+          type:
+          - string
+          - 'null'
+        subtype:
+          description: Account subtype.
+          type:
+          - string
+          - 'null'
+        type:
+          description: Account type (only if no ledger entries).
+          type:
+          - string
+          - 'null'
+      type: object
+    AccountLedgerResponse:
+      description: Response for account ledger.
+      properties:
+        account_id:
+          description: Account ID.
+          format: uuid
+          type: string
+        code:
+          description: Account code.
+          example: '1001'
+          type: string
+        entries:
+          description: Entries.
+          items:
+            $ref: '#/components/schemas/LedgerEntryResponse'
+          type: array
+        name:
+          description: Account name.
+          example: Main Bank Account
+          type: string
+        pagination:
+          $ref: '#/components/schemas/PaginationResponse'
+          description: Pagination.
+      required:
+      - account_id
+      - code
+      - name
+      - entries
+      - pagination
+      type: object
+    AccountBalanceResponse:
+      description: Account balance in response.
+      properties:
+        account_id:
+          description: Account ID.
+          format: uuid
+          type: string
+        account_type:
+          description: Account type.
+          example: asset
+          type: string
+        balance:
+          description: Balance.
+          type: string
+        code:
+          description: Account code.
+          example: '1001'
+          type: string
+        credit:
+          description: Credit amount.
+          type: string
+        debit:
+          description: Debit amount.
+          type: string
+        name:
+          description: Account name.
+          example: Main Bank Account
+          type: string
+      required:
+      - account_id
+      - code
+      - name
+      - account_type
+      - debit
+      - credit
+      - balance
+      type: object

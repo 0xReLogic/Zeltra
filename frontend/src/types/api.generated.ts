@@ -1355,7 +1355,7 @@ export interface components {
              */
             type: string;
             /** @description User info. */
-            user: components["schemas"]["UserInfo"];
+            user: components["schemas"]["DashboardUserInfo"];
         };
         /** @description Add user to organization request. */
         AddUserRequest: {
@@ -2129,8 +2129,15 @@ export interface components {
              * @example debit
              */
             entry_type: string;
+            /**
+             * @description Optional exchange rate override.
+             * @example 1.0850
+             */
+            exchange_rate?: string | null;
             /** @description Optional memo. */
             memo?: string | null;
+            /** @description Optional compliance/ESG metadata. */
+            metadata?: unknown;
             /**
              * @description Source amount (positive).
              * @example 100.00
@@ -2298,6 +2305,19 @@ export interface components {
              * @example 180
              */
             runway_days: number;
+        };
+        /** @description Dashboard user info (simplified). */
+        DashboardUserInfo: {
+            /**
+             * @description Full name.
+             * @example John Doe
+             */
+            full_name: string;
+            /**
+             * Format: uuid
+             * @description User ID.
+             */
+            id: string;
         };
         /** @description Response for a dimension type. */
         DimensionTypeResponse: {
@@ -3068,6 +3088,16 @@ export interface components {
             /** @description The refresh token. */
             refresh_token: string;
         };
+        /** @description Refresh token response. */
+        RefreshResponse: {
+            /** @description New access token. */
+            access_token: string;
+            /**
+             * Format: int64
+             * @description Token expiration in seconds.
+             */
+            expires_in: number;
+        };
         /** @description Registration request payload. */
         RegisterRequest: {
             /** @description User email. */
@@ -3076,6 +3106,13 @@ export interface components {
             full_name: string;
             /** @description User password. */
             password: string;
+        };
+        /** @description Registration response payload. */
+        RegisterResponse: {
+            /** @description Success message. */
+            message: string;
+            /** @description Registered user info. */
+            user: components["schemas"]["UserInfo"];
         };
         /** @description Request body for rejecting a transaction. */
         RejectRequest: {
@@ -3133,6 +3170,11 @@ export interface components {
         ResendVerificationRequest: {
             /** @description User email to resend verification to. */
             email: string;
+        };
+        /** @description Resend verification email response. */
+        ResendVerificationResponse: {
+            /** @description Success message. */
+            message: string;
         };
         /** @description Response for a revaluation log. */
         RevaluationLogResponse: {
@@ -3270,13 +3312,24 @@ export interface components {
         };
         /** @description Transaction list item (lightweight). */
         TransactionListItem: {
+            /** @description Created at timestamp. */
             created_at: string;
+            /** @description Description. */
             description: string;
-            /** Format: uuid */
+            /**
+             * Format: uuid
+             * @description Transaction ID.
+             */
             id: string;
+            /** @description Reference number. */
             reference_number?: string | null;
+            /** @description Status. */
             status: string;
+            /** @description Total amount. */
+            total_amount: string;
+            /** @description Transaction date. */
             transaction_date: string;
+            /** @description Transaction type. */
             transaction_type: string;
         };
         /** @description Response for a transaction. */
@@ -3457,18 +3510,26 @@ export interface components {
             /** @description Reference number. */
             reference_number?: string | null;
         };
-        /** @description User info. */
+        /** @description User info returned in auth responses. */
         UserInfo: {
             /**
-             * @description Full name.
+             * @description User email.
+             * @example user@example.com
+             */
+            email: string;
+            /**
+             * @description User full name.
              * @example John Doe
              */
             full_name: string;
             /**
              * Format: uuid
              * @description User ID.
+             * @example 550e8400-e29b-41d4-a716-446655440000
              */
             id: string;
+            /** @description Organizations the user belongs to. */
+            organizations: components["schemas"]["UserOrganization"][];
         };
         /** @description Organization info for a user. */
         UserOrganization: {
@@ -3588,7 +3649,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["RefreshResponse"];
+                };
             };
             /** @description Invalid or expired refresh token */
             401: {
@@ -3617,7 +3680,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["RegisterResponse"];
+                };
             };
             /** @description Email already exists */
             409: {
@@ -3646,7 +3711,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ResendVerificationResponse"];
+                };
             };
         };
     };
@@ -5109,7 +5176,7 @@ export interface operations {
                 /** @description Organization ID */
                 org_id: string;
                 /** @description Filter by dimension type ID. */
-                type: string | null;
+                dimension_type_id: string | null;
                 /** @description Filter by active status. */
                 active: boolean | null;
             };

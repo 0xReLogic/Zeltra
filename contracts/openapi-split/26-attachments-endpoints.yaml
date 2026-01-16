@@ -1,0 +1,197 @@
+paths:
+  /organizations/{org_id}/attachments/{attachment_id}:
+    delete:
+      operationId: delete_attachment
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Attachment ID
+        in: path
+        name: attachment_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '204':
+          description: Attachment deleted successfully
+        '403':
+          description: Forbidden
+        '404':
+          description: Attachment not found
+        '503':
+          description: Storage service not available
+      security:
+      - bearerAuth: []
+      summary: 'DELETE `/organizations/{org_id}/attachments/{attachment_id}`
+
+        Delete an attachment.'
+      tags:
+      - Attachments
+    get:
+      operationId: get_attachment
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Attachment ID
+        in: path
+        name: attachment_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttachmentResponse'
+          description: Attachment details and download URL
+        '403':
+          description: Forbidden
+        '404':
+          description: Attachment not found
+        '503':
+          description: Storage service not available
+      security:
+      - bearerAuth: []
+      summary: 'GET `/organizations/{org_id}/attachments/{attachment_id}`
+
+        Get attachment with download URL.'
+      tags:
+      - Attachments
+  /organizations/{org_id}/transactions/{transaction_id}/attachments:
+    get:
+      operationId: list_attachments
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Transaction ID
+        in: path
+        name: transaction_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/AttachmentResponse'
+                type: array
+          description: List of attachments for transaction
+        '403':
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: 'GET `/organizations/{org_id}/transactions/{transaction_id}/attachments`
+
+        List attachments for a transaction.'
+      tags:
+      - Attachments
+    post:
+      operationId: confirm_upload
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Transaction ID
+        in: path
+        name: transaction_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfirmUploadRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttachmentResponse'
+          description: Attachment confirmed and created
+        '400':
+          description: Invalid request or file size mismatch
+        '403':
+          description: Forbidden
+        '503':
+          description: Storage service not available
+      security:
+      - bearerAuth: []
+      summary: 'POST `/organizations/{org_id}/transactions/{transaction_id}/attachments`
+
+        Confirm an upload and create the attachment record.'
+      tags:
+      - Attachments
+  /organizations/{org_id}/transactions/{transaction_id}/attachments/upload:
+    post:
+      operationId: request_upload
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Transaction ID
+        in: path
+        name: transaction_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestUploadRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequestUploadResponse'
+          description: Upload URL generated successfully
+        '400':
+          description: Invalid request or file too large
+        '403':
+          description: Forbidden
+        '404':
+          description: Transaction not found
+        '503':
+          description: Storage service not available
+      security:
+      - bearerAuth: []
+      summary: 'POST `/organizations/{org_id}/transactions/{transaction_id}/attachments/upload`
+
+        Request a presigned upload URL.'
+      tags:
+      - Attachments

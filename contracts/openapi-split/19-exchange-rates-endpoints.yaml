@@ -1,0 +1,235 @@
+paths:
+  /organizations/{org_id}/exchange-rates:
+    get:
+      operationId: get_exchange_rate
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Source currency code.
+        example: EUR
+        in: path
+        name: from
+        required: true
+        schema:
+          type: string
+      - description: Target currency code.
+        example: USD
+        in: path
+        name: to
+        required: true
+        schema:
+          type: string
+      - description: Date for the rate lookup (defaults to today).
+        in: path
+        name: date
+        required: true
+        schema:
+          format: date
+          type:
+          - string
+          - 'null'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExchangeRateResponse'
+          description: Exchange rate details
+        '403':
+          description: Forbidden
+        '404':
+          description: Rate not found
+      security:
+      - bearerAuth: []
+      summary: GET `/organizations/{org_id}/exchange-rates` - Get exchange rate for
+        currency pair.
+      tags:
+      - Exchange Rates
+    post:
+      operationId: create_exchange_rate
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateExchangeRateRequest'
+        required: true
+      responses:
+        '201':
+          description: Exchange rate created or updated successfully
+        '400':
+          description: Invalid input or non-positive rate
+        '403':
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: POST `/organizations/{org_id}/exchange-rates` - Create or update an
+        exchange rate.
+      tags:
+      - Exchange Rates
+  /organizations/{org_id}/exchange-rates/list:
+    get:
+      operationId: list_exchange_rates
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Filter by source currency.
+        in: path
+        name: from
+        required: true
+        schema:
+          type:
+          - string
+          - 'null'
+      - description: Filter by target currency.
+        in: path
+        name: to
+        required: true
+        schema:
+          type:
+          - string
+          - 'null'
+      - description: Filter by start date (inclusive).
+        in: path
+        name: start_date
+        required: true
+        schema:
+          format: date
+          type:
+          - string
+          - 'null'
+      - description: Filter by end date (inclusive).
+        in: path
+        name: end_date
+        required: true
+        schema:
+          format: date
+          type:
+          - string
+          - 'null'
+      - description: Pagination parameters.
+        in: path
+        name: page
+        required: true
+        schema:
+          $ref: '#/components/schemas/PageRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageResponse_ExchangeRateListItem'
+          description: List of exchange rates
+        '403':
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: GET `/organizations/{org_id}/exchange-rates/list` - List exchange rates.
+      tags:
+      - Exchange Rates
+  /organizations/{org_id}/exchange-rates/bulk:
+    post:
+      operationId: bulk_import_rates
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkImportRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkImportResponse'
+          description: Bulk import completed
+        '400':
+          description: Validation errors or input issue
+        '403':
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: POST `/organizations/{org_id}/exchange-rates/bulk` - Bulk import exchange
+        rates.
+      tags:
+      - Exchange Rates
+  /organizations/{org_id}/exchange-rates/fetch:
+    post:
+      operationId: fetch_exchange_rates
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FetchRatesRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FetchRatesResponse'
+          description: Rates fetched and stored successfully
+        '400':
+          description: Invalid request or validation error
+        '403':
+          description: Forbidden
+        '502':
+          description: Bad gateway - external API error
+      security:
+      - bearerAuth: []
+      summary: POST `/organizations/{org_id}/exchange-rates/fetch` - Fetch rates from
+        external API.
+      tags:
+      - Exchange Rates
+  /currencies:
+    get:
+      operationId: list_currencies
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/CurrencyResponse'
+                type: array
+          description: List of currencies
+        '401':
+          description: Unauthorized
+      security:
+      - bearerAuth: []
+      summary: GET `/currencies` - List all currencies.
+      tags:
+      - Currencies

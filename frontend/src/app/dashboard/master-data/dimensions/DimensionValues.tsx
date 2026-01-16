@@ -59,7 +59,7 @@ export function DimensionValues({ dimension }: DimensionValuesProps) {
     const [open, setOpen] = React.useState(false)
     const [editingValue, setEditingValue] = React.useState<DimensionValue | null>(null)
 
-    const values = Array.isArray(valuesData) ? valuesData : []
+    const values = valuesData?.dimension_values || []
 
     const form = useForm<z.infer<typeof valueSchema>>({
         resolver: zodResolver(valueSchema),
@@ -213,26 +213,26 @@ export function DimensionValues({ dimension }: DimensionValuesProps) {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead className="w-[100px]">Code</TableHead>
-                            <TableHead>Name</TableHead>
-                            <TableHead>Dimension Type</TableHead>
-                            <TableHead className="w-[50px]"></TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {values.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={4} className="text-center h-24 text-muted-foreground">
-                                    No values found.
-                                </TableCell>
-                            </TableRow>
-                        ) : (
-                            values.map((val) => (
-                                <TableRow key={val.code}>
-                                    <TableCell className="font-medium font-mono">{val.code}</TableCell>
-                                    <TableCell>{val.name}</TableCell>
-                                    <TableCell className="text-muted-foreground">{val.dimension_type}</TableCell>
-                                    <TableCell>
+                                    <TableHead className="w-[100px]">Code</TableHead>
+                                    <TableHead>Name</TableHead>
+                                    <TableHead>Description</TableHead>
+                                    <TableHead className="w-[50px]"></TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {values.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={4} className="text-center h-24 text-muted-foreground">
+                                            No values found.
+                                        </TableCell>
+                                    </TableRow>
+                                ) : (
+                                    values.map((val) => (
+                                        <TableRow key={val.id}>
+                                            <TableCell className="font-medium font-mono">{val.code}</TableCell>
+                                            <TableCell>{val.name}</TableCell>
+                                            <TableCell className="text-muted-foreground">{val.description || '-'}</TableCell>
+                                            <TableCell>
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
                                                 <Button variant="ghost" className="h-8 w-8 p-0">

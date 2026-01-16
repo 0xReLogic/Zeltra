@@ -12,7 +12,7 @@ export default function DimensionsPage() {
   const [activeTab, setActiveTab] = React.useState<string>('')
   
   // Ensure data is an array - memoize to avoid re-renders
-  const dimensions = React.useMemo(() => Array.isArray(data) ? data : [], [data])
+  const dimensions = React.useMemo(() => data?.dimension_types || [], [data])
 
   // Set initial tab when data loads
   React.useEffect(() => {

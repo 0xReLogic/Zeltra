@@ -1,0 +1,279 @@
+components:
+  schemas:
+    ApiError:
+      description: Standard API error response.
+      properties:
+        details:
+          description: Additional error details.
+        error:
+          description: Error code (e.g., "validation_error", "not_found").
+          example: not_found
+          type: string
+        message:
+          description: Human-readable error message.
+          example: Resource not found
+          type: string
+        request_id:
+          description: Request ID for tracing.
+          type:
+          - string
+          - 'null'
+      required:
+      - error
+      - message
+      type: object
+    PaginationResponse:
+      description: Pagination response.
+      properties:
+        limit:
+          description: Items per page.
+          format: int64
+          minimum: 0
+          type: integer
+        page:
+          description: Current page.
+          format: int64
+          minimum: 0
+          type: integer
+        total:
+          description: Total items.
+          format: int64
+          minimum: 0
+          type: integer
+        total_pages:
+          description: Total pages.
+          format: int64
+          minimum: 0
+          type: integer
+      required:
+      - page
+      - limit
+      - total
+      - total_pages
+      type: object
+    PaginationInfo:
+      description: Pagination info.
+      properties:
+        has_more:
+          description: Has more results.
+          type: boolean
+        limit:
+          description: Limit.
+          format: int64
+          minimum: 0
+          type: integer
+        next_cursor:
+          description: Next cursor.
+          type:
+          - string
+          - 'null'
+      required:
+      - limit
+      - has_more
+      type: object
+    PaginationMeta:
+      description: Pagination metadata.
+      properties:
+        limit:
+          description: Items per page.
+          format: int64
+          minimum: 0
+          type: integer
+        page:
+          description: Current page number (0-indexed).
+          format: int64
+          minimum: 0
+          type: integer
+        total:
+          description: Total number of items.
+          format: int64
+          minimum: 0
+          type: integer
+      required:
+      - page
+      - limit
+      - total
+      type: object
+    PaginatedTransactionsResponse:
+      description: Response for a paginated list of transactions.
+      properties:
+        pagination:
+          $ref: '#/components/schemas/PaginationMeta'
+          description: Pagination metadata.
+        transactions:
+          description: List of transaction items.
+          items:
+            $ref: '#/components/schemas/TransactionListItem'
+          type: array
+      required:
+      - transactions
+      - pagination
+      type: object
+    PendingTransactionResponse:
+      description: Response for pending transaction in approval queue.
+      properties:
+        can_approve:
+          description: Whether the current user can approve this transaction.
+          type: boolean
+        description:
+          description: Description.
+          type: string
+        id:
+          description: Transaction ID.
+          format: uuid
+          type: string
+        reference_number:
+          description: Reference number.
+          type:
+          - string
+          - 'null'
+        status:
+          description: Status.
+          type: string
+        submitted_at:
+          description: Submitted at timestamp.
+          type:
+          - string
+          - 'null'
+        total_amount:
+          description: Total amount.
+          type: string
+        transaction_date:
+          description: Transaction date.
+          type: string
+        type:
+          description: Transaction type.
+          type: string
+      required:
+      - id
+      - type
+      - transaction_date
+      - description
+      - status
+      - total_amount
+      - can_approve
+      type: object
+    PageMeta:
+      description: Pagination metadata.
+      properties:
+        page:
+          description: Current page number.
+          example: 1
+          format: int32
+          minimum: 0
+          type: integer
+        per_page:
+          description: Items per page.
+          example: 20
+          format: int32
+          minimum: 0
+          type: integer
+        total:
+          description: Total number of items across all pages.
+          example: 100
+          format: int64
+          minimum: 0
+          type: integer
+        total_pages:
+          description: Total number of pages.
+          example: 5
+          format: int32
+          minimum: 0
+          type: integer
+      required:
+      - page
+      - per_page
+      - total
+      - total_pages
+      type: object
+    PageRequest:
+      description: Request parameters for paginated queries.
+      properties:
+        page:
+          default: 1
+          description: Page number (1-indexed).
+          example: 1
+          format: int32
+          minimum: 0
+          type: integer
+        per_page:
+          default: 20
+          description: Number of items per page.
+          example: 10
+          format: int32
+          minimum: 0
+          type: integer
+      type: object
+    PageResponse_ExchangeRateListItem:
+      description: Response wrapper for paginated data.
+      properties:
+        data:
+          description: The items in the current page.
+          items:
+            description: Response item for list endpoint.
+            properties:
+              created_at:
+                description: Date the rate was created.
+                format: date-time
+                type: string
+              effective_date:
+                description: Date the rate is effective.
+                format: date
+                type: string
+              from_currency:
+                description: Base currency code (e.g., USD).
+                type: string
+              id:
+                description: ID of the exchange rate.
+                format: uuid
+                type: string
+              rate:
+                description: Exchange rate value.
+                type: string
+              source:
+                description: Source of the rate (e.g., Frankfurter).
+                type: string
+              to_currency:
+                description: Target currency code (e.g., IDR).
+                type: string
+            required:
+            - id
+            - from_currency
+            - to_currency
+            - rate
+            - effective_date
+            - source
+            - created_at
+            type: object
+          type: array
+        meta:
+          $ref: '#/components/schemas/PageMeta'
+          description: Pagination metadata.
+      required:
+      - data
+      - meta
+      type: object
+    HealthResponse:
+      description: Health check response.
+      properties:
+        status:
+          description: Service status.
+          example: healthy
+          type: string
+        version:
+          description: Service version.
+          example: 0.1.0
+          type: string
+      required:
+      - status
+      - version
+      type: object
+    ToggleStatusRequest:
+      description: Request body for toggling account status.
+      properties:
+        is_active:
+          description: Whether the account should be active.
+          type: boolean
+      required:
+      - is_active
+      type: object

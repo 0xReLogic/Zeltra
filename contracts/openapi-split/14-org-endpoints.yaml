@@ -1,0 +1,215 @@
+paths:
+  /organizations:
+    post:
+      operationId: create_organization
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrganizationRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationResponse'
+          description: Organization created successfully
+        '409':
+          description: Slug already exists
+      security:
+      - bearerAuth: []
+      summary: POST /organizations - Create a new organization.
+      tags:
+      - Organizations
+  /organizations/{org_id}:
+    get:
+      operationId: get_organization
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationResponse'
+          description: Organization found
+        '403':
+          description: Forbidden
+        '404':
+          description: Organization not found
+      security:
+      - bearerAuth: []
+      summary: GET `/organizations/{org_id}` - Get organization details.
+      tags:
+      - Organizations
+    patch:
+      operationId: update_organization
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateOrganizationRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationResponse'
+          description: Organization updated successfully
+        '403':
+          description: Forbidden
+        '404':
+          description: Organization not found
+      security:
+      - bearerAuth: []
+      summary: PATCH `/organizations/{org_id}` - Update organization settings.
+      tags:
+      - Organizations
+  /organizations/{org_id}/users:
+    get:
+      operationId: list_users
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/OrgUserResponse'
+                type: array
+          description: Users listed
+        '403':
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: GET `/organizations/{org_id}/users` - List organization users.
+      tags:
+      - Organizations
+    post:
+      operationId: add_user
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddUserRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MembershipResponse'
+          description: User added successfully
+        '403':
+          description: Forbidden
+        '404':
+          description: User not found
+        '409':
+          description: User is already a member
+      security:
+      - bearerAuth: []
+      summary: POST `/organizations/{org_id}/users` - Add user to organization.
+      tags:
+      - Organizations
+  /organizations/{org_id}/users/{user_id}:
+    delete:
+      operationId: remove_user
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '204':
+          description: User removed successfully
+        '403':
+          description: Forbidden
+        '404':
+          description: Organization or user not found
+      security:
+      - bearerAuth: []
+      summary: DELETE `/organizations/{org_id}/users/{user_id}` - Remove user from
+        organization.
+      tags:
+      - Organizations
+    patch:
+      operationId: update_member
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateMemberRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MembershipResponse'
+          description: Member updated successfully
+        '403':
+          description: Forbidden
+        '404':
+          description: Organization or user not found
+      security:
+      - bearerAuth: []
+      summary: PATCH `/organizations/{org_id}/users/{user_id}` - Update user's role
+        and/or approval limit.
+      tags:
+      - Organizations

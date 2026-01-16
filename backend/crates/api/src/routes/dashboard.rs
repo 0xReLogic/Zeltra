@@ -184,14 +184,14 @@ pub struct ActivityItemResponse {
     /// Currency (if applicable).
     pub currency: Option<String>,
     /// User info.
-    pub user: UserInfo,
+    pub user: DashboardUserInfo,
     /// Timestamp.
     pub timestamp: String,
 }
 
-/// User info.
+/// Dashboard user info (simplified).
 #[derive(Debug, Serialize, utoipa::ToSchema)]
-pub struct UserInfo {
+pub struct DashboardUserInfo {
     /// User ID.
     pub id: Uuid,
     /// Full name.
@@ -452,7 +452,7 @@ async fn get_recent_activity(
                 description: a.description.clone(),
                 amount: a.amount.map(format_money),
                 currency: a.currency.clone(),
-                user: UserInfo {
+                user: DashboardUserInfo {
                     id: a.user_id,
                     full_name: a.user_full_name.clone(),
                 },

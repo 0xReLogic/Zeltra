@@ -1,0 +1,167 @@
+paths:
+  /organizations/{org_id}/approval-rules:
+    get:
+      operationId: list_approval_rules
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ApprovalRuleResponse'
+                type: array
+          description: List of approval rules
+        '403':
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: GET `/organizations/{org_id}/approval-rules` - List approval rules.
+      tags:
+      - Approval Rules
+    post:
+      operationId: create_approval_rule
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateApprovalRuleRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApprovalRuleResponse'
+          description: Approval rule created successfully
+        '400':
+          description: Invalid input or amount format
+        '403':
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: POST `/organizations/{org_id}/approval-rules` - Create approval rule.
+      tags:
+      - Approval Rules
+  /organizations/{org_id}/approval-rules/{rule_id}:
+    delete:
+      operationId: delete_approval_rule
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Approval Rule ID
+        in: path
+        name: rule_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '204':
+          description: Approval rule deleted successfully
+        '403':
+          description: Forbidden
+        '404':
+          description: Approval rule not found
+      security:
+      - bearerAuth: []
+      summary: DELETE `/organizations/{org_id}/approval-rules/{rule_id}` - Delete
+        approval rule.
+      tags:
+      - Approval Rules
+    get:
+      operationId: get_approval_rule
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Approval Rule ID
+        in: path
+        name: rule_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApprovalRuleResponse'
+          description: Approval rule details
+        '403':
+          description: Forbidden
+        '404':
+          description: Approval rule not found
+      security:
+      - bearerAuth: []
+      summary: GET `/organizations/{org_id}/approval-rules/{rule_id}` - Get approval
+        rule.
+      tags:
+      - Approval Rules
+    patch:
+      operationId: update_approval_rule
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Approval Rule ID
+        in: path
+        name: rule_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateApprovalRuleRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApprovalRuleResponse'
+          description: Approval rule updated successfully
+        '400':
+          description: Invalid input or amount format
+        '403':
+          description: Forbidden
+        '404':
+          description: Approval rule not found
+      security:
+      - bearerAuth: []
+      summary: PATCH `/organizations/{org_id}/approval-rules/{rule_id}` - Update approval
+        rule.
+      tags:
+      - Approval Rules

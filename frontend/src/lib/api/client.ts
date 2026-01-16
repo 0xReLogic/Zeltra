@@ -131,7 +131,7 @@ export async function apiClient<T>(
     return fetch(`${baseUrl}${finalEndpoint}`, {
       ...options,
       headers: {
-        'Content-Type': 'application/json',
+        ...(['POST', 'PUT', 'PATCH'].includes(options?.method || 'GET') && { 'Content-Type': 'application/json' }),
         ...(authToken && { Authorization: `Bearer ${authToken}` }),
         ...(orgId && { 'X-Organization-ID': orgId }),
         ...options?.headers,

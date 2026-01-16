@@ -1,0 +1,177 @@
+components:
+  schemas:
+    DashboardMetricsResponse:
+      description: Response for dashboard metrics.
+      properties:
+        burn_rate:
+          $ref: '#/components/schemas/BurnRateResponse'
+          description: Burn rate.
+        cash_position:
+          $ref: '#/components/schemas/CashPositionResponse'
+          description: Cash position.
+        pending_approvals:
+          $ref: '#/components/schemas/PendingApprovalsResponse'
+          description: Pending approvals.
+        period:
+          oneOf:
+          - type: 'null'
+          - $ref: '#/components/schemas/PeriodInfo'
+            description: Period info.
+        runway_days:
+          description: Runway days.
+          example: 180
+          format: int32
+          type: integer
+      required:
+      - cash_position
+      - burn_rate
+      - runway_days
+      - pending_approvals
+      type: object
+    CashPositionResponse:
+      description: Cash position response.
+      properties:
+        balance:
+          description: Current balance.
+          example: '50000.0000'
+          type: string
+        change_from_last_period:
+          description: Change from last period.
+          example: '5000.0000'
+          type: string
+        change_percent:
+          description: Change percentage.
+          example: 11.11
+          format: double
+          type: number
+        currency:
+          description: Currency.
+          example: USD
+          type: string
+      required:
+      - balance
+      - currency
+      - change_from_last_period
+      - change_percent
+      type: object
+    BurnRateResponse:
+      description: Burn rate response.
+      properties:
+        daily:
+          description: Daily burn rate.
+          example: '100.0000'
+          type: string
+        monthly:
+          description: Monthly burn rate.
+          example: '3000.0000'
+          type: string
+      required:
+      - daily
+      - monthly
+      type: object
+    CashFlowResponse:
+      description: Response for cash flow data.
+      properties:
+        data:
+          description: Cash flow data points.
+          items:
+            $ref: '#/components/schemas/CashFlowDataPoint'
+          type: array
+      required:
+      - data
+      type: object
+    CashFlowDataPoint:
+      description: Cash flow data point.
+      properties:
+        inflow:
+          description: Total inflow.
+          type: string
+        month:
+          description: Month label (e.g., "Jan").
+          example: Jan
+          type: string
+        net:
+          description: Net cash flow.
+          type: string
+        outflow:
+          description: Total outflow.
+          type: string
+        period_name:
+          description: Period name (e.g., "2026-01").
+          example: 2026-01
+          type: string
+      required:
+      - month
+      - period_name
+      - inflow
+      - outflow
+      - net
+      type: object
+    ActivityItemResponse:
+      description: Activity item response.
+      properties:
+        action:
+          description: Action performed.
+          example: create
+          type: string
+        amount:
+          description: Amount (if applicable).
+          type:
+          - string
+          - 'null'
+        currency:
+          description: Currency (if applicable).
+          type:
+          - string
+          - 'null'
+        description:
+          description: Description.
+          example: New transaction created for 120.00 USD
+          type: string
+        entity_id:
+          description: Entity ID.
+          format: uuid
+          type: string
+        entity_type:
+          description: Entity type.
+          example: transaction
+          type: string
+        id:
+          description: Activity ID.
+          format: uuid
+          type: string
+        timestamp:
+          description: Timestamp.
+          type: string
+        type:
+          description: Activity type.
+          example: transaction_create
+          type: string
+        user:
+          $ref: '#/components/schemas/DashboardUserInfo'
+          description: User info.
+      required:
+      - id
+      - type
+      - action
+      - entity_type
+      - entity_id
+      - description
+      - user
+      - timestamp
+      type: object
+    RecentActivityResponse:
+      description: Response for recent activity.
+      properties:
+        activities:
+          description: Activity items.
+          items:
+            $ref: '#/components/schemas/ActivityItemResponse'
+          type: array
+        pagination:
+          $ref: '#/components/schemas/PaginationInfo'
+          description: Pagination info.
+      required:
+      - activities
+      - pagination
+      type: object

@@ -1,11 +1,8 @@
-'use client'
-
-import { useState } from 'react'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { useState, useCallback } from 'react'
 import { useForm } from 'react-hook-form'
 import * as z from 'zod'
-import { format } from 'date-fns'
-import { CalendarIcon, Loader2, ChevronsUpDown, Leaf, Scale } from 'lucide-react'
+import { format, startOfDay, endOfDay } from 'date-fns'
+import { CalendarIcon, Loader2, ChevronsUpDown, Leaf, Scale, AlertTriangle } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -43,8 +40,10 @@ import { cn } from '@/lib/utils'
 import { useCreateTransaction } from '@/lib/queries/transactions'
 import { useAccounts } from '@/lib/queries/accounts'
 import { useDimensions, useDimensionValues } from '@/lib/queries/dimensions'
+import { useFiscalPeriods } from '@/lib/queries/fiscal'
 import { toast } from 'sonner'
 import { ApiError } from '@/lib/api/client'
+import { useOrganization } from '@/lib/queries/organizations'
 import type { CreateTransactionRequest, CreateEntryRequest } from '@/types/transactions'
 
 const formSchema = z.object({
@@ -58,8 +57,8 @@ const formSchema = z.object({
   }),
   main_account_id: z.string().min(1, 'Account is required'),
   contra_account_id: z.string().min(1, 'Category/Contra account is required'),
-  department: z.string().optional(),
-  project: z.string().optional(),
+  // Dynamic dimensions: TypeID -> ValueID
+  dimensionValues: z.record(z.string(), z.string()).optional(),
   currency: z.string(),
   // Advanced Fields
   exchange_rate: z.string().optional(),
@@ -76,25 +75,48 @@ export function CreateTransactionDialog() {
   const createMutation = useCreateTransaction()
   const { data: accountsData } = useAccounts()
   const { data: dimensionsData } = useDimensions()
+  const { data: valuesData } = useDimensionValues() // Fetch all values
+  const { data: organization } = useOrganization()
+  const { data: fiscalPeriodsData } = useFiscalPeriods()
 
-  // Ensure data is arrays - handle wrapper objects
-  const accounts = accountsData?.accounts ?? []
-  const dimensions = Array.isArray(dimensionsData) ? dimensionsData : []
-  
-  // Get dimension type IDs for DEPT and PROJ
-  const deptTypeId = dimensions.find(d => d.code === 'DEPT')?.id
-  const projTypeId = dimensions.find(d => d.code === 'PROJ')?.id
-  
-  // Fetch dimension values for each type
-  const { data: deptValues } = useDimensionValues(deptTypeId)
-  const { data: projValues } = useDimensionValues(projTypeId)
-  
-  // Extract values arrays
-  const departmentOptions = Array.isArray(deptValues) ? deptValues : []
-  const projectOptions = Array.isArray(projValues) ? projValues : []
+  // Custom Zod Resolver to bypass version mismatch
+  const resolver = useCallback(async (values: FormValues) => {
+    try {
+      const result = await formSchema.safeParseAsync(values)
+     
+      if (result.success) {
+        return {
+          values: result.data,
+          errors: {},
+        }
+      }
+
+      // ZodError structure mismatch workaround
+      const errors = (result.error as unknown as { errors: Array<{ path: string[]; code: string; message: string }> }).errors.reduce(
+        (all: Record<string, unknown>, current) => {
+           const path = current.path.join('.')
+           return {
+             ...all,
+             [path]: {
+                type: current.code,
+                message: current.message,
+             }
+           }
+        },
+        {}
+      )
+
+      return {
+        values: {},
+        errors,
+      }
+    } catch {
+        return { values: {}, errors: {} }
+    }
+  }, [])
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+    resolver, // Use custom resolver
     defaultValues: {
       type: 'expense',
       transaction_date: new Date(),
@@ -104,8 +126,8 @@ export function CreateTransactionDialog() {
       amount: '',
       main_account_id: '',
       contra_account_id: '',
-      department: '',
-      project: '',
+      // Valid record initialization
+      dimensionValues: {}, 
       currency: 'USD',
       exchange_rate: '',
       esg_enabled: false,
@@ -114,12 +136,36 @@ export function CreateTransactionDialog() {
     },
   })
 
+  // Ensure data is arrays - handle wrapper objects
+  const accounts = accountsData?.accounts ?? []
+  const dimensions = dimensionsData?.dimension_types || []
+  const allValues = valuesData?.dimension_values || []
+  const fiscalPeriods = fiscalPeriodsData || []
+  
+  // Tier-aware exchange rate check
+  const baseCurrency = organization?.base_currency || 'USD'
+  const isStarterTier = organization?.subscription_tier?.toLowerCase() === 'starter'
+
+  // Fiscal period validation
+  const transactionDate = form.watch('transaction_date')
+  const activePeriod = fiscalPeriods.find(p => {
+    if (!transactionDate || !p.start_date || !p.end_date) return false
+    const start = new Date(p.start_date)
+    const end = new Date(p.end_date)
+    const tx = startOfDay(transactionDate)
+    return (tx >= startOfDay(start) && tx <= endOfDay(end))
+  })
+  
+  const isPeriodOpen = activePeriod?.status === 'OPEN'
+  const noPeriodFound = transactionDate && !activePeriod
+  const isPeriodClosed = activePeriod && activePeriod.status !== 'OPEN'
+
   function onSubmit(values: FormValues) {
     const amount = values.amount
     const currency = values.currency
 
     // Prepare Metadata
-    let metadata: Record<string, any> | undefined = undefined
+    let metadata: Record<string, unknown> | undefined = undefined
     if (values.esg_enabled) {
         metadata = {
             esg: {
@@ -130,55 +176,51 @@ export function CreateTransactionDialog() {
         }
     }
 
-    // Collect dimension IDs
-    const dims: string[] = []
-    if (values.department && values.department !== 'none') dims.push(values.department)
-    if (values.project && values.project !== 'none') dims.push(values.project)
+    // Collect dynamic dimension IDs (flatten from map)
+    const dims: string[] = values.dimensionValues 
+        ? (Object.values(values.dimensionValues) as string[]).filter(v => v !== 'none') 
+        : []
 
     // Build entries based on transaction type
-    // API expects: account_id, entry_type ("debit" | "credit"), source_amount, source_currency
     let entries: CreateEntryRequest[] = []
 
     const commonProps = {
         source_amount: amount,
         source_currency: currency,
-        exchange_rate: values.exchange_rate, // Pass override if present
+        exchange_rate: values.exchange_rate || undefined,
     }
 
     if (values.type === 'expense') {
-      // Expense: Debit Expense account, Credit Asset account
       entries = [
         {
-          account_id: values.contra_account_id, // Expense account
+          account_id: values.contra_account_id,
           entry_type: 'debit',
           dimensions: dims.length > 0 ? dims : undefined,
-          metadata: metadata, // Attach ESG to Expense
+          metadata: metadata,
           ...commonProps
         },
         {
-          account_id: values.main_account_id, // Asset/Bank account
+          account_id: values.main_account_id,
           entry_type: 'credit',
           ...commonProps
         },
       ]
     } else if (values.type === 'revenue') {
-      // Revenue: Debit Asset account, Credit Revenue account
       entries = [
         {
-          account_id: values.main_account_id, // Asset/Bank account
+          account_id: values.main_account_id,
           entry_type: 'debit',
           ...commonProps
         },
         {
-          account_id: values.contra_account_id, // Revenue account
+          account_id: values.contra_account_id,
           entry_type: 'credit',
           dimensions: dims.length > 0 ? dims : undefined,
-          metadata: metadata, // Attach ESG to Revenue (Impact of sales?)
+          metadata: metadata,
           ...commonProps
         },
       ]
     } else {
-      // Transfer/Journal: Simple debit/credit
       entries = [
         {
           account_id: values.main_account_id,
@@ -190,7 +232,7 @@ export function CreateTransactionDialog() {
         {
           account_id: values.contra_account_id,
           entry_type: 'credit',
-          metadata: metadata, // Attach to both or just one?
+          metadata: metadata,
           ...commonProps
         },
       ]
@@ -198,7 +240,9 @@ export function CreateTransactionDialog() {
 
     const request = {
       type: values.type,
-      transaction_date: format(values.transaction_date, 'yyyy-MM-dd'),
+      transaction_date: values.transaction_date instanceof Date && !isNaN(values.transaction_date.getTime())
+        ? format(values.transaction_date, 'yyyy-MM-dd')
+        : format(new Date(), 'yyyy-MM-dd'),
       description: values.description,
       entries,
       reference_number: values.reference_number || undefined,
@@ -213,14 +257,22 @@ export function CreateTransactionDialog() {
         form.reset()
       },
       onError: (error) => {
-        // Handle specific budget dimension validation errors
-        if (error instanceof ApiError && error.status === 400 && error.details?.missing_dimensions) {
-          const missing = error.details.missing_dimensions.join(', ')
-          toast.error(`Dimension '${missing}' is required because this account is tied to a budget.`)
-          return
+        if (error instanceof ApiError && error.status === 400) {
+          const code = error.code
+          if (code === 'no_fiscal_period') {
+            toast.error('No open fiscal period found for this date. Transaction cannot be posted.')
+            return
+          }
+          if (code === 'period_closed') {
+            toast.error('The fiscal period for this date is closed. No further posting allowed.')
+            return
+          }
+          if (error.details?.missing_dimensions) {
+            const missing = error.details.missing_dimensions.join(', ')
+            toast.error(`Dimension '${missing}' is required because this account is tied to a budget.`)
+            return
+          }
         }
-        
-        // Error toast is already shown by apiClient
         console.error('Failed to create transaction:', error)
       },
     })
@@ -303,6 +355,31 @@ export function CreateTransactionDialog() {
               />
             </div>
 
+            {/* Fiscal Period Validation Messages */}
+            {noPeriodFound && (
+              <div className="flex items-start gap-2 rounded-md border border-amber-500/50 bg-amber-500/10 p-3 text-sm">
+                <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium text-amber-600">No Fiscal Period Found</p>
+                  <p className="text-muted-foreground text-xs mt-1">
+                    There is no fiscal period defined for this date. Please create one in Settings.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {isPeriodClosed && (
+              <div className="flex items-start gap-2 rounded-md border border-red-500/50 bg-red-500/10 p-3 text-sm">
+                <AlertTriangle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium text-red-600">Fiscal Period Restricted</p>
+                  <p className="text-muted-foreground text-xs mt-1">
+                    The fiscal period for this date is {activePeriod?.status?.toLowerCase()}. Posting is not allowed.
+                  </p>
+                </div>
+              </div>
+            )}
+
             <FormField
               control={form.control}
               name="reference_number"
@@ -331,60 +408,52 @@ export function CreateTransactionDialog() {
               )}
             />
 
-            {/* Dimensions Section */}
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="department"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Department (Optional)</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select Dept" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="none">None</SelectItem>
-                        {departmentOptions.map((v) => (
-                          <SelectItem key={v.code} value={v.code}>
-                            {v.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="project"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Project (Optional)</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select Project" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="none">None</SelectItem>
-                        {projectOptions.map((v) => (
-                          <SelectItem key={v.code} value={v.code}>
-                            {v.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            {/* Dynamic Dimensions Section */}
+            {dimensions.length > 0 && (
+              <div className="grid grid-cols-2 gap-4">
+                {dimensions.map((dim) => {
+                  const options = allValues.filter(v => {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const val = v as any
+                    const matchType = val.dimension_type_id === dim.id || val.dimension_type?.id === dim.id
+                    const isActive = val.is_active !== false && val.active !== false
+                    return matchType && isActive
+                  })
+                  
+                  return (
+                    <FormField
+                      key={dim.id}
+                      control={form.control}
+                      name={`dimensionValues.${dim.id}`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>{dim.name} {dim.is_required ? '*' : '(Optional)'}</FormLabel>
+                          <Select 
+                            onValueChange={field.onChange} 
+                            value={(field.value || 'none') as string}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder={`Select ${dim.name}`} />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="none">None</SelectItem>
+                              {options.map((v) => (
+                                <SelectItem key={v.code} value={v.id}>
+                                  {v.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )
+                })}
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               <FormField
@@ -519,7 +588,9 @@ export function CreateTransactionDialog() {
                       name="exchange_rate"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Exchange Rate Override</FormLabel>
+                          <FormLabel>
+                            Exchange Rate {isStarterTier && form.watch('currency') !== baseCurrency ? '(Required)' : 'Override'}
+                          </FormLabel>
                           <FormControl>
                             <Input placeholder="1.0000" {...field} />
                           </FormControl>
@@ -528,6 +599,20 @@ export function CreateTransactionDialog() {
                       )}
                     />
                    </div>
+                   
+                   {/* STARTER tier warning for non-base currencies */}
+                   {isStarterTier && form.watch('currency') !== baseCurrency && (
+                     <div className="flex items-start gap-2 rounded-md border border-amber-500/50 bg-amber-500/10 p-3 text-sm">
+                       <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
+                       <div>
+                         <p className="font-medium text-amber-600">Manual Exchange Rate Required</p>
+                         <p className="text-muted-foreground text-xs mt-1">
+                           Your Starter plan requires manual exchange rate input for {form.watch('currency')} → {baseCurrency}. 
+                           Upgrade to Growth for auto-sync rates.
+                         </p>
+                       </div>
+                     </div>
+                   )}
 
                    <div className="space-y-4 border-t pt-4">
                       <FormField
@@ -597,9 +682,9 @@ export function CreateTransactionDialog() {
             </div>
 
             <DialogFooter>
-              <Button type="submit" disabled={createMutation.isPending}>
+              <Button type="submit" disabled={createMutation.isPending || !isPeriodOpen}>
                 {createMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Create Transaction
+                {!isPeriodOpen && transactionDate ? 'Period Restricted' : 'Create Transaction'}
               </Button>
             </DialogFooter>
           </form>

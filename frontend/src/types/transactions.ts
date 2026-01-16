@@ -29,12 +29,8 @@ export type {
   BulkApproveResponse,
 }
 
-// Extend CreateEntryRequest manually since we just modified backend
-export interface CreateEntryRequest extends Omit<components['schemas']['CreateEntryRequest'], 'dimensions'> {
-    dimensions?: string[]
-    exchange_rate?: string
-    metadata?: Record<string, unknown>
-}
+// Use generated CreateEntryRequest directly
+export type CreateEntryRequest = components['schemas']['CreateEntryRequest']
 
 export type PayInvoiceRequest = components['schemas']['PayInvoiceRequest']
 
@@ -60,6 +56,11 @@ export type UpdateTransactionRequest = ApiUpdateTransactionRequest
 
 // Backend returns structured response with pagination
 export type GetTransactionsResponse = components['schemas']['PaginatedTransactionsResponse']
+
+// Backend /transactions/pending returns { data: PendingTransaction[] }
+export interface GetPendingTransactionsResponse {
+  data: (ApiTransactionListItem & { can_approve?: boolean })[]
+}
 
 // Legacy alias for backward compatibility
 export interface TransactionEntry {

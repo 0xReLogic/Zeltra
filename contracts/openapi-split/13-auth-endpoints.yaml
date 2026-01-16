@@ -1,0 +1,119 @@
+paths:
+  /auth/login:
+    post:
+      operationId: login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+          description: Login successful
+        '401':
+          description: Invalid credentials
+      summary: POST /auth/login - Authenticate user and return tokens.
+      tags:
+      - Auth
+  /auth/register:
+    post:
+      operationId: register
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterResponse'
+          description: User registered successfully
+        '409':
+          description: Email already exists
+      summary: POST /auth/register - Register a new user.
+      tags:
+      - Auth
+  /auth/refresh:
+    post:
+      operationId: refresh
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefreshResponse'
+          description: Token refreshed successfully
+        '401':
+          description: Invalid or expired refresh token
+      summary: POST /auth/refresh - Refresh access token using refresh token.
+      tags:
+      - Auth
+  /auth/logout:
+    post:
+      operationId: logout
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LogoutRequest'
+        required: true
+      responses:
+        '200':
+          description: Logged out successfully
+      summary: POST /auth/logout - Logout and invalidate refresh token.
+      tags:
+      - Auth
+  /auth/verify-email:
+    post:
+      operationId: verify_email
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyEmailRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifyEmailResponse'
+          description: Email verified successfully
+        '400':
+          description: Invalid or expired token
+      summary: POST /auth/verify-email - Verify user's email with token.
+      tags:
+      - Auth
+  /auth/resend-verification:
+    post:
+      operationId: resend_verification
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResendVerificationRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResendVerificationResponse'
+          description: Verification email sent if account exists
+      summary: POST /auth/resend-verification - Resend verification email.
+      tags:
+      - Auth

@@ -1,0 +1,255 @@
+components:
+  schemas:
+    AccrualScheduleResponse:
+      description: Response for an accrual schedule.
+      properties:
+        created_at:
+          description: Created at.
+          type: string
+        credit_account_id:
+          description: Credit account ID.
+          format: uuid
+          type: string
+        currency_id:
+          description: Currency ID.
+          type: string
+        debit_account_id:
+          description: Debit account ID.
+          format: uuid
+          type: string
+        description:
+          description: Description.
+          type:
+          - string
+          - 'null'
+        end_date:
+          description: End date.
+          type: string
+        frequency:
+          description: Frequency.
+          type: string
+        id:
+          description: Schedule ID.
+          format: uuid
+          type: string
+        name:
+          description: Name.
+          type: string
+        next_run_date:
+          description: Next run date.
+          type:
+          - string
+          - 'null'
+        organization_id:
+          description: Organization ID.
+          format: uuid
+          type: string
+        periods_processed:
+          description: Periods processed.
+          format: int32
+          type: integer
+        start_date:
+          description: Start date.
+          type: string
+        status:
+          description: Status.
+          type: string
+        total_amount:
+          description: Total amount.
+          type: string
+        total_periods:
+          description: Total periods.
+          format: int32
+          type: integer
+      required:
+      - id
+      - organization_id
+      - name
+      - total_amount
+      - currency_id
+      - debit_account_id
+      - credit_account_id
+      - start_date
+      - end_date
+      - frequency
+      - total_periods
+      - periods_processed
+      - status
+      - created_at
+      type: object
+    CreateAccrualScheduleRequest:
+      description: Request body for creating an accrual schedule.
+      properties:
+        credit_account_id:
+          description: Credit account ID.
+          format: uuid
+          type: string
+        currency_id:
+          description: Currency ID (ISO code).
+          example: USD
+          type: string
+        debit_account_id:
+          description: Debit account ID.
+          format: uuid
+          type: string
+        description:
+          description: Optional description.
+          type:
+          - string
+          - 'null'
+        end_date:
+          description: End date (YYYY-MM-DD).
+          example: 2026-12-31
+          type: string
+        frequency:
+          description: 'Frequency: daily, weekly, monthly, quarterly, yearly.'
+          example: monthly
+          type: string
+        name:
+          description: Name of the accrual schedule.
+          example: Prepaid Insurance
+          type: string
+        start_date:
+          description: Start date (YYYY-MM-DD).
+          example: 2026-01-01
+          type: string
+        total_amount:
+          description: Total amount to accrue.
+          example: '12000.00'
+          type: string
+        total_periods:
+          description: Total number of periods.
+          example: 12
+          format: int32
+          type: integer
+      required:
+      - name
+      - total_amount
+      - currency_id
+      - debit_account_id
+      - credit_account_id
+      - start_date
+      - end_date
+      - frequency
+      - total_periods
+      type: object
+    RevaluationLogResponse:
+      description: Response for a revaluation log.
+      properties:
+        account_id:
+          description: Account ID.
+          format: uuid
+          type: string
+        carrying_balance:
+          description: Carrying balance before revaluation.
+          type: string
+        created_at:
+          description: Created at.
+          type: string
+        exchange_rate:
+          description: Exchange rate used.
+          type: string
+        functional_currency:
+          description: Functional currency.
+          type: string
+        gain_loss_amount:
+          description: Gain/loss amount.
+          type: string
+        id:
+          description: Log ID.
+          format: uuid
+          type: string
+        organization_id:
+          description: Organization ID.
+          format: uuid
+          type: string
+        revaluation_date:
+          description: Revaluation date.
+          type: string
+        revalued_balance:
+          description: Revalued balance.
+          type: string
+        source_currency:
+          description: Account currency.
+          type: string
+        transaction_id:
+          description: Related transaction ID.
+          format: uuid
+          type:
+          - string
+          - 'null'
+      required:
+      - id
+      - account_id
+      - organization_id
+      - revaluation_date
+      - source_currency
+      - functional_currency
+      - exchange_rate
+      - carrying_balance
+      - revalued_balance
+      - gain_loss_amount
+      - created_at
+      type: object
+    IntercompanyMappingResponse:
+      description: Response for an intercompany mapping.
+      properties:
+        auto_post:
+          description: Whether to auto-post transactions.
+          type: boolean
+        created_at:
+          description: Created at.
+          type: string
+        id:
+          description: Mapping ID.
+          format: uuid
+          type: string
+        mapping_type:
+          description: Mapping type.
+          type: string
+        source_account_id:
+          description: Source account ID.
+          format: uuid
+          type: string
+        source_org_id:
+          description: Source organization ID.
+          format: uuid
+          type: string
+        target_account_id:
+          description: Target account ID.
+          format: uuid
+          type: string
+        target_org_id:
+          description: Target organization ID.
+          format: uuid
+          type: string
+      required:
+      - id
+      - source_org_id
+      - source_account_id
+      - target_org_id
+      - target_account_id
+      - auto_post
+      - mapping_type
+      - created_at
+      type: object
+    CreateIntercompanyMappingRequest:
+      description: Request body for creating an intercompany mapping.
+      properties:
+        source_account_id:
+          description: Source account ID (in current organization).
+          format: uuid
+          type: string
+        target_account_id:
+          description: Target account ID (in target organization).
+          format: uuid
+          type: string
+        target_org_id:
+          description: Target organization ID.
+          format: uuid
+          type: string
+      required:
+      - source_account_id
+      - target_org_id
+      - target_account_id
+      type: object

@@ -63,7 +63,6 @@ pub struct ListDimensionTypesQuery {
 #[derive(Debug, Deserialize, utoipa::IntoParams)]
 pub struct ListDimensionValuesQuery {
     /// Filter by dimension type ID.
-    #[serde(rename = "type")]
     pub dimension_type_id: Option<Uuid>,
     /// Filter by active status.
     pub active: Option<bool>,

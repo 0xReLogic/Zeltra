@@ -16,7 +16,7 @@ import { PayInvoiceDialog } from '@/components/transactions/PayInvoiceDialog'
 import { TransactionListItem } from '@/types/transactions'
 import { Button } from '@/components/ui/button'
 import { Loader2, Filter, CreditCard } from 'lucide-react'
-import Link from 'next/link'
+
 import {
     Select,
     SelectContent,
@@ -53,8 +53,8 @@ export default function TransactionsPage() {
   const { data: deptValues } = useDimensionValues(deptTypeId)
   const { data: projValues } = useDimensionValues(projTypeId)
   
-  const departmentOptions = Array.isArray(deptValues) ? deptValues : []
-  const projectOptions = Array.isArray(projValues) ? projValues : []
+  const departmentOptions = deptValues?.dimension_values || []
+  const projectOptions = projValues?.dimension_values || []
 
   // Backend returns structured object with transactions array
   const txnList = data?.transactions || []
@@ -122,6 +122,7 @@ export default function TransactionsPage() {
                 <TableHead>Reference</TableHead>
                 <TableHead>Description</TableHead>
                 <TableHead>Type</TableHead>
+                <TableHead>Amount</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
@@ -129,14 +130,17 @@ export default function TransactionsPage() {
             <TableBody>
               {txnList.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                     No transactions found. Create your first transaction to get started.
                   </TableCell>
                 </TableRow>
               ) : (
                 txnList.map((txn) => (
-                  <Link href={`/dashboard/transactions/${txn.id}`} key={txn.id} className="contents">
-                  <TableRow className="cursor-pointer hover:bg-muted/50">
+                  <TableRow 
+                    key={txn.id} 
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => window.location.href = `/dashboard/transactions/${txn.id}`}
+                  >
                     <TableCell className="font-medium">
                       {txn.transaction_date}
                     </TableCell>
@@ -148,6 +152,12 @@ export default function TransactionsPage() {
                       <Badge variant="outline" className="capitalize">
                         {txn.transaction_type}
                       </Badge>
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      {new Intl.NumberFormat('en-US', { 
+                        style: 'currency', 
+                        currency: 'USD' // Fallback to USD as list item doesn't provide source_currency
+                      }).format(parseFloat(txn.total_amount || '0'))}
                     </TableCell>
                     <TableCell>
                       <Badge variant={getStatusColor(txn.status) as 'default' | 'secondary' | 'outline' | 'destructive'}>
@@ -175,7 +185,6 @@ export default function TransactionsPage() {
                       )}
                     </TableCell>
                   </TableRow>
-                  </Link>
                 ))
               )}
             </TableBody>

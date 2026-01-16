@@ -22,16 +22,9 @@ export function UsageMeter({ className }: UsageMeterProps) {
   const maxUsers = org.limits.max_users
   const currentUsers = usersData?.data?.length || 0
 
-  // If unlimited, don't show usage meter or show "Unlimited"
-  if (maxUsers === null) {
-    return null
-    // Alternatively: 
-    // return <div className="text-xs text-muted-foreground">Users: Unlimited</div>
-  }
-
-  const percentage = Math.min((currentUsers / maxUsers) * 100, 100)
-  const isNearLimit = percentage >= 80
-  const isAtLimit = percentage >= 100
+  const percentage = maxUsers ? Math.min((currentUsers / maxUsers) * 100, 100) : 0
+  const isNearLimit = maxUsers ? percentage >= 80 : false
+  const isAtLimit = maxUsers ? percentage >= 100 : false
 
   return (
     <div className={cn("space-y-2", className)}>
@@ -41,16 +34,18 @@ export function UsageMeter({ className }: UsageMeterProps) {
           "font-medium",
           isAtLimit ? "text-destructive" : isNearLimit ? "text-amber-500" : "text-muted-foreground"
         )}>
-          {currentUsers} / {maxUsers}
+          {currentUsers} / {maxUsers || '∞'}
         </span>
       </div>
-      <Progress 
-        value={percentage} 
-        className="h-2"
-        // TODO: Pass custom indicator color to Progress if supported, 
-        // currently Progress uses bg-primary which is fine.
-        // If we want red, we need to modify Progress or use inline style.
-      />
+      {maxUsers && (
+        <Progress 
+          value={percentage} 
+          className="h-2"
+          // TODO: Pass custom indicator color to Progress if supported, 
+          // currently Progress uses bg-primary which is fine.
+          // If we want red, we need to modify Progress or use inline style.
+        />
+      )}
     </div>
   )
 }

@@ -1,0 +1,507 @@
+paths:
+  /organizations/{org_id}/transactions:
+    get:
+      operationId: list_transactions
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Filter by status.
+        in: path
+        name: status
+        required: true
+        schema:
+          type:
+          - string
+          - 'null'
+      - description: Filter by transaction type.
+        in: path
+        name: type
+        required: true
+        schema:
+          type:
+          - string
+          - 'null'
+      - description: Filter by date range start (YYYY-MM-DD).
+        in: path
+        name: from
+        required: true
+        schema:
+          format: date
+          type:
+          - string
+          - 'null'
+      - description: Filter by date range end (YYYY-MM-DD).
+        in: path
+        name: to
+        required: true
+        schema:
+          format: date
+          type:
+          - string
+          - 'null'
+      - description: Filter by dimension value ID.
+        in: path
+        name: dimension
+        required: true
+        schema:
+          format: uuid
+          type:
+          - string
+          - 'null'
+      - description: Page number (1-indexed).
+        in: path
+        name: page
+        required: true
+        schema:
+          format: int64
+          minimum: 0
+          type:
+          - integer
+          - 'null'
+      - description: 'Page size (default: 50, max: 100).'
+        in: path
+        name: limit
+        required: true
+        schema:
+          format: int64
+          minimum: 0
+          type:
+          - integer
+          - 'null'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTransactionsResponse'
+          description: Transactions retrieved successfully
+        '403':
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: GET `/organizations/{org_id}/transactions` - List transactions.
+      tags:
+      - Transactions
+    post:
+      operationId: create_transaction
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTransactionRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionResponse'
+          description: Transaction created successfully
+        '400':
+          description: Invalid input, unbalanced transaction, or missing required
+            budget dimensions
+        '403':
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: POST `/organizations/{org_id}/transactions` - Create a new transaction.
+      tags:
+      - Transactions
+  /organizations/{org_id}/transactions/{transaction_id}:
+    delete:
+      operationId: delete_transaction
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Transaction ID
+        in: path
+        name: transaction_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '204':
+          description: Transaction deleted successfully
+        '400':
+          description: Cannot delete posted transaction
+        '403':
+          description: Forbidden
+        '404':
+          description: Transaction not found
+      security:
+      - bearerAuth: []
+      summary: DELETE `/organizations/{org_id}/transactions/{transaction_id}` - Delete
+        draft transaction.
+      tags:
+      - Transactions
+    get:
+      operationId: get_transaction
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Transaction ID
+        in: path
+        name: transaction_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionResponse'
+          description: Transaction details
+        '403':
+          description: Forbidden
+        '404':
+          description: Transaction not found
+      security:
+      - bearerAuth: []
+      summary: GET `/organizations/{org_id}/transactions/{transaction_id}` - Get transaction
+        with entries.
+      tags:
+      - Transactions
+    patch:
+      operationId: update_transaction
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Transaction ID
+        in: path
+        name: transaction_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTransactionRequest'
+        required: true
+      responses:
+        '200':
+          description: Transaction updated successfully
+        '400':
+          description: Cannot modify posted transaction
+        '403':
+          description: Forbidden
+        '404':
+          description: Transaction not found
+      security:
+      - bearerAuth: []
+      summary: PATCH `/organizations/{org_id}/transactions/{transaction_id}` - Update
+        draft transaction.
+      tags:
+      - Transactions
+  /organizations/{org_id}/transactions/{transaction_id}/submit:
+    post:
+      operationId: submit_transaction
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Transaction ID
+        in: path
+        name: transaction_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          description: Transaction submitted successfully
+        '400':
+          description: Invalid status for submission
+        '403':
+          description: Forbidden
+        '404':
+          description: Transaction not found
+      security:
+      - bearerAuth: []
+      summary: POST `/organizations/{org_id}/transactions/{transaction_id}/submit`
+        - Submit for approval.
+      tags:
+      - Transactions
+  /organizations/{org_id}/transactions/{transaction_id}/approve:
+    post:
+      operationId: approve_transaction
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Transaction ID
+        in: path
+        name: transaction_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApproveRequest'
+        required: true
+      responses:
+        '200':
+          description: Transaction approved successfully
+        '400':
+          description: Invalid status for approval
+        '403':
+          description: Forbidden
+        '404':
+          description: Transaction not found
+      security:
+      - bearerAuth: []
+      summary: POST `/organizations/{org_id}/transactions/{transaction_id}/approve`
+        - Approve transaction.
+      tags:
+      - Transactions
+  /organizations/{org_id}/transactions/{transaction_id}/reject:
+    post:
+      operationId: reject_transaction
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Transaction ID
+        in: path
+        name: transaction_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RejectRequest'
+        required: true
+      responses:
+        '200':
+          description: Transaction rejected successfully
+        '400':
+          description: Invalid status for rejection
+        '403':
+          description: Forbidden
+        '404':
+          description: Transaction not found
+      security:
+      - bearerAuth: []
+      summary: POST `/organizations/{org_id}/transactions/{transaction_id}/reject`
+        - Reject transaction.
+      tags:
+      - Transactions
+  /organizations/{org_id}/transactions/{transaction_id}/post:
+    post:
+      operationId: post_transaction
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Transaction ID
+        in: path
+        name: transaction_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          description: Transaction posted successfully
+        '400':
+          description: Invalid status for posting
+        '403':
+          description: Forbidden
+        '404':
+          description: Transaction not found
+      security:
+      - bearerAuth: []
+      summary: POST `/organizations/{org_id}/transactions/{transaction_id}/post` -
+        Post to ledger.
+      tags:
+      - Transactions
+  /organizations/{org_id}/transactions/{transaction_id}/void:
+    post:
+      operationId: void_transaction
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Transaction ID
+        in: path
+        name: transaction_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VoidRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoidResponse'
+          description: Transaction voided successfully
+        '400':
+          description: Invalid status for voiding
+        '403':
+          description: Forbidden
+        '404':
+          description: Transaction not found
+      security:
+      - bearerAuth: []
+      summary: POST `/organizations/{org_id}/transactions/{transaction_id}/void` -
+        Void transaction.
+      tags:
+      - Transactions
+  /organizations/{org_id}/transactions/pending:
+    get:
+      operationId: get_pending_transactions
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/PendingTransactionResponse'
+                type: array
+          description: List of pending transactions
+        '403':
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: GET `/organizations/{org_id}/transactions/pending` - Get pending transactions.
+      tags:
+      - Transactions
+  /organizations/{org_id}/transactions/bulk-approve:
+    post:
+      operationId: bulk_approve_transactions
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkApproveRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkApproveResponse'
+          description: Bulk approval results
+        '403':
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: POST `/organizations/{org_id}/transactions/bulk-approve` - Bulk approve
+        transactions.
+      tags:
+      - Transactions
+  /organizations/{org_id}/transactions/pay-invoice:
+    post:
+      operationId: pay_invoice
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayInvoiceRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionResponse'
+          description: Payment transaction created
+        '400':
+          description: Invalid input or processing error
+        '404':
+          description: Invoice not found
+      security:
+      - bearerAuth: []
+      summary: POST `/organizations/{org_id}/transactions/pay-invoice` - Pay an invoice
+        with auto-forex variance.
+      tags:
+      - Transactions

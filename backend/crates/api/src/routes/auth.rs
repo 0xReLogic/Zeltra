@@ -11,8 +11,9 @@ use zeltra_db::{
     entities::sea_orm_active_enums::UserRole,
 };
 use zeltra_shared::auth::{
-    LoginRequest, LoginResponse, LogoutRequest, RefreshRequest, RegisterRequest,
-    ResendVerificationRequest, UserInfo, UserOrganization, VerifyEmailRequest, VerifyEmailResponse,
+    LoginRequest, LoginResponse, LogoutRequest, RefreshRequest, RefreshResponse, RegisterRequest,
+    RegisterResponse, ResendVerificationRequest, ResendVerificationResponse, UserInfo,
+    UserOrganization, VerifyEmailRequest, VerifyEmailResponse,
 };
 
 /// Creates the auth router.
@@ -228,7 +229,7 @@ pub async fn login(
     path = "/auth/register",
     request_body = RegisterRequest,
     responses(
-        (status = 201, description = "User registered successfully"),
+        (status = 201, description = "User registered successfully", body = RegisterResponse),
         (status = 409, description = "Email already exists")
     ),
     tag = "Auth"
@@ -325,15 +326,16 @@ pub async fn register(
     // Return user info (without tokens - they need to verify email and create/join an org first)
     (
         StatusCode::CREATED,
-        Json(json!({
-            "user": {
-                "id": user.id,
-                "email": user.email,
-                "full_name": user.full_name,
-                "email_verified": false
+        Json(RegisterResponse {
+            user: UserInfo {
+                id: user.id,
+                email: user.email,
+                full_name: user.full_name,
+                organizations: vec![],
             },
-            "message": "Registration successful. Please check your email to verify your account."
-        })),
+            message: "Registration successful. Please check your email to verify your account."
+                .to_string(),
+        }),
     )
         .into_response()
 }
@@ -344,7 +346,7 @@ pub async fn register(
     path = "/auth/refresh",
     request_body = RefreshRequest,
     responses(
-        (status = 200, description = "Token refreshed successfully"),
+        (status = 200, description = "Token refreshed successfully", body = RefreshResponse),
         (status = 401, description = "Invalid or expired refresh token")
     ),
     tag = "Auth"
@@ -431,10 +433,10 @@ pub async fn refresh(
 
     (
         StatusCode::OK,
-        Json(json!({
-            "access_token": access_token,
-            "expires_in": state.jwt_service.access_token_expires_in()
-        })),
+        Json(RefreshResponse {
+            access_token,
+            expires_in: state.jwt_service.access_token_expires_in(),
+        }),
     )
         .into_response()
 }
@@ -564,7 +566,7 @@ pub async fn verify_email(
     path = "/auth/resend-verification",
     request_body = ResendVerificationRequest,
     responses(
-        (status = 200, description = "Verification email sent if account exists")
+        (status = 200, description = "Verification email sent if account exists", body = ResendVerificationResponse)
     ),
     tag = "Auth"
 )]
@@ -650,9 +652,10 @@ pub async fn resend_verification(
 
     (
         StatusCode::OK,
-        Json(json!({
-            "message": "If an account exists with this email, a verification link has been sent."
-        })),
+        Json(ResendVerificationResponse {
+            message: "If an account exists with this email, a verification link has been sent."
+                .to_string(),
+        }),
     )
         .into_response()
 }

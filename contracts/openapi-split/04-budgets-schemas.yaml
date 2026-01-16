@@ -1,0 +1,232 @@
+components:
+  schemas:
+    BudgetResponse:
+      description: Response for a budget.
+      properties:
+        budget_type:
+          description: Budget type.
+          type: string
+        created_at:
+          description: Created at timestamp.
+          type: string
+        currency:
+          description: Currency.
+          type: string
+        description:
+          description: Budget description.
+          type:
+          - string
+          - 'null'
+        fiscal_year_id:
+          description: Fiscal year ID.
+          format: uuid
+          type: string
+        fiscal_year_name:
+          description: Fiscal year name.
+          type: string
+        id:
+          description: Budget ID.
+          format: uuid
+          type: string
+        is_active:
+          description: Whether the budget is active.
+          type: boolean
+        is_locked:
+          description: Whether the budget is locked.
+          type: boolean
+        name:
+          description: Budget name.
+          type: string
+        total_budgeted:
+          description: Total budgeted amount.
+          type: string
+        updated_at:
+          description: Updated at timestamp.
+          type: string
+      required:
+      - id
+      - name
+      - fiscal_year_id
+      - fiscal_year_name
+      - budget_type
+      - currency
+      - is_active
+      - is_locked
+      - total_budgeted
+      - created_at
+      - updated_at
+      type: object
+    CreateBudgetRequest:
+      description: Request body for creating a budget.
+      properties:
+        budget_type:
+          description: 'Budget type: annual, quarterly, monthly, project.'
+          example: annual
+          type: string
+        description:
+          description: Budget description.
+          type:
+          - string
+          - 'null'
+        fiscal_year_id:
+          description: Fiscal year ID.
+          format: uuid
+          type: string
+        name:
+          description: Budget name.
+          example: FY2026 Operations
+          type: string
+      required:
+      - name
+      - fiscal_year_id
+      - budget_type
+      type: object
+    UpdateBudgetRequest:
+      description: Request body for updating a budget.
+      properties:
+        description:
+          description: Budget description.
+          type:
+          - string
+          - 'null'
+        is_active:
+          description: Whether the budget is active.
+          type:
+          - boolean
+          - 'null'
+        name:
+          description: Budget name.
+          type:
+          - string
+          - 'null'
+      type: object
+    CreateBudgetLinesRequest:
+      description: Request body for creating budget lines in bulk.
+      properties:
+        lines:
+          description: Budget lines to create.
+          items:
+            $ref: '#/components/schemas/BudgetLineInput'
+          type: array
+      required:
+      - lines
+      type: object
+    BudgetLineInput:
+      description: Input for a single budget line.
+      properties:
+        account_id:
+          description: Account ID.
+          format: uuid
+          type: string
+        amount:
+          description: Budgeted amount.
+          example: '5000.00'
+          type: string
+        dimensions:
+          description: Dimension value IDs.
+          items:
+            format: uuid
+            type: string
+          type:
+          - array
+          - 'null'
+        fiscal_period_id:
+          description: Fiscal period ID.
+          format: uuid
+          type: string
+        notes:
+          description: Notes.
+          type:
+          - string
+          - 'null'
+      required:
+      - account_id
+      - fiscal_period_id
+      - amount
+      type: object
+    BudgetVsActualResponse:
+      description: Response for budget vs actual data.
+      properties:
+        budget_id:
+          description: Budget ID.
+          format: uuid
+          type:
+          - string
+          - 'null'
+        budget_name:
+          description: Budget name.
+          example: Annual Budget 2023
+          type:
+          - string
+          - 'null'
+        line_items:
+          description: Line items.
+          items:
+            $ref: '#/components/schemas/BudgetLineItemResponse'
+          type: array
+        summary:
+          $ref: '#/components/schemas/BudgetSummary'
+          description: Summary.
+      required:
+      - summary
+      - line_items
+      type: object
+    BudgetLineItemResponse:
+      description: Budget line item response.
+      properties:
+        account_code:
+          description: Account code.
+          example: '6001'
+          type: string
+        account_id:
+          description: Account ID.
+          format: uuid
+          type: string
+        account_name:
+          description: Account name.
+          example: Office Expenses
+          type: string
+        actual:
+          description: Actual amount.
+          type: string
+        budgeted:
+          description: Budgeted amount.
+          type: string
+        variance:
+          description: Variance.
+          type: string
+        variance_percent:
+          description: Variance percentage.
+          format: double
+          type: number
+      required:
+      - account_id
+      - account_code
+      - account_name
+      - budgeted
+      - actual
+      - variance
+      - variance_percent
+      type: object
+    BudgetSummary:
+      description: Budget summary.
+      properties:
+        total_actual:
+          description: Total actual.
+          type: string
+        total_budgeted:
+          description: Total budgeted.
+          type: string
+        variance:
+          description: Variance (budgeted - actual).
+          type: string
+        variance_percent:
+          description: Variance percentage.
+          format: double
+          type: number
+      required:
+      - total_budgeted
+      - total_actual
+      - variance
+      - variance_percent
+      type: object

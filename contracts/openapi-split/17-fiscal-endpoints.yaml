@@ -1,0 +1,107 @@
+paths:
+  /organizations/{org_id}/fiscal-years:
+    get:
+      operationId: list_fiscal_years
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/FiscalYearResponse'
+                type: array
+          description: List of fiscal years
+        '403':
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: GET `/organizations/{org_id}/fiscal-years` - List fiscal years with
+        nested periods.
+      tags:
+      - Fiscal
+    post:
+      operationId: create_fiscal_year
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateFiscalYearRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FiscalYearResponse'
+          description: Fiscal year created successfully
+        '400':
+          description: Invalid date range
+        '403':
+          description: Forbidden
+        '409':
+          description: Overlapping fiscal year
+      security:
+      - bearerAuth: []
+      summary: POST `/organizations/{org_id}/fiscal-years` - Create a fiscal year
+        with auto-generated periods.
+      tags:
+      - Fiscal
+  /organizations/{org_id}/fiscal-periods/{period_id}/status:
+    patch:
+      operationId: update_period_status
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Fiscal Period ID
+        in: path
+        name: period_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePeriodStatusRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FiscalPeriodResponse'
+          description: Period status updated successfully
+        '400':
+          description: Invalid status or transition
+        '403':
+          description: Forbidden
+        '409':
+          description: Earlier periods must be closed first
+      security:
+      - bearerAuth: []
+      summary: PATCH `/organizations/{org_id}/fiscal-periods/{period_id}/status` -
+        Update period status.
+      tags:
+      - Fiscal

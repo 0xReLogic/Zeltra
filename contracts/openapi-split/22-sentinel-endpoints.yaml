@@ -1,0 +1,184 @@
+paths:
+  /organizations/{org_id}/revaluation-logs:
+    get:
+      operationId: list_revaluation_logs
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/RevaluationLogResponse'
+                type: array
+          description: List of revaluation logs
+        '403':
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: GET `/organizations/{org_id}/revaluation-logs` - List revaluation logs.
+      tags:
+      - Sentinel
+  /organizations/{org_id}/accrual-schedules:
+    get:
+      operationId: list_accrual_schedules
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/AccrualScheduleResponse'
+                type: array
+          description: List of accrual schedules
+        '403':
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: GET `/organizations/{org_id}/accrual-schedules` - List accrual schedules.
+      tags:
+      - Sentinel
+    post:
+      operationId: create_accrual_schedule
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAccrualScheduleRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccrualScheduleResponse'
+          description: Accrual schedule created
+        '400':
+          description: Invalid input
+        '403':
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: POST `/organizations/{org_id}/accrual-schedules` - Create accrual schedule.
+      tags:
+      - Sentinel
+  /organizations/{org_id}/accrual-schedules/{schedule_id}:
+    get:
+      operationId: get_accrual_schedule
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Schedule ID
+        in: path
+        name: schedule_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccrualScheduleResponse'
+          description: Accrual schedule details
+        '403':
+          description: Forbidden
+        '404':
+          description: Schedule not found
+      security:
+      - bearerAuth: []
+      summary: GET `/organizations/{org_id}/accrual-schedules/{schedule_id}` - Get
+        accrual schedule.
+      tags:
+      - Sentinel
+  /organizations/{org_id}/intercompany/connect:
+    post:
+      operationId: create_intercompany_mapping
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateIntercompanyMappingRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IntercompanyMappingResponse'
+          description: Intercompany mapping created
+        '400':
+          description: Invalid input
+        '403':
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: POST `/organizations/{org_id}/intercompany/connect` - Create intercompany
+        mapping.
+      tags:
+      - Sentinel
+  /organizations/{org_id}/intercompany/mappings:
+    get:
+      operationId: list_intercompany_mappings
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/IntercompanyMappingResponse'
+                type: array
+          description: List of intercompany mappings
+        '403':
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: GET `/organizations/{org_id}/intercompany/mappings` - List intercompany
+        mappings.
+      tags:
+      - Sentinel

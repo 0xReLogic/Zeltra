@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '../api/client'
 import type {
   GetTransactionsResponse,
+  GetPendingTransactionsResponse,
   CreateTransactionRequest,
   UpdateTransactionRequest,
   Transaction,
@@ -71,16 +72,17 @@ export function useTransaction(id: string) {
 }
 
 /**
- * GET /organizations/{org_id}/transactions?status=pending
- * Get pending transactions for approval queue
+ * GET /organizations/{org_id}/transactions/pending
+ * Get pending transactions for approval queue (includes can_approve flag)
  */
+// Backend /transactions/pending returns { data: PendingTransaction[] }
 export function usePendingTransactions() {
   return useQuery({
     queryKey: TRANSACTION_KEYS.pending(),
     queryFn: async () => {
-      // Backend returns array directly
-      const transactions = await apiClient<GetTransactionsResponse>('/transactions?status=pending')
-      return transactions
+      // Use dedicated pending endpoint that returns can_approve
+      const response = await apiClient<GetPendingTransactionsResponse>('/transactions/pending')
+      return response
     },
   })
 }

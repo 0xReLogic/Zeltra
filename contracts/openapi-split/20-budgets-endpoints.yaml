@@ -1,0 +1,267 @@
+paths:
+  /organizations/{org_id}/budgets:
+    get:
+      operationId: list_budgets
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/BudgetResponse'
+                type: array
+          description: List of budgets
+        '403':
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: GET `/organizations/{org_id}/budgets` - List budgets with summary totals.
+      tags:
+      - Budgets
+    post:
+      operationId: create_budget
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBudgetRequest'
+        required: true
+      responses:
+        '201':
+          description: Budget created successfully
+        '400':
+          description: Invalid input
+        '403':
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: POST `/organizations/{org_id}/budgets` - Create a new budget.
+      tags:
+      - Budgets
+  /organizations/{org_id}/budgets/{budget_id}:
+    get:
+      operationId: get_budget
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Budget ID
+        in: path
+        name: budget_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          description: Budget details with lines
+        '403':
+          description: Forbidden
+        '404':
+          description: Budget not found
+      security:
+      - bearerAuth: []
+      summary: GET `/organizations/{org_id}/budgets/{budget_id}` - Get budget with
+        all lines.
+      tags:
+      - Budgets
+    put:
+      operationId: update_budget
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Budget ID
+        in: path
+        name: budget_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateBudgetRequest'
+        required: true
+      responses:
+        '200':
+          description: Budget updated successfully
+        '403':
+          description: Forbidden
+        '404':
+          description: Budget not found
+      security:
+      - bearerAuth: []
+      summary: PUT `/organizations/{org_id}/budgets/{budget_id}` - Update budget.
+      tags:
+      - Budgets
+  /organizations/{org_id}/budgets/{budget_id}/lines:
+    get:
+      operationId: list_budget_lines
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Budget ID
+        in: path
+        name: budget_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          description: List of budget lines
+        '403':
+          description: Forbidden
+        '404':
+          description: Budget not found
+      security:
+      - bearerAuth: []
+      summary: GET `/organizations/{org_id}/budgets/{budget_id}/lines` - Get budget
+        lines.
+      tags:
+      - Budgets
+    post:
+      operationId: create_budget_lines
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Budget ID
+        in: path
+        name: budget_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBudgetLinesRequest'
+        required: true
+      responses:
+        '201':
+          description: Budget lines created successfully
+        '403':
+          description: Forbidden
+        '404':
+          description: Budget not found
+      security:
+      - bearerAuth: []
+      summary: POST `/organizations/{org_id}/budgets/{budget_id}/lines` - Create budget
+        lines in bulk.
+      tags:
+      - Budgets
+  /organizations/{org_id}/budgets/{budget_id}/lock:
+    post:
+      operationId: lock_budget
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Budget ID
+        in: path
+        name: budget_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          description: Budget locked successfully
+        '403':
+          description: Forbidden
+        '404':
+          description: Budget not found
+      security:
+      - bearerAuth: []
+      summary: POST `/organizations/{org_id}/budgets/{budget_id}/lock` - Lock budget.
+      tags:
+      - Budgets
+  /organizations/{org_id}/budgets/{budget_id}/vs-actual:
+    get:
+      operationId: get_budget_vs_actual
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Budget ID
+        in: path
+        name: budget_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Filter by fiscal period ID.
+        in: path
+        name: fiscal_period_id
+        required: true
+        schema:
+          format: uuid
+          type:
+          - string
+          - 'null'
+      - description: Filter by dimension value IDs (comma-separated).
+        in: path
+        name: dimensions
+        required: true
+        schema:
+          type:
+          - string
+          - 'null'
+      responses:
+        '200':
+          description: Budget vs actual comparison
+        '403':
+          description: Forbidden
+        '404':
+          description: Budget not found
+      security:
+      - bearerAuth: []
+      summary: GET `/organizations/{org_id}/budgets/{budget_id}/vs-actual` - Get budget
+        vs actual comparison.
+      tags:
+      - Budgets

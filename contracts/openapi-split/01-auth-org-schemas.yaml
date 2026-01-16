@@ -1,0 +1,418 @@
+components:
+  schemas:
+    AddUserRequest:
+      description: Add user to organization request.
+      properties:
+        approval_limit:
+          description: Approval limit (for approver role).
+          type:
+          - string
+          - 'null'
+        email:
+          description: User email to add.
+          type: string
+        role:
+          description: Role to assign.
+          type: string
+      required:
+      - email
+      - role
+      type: object
+    CreateOrganizationRequest:
+      description: Create organization request.
+      properties:
+        base_currency:
+          description: Base currency (ISO 4217 code).
+          type: string
+        name:
+          description: Organization name.
+          type: string
+        slug:
+          description: Organization slug (URL-friendly).
+          type: string
+        timezone:
+          description: Timezone (IANA format).
+          type: string
+      required:
+      - name
+      - slug
+      - base_currency
+      type: object
+    LoginRequest:
+      description: Login request payload.
+      properties:
+        email:
+          description: User email.
+          example: user@example.com
+          type: string
+        password:
+          description: User password.
+          example: password123
+          type: string
+      required:
+      - email
+      - password
+      type: object
+    LoginResponse:
+      description: Login response payload.
+      properties:
+        access_token:
+          description: Access token.
+          type: string
+        expires_in:
+          description: Token expiration in seconds.
+          format: int64
+          type: integer
+        refresh_token:
+          description: Refresh token.
+          type: string
+        user:
+          $ref: '#/components/schemas/UserInfo'
+          description: Authenticated user info.
+      required:
+      - user
+      - access_token
+      - refresh_token
+      - expires_in
+      type: object
+    LogoutRequest:
+      description: Logout request.
+      properties:
+        refresh_token:
+          description: The refresh token to invalidate.
+          type: string
+      required:
+      - refresh_token
+      type: object
+    ResendVerificationRequest:
+      description: Resend verification email request.
+      properties:
+        email:
+          description: User email to resend verification to.
+          type: string
+      required:
+      - email
+      type: object
+    ResendVerificationResponse:
+      description: Resend verification email response.
+      properties:
+        message:
+          description: Success message.
+          type: string
+      required:
+      - message
+      type: object
+    VerifyEmailRequest:
+      description: Email verification request.
+      properties:
+        token:
+          description: The verification token from the email link.
+          type: string
+      required:
+      - token
+      type: object
+    VerifyEmailResponse:
+      description: Email verification response.
+      properties:
+        message:
+          description: Success message.
+          type: string
+        verified:
+          description: Whether email is now verified.
+          type: boolean
+      required:
+      - message
+      - verified
+      type: object
+    OrganizationResponse:
+      description: Organization details response.
+      properties:
+        base_currency:
+          description: Base currency for accounting.
+          type: string
+        created_at:
+          description: Creation timestamp.
+          format: date-time
+          type: string
+        id:
+          description: Organization ID.
+          format: uuid
+          type: string
+        limits:
+          oneOf:
+          - type: 'null'
+          - $ref: '#/components/schemas/TierLimitsResponse'
+            description: Tier limits and feature flags.
+        name:
+          description: Organization name.
+          type: string
+        slug:
+          description: Organization slug.
+          type: string
+        subscription_status:
+          description: Subscription status.
+          type: string
+        subscription_tier:
+          description: Subscription tier.
+          type: string
+        timezone:
+          description: Timezone for reports.
+          type: string
+        trial_ends_at:
+          description: Trial expiration date (if applicable).
+          format: date-time
+          type:
+          - string
+          - 'null'
+      required:
+      - id
+      - name
+      - slug
+      - base_currency
+      - timezone
+      - subscription_tier
+      - subscription_status
+      - created_at
+      type: object
+    OrgUserResponse:
+      description: Organization user session response.
+      properties:
+        approval_limit:
+          description: Individual approval limit.
+          type:
+          - string
+          - 'null'
+        created_at:
+          description: Creation timestamp.
+          format: date-time
+          type: string
+        email:
+          description: User email.
+          type: string
+        full_name:
+          description: User's full name.
+          type: string
+        id:
+          description: User ID.
+          format: uuid
+          type: string
+        role:
+          description: Role within the organization.
+          type: string
+      required:
+      - id
+      - email
+      - full_name
+      - role
+      - created_at
+      type: object
+    MembershipResponse:
+      description: Membership update response.
+      properties:
+        approval_limit:
+          description: Individual approval limit.
+          type:
+          - string
+          - 'null'
+        created_at:
+          description: Creation timestamp.
+          format: date-time
+          type: string
+        organization_id:
+          description: Organization ID.
+          format: uuid
+          type: string
+        role:
+          description: Membership role.
+          type: string
+        user_id:
+          description: User ID.
+          format: uuid
+          type: string
+      required:
+      - user_id
+      - organization_id
+      - role
+      - created_at
+      type: object
+    RefreshRequest:
+      description: Refresh token request.
+      properties:
+        refresh_token:
+          description: The refresh token.
+          type: string
+      required:
+      - refresh_token
+      type: object
+    RefreshResponse:
+      description: Refresh token response.
+      properties:
+        access_token:
+          description: New access token.
+          type: string
+        expires_in:
+          description: Token expiration in seconds.
+          format: int64
+          type: integer
+      required:
+      - access_token
+      - expires_in
+      type: object
+    RegisterRequest:
+      description: Registration request payload.
+      properties:
+        email:
+          description: User email.
+          type: string
+        full_name:
+          description: User full name.
+          type: string
+        password:
+          description: User password.
+          type: string
+      required:
+      - email
+      - password
+      - full_name
+      type: object
+    RegisterResponse:
+      description: Registration response payload.
+      properties:
+        message:
+          description: Success message.
+          type: string
+        user:
+          $ref: '#/components/schemas/UserInfo'
+          description: Registered user info.
+      required:
+      - user
+      - message
+      type: object
+    TierLimitsResponse:
+      description: Subscription tier limits and feature flags.
+      properties:
+        has_audit_export:
+          description: Whether audit data export is enabled.
+          type: boolean
+        has_auto_accruals:
+          description: Whether automated accruals are enabled.
+          type: boolean
+        has_custom_reports:
+          description: Whether custom reporting is enabled.
+          type: boolean
+        has_intercompany_hub:
+          description: Whether the intercompany hub is enabled.
+          type: boolean
+        has_multi_currency:
+          description: Whether multi-currency features are enabled.
+          type: boolean
+        has_simulation:
+          description: Whether simulation and scenario planning are enabled.
+          type: boolean
+        max_dimensions:
+          description: Maximum number of dimension types allowed.
+          format: int32
+          type: integer
+        max_transactions_per_month:
+          description: Maximum transactions per month allowed (None = unlimited).
+          format: int32
+          type:
+          - integer
+          - 'null'
+        max_users:
+          description: Maximum number of users allowed (None = unlimited).
+          format: int32
+          type:
+          - integer
+          - 'null'
+      required:
+      - max_dimensions
+      - has_multi_currency
+      - has_auto_accruals
+      - has_intercompany_hub
+      - has_simulation
+      - has_custom_reports
+      - has_audit_export
+      type: object
+    UpdateOrganizationRequest:
+      description: Update organization request.
+      properties:
+        base_currency:
+          description: Base currency (optional, ISO 4217 code).
+          type:
+          - string
+          - 'null'
+        name:
+          description: Organization name (optional).
+          type:
+          - string
+          - 'null'
+        timezone:
+          description: Timezone (optional, IANA format).
+          type:
+          - string
+          - 'null'
+      type: object
+    UpdateMemberRequest:
+      description: Update organization member request.
+      properties:
+        approval_limit:
+          description: New approval limit (optional, null to clear).
+          type:
+          - string
+          - 'null'
+        role:
+          description: New role (optional).
+          type:
+          - string
+          - 'null'
+      type: object
+    UserInfo:
+      description: User info returned in auth responses.
+      properties:
+        email:
+          description: User email.
+          example: user@example.com
+          type: string
+        full_name:
+          description: User full name.
+          example: John Doe
+          type: string
+        id:
+          description: User ID.
+          example: 550e8400-e29b-41d4-a716-446655440000
+          format: uuid
+          type: string
+        organizations:
+          description: Organizations the user belongs to.
+          items:
+            $ref: '#/components/schemas/UserOrganization'
+          type: array
+      required:
+      - id
+      - email
+      - full_name
+      - organizations
+      type: object
+    UserOrganization:
+      description: Organization info for a user.
+      properties:
+        id:
+          description: Organization ID.
+          format: uuid
+          type: string
+        name:
+          description: Organization name.
+          type: string
+        role:
+          description: User's role in this organization.
+          type: string
+        slug:
+          description: Organization slug.
+          type: string
+      required:
+      - id
+      - name
+      - slug
+      - role
+      type: object

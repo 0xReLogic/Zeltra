@@ -1,0 +1,14 @@
+paths:
+  /health:
+    get:
+      operationId: health_check
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+          description: Service is healthy
+      summary: Health check handler.
+      tags:
+      - Health

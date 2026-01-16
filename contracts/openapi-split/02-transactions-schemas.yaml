@@ -1,0 +1,518 @@
+components:
+  schemas:
+    CreateTransactionRequest:
+      description: Request body for creating a transaction.
+      properties:
+        description:
+          description: Description.
+          example: Monthly rent payment
+          type: string
+        entries:
+          description: Ledger entries.
+          items:
+            $ref: '#/components/schemas/CreateEntryRequest'
+          type: array
+        idempotency_key:
+          description: Optional idempotency key for preventing duplicate transactions.
+          format: uuid
+          type:
+          - string
+          - 'null'
+        iso_metadata:
+          description: Optional ISO 20022 metadata.
+        memo:
+          description: Optional memo.
+          type:
+          - string
+          - 'null'
+        reference_number:
+          description: Optional reference number.
+          example: TX-1001
+          type:
+          - string
+          - 'null'
+        timezone:
+          description: Timezone for the transaction (e.g., "UTC", "Asia/Jakarta").
+          example: UTC
+          type: string
+        transaction_date:
+          description: Transaction date (YYYY-MM-DD).
+          format: date
+          type: string
+        type:
+          description: Transaction type.
+          example: journal
+          type: string
+      required:
+      - type
+      - transaction_date
+      - description
+      - entries
+      - timezone
+      type: object
+    CreateEntryRequest:
+      description: Request body for a single ledger entry.
+      properties:
+        account_id:
+          description: Account ID.
+          format: uuid
+          type: string
+        dimensions:
+          description: Dimension value IDs.
+          items:
+            format: uuid
+            type: string
+          type: array
+        entry_type:
+          description: 'Entry type: "debit" or "credit".'
+          example: debit
+          type: string
+        exchange_rate:
+          description: Optional exchange rate override.
+          example: '1.0850'
+          type:
+          - string
+          - 'null'
+        memo:
+          description: Optional memo.
+          type:
+          - string
+          - 'null'
+        metadata:
+          description: Optional compliance/ESG metadata.
+        source_amount:
+          description: Source amount (positive).
+          example: '100.00'
+          type: string
+        source_currency:
+          description: Source currency code.
+          example: USD
+          type: string
+      required:
+      - account_id
+      - source_currency
+      - source_amount
+      - entry_type
+      type: object
+    TransactionResponse:
+      description: Response for a transaction.
+      properties:
+        created_at:
+          description: Created at timestamp.
+          type: string
+        created_by:
+          description: Created by user ID.
+          format: uuid
+          type: string
+        description:
+          description: Description.
+          type: string
+        entries:
+          description: Ledger entries.
+          items:
+            $ref: '#/components/schemas/EntryResponse'
+          type: array
+        fiscal_period_id:
+          description: Fiscal period ID.
+          format: uuid
+          type: string
+        id:
+          description: Transaction ID.
+          format: uuid
+          type: string
+        idempotency_key:
+          description: Optional idempotency key.
+          format: uuid
+          type:
+          - string
+          - 'null'
+        iso_metadata:
+          description: Optional ISO 20022 metadata.
+        memo:
+          description: Memo.
+          type:
+          - string
+          - 'null'
+        reference_number:
+          description: Reference number.
+          type:
+          - string
+          - 'null'
+        status:
+          description: Status.
+          type: string
+        timezone:
+          description: Timezone for the transaction.
+          example: UTC
+          type: string
+        total_credit:
+          description: Total credits in functional currency.
+          type: string
+        total_debit:
+          description: Total debits in functional currency.
+          type: string
+        transaction_date:
+          description: Transaction date.
+          type: string
+        type:
+          description: Transaction type.
+          type: string
+        updated_at:
+          description: Updated at timestamp.
+          type: string
+      required:
+      - id
+      - type
+      - transaction_date
+      - description
+      - status
+      - fiscal_period_id
+      - created_by
+      - created_at
+      - updated_at
+      - entries
+      - total_debit
+      - total_credit
+      - timezone
+      type: object
+    TransactionListItem:
+      description: Transaction list item (lightweight).
+      properties:
+        created_at:
+          description: Created at timestamp.
+          type: string
+        description:
+          description: Description.
+          type: string
+        id:
+          description: Transaction ID.
+          format: uuid
+          type: string
+        reference_number:
+          description: Reference number.
+          type:
+          - string
+          - 'null'
+        status:
+          description: Status.
+          type: string
+        total_amount:
+          description: Total amount.
+          type: string
+        transaction_date:
+          description: Transaction date.
+          type: string
+        transaction_type:
+          description: Transaction type.
+          type: string
+      required:
+      - id
+      - transaction_type
+      - transaction_date
+      - description
+      - status
+      - created_at
+      - total_amount
+      type: object
+    UpdateTransactionRequest:
+      description: Request body for updating a transaction.
+      properties:
+        description:
+          description: Description.
+          type:
+          - string
+          - 'null'
+        memo:
+          description: Memo.
+          type:
+          - string
+          - 'null'
+        reference_number:
+          description: Reference number.
+          type:
+          - string
+          - 'null'
+      type: object
+    ApproveRequest:
+      description: Request body for approving a transaction.
+      properties:
+        approval_notes:
+          description: Optional approval notes.
+          type:
+          - string
+          - 'null'
+      type: object
+    RejectRequest:
+      description: Request body for rejecting a transaction.
+      properties:
+        reason:
+          description: Rejection reason (required).
+          type: string
+      required:
+      - reason
+      type: object
+    VoidRequest:
+      description: Request body for voiding a transaction.
+      properties:
+        reason:
+          description: Void reason (required).
+          type: string
+      required:
+      - reason
+      type: object
+    VoidResponse:
+      description: Response for void operation.
+      properties:
+        original_transaction:
+          $ref: '#/components/schemas/TransactionResponse'
+          description: Original transaction (now voided).
+        reversing_transaction:
+          $ref: '#/components/schemas/TransactionResponse'
+          description: Reversing transaction (posted).
+      required:
+      - original_transaction
+      - reversing_transaction
+      type: object
+    BulkApproveRequest:
+      description: Request body for bulk approval.
+      properties:
+        approval_notes:
+          description: Optional approval notes.
+          type:
+          - string
+          - 'null'
+        transaction_ids:
+          description: Transaction IDs to approve.
+          items:
+            format: uuid
+            type: string
+          type: array
+      required:
+      - transaction_ids
+      type: object
+    BulkApproveResponse:
+      description: Response for bulk approval.
+      properties:
+        failure_count:
+          description: Number of failed approvals.
+          minimum: 0
+          type: integer
+        results:
+          description: Results for each transaction.
+          items:
+            $ref: '#/components/schemas/BulkApproveItemResponse'
+          type: array
+        success_count:
+          description: Number of successful approvals.
+          minimum: 0
+          type: integer
+      required:
+      - results
+      - success_count
+      - failure_count
+      type: object
+    BulkApproveItemResponse:
+      description: Response for a single bulk approval item.
+      properties:
+        error:
+          description: Error message if failed.
+          type:
+          - string
+          - 'null'
+        success:
+          description: Whether the approval succeeded.
+          type: boolean
+        transaction_id:
+          description: Transaction ID.
+          format: uuid
+          type: string
+      required:
+      - transaction_id
+      - success
+      type: object
+    PayInvoiceRequest:
+      description: Request body for paying an invoice.
+      properties:
+        amount:
+          description: Amount to pay (in source currency).
+          example: '100.00'
+          type: string
+        description:
+          description: Optional description.
+          type:
+          - string
+          - 'null'
+        exchange_rate:
+          description: Exchange rate for the payment.
+          example: '1.0850'
+          type: string
+        gain_loss_account_id:
+          description: Account ID for Realized Gain/Loss.
+          format: uuid
+          type: string
+        idempotency_key:
+          description: Optional idempotency key.
+          format: uuid
+          type:
+          - string
+          - 'null'
+        invoice_id:
+          description: ID of the invoice (transaction) being paid.
+          format: uuid
+          type: string
+        iso_metadata:
+          description: Optional ISO 20022 metadata.
+        payment_account_id:
+          description: Account ID to pay from (e.g., Bank).
+          format: uuid
+          type: string
+        payment_date:
+          description: Payment date.
+          format: date
+          type: string
+        timezone:
+          description: Timezone for the transaction.
+          example: UTC
+          type: string
+      required:
+      - invoice_id
+      - payment_account_id
+      - amount
+      - exchange_rate
+      - payment_date
+      - gain_loss_account_id
+      - timezone
+      type: object
+    PendingApprovalsResponse:
+      description: Pending approvals response.
+      properties:
+        count:
+          description: Number of pending items.
+          example: 5
+          format: int32
+          type: integer
+        total_amount:
+          description: Total amount.
+          example: '1250.0000'
+          type: string
+      required:
+      - count
+      - total_amount
+      type: object
+    EntryResponse:
+      description: Response for a ledger entry.
+      properties:
+        account_id:
+          description: Account ID.
+          format: uuid
+          type: string
+        credit:
+          description: Credit amount.
+          type: string
+        debit:
+          description: Debit amount.
+          type: string
+        dimensions:
+          description: Dimension value IDs.
+          items:
+            format: uuid
+            type: string
+          type: array
+        exchange_rate:
+          description: Exchange rate.
+          type: string
+        functional_amount:
+          description: Functional amount.
+          type: string
+        functional_currency:
+          description: Functional currency.
+          type: string
+        id:
+          description: Entry ID.
+          format: uuid
+          type: string
+        memo:
+          description: Memo.
+          type:
+          - string
+          - 'null'
+        source_amount:
+          description: Source amount.
+          type: string
+        source_currency:
+          description: Source currency.
+          type: string
+      required:
+      - id
+      - account_id
+      - source_currency
+      - source_amount
+      - exchange_rate
+      - functional_currency
+      - functional_amount
+      - debit
+      - credit
+      - dimensions
+      type: object
+    LedgerEntryResponse:
+      description: Ledger entry response.
+      properties:
+        credit:
+          description: Credit.
+          type: string
+        debit:
+          description: Debit.
+          type: string
+        description:
+          description: Description.
+          type: string
+        dimensions:
+          description: Dimensions.
+          items:
+            $ref: '#/components/schemas/DimensionValueResponse'
+          type: array
+        exchange_rate:
+          description: Exchange rate.
+          type: string
+        functional_amount:
+          description: Functional amount.
+          type: string
+        id:
+          description: Entry ID.
+          format: uuid
+          type: string
+        reference_number:
+          description: Reference number.
+          type:
+          - string
+          - 'null'
+        running_balance:
+          description: Running balance.
+          type: string
+        source_amount:
+          description: Source amount.
+          type: string
+        source_currency:
+          description: Source currency.
+          type: string
+        transaction_date:
+          description: Transaction date.
+          type: string
+        transaction_id:
+          description: Transaction ID.
+          format: uuid
+          type: string
+      required:
+      - id
+      - transaction_id
+      - transaction_date
+      - description
+      - source_currency
+      - source_amount
+      - exchange_rate
+      - functional_amount
+      - debit
+      - credit
+      - running_balance
+      - dimensions
+      type: object

@@ -1,0 +1,61 @@
+paths:
+  /organizations/{org_id}/forensic/benford:
+    get:
+      description: Performs Advanced Benford's Law analysis (1st & 2nd Digit, MAD).
+      operationId: get_benford
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BenfordResponse'
+          description: Advanced Benford analysis
+        '402':
+          description: Payment Required (Enterprise Only)
+        '403':
+          description: Forbidden
+        '404':
+          description: Organization not found
+      security:
+      - bearerAuth: []
+      summary: GET /organizations/{org_id}/forensic/benford
+      tags:
+      - Forensic
+  /organizations/{org_id}/forensic/health-score:
+    get:
+      description: Calculates Financial Health Metrics (Altman Z-Score & Beneish M-Score).
+      operationId: get_health_score
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthScoreResponse'
+          description: Health Score Results
+        '402':
+          description: Payment Required (Enterprise Only)
+        '403':
+          description: Forbidden
+        '404':
+          description: Organization not found
+      security:
+      - bearerAuth: []
+      summary: GET /organizations/{org_id}/forensic/health-score
+      tags:
+      - Forensic

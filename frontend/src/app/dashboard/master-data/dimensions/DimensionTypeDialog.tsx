@@ -42,7 +42,7 @@ export function DimensionTypeDialog() {
 
     const handleOpenChange = (newOpen: boolean) => {
         if (newOpen) {
-            const currentDimensions = Array.isArray(dimensions) ? dimensions : []
+            const currentDimensions = dimensions?.dimension_types || []
             // If checking fails or types are off, default to allowing usage (fail open) unless we are sure
             const maxDimensions = org?.limits?.max_dimensions
             

@@ -1,0 +1,216 @@
+paths:
+  /organizations/{org_id}/dimension-types:
+    get:
+      operationId: list_dimension_types
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Filter by active status.
+        in: path
+        name: active
+        required: true
+        schema:
+          type:
+          - boolean
+          - 'null'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/DimensionTypeResponse'
+                type: array
+          description: List of dimension types
+        '403':
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: GET `/organizations/{org_id}/dimension-types` - List dimension types.
+      tags:
+      - Dimensions
+    post:
+      operationId: create_dimension_type
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDimensionTypeRequest'
+        required: true
+      responses:
+        '201':
+          description: Dimension type created successfully
+        '403':
+          description: Forbidden
+        '409':
+          description: Duplicate code
+      security:
+      - bearerAuth: []
+      summary: POST `/organizations/{org_id}/dimension-types` - Create a dimension
+        type.
+      tags:
+      - Dimensions
+  /organizations/{org_id}/dimension-values:
+    get:
+      operationId: list_dimension_values
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Filter by dimension type ID.
+        in: path
+        name: dimension_type_id
+        required: true
+        schema:
+          format: uuid
+          type:
+          - string
+          - 'null'
+      - description: Filter by active status.
+        in: path
+        name: active
+        required: true
+        schema:
+          type:
+          - boolean
+          - 'null'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/DimensionValueResponse'
+                type: array
+          description: List of dimension values
+        '403':
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: GET `/organizations/{org_id}/dimension-values` - List dimension values.
+      tags:
+      - Dimensions
+    post:
+      operationId: create_dimension_value
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDimensionValueRequest'
+        required: true
+      responses:
+        '201':
+          description: Dimension value created successfully
+        '400':
+          description: Invalid input or parent/type not found
+        '403':
+          description: Forbidden
+        '409':
+          description: Duplicate code
+      security:
+      - bearerAuth: []
+      summary: POST `/organizations/{org_id}/dimension-values` - Create a dimension
+        value.
+      tags:
+      - Dimensions
+  /organizations/{org_id}/dimension-values/{value_id}:
+    patch:
+      operationId: update_dimension_value
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Dimension Value ID
+        in: path
+        name: value_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDimensionValueRequest'
+        required: true
+      responses:
+        '200':
+          description: Dimension value updated successfully
+        '403':
+          description: Forbidden
+        '404':
+          description: Dimension value not found
+        '409':
+          description: Duplicate code
+      security:
+      - bearerAuth: []
+      summary: PATCH `/organizations/{org_id}/dimension-values/{value_id}` - Update
+        dimension value.
+      tags:
+      - Dimensions
+  /organizations/{org_id}/dimension-values/{value_id}/status:
+    patch:
+      operationId: toggle_dimension_value_status
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Dimension Value ID
+        in: path
+        name: value_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ToggleDimensionValueStatusRequest'
+        required: true
+      responses:
+        '200':
+          description: Dimension value status toggled successfully
+        '403':
+          description: Forbidden
+        '404':
+          description: Dimension value not found
+      security:
+      - bearerAuth: []
+      summary: PATCH `/organizations/{org_id}/dimension-values/{value_id}/status`
+        - Toggle dimension value status.
+      tags:
+      - Dimensions

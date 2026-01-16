@@ -559,6 +559,20 @@ impl OrganizationRepository {
             .await
             .map(|res| res.and_then(|(_, limit)| limit))
     }
+
+    /// Lists all active organizations.
+    ///
+    /// Used by background tasks like exchange rate sync.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the database query fails.
+    pub async fn list_all(&self) -> Result<Vec<organizations::Model>, DbErr> {
+        organizations::Entity::find()
+            .filter(organizations::Column::IsActive.eq(true))
+            .all(&self.db)
+            .await
+    }
 }
 
 /// Returns the privilege level of a role (higher = more privileges).
