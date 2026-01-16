@@ -4202,27 +4202,28 @@ export interface operations {
     };
     get_account_ledger: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Start date. */
+                from?: string;
+                /** @description End date. */
+                to?: string;
+                /**
+                 * @description Page number (0-indexed).
+                 * @example 0
+                 */
+                page?: number;
+                /**
+                 * @description Items per page.
+                 * @example 50
+                 */
+                limit?: number;
+            };
             header?: never;
             path: {
                 /** @description Organization ID */
                 org_id: string;
                 /** @description Account ID */
                 account_id: string;
-                /** @description Start date. */
-                from: string | null;
-                /** @description End date. */
-                to: string | null;
-                /**
-                 * @description Page number (0-indexed).
-                 * @example 0
-                 */
-                page: number | null;
-                /**
-                 * @description Items per page.
-                 * @example 50
-                 */
-                limit: number | null;
             };
             cookie?: never;
         };
@@ -5888,13 +5889,14 @@ export interface operations {
     };
     get_balance_sheet: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description As of date (defaults to today). */
+                as_of?: string;
+            };
             header?: never;
             path: {
                 /** @description Organization ID */
                 org_id: string;
-                /** @description As of date (defaults to today). */
-                as_of: string | null;
             };
             cookie?: never;
         };
@@ -5927,15 +5929,11 @@ export interface operations {
     };
     get_dimensional_report: {
         parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Organization ID */
-                org_id: string;
+            query: {
                 /** @description Start date. */
-                from: string | null;
+                from?: string;
                 /** @description End date. */
-                to: string | null;
+                to?: string;
                 /**
                  * @description Dimension types to group by (comma-separated).
                  * @example department,location
@@ -5945,9 +5943,14 @@ export interface operations {
                  * @description Account type filter.
                  * @example expense
                  */
-                account_type: string | null;
+                account_type?: string;
                 /** @description Dimension value IDs to filter by (comma-separated). */
-                dimensions: string | null;
+                dimensions?: string;
+            };
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: string;
             };
             cookie?: never;
         };
@@ -5973,20 +5976,21 @@ export interface operations {
     };
     get_income_statement: {
         parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Organization ID */
-                org_id: string;
+            query?: {
                 /** @description Start date. */
-                from: string | null;
+                from?: string;
                 /** @description End date. */
-                to: string | null;
+                to?: string;
                 /**
                  * @description Dimension value IDs to filter by (comma-separated).
                  * @example 550e8400-e29b-41d4-a716-446655440000
                  */
-                dimensions: string | null;
+                dimensions?: string;
+            };
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: string;
             };
             cookie?: never;
         };
@@ -6026,18 +6030,19 @@ export interface operations {
     };
     get_trial_balance: {
         parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Organization ID */
-                org_id: string;
+            query?: {
                 /** @description As of date (defaults to today). */
-                as_of: string | null;
+                as_of?: string;
                 /**
                  * @description Dimension value IDs to filter by (comma-separated).
                  * @example 550e8400-e29b-41d4-a716-446655440000
                  */
-                dimensions: string | null;
+                dimensions?: string;
+            };
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: string;
             };
             cookie?: never;
         };

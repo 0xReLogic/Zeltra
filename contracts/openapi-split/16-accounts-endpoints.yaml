@@ -203,45 +203,37 @@ paths:
           format: uuid
           type: string
       - description: Start date.
-        in: path
+        in: query
         name: from
-        required: true
+        required: false
         schema:
           format: date
-          type:
-          - string
-          - 'null'
+          type: string
       - description: End date.
-        in: path
+        in: query
         name: to
-        required: true
+        required: false
         schema:
           format: date
-          type:
-          - string
-          - 'null'
+          type: string
       - description: Page number (0-indexed).
         example: 0
-        in: path
+        in: query
         name: page
-        required: true
+        required: false
         schema:
           format: int64
           minimum: 0
-          type:
-          - integer
-          - 'null'
+          type: integer
       - description: Items per page.
         example: 50
-        in: path
+        in: query
         name: limit
-        required: true
+        required: false
         schema:
           format: int64
           minimum: 0
-          type:
-          - integer
-          - 'null'
+          type: integer
       responses:
         '200':
           content:

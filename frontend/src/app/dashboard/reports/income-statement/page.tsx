@@ -22,37 +22,54 @@ export default function IncomeStatementPage() {
   const { data, isLoading } = useIncomeStatement()
 
   const handleExportCSV = () => {
-    if (!data?.data) return
-    const report = data.data
+    if (!data) return
     const exportData = [
-        ...report.revenues.map(item => ({ Type: 'Revenue', ...item })),
-        ...report.expenses.map(item => ({ Type: 'Expense', ...item })),
-        { Type: 'Net Income', code: '', name: 'Total', amount: report.net_income }
+        ...(data.revenue?.accounts || []).map(item => ({ Type: 'Revenue', ...item })),
+        ...(data.cost_of_goods_sold?.accounts || []).map(item => ({ Type: 'Cost of Goods Sold', ...item })),
+        ...(data.operating_expenses?.accounts || []).map(item => ({ Type: 'Operating Expense', ...item })),
+        ...(data.other_income_expenses?.accounts || []).map(item => ({ Type: 'Other Income/Expense', ...item })),
+        { Type: 'Net Income', code: '', name: 'Total', balance: data.net_income }
     ]
     downloadCSV(exportData, `Income_Statement_${new Date().toISOString().split('T')[0]}.csv`)
     toast.success('CSV exported successfully')
   }
 
   const handleExportPDF = () => {
-    if (!data?.data) return
-    const report = data.data
+    if (!data) return
     const headers = ['Type', 'Code', 'Account Name', 'Amount']
     const tableData: (string | number)[][] = []
 
-    // Revenues
-    report.revenues.forEach(item => 
-        tableData.push(['Revenue', item.code, item.name, parseFloat(item.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })])
+    // Revenue
+    data.revenue?.accounts?.forEach(item => 
+        tableData.push(['Revenue', item.code, item.name, parseFloat(item.balance).toLocaleString('en-US', { minimumFractionDigits: 2 })])
     )
-    tableData.push(['', '', 'Total Revenues', parseFloat(report.total_revenue).toLocaleString('en-US', { minimumFractionDigits: 2 })])
+    tableData.push(['', '', 'Total Revenue', parseFloat(data.revenue?.total || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })])
 
-    // Expenses
-    report.expenses.forEach(item => 
-        tableData.push(['Expense', item.code, item.name, parseFloat(item.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })])
+    // COGS
+    if (data.cost_of_goods_sold?.accounts?.length) {
+      data.cost_of_goods_sold.accounts.forEach(item => 
+          tableData.push(['COGS', item.code, item.name, parseFloat(item.balance).toLocaleString('en-US', { minimumFractionDigits: 2 })])
+      )
+      tableData.push(['', '', 'Total COGS', parseFloat(data.cost_of_goods_sold?.total || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })])
+    }
+    tableData.push(['', '', 'GROSS PROFIT', parseFloat(data.gross_profit || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })])
+
+    // Operating Expenses
+    data.operating_expenses?.accounts?.forEach(item => 
+        tableData.push(['Operating Expense', item.code, item.name, parseFloat(item.balance).toLocaleString('en-US', { minimumFractionDigits: 2 })])
     )
-    tableData.push(['', '', 'Total Expenses', parseFloat(report.total_expenses).toLocaleString('en-US', { minimumFractionDigits: 2 })])
+    tableData.push(['', '', 'Total Operating Expenses', parseFloat(data.operating_expenses?.total || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })])
+    tableData.push(['', '', 'OPERATING INCOME', parseFloat(data.operating_income || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })])
+
+    // Other Income/Expenses
+    if (data.other_income_expenses?.accounts?.length) {
+      data.other_income_expenses.accounts.forEach(item => 
+          tableData.push(['Other', item.code, item.name, parseFloat(item.balance).toLocaleString('en-US', { minimumFractionDigits: 2 })])
+      )
+    }
     
     // Net Income
-    tableData.push(['', '', 'NET INCOME', parseFloat(report.net_income).toLocaleString('en-US', { minimumFractionDigits: 2 })])
+    tableData.push(['', '', 'NET INCOME', parseFloat(data.net_income || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })])
 
     exportPDF('Income Statement', headers, tableData, `Income_Statement_${new Date().toISOString().split('T')[0]}.pdf`)
     toast.success('PDF exported successfully')
@@ -62,10 +79,18 @@ export default function IncomeStatementPage() {
     return <div className="p-8 text-center text-muted-foreground">Loading report...</div>
   }
 
-  const report = data?.data
-  const revenues = report?.revenues || []
-  const expenses = report?.expenses || []
-  const netIncome = parseFloat(report?.net_income || '0')
+  const revenues = data?.revenue?.accounts || []
+  const cogs = data?.cost_of_goods_sold?.accounts || []
+  const operatingExpenses = data?.operating_expenses?.accounts || []
+  const otherIncomeExpenses = data?.other_income_expenses?.accounts || []
+  
+  const totalRevenue = parseFloat(data?.revenue?.total || '0')
+  const totalCogs = parseFloat(data?.cost_of_goods_sold?.total || '0')
+  const grossProfit = parseFloat(data?.gross_profit || '0')
+  const totalOperatingExpenses = parseFloat(data?.operating_expenses?.total || '0')
+  const operatingIncome = parseFloat(data?.operating_income || '0')
+  const totalOther = parseFloat(data?.other_income_expenses?.total || '0')
+  const netIncome = parseFloat(data?.net_income || '0')
 
   return (
     <div className="space-y-6">
@@ -107,45 +132,109 @@ export default function IncomeStatementPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {/* Revenues */}
+              {/* Revenue */}
               <TableRow className="bg-muted/30">
-                <TableCell colSpan={3} className="font-semibold text-muted-foreground pt-4">Revenues</TableCell>
+                <TableCell colSpan={3} className="font-semibold text-muted-foreground pt-4">Revenue</TableCell>
               </TableRow>
               {revenues.map((item) => (
                 <TableRow key={item.code} className="border-0">
                   <TableCell className="font-medium">{item.code}</TableCell>
                   <TableCell>{item.name}</TableCell>
                   <TableCell className="text-right font-mono">
-                    {parseFloat(item.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    {parseFloat(item.balance).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                   </TableCell>
                 </TableRow>
               ))}
               <TableRow className="border-t font-semibold">
-                <TableCell colSpan={2}>Total Revenues</TableCell>
+                <TableCell colSpan={2}>Total Revenue</TableCell>
                 <TableCell className="text-right font-mono">
-                  {parseFloat(report?.total_revenue || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  {totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                 </TableCell>
               </TableRow>
 
-              {/* Expenses */}
-              <TableRow className="bg-muted/30">
-                <TableCell colSpan={3} className="font-semibold text-muted-foreground pt-6">Expenses</TableCell>
+              {/* Cost of Goods Sold */}
+              {cogs.length > 0 && (
+                <>
+                  <TableRow className="bg-muted/30">
+                    <TableCell colSpan={3} className="font-semibold text-muted-foreground pt-6">Cost of Goods Sold</TableCell>
+                  </TableRow>
+                  {cogs.map((item) => (
+                    <TableRow key={item.code} className="border-0">
+                      <TableCell className="font-medium">{item.code}</TableCell>
+                      <TableCell>{item.name}</TableCell>
+                      <TableCell className="text-right font-mono">
+                        {parseFloat(item.balance).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  <TableRow className="border-t font-semibold">
+                    <TableCell colSpan={2}>Total COGS</TableCell>
+                    <TableCell className="text-right font-mono">
+                      {totalCogs.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    </TableCell>
+                  </TableRow>
+                </>
+              )}
+
+              {/* Gross Profit */}
+              <TableRow className="border-t bg-muted/50 font-semibold">
+                <TableCell colSpan={2}>Gross Profit</TableCell>
+                <TableCell className="text-right font-mono">
+                  {grossProfit.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                </TableCell>
               </TableRow>
-              {expenses.map((item) => (
+
+              {/* Operating Expenses */}
+              <TableRow className="bg-muted/30">
+                <TableCell colSpan={3} className="font-semibold text-muted-foreground pt-6">Operating Expenses</TableCell>
+              </TableRow>
+              {operatingExpenses.map((item) => (
                 <TableRow key={item.code} className="border-0">
                   <TableCell className="font-medium">{item.code}</TableCell>
                   <TableCell>{item.name}</TableCell>
                    <TableCell className="text-right font-mono">
-                    {parseFloat(item.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    {parseFloat(item.balance).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                   </TableCell>
                 </TableRow>
               ))}
               <TableRow className="border-t font-semibold">
-                <TableCell colSpan={2}>Total Expenses</TableCell>
+                <TableCell colSpan={2}>Total Operating Expenses</TableCell>
                 <TableCell className="text-right font-mono">
-                  {parseFloat(report?.total_expenses || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  {totalOperatingExpenses.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                 </TableCell>
               </TableRow>
+
+              {/* Operating Income */}
+              <TableRow className="border-t bg-muted/50 font-semibold">
+                <TableCell colSpan={2}>Operating Income</TableCell>
+                <TableCell className="text-right font-mono">
+                  {operatingIncome.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                </TableCell>
+              </TableRow>
+
+              {/* Other Income/Expenses */}
+              {otherIncomeExpenses.length > 0 && (
+                <>
+                  <TableRow className="bg-muted/30">
+                    <TableCell colSpan={3} className="font-semibold text-muted-foreground pt-6">Other Income/Expenses</TableCell>
+                  </TableRow>
+                  {otherIncomeExpenses.map((item) => (
+                    <TableRow key={item.code} className="border-0">
+                      <TableCell className="font-medium">{item.code}</TableCell>
+                      <TableCell>{item.name}</TableCell>
+                       <TableCell className="text-right font-mono">
+                        {parseFloat(item.balance).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  <TableRow className="border-t font-semibold">
+                    <TableCell colSpan={2}>Total Other</TableCell>
+                    <TableCell className="text-right font-mono">
+                      {totalOther.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    </TableCell>
+                  </TableRow>
+                </>
+              )}
 
               {/* Net Income */}
               <TableRow className="border-t-2 bg-muted/50 font-bold text-lg">

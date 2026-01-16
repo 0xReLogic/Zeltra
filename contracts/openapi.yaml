@@ -4112,45 +4112,37 @@ paths:
           format: uuid
           type: string
       - description: Start date.
-        in: path
+        in: query
         name: from
-        required: true
+        required: false
         schema:
           format: date
-          type:
-          - string
-          - 'null'
+          type: string
       - description: End date.
-        in: path
+        in: query
         name: to
-        required: true
+        required: false
         schema:
           format: date
-          type:
-          - string
-          - 'null'
+          type: string
       - description: Page number (0-indexed).
         example: 0
-        in: path
+        in: query
         name: page
-        required: true
+        required: false
         schema:
           format: int64
           minimum: 0
-          type:
-          - integer
-          - 'null'
+          type: integer
       - description: Items per page.
         example: 50
-        in: path
+        in: query
         name: limit
-        required: true
+        required: false
         schema:
           format: int64
           minimum: 0
-          type:
-          - integer
-          - 'null'
+          type: integer
       responses:
         '200':
           content:
@@ -5622,14 +5614,12 @@ paths:
           format: uuid
           type: string
       - description: As of date (defaults to today).
-        in: path
+        in: query
         name: as_of
-        required: true
+        required: false
         schema:
           format: date
-          type:
-          - string
-          - 'null'
+          type: string
       responses:
         '200':
           content:
@@ -5659,47 +5649,39 @@ paths:
           format: uuid
           type: string
       - description: Start date.
-        in: path
+        in: query
         name: from
-        required: true
+        required: false
         schema:
           format: date
-          type:
-          - string
-          - 'null'
+          type: string
       - description: End date.
-        in: path
+        in: query
         name: to
-        required: true
+        required: false
         schema:
           format: date
-          type:
-          - string
-          - 'null'
+          type: string
       - description: Dimension types to group by (comma-separated).
         example: department,location
-        in: path
+        in: query
         name: group_by
         required: true
         schema:
           type: string
       - description: Account type filter.
         example: expense
-        in: path
+        in: query
         name: account_type
-        required: true
+        required: false
         schema:
-          type:
-          - string
-          - 'null'
+          type: string
       - description: Dimension value IDs to filter by (comma-separated).
-        in: path
+        in: query
         name: dimensions
-        required: true
+        required: false
         schema:
-          type:
-          - string
-          - 'null'
+          type: string
       responses:
         '200':
           content:
@@ -5727,32 +5709,26 @@ paths:
           format: uuid
           type: string
       - description: Start date.
-        in: path
+        in: query
         name: from
-        required: true
+        required: false
         schema:
           format: date
-          type:
-          - string
-          - 'null'
+          type: string
       - description: End date.
-        in: path
+        in: query
         name: to
-        required: true
+        required: false
         schema:
           format: date
-          type:
-          - string
-          - 'null'
+          type: string
       - description: Dimension value IDs to filter by (comma-separated).
         example: 550e8400-e29b-41d4-a716-446655440000
-        in: path
+        in: query
         name: dimensions
-        required: true
+        required: false
         schema:
-          type:
-          - string
-          - 'null'
+          type: string
       responses:
         '200':
           content:
@@ -5784,23 +5760,19 @@ paths:
           format: uuid
           type: string
       - description: As of date (defaults to today).
-        in: path
+        in: query
         name: as_of
-        required: true
+        required: false
         schema:
           format: date
-          type:
-          - string
-          - 'null'
+          type: string
       - description: Dimension value IDs to filter by (comma-separated).
         example: 550e8400-e29b-41d4-a716-446655440000
-        in: path
+        in: query
         name: dimensions
-        required: true
+        required: false
         schema:
-          type:
-          - string
-          - 'null'
+          type: string
       responses:
         '200':
           content:

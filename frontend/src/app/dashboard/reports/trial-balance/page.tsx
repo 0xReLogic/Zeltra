@@ -22,36 +22,36 @@ export default function TrialBalancePage() {
   const { data, isLoading } = useTrialBalance()
 
   const handleExportCSV = () => {
-    if (!data?.data) return
-    const exportData = data.data.map(item => ({
+    if (!data?.accounts) return
+    const exportData = data.accounts.map(item => ({
       Account_Code: item.code,
       Account_Name: item.name,
-      Debit: item.debit !== '0' ? item.debit : '',
-      Credit: item.credit !== '0' ? item.credit : ''
+      Debit: parseFloat(item.debit) > 0 ? item.debit : '',
+      Credit: parseFloat(item.credit) > 0 ? item.credit : ''
     }))
     exportData.push({
       Account_Code: 'TOTAL',
       Account_Name: '',
-      Debit: data.total_debit,
-      Credit: data.total_credit
+      Debit: data.totals.total_debit,
+      Credit: data.totals.total_credit
     })
     downloadCSV(exportData, `Trial_Balance_${new Date().toISOString().split('T')[0]}.csv`)
     toast.success('CSV exported successfully')
   }
 
   const handleExportPDF = () => {
-    if (!data?.data) return
+    if (!data?.accounts) return
     const headers = ['Code', 'Account Name', 'Debit', 'Credit']
-    const tableData = data.data.map(item => [
+    const tableData = data.accounts.map(item => [
       item.code,
       item.name,
-      item.debit !== '0' ? parseFloat(item.debit).toLocaleString('en-US', { minimumFractionDigits: 2 }) : '-',
-      item.credit !== '0' ? parseFloat(item.credit).toLocaleString('en-US', { minimumFractionDigits: 2 }) : '-'
+      parseFloat(item.debit) > 0 ? parseFloat(item.debit).toLocaleString('en-US', { minimumFractionDigits: 2 }) : '-',
+      parseFloat(item.credit) > 0 ? parseFloat(item.credit).toLocaleString('en-US', { minimumFractionDigits: 2 }) : '-'
     ])
     // Add Total Row
     tableData.push(['', 'TOTAL', 
-      parseFloat(data.total_debit).toLocaleString('en-US', { minimumFractionDigits: 2 }),
-      parseFloat(data.total_credit).toLocaleString('en-US', { minimumFractionDigits: 2 })
+      parseFloat(data.totals.total_debit).toLocaleString('en-US', { minimumFractionDigits: 2 }),
+      parseFloat(data.totals.total_credit).toLocaleString('en-US', { minimumFractionDigits: 2 })
     ])
     
     exportPDF('Trial Balance Report', headers, tableData, `Trial_Balance_${new Date().toISOString().split('T')[0]}.pdf`)
@@ -62,10 +62,11 @@ export default function TrialBalancePage() {
     return <div className="p-8 text-center text-muted-foreground">Loading report...</div>
   }
 
-  const report = data?.data || []
-  const totalDebit = parseFloat(data?.total_debit || '0')
-  const totalCredit = parseFloat(data?.total_credit || '0')
-  const isBalanced = Math.abs(totalDebit - totalCredit) < 0.01
+  // Use correct accessors from backend response
+  const accounts = data?.accounts ?? []
+  const totalDebit = parseFloat(data?.totals?.total_debit ?? '0')
+  const totalCredit = parseFloat(data?.totals?.total_credit ?? '0')
+  const isBalanced = data?.totals?.is_balanced ?? false
 
   return (
     <div className="space-y-6">
@@ -94,9 +95,9 @@ export default function TrialBalancePage() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Jan 2026</CardTitle>
+              <CardTitle>{data?.as_of ?? 'Current Period'}</CardTitle>
               <CardDescription>
-                Report generated on {new Date().toLocaleDateString()}
+                Report generated on {new Date().toLocaleDateString()} • Currency: {data?.currency ?? 'USD'}
               </CardDescription>
             </div>
             <div className={`px-4 py-1.5 rounded-full text-sm font-medium ${isBalanced ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>
@@ -115,8 +116,8 @@ export default function TrialBalancePage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {report.map((item) => (
-                <TableRow key={item.code}>
+              {accounts.map((item) => (
+                <TableRow key={item.account_id}>
                   <TableCell className="font-medium">{item.code}</TableCell>
                   <TableCell>{item.name}</TableCell>
                   <TableCell className="text-right font-mono">

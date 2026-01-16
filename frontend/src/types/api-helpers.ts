@@ -153,9 +153,13 @@ export type UpdateMemberRequest = Schema<'UpdateMemberRequest'>
 
 // Reports
 export type TrialBalanceResponse = Schema<'TrialBalanceResponse'>
+export type TrialBalanceTotals = Schema<'TrialBalanceTotals'>
 export type IncomeStatementResponse = Schema<'IncomeStatementResponse'>
+export type IncomeStatementSectionResponse = Schema<'IncomeStatementSectionResponse'>
 export type BalanceSheetResponse = Schema<'BalanceSheetResponse'>
+export type BalanceSheetSectionResponse = Schema<'BalanceSheetSectionResponse'>
 export type DimensionalReportResponse = Schema<'DimensionalReportResponse'>
+export type DimensionalReportRowResponse = Schema<'DimensionalReportRowResponse'>
 
 // Dashboard
 export type DashboardMetricsResponse = Schema<'DashboardMetricsResponse'>

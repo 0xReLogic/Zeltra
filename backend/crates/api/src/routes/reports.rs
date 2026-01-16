@@ -55,6 +55,7 @@ pub fn routes() -> Router<AppState> {
 
 /// Query parameters for trial balance report.
 #[derive(Debug, Deserialize, utoipa::IntoParams)]
+#[into_params(parameter_in = Query)]
 pub struct TrialBalanceQuery {
     /// As of date (defaults to today).
     pub as_of: Option<NaiveDate>,
@@ -65,6 +66,7 @@ pub struct TrialBalanceQuery {
 
 /// Query parameters for balance sheet report.
 #[derive(Debug, Deserialize, utoipa::IntoParams)]
+#[into_params(parameter_in = Query)]
 pub struct BalanceSheetQuery {
     /// As of date (defaults to today).
     pub as_of: Option<NaiveDate>,
@@ -72,6 +74,7 @@ pub struct BalanceSheetQuery {
 
 /// Query parameters for income statement report.
 #[derive(Debug, Deserialize, utoipa::IntoParams)]
+#[into_params(parameter_in = Query)]
 pub struct IncomeStatementQuery {
     /// Start date.
     pub from: Option<NaiveDate>,
@@ -84,6 +87,7 @@ pub struct IncomeStatementQuery {
 
 /// Query parameters for dimensional report.
 #[derive(Debug, Deserialize, utoipa::IntoParams)]
+#[into_params(parameter_in = Query)]
 pub struct DimensionalReportQuery {
     /// Start date.
     pub from: Option<NaiveDate>,
@@ -101,6 +105,7 @@ pub struct DimensionalReportQuery {
 
 /// Query parameters for account ledger.
 #[derive(Debug, Deserialize, utoipa::IntoParams)]
+#[into_params(parameter_in = Query)]
 pub struct AccountLedgerQuery {
     /// Start date.
     pub from: Option<NaiveDate>,

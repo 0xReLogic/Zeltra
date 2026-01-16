@@ -22,34 +22,32 @@ export default function BalanceSheetPage() {
   const { data, isLoading } = useBalanceSheet()
 
   const handleExportCSV = () => {
-    if (!data?.data) return
-    const report = data.data
+    if (!data) return
     const exportData = [
-        ...report.assets.map(item => ({ Section: 'Assets', ...item })),
-        ...report.liabilities.map(item => ({ Section: 'Liabilities', ...item })),
-        ...report.equity.map(item => ({ Section: 'Equity', ...item })),
+        ...(data.assets?.accounts || []).map(item => ({ Section: 'Assets', ...item })),
+        ...(data.liabilities?.accounts || []).map(item => ({ Section: 'Liabilities', ...item })),
+        ...(data.equity?.accounts || []).map(item => ({ Section: 'Equity', ...item })),
     ]
     downloadCSV(exportData, `Balance_Sheet_${new Date().toISOString().split('T')[0]}.csv`)
     toast.success('CSV exported successfully')
   }
 
   const handleExportPDF = () => {
-    if (!data?.data) return
-    const report = data.data
+    if (!data) return
     const headers = ['Section', 'Code', 'Account Name', 'Amount']
     const tableData: (string | number)[][] = []
 
     // Assets
-    report.assets.forEach(item => tableData.push(['Assets', item.code, item.name, parseFloat(item.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })]))
-    tableData.push(['', '', 'Total Assets', parseFloat(report.total_assets).toLocaleString('en-US', { minimumFractionDigits: 2 })])
+    data.assets?.accounts?.forEach(item => tableData.push(['Assets', item.code, item.name, parseFloat(item.balance).toLocaleString('en-US', { minimumFractionDigits: 2 })]))
+    tableData.push(['', '', 'Total Assets', parseFloat(data.total_assets || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })])
 
     // Liabilities
-    report.liabilities.forEach(item => tableData.push(['Liabilities', item.code, item.name, parseFloat(item.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })]))
-    tableData.push(['', '', 'Total Liabilities', parseFloat(report.total_liabilities).toLocaleString('en-US', { minimumFractionDigits: 2 })])
+    data.liabilities?.accounts?.forEach(item => tableData.push(['Liabilities', item.code, item.name, parseFloat(item.balance).toLocaleString('en-US', { minimumFractionDigits: 2 })]))
+    tableData.push(['', '', 'Total Liabilities', parseFloat(data.liabilities?.total || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })])
 
     // Equity
-    report.equity.forEach(item => tableData.push(['Equity', item.code, item.name, parseFloat(item.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })]))
-    tableData.push(['', '', 'Total Equity', parseFloat(report.total_equity).toLocaleString('en-US', { minimumFractionDigits: 2 })])
+    data.equity?.accounts?.forEach(item => tableData.push(['Equity', item.code, item.name, parseFloat(item.balance).toLocaleString('en-US', { minimumFractionDigits: 2 })]))
+    tableData.push(['', '', 'Total Equity', parseFloat(data.equity?.total || '0').toLocaleString('en-US', { minimumFractionDigits: 2 })])
     
     exportPDF('Balance Sheet', headers, tableData, `Balance_Sheet_${new Date().toISOString().split('T')[0]}.pdf`)
     toast.success('PDF exported successfully')
@@ -59,17 +57,16 @@ export default function BalanceSheetPage() {
     return <div className="p-8 text-center text-muted-foreground">Loading report...</div>
   }
 
-  const report = data?.data
-  const assets = report?.assets || []
-  const liabilities = report?.liabilities || []
-  const equity = report?.equity || []
+  const assets = data?.assets?.accounts || []
+  const liabilities = data?.liabilities?.accounts || []
+  const equity = data?.equity?.accounts || []
   
-  const totalAssets = parseFloat(report?.total_assets || '0')
-  const totalLiabilities = parseFloat(report?.total_liabilities || '0')
-  const totalEquity = parseFloat(report?.total_equity || '0')
-  const totalLiabilitiesEquity = totalLiabilities + totalEquity
+  const totalAssets = parseFloat(data?.total_assets || '0')
+  const totalLiabilities = parseFloat(data?.liabilities?.total || '0')
+  const totalEquity = parseFloat(data?.equity?.total || '0')
+  const totalLiabilitiesEquity = parseFloat(data?.total_liabilities_and_equity || '0')
 
-  const isBalanced = Math.abs(totalAssets - totalLiabilitiesEquity) < 0.01
+  const isBalanced = data?.is_balanced ?? false
 
   return (
     <div className="space-y-6">
@@ -127,7 +124,7 @@ export default function BalanceSheetPage() {
                   <TableCell className="font-medium">{item.code}</TableCell>
                   <TableCell>{item.name}</TableCell>
                   <TableCell className="text-right font-mono">
-                    {parseFloat(item.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    {parseFloat(item.balance).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                   </TableCell>
                 </TableRow>
               ))}
@@ -147,7 +144,7 @@ export default function BalanceSheetPage() {
                   <TableCell className="font-medium">{item.code}</TableCell>
                   <TableCell>{item.name}</TableCell>
                    <TableCell className="text-right font-mono">
-                    {parseFloat(item.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    {parseFloat(item.balance).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                   </TableCell>
                 </TableRow>
               ))}
@@ -167,7 +164,7 @@ export default function BalanceSheetPage() {
                   <TableCell className="font-medium">{item.code}</TableCell>
                   <TableCell>{item.name}</TableCell>
                    <TableCell className="text-right font-mono">
-                    {parseFloat(item.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    {parseFloat(item.balance).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                   </TableCell>
                 </TableRow>
               ))}
