@@ -4,7 +4,14 @@ components:
       description: Standard API error response.
       properties:
         details:
-          description: Additional error details.
+          description: Additional error details (e.g., validation errors, retry information).
+          type: object
+          additionalProperties: true
+          example:
+            retry_after: 60
+            validation_errors:
+              - field: email
+                message: Invalid email format
         error:
           description: Error code (e.g., "validation_error", "not_found").
           example: not_found
@@ -22,7 +29,7 @@ components:
       - message
       type: object
     PaginationResponse:
-      description: Pagination response.
+      description: Pagination response with 0-indexed pages and total_pages calculation. Used for standard paginated endpoints.
       properties:
         limit:
           description: Items per page.
@@ -30,7 +37,7 @@ components:
           minimum: 0
           type: integer
         page:
-          description: Current page.
+          description: Current page number (0-indexed).
           format: int64
           minimum: 0
           type: integer
@@ -51,7 +58,7 @@ components:
       - total_pages
       type: object
     PaginationInfo:
-      description: Pagination info.
+      description: Cursor-based pagination info for efficient navigation through large datasets. Used for activity feeds and real-time data.
       properties:
         has_more:
           description: Has more results.
@@ -69,11 +76,37 @@ components:
       - limit
       - has_more
       type: object
-    PageMeta:
-      description: Pagination metadata.
+    PaginationMeta:
+      description: Simple pagination metadata for transactions (0-indexed pages, no total_pages calculation).
       properties:
         page:
-          description: Current page number.
+          description: Current page number (0-indexed).
+          example: 0
+          format: int64
+          minimum: 0
+          type: integer
+        limit:
+          description: Maximum number of items per page.
+          example: 20
+          format: int64
+          minimum: 0
+          type: integer
+        total:
+          description: Total number of items across all pages.
+          example: 100
+          format: int64
+          minimum: 0
+          type: integer
+      required:
+      - page
+      - limit
+      - total
+      type: object
+    PageMeta:
+      description: Standard REST pagination metadata with 1-indexed pages. Used for most paginated endpoints like exchange rates and reports.
+      properties:
+        page:
+          description: Current page number (1-indexed).
           example: 1
           format: int32
           minimum: 0

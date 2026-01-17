@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { apiClient } from '../api/client'
+import type { RecentActivityResponse } from '@/types/api-helpers'
 
 export interface DashboardMetrics {
   cash_position: {
@@ -65,30 +66,12 @@ export function useCashFlowData() {
 }
 
 // TODO: Move types to lib/api/types.ts once generated
-interface ActivityResponse {
-    activities: {
-        id: string
-        type: string
-        action: string
-        entity_type: string
-        entity_id: string
-        description: string
-        amount?: string
-        currency?: string
-        user: { id: string, full_name: string }
-        timestamp: string
-    }[]
-    pagination: {
-        limit: number
-        has_more: boolean
-        next_cursor: string | null
-    }
-}
+// REMOVED: Custom ActivityResponse interface - now using generated RecentActivityResponse type
 
 export function useRecentActivity() {
     return useQuery({
         queryKey: ['dashboard', 'recent-activity'],
-        queryFn: () => apiClient<ActivityResponse>('/dashboard/recent-activity'),
+        queryFn: () => apiClient<RecentActivityResponse>('/dashboard/recent-activity'),
         refetchInterval: 30000 // Real-time feed, refresh every 30s
     })
 }

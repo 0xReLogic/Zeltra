@@ -51,7 +51,9 @@ const formSchema = z.object({
 })
 
 export default function ExchangeRatesPage() {
-  const { data, isLoading } = useExchangeRates()
+  const [page, setPage] = React.useState(1)
+  const [perPage, setPerPage] = React.useState(20)
+  const { data, isLoading } = useExchangeRates({ page, per_page: perPage })
   const { data: currenciesData } = useCurrencies()
   const createRate = useCreateExchangeRate()
   const fetchLiveRates = useFetchLiveRates()
@@ -277,6 +279,33 @@ export default function ExchangeRatesPage() {
                 ))}
               </TableBody>
             </Table>
+            
+            {/* Pagination Controls */}
+            {data?.meta && data.meta.total_pages > 1 && (
+              <div className="flex items-center justify-between mt-4 pt-4 border-t">
+                <div className="text-sm text-muted-foreground">
+                  Page {data.meta.page} of {data.meta.total_pages} ({data.meta.total} total rates)
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage(p => p + 1)}
+                    disabled={page >= data.meta.total_pages}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

@@ -216,12 +216,17 @@ components:
           description: MIME type.
           example: application/pdf
           type: string
+        simulation_id:
+          description: Simulation ID (for simulation attachments).
+          format: uuid
+          type: string
+          nullable: true
         storage_provider:
           description: Storage provider.
           example: s3
           type: string
         transaction_id:
-          description: Transaction ID.
+          description: Transaction ID (for transaction attachments).
           format: uuid
           type: string
           nullable: true

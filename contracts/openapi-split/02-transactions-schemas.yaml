@@ -436,20 +436,24 @@ components:
       - pagination
       type: object
     PaginationMeta:
-      description: Pagination metadata.
+      description: Simple pagination metadata for transactions (0-indexed pages, no
+        total_pages calculation)
       properties:
         limit:
-          description: Items per page.
+          description: Maximum number of items per page.
+          example: 20
           format: int64
           minimum: 0
           type: integer
         page:
           description: Current page number (0-indexed).
+          example: 0
           format: int64
           minimum: 0
           type: integer
         total:
-          description: Total number of items.
+          description: Total number of items across all pages.
+          example: 100
           format: int64
           minimum: 0
           type: integer

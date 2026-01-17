@@ -315,12 +315,16 @@ pub struct PayInvoiceRequest {
 
 /// Pagination metadata.
 #[derive(Debug, Serialize, utoipa::ToSchema)]
+#[schema(description = "Simple pagination metadata for transactions (0-indexed pages, no total_pages calculation)")]
 pub struct PaginationMeta {
     /// Current page number (0-indexed).
+    #[schema(example = 0)]
     pub page: u64,
-    /// Items per page.
+    /// Maximum number of items per page.
+    #[schema(example = 20)]
     pub limit: u64,
-    /// Total number of items.
+    /// Total number of items across all pages.
+    #[schema(example = 100)]
     pub total: u64,
 }
 

@@ -80,7 +80,6 @@ export type LedgerEntryResponse = Schema<'LedgerEntryResponse'>
 export type PayInvoiceRequest = Schema<'PayInvoiceRequest'>
 export type PendingTransactionResponse = Schema<'PendingTransactionResponse'>
 export type PaginatedTransactionsResponse = Schema<'PaginatedTransactionsResponse'>
-export type PaginationMeta = Schema<'PaginationMeta'>
 
 // Transaction Workflow
 export type ApproveRequest = Schema<'ApproveRequest'>
@@ -175,6 +174,11 @@ export type CurrencyResponse = Schema<'CurrencyResponse'>
 // Pagination
 export type PaginationResponse = Schema<'PaginationResponse'>
 export type PaginationInfo = Schema<'PaginationInfo'>
+export type PaginationMeta = Schema<'PaginationMeta'>
+export type PageMeta = Schema<'PageMeta'>
+export type PageRequest = Schema<'PageRequest'>
+export type PageResponse_ExchangeRateListItem = Schema<'PageResponse_ExchangeRateListItem'>
+export type ExchangeRateListItem = Schema<'ExchangeRateListItem'>
 
 // Error
 export type ApiError = Schema<'ApiError'>
