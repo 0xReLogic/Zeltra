@@ -41,6 +41,8 @@ export const useAuthStore = create<AuthState>()(
       setAuth: (user, accessToken, refreshToken, expiresIn) => {
         // Store actual expiry time - proactive refresh is handled by dashboard layout
         const tokenExpiresAt = Date.now() + (expiresIn * 1000)
+        const expiresInMinutes = Math.floor(expiresIn / 60)
+        console.log(`🔐 setAuth called: user=${user.email}, expires in ${expiresInMinutes} minutes`)
         set({ 
           user, 
           accessToken, 
@@ -52,18 +54,24 @@ export const useAuthStore = create<AuthState>()(
       
       setTokens: (accessToken, refreshToken, expiresIn) => {
         const tokenExpiresAt = Date.now() + (expiresIn * 1000)
+        const expiresInMinutes = Math.floor(expiresIn / 60)
+        console.log(`🔑 setTokens called: expires in ${expiresInMinutes} minutes`)
         set({ accessToken, refreshToken, tokenExpiresAt })
       },
       
       setOrg: (orgId) => set({ currentOrgId: orgId }),
       
-      logout: () => set({ 
-        user: null, 
-        accessToken: null, 
-        refreshToken: null, 
-        tokenExpiresAt: null,
-        currentOrgId: null 
-      }),
+      logout: () => {
+        console.log('🚪 LOGOUT CALLED - Clearing auth state')
+        console.trace('Logout stack trace:')
+        set({ 
+          user: null, 
+          accessToken: null, 
+          refreshToken: null, 
+          tokenExpiresAt: null,
+          currentOrgId: null 
+        })
+      },
       
       isTokenExpired: () => {
         const { tokenExpiresAt } = get()
@@ -81,7 +89,21 @@ export const useAuthStore = create<AuthState>()(
         refreshToken: state.refreshToken,
         tokenExpiresAt: state.tokenExpiresAt,
         currentOrgId: state.currentOrgId,
-      })
+      }),
+      onRehydrateStorage: () => {
+        console.log('💧 Zustand: Starting hydration from localStorage')
+        return (state, error) => {
+          if (error) {
+            console.error('❌ Zustand: Hydration error:', error)
+          } else {
+            console.log('✅ Zustand: Hydration complete', {
+              hasUser: !!state?.user,
+              hasAccessToken: !!state?.accessToken,
+              hasRefreshToken: !!state?.refreshToken,
+            })
+          }
+        }
+      },
     }
   )
 )

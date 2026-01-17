@@ -12,24 +12,79 @@ import { Loader2 } from 'lucide-react'
  * Custom hook to properly wait for Zustand persist hydration.
  * This ensures we don't read stale state before localStorage is loaded.
  */
+/**
+ * Custom hook to properly wait for Zustand persist hydration.
+ * This ensures we don't read stale state before localStorage is loaded.
+ * 
+ * IMPORTANT: We can't rely on hasHydrated() alone because it returns true
+ * BEFORE the state is actually updated. We need to wait for the actual
+ * state to be populated from localStorage.
+ */
 function useHydration() {
   const [hydrated, setHydrated] = useState(() => {
-    // Check if already hydrated on initial render (SSR safety)
-    if (typeof window === 'undefined') return false
-    return useAuthStore.persist?.hasHydrated() ?? false
+    // Skip on server
+    if (typeof window === 'undefined') {
+      console.log('🌊 useHydration: SSR mode, not hydrated')
+      return false
+    }
+
+    // Check if persist middleware exists
+    if (!useAuthStore.persist) {
+      console.log('🌊 useHydration: No persist middleware, marking as hydrated')
+      return true
+    }
+
+    // Check if already hydrated
+    const isHydrated = useAuthStore.persist.hasHydrated()
+    if (isHydrated) {
+      console.log('🌊 useHydration: Already hydrated on mount, state:', {
+        hasAccessToken: !!useAuthStore.getState().accessToken,
+        hasUser: !!useAuthStore.getState().user,
+      })
+    }
+    return isHydrated
   })
+  
+  const accessToken = useAuthStore((state) => state.accessToken)
+  const user = useAuthStore((state) => state.user)
 
   useEffect(() => {
-    // If already hydrated, nothing to do
-    if (hydrated) return
+    // Skip if already hydrated or on server
+    if (hydrated || typeof window === 'undefined') {
+      return
+    }
 
+    // Check if persist middleware exists
+    if (!useAuthStore.persist) {
+      return
+    }
+
+    console.log('🌊 useHydration: Waiting for hydration...')
+    
     // Wait for hydration to complete
-    const unsub = useAuthStore.persist?.onFinishHydration(() => {
+    const unsub = useAuthStore.persist.onFinishHydration(() => {
+      console.log('🌊 useHydration: Hydration finished, state:', {
+        hasAccessToken: !!useAuthStore.getState().accessToken,
+        hasUser: !!useAuthStore.getState().user,
+      })
       setHydrated(true)
     })
 
-    return () => unsub?.()
+    return () => {
+      console.log('🌊 useHydration: Cleanup')
+      unsub?.()
+    }
   }, [hydrated])
+
+  // Log when state changes after hydration
+  useEffect(() => {
+    if (hydrated) {
+      console.log('🌊 useHydration: State after hydration:', {
+        hasAccessToken: !!accessToken,
+        hasUser: !!user,
+      })
+    }
+  }, [hydrated, accessToken, user])
 
   return hydrated
 }
@@ -46,13 +101,93 @@ export default function DashboardLayout({
   // This prevents reading stale null values before localStorage is loaded
   const accessToken = useAuthStore((state) => state.accessToken)
   const user = useAuthStore((state) => state.user)
+  const tokenExpiresAt = useAuthStore((state) => state.tokenExpiresAt)
+  const refreshToken = useAuthStore((state) => state.refreshToken)
+  const setTokens = useAuthStore((state) => state.setTokens)
+  const logout = useAuthStore((state) => state.logout)
 
   useEffect(() => {
     // Only check auth after hydration is complete
-    if (isHydrated && (!accessToken || !user)) {
-      router.replace('/login')
+    if (!isHydrated) {
+      return
     }
+
+    // Add a small delay to ensure state is fully populated after hydration
+    // This prevents race condition where hasHydrated() returns true but state is still null
+    const timeoutId = setTimeout(() => {
+      if (!accessToken || !user) {
+        console.log('🚫 Auth check failed, redirecting to login:', { hasAccessToken: !!accessToken, hasUser: !!user })
+        router.replace('/login')
+      } else {
+        console.log('✅ Auth check passed:', { hasAccessToken: !!accessToken, hasUser: !!user })
+      }
+    }, 100) // 100ms delay to let state settle
+
+    return () => clearTimeout(timeoutId)
   }, [isHydrated, accessToken, user, router])
+
+  // Proactive token refresh - refresh 2 minutes before expiry
+  useEffect(() => {
+    if (!isHydrated || !accessToken || !refreshToken || !tokenExpiresAt) {
+      console.log('⏸️ Proactive refresh skipped:', { isHydrated, hasAccessToken: !!accessToken, hasRefreshToken: !!refreshToken, hasExpiresAt: !!tokenExpiresAt })
+      return
+    }
+
+    console.log('🔧 Proactive refresh effect mounted')
+
+    const checkAndRefresh = async () => {
+      const now = Date.now()
+      const timeUntilExpiry = tokenExpiresAt - now
+      const twoMinutes = 2 * 60 * 1000
+      const timeUntilExpiryMinutes = Math.floor(timeUntilExpiry / 60000)
+
+      console.log(`⏰ Token check: expires in ${timeUntilExpiryMinutes} minutes (${timeUntilExpiry}ms)`)
+
+      // If token expires in less than 2 minutes, refresh it
+      if (timeUntilExpiry < twoMinutes && timeUntilExpiry > 0) {
+        console.log('🔄 Token expiring soon, refreshing proactively...')
+        try {
+          const baseUrl = process.env.NEXT_PUBLIC_API_URL || '/api/v1'
+          const res = await fetch(`${baseUrl}/auth/refresh`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refresh_token: refreshToken }),
+          })
+
+          if (res.ok) {
+            const data = await res.json()
+            setTokens(data.access_token, refreshToken, data.expires_in)
+            console.log('✅ Token refreshed proactively, new expiry:', data.expires_in, 'seconds')
+          } else {
+            const errorBody = await res.json().catch(() => ({}))
+            console.error('❌ Proactive refresh failed:', res.status, errorBody)
+            console.log('🚪 LOGOUT TRIGGERED: Proactive refresh failed in dashboard layout')
+            // Refresh failed, logout user
+            logout()
+            router.replace('/login')
+          }
+        } catch (error) {
+          console.error('❌ Proactive refresh error:', error)
+          console.log('🚪 LOGOUT TRIGGERED: Proactive refresh exception in dashboard layout')
+          logout()
+          router.replace('/login')
+        }
+      } else if (timeUntilExpiry <= 0) {
+        console.log('⚠️ Token already expired!')
+      }
+    }
+
+    // Check immediately
+    checkAndRefresh()
+
+    // Then check every minute
+    const interval = setInterval(checkAndRefresh, 60 * 1000)
+
+    return () => {
+      console.log('🔧 Proactive refresh effect unmounted')
+      clearInterval(interval)
+    }
+  }, [isHydrated, accessToken, refreshToken, tokenExpiresAt, setTokens, logout, router])
 
   // Show loading while waiting for hydration
   if (!isHydrated) {

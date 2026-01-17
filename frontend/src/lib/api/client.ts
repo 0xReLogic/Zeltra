@@ -88,6 +88,7 @@ let refreshPromise: Promise<boolean> | null = null
 async function refreshAccessToken(): Promise<boolean> {
   // If a refresh is already in progress, wait for it
   if (refreshPromise) {
+    console.log('🔄 Refresh already in progress, waiting...')
     return refreshPromise
   }
   
@@ -95,8 +96,11 @@ async function refreshAccessToken(): Promise<boolean> {
   const { refreshToken, setTokens, logout } = state
   
   if (!refreshToken) {
+    console.log('❌ No refresh token available')
     return false
   }
+  
+  console.log('🔄 Starting token refresh...')
   
   // Create the refresh promise - all concurrent callers will share this
   refreshPromise = (async () => {
@@ -110,6 +114,9 @@ async function refreshAccessToken(): Promise<boolean> {
       })
       
       if (!res.ok) {
+        const errorBody = await res.json().catch(() => ({}))
+        console.error('❌ Token refresh failed:', res.status, errorBody)
+        console.log('🚪 LOGOUT TRIGGERED: Token refresh failed in client.ts')
         logout()
         return false
       }
@@ -118,8 +125,11 @@ async function refreshAccessToken(): Promise<boolean> {
       // Backend /auth/refresh only returns { access_token, expires_in }
       // It does NOT return a new refresh_token, so we keep the existing one
       setTokens(data.access_token, refreshToken, data.expires_in)
+      console.log('✅ Token refreshed successfully, expires in:', data.expires_in, 'seconds')
       return true
-    } catch {
+    } catch (error) {
+      console.error('❌ Token refresh error:', error)
+      console.log('🚪 LOGOUT TRIGGERED: Token refresh exception in client.ts')
       logout()
       return false
     } finally {
@@ -203,11 +213,14 @@ export async function apiClient<T>(
     
     // Handle 401 - attempt token refresh
     if (res.status === 401 && token && !options?.skipAuth) {
+      console.log('⚠️ Got 401 response, attempting token refresh...')
       const refreshed = await refreshAccessToken()
       if (refreshed) {
         const newToken = useAuthStore.getState().accessToken
+        console.log('✅ Retrying request with new token')
         res = await makeRequest(newToken)
       } else {
+        console.log('❌ Token refresh failed, redirecting to login')
         // Redirect to login
         if (typeof window !== 'undefined') {
           window.location.href = '/login'
