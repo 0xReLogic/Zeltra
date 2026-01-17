@@ -15,9 +15,8 @@ components:
           type: string
         request_id:
           description: Request ID for tracing.
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
       required:
       - error
       - message
@@ -64,9 +63,8 @@ components:
           type: integer
         next_cursor:
           description: Next cursor.
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
       required:
       - limit
       - has_more

@@ -1,15 +1,53 @@
 #!/usr/bin/env python3
 """
 Split OpenAPI spec into manageable chunks for auditing.
+Also fixes utoipa-generated nullable syntax (OpenAPI 3.1 -> 3.0 compatible).
 """
 
 import yaml
 import json
+import re
 from pathlib import Path
+
+def fix_nullable_syntax(obj):
+    """
+    Recursively fix utoipa's OpenAPI 3.1 nullable syntax to OpenAPI 3.0 compatible.
+    Converts: type: [string, 'null'] -> type: string, nullable: true
+    """
+    if isinstance(obj, dict):
+        # Check if this dict has a 'type' that's a list with 'null'
+        if 'type' in obj and isinstance(obj['type'], list):
+            type_list = obj['type']
+            # Filter out 'null' from the list
+            non_null_types = [t for t in type_list if t != 'null']
+            has_null = 'null' in type_list
+            
+            if has_null and len(non_null_types) == 1:
+                # Single type + null -> use nullable: true
+                obj['type'] = non_null_types[0]
+                obj['nullable'] = True
+            elif has_null and len(non_null_types) > 1:
+                # Multiple types + null -> keep as oneOf with nullable
+                obj['nullable'] = True
+                del obj['type']
+                obj['oneOf'] = [{'type': t} for t in non_null_types]
+        
+        # Recursively process all values
+        for key, value in obj.items():
+            fix_nullable_syntax(value)
+    
+    elif isinstance(obj, list):
+        for item in obj:
+            fix_nullable_syntax(item)
+    
+    return obj
 
 # Read full OpenAPI spec
 with open('openapi.yaml', 'r') as f:
     spec = yaml.safe_load(f)
+
+# Fix nullable syntax in the entire spec
+spec = fix_nullable_syntax(spec)
 
 # Create output directory
 output_dir = Path('openapi-split')

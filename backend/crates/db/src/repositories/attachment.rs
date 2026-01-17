@@ -58,6 +58,7 @@ impl AttachmentRepoTrait for AttachmentRepository {
             id: Set(input.id),
             organization_id: Set(input.organization_id),
             transaction_id: Set(input.transaction_id),
+            simulation_id: Set(input.simulation_id),
             attachment_type: Set(to_db_attachment_type(input.attachment_type)),
             file_name: Set(input.filename.clone()),
             file_size: Set(input.file_size),
@@ -102,6 +103,22 @@ impl AttachmentRepoTrait for AttachmentRepository {
     ) -> Result<Vec<Attachment>, AttachmentError> {
         let models = attachments::Entity::find()
             .filter(attachments::Column::TransactionId.eq(transaction_id))
+            .filter(attachments::Column::OrganizationId.eq(organization_id))
+            .order_by_desc(attachments::Column::CreatedAt)
+            .all(&self.db)
+            .await
+            .map_err(|e| AttachmentError::repository(e.to_string()))?;
+
+        Ok(models.into_iter().map(to_domain).collect())
+    }
+
+    async fn list_by_simulation(
+        &self,
+        simulation_id: Uuid,
+        organization_id: Uuid,
+    ) -> Result<Vec<Attachment>, AttachmentError> {
+        let models = attachments::Entity::find()
+            .filter(attachments::Column::SimulationId.eq(simulation_id))
             .filter(attachments::Column::OrganizationId.eq(organization_id))
             .order_by_desc(attachments::Column::CreatedAt)
             .all(&self.db)
@@ -189,6 +206,7 @@ fn to_domain(model: attachments::Model) -> Attachment {
         id: model.id,
         organization_id: model.organization_id,
         transaction_id: model.transaction_id,
+        simulation_id: model.simulation_id,
         attachment_type: from_db_attachment_type(&model.attachment_type),
         filename: model.file_name,
         file_size: model.file_size,

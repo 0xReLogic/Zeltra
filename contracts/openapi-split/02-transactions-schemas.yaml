@@ -15,22 +15,19 @@ components:
         idempotency_key:
           description: Optional idempotency key for preventing duplicate transactions.
           format: uuid
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         iso_metadata:
           description: Optional ISO 20022 metadata.
         memo:
           description: Optional memo.
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         reference_number:
           description: Optional reference number.
           example: TX-1001
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         timezone:
           description: Timezone for the transaction (e.g., "UTC", "Asia/Jakarta").
           example: UTC
@@ -70,14 +67,12 @@ components:
         exchange_rate:
           description: Optional exchange rate override.
           example: '1.0850'
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         memo:
           description: Optional memo.
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         metadata:
           description: Optional compliance/ESG metadata.
         source_amount:
@@ -123,21 +118,18 @@ components:
         idempotency_key:
           description: Optional idempotency key.
           format: uuid
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         iso_metadata:
           description: Optional ISO 20022 metadata.
         memo:
           description: Memo.
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         reference_number:
           description: Reference number.
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         status:
           description: Status.
           type: string
@@ -190,9 +182,8 @@ components:
           type: string
         reference_number:
           description: Reference number.
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         status:
           description: Status.
           type: string
@@ -219,28 +210,24 @@ components:
       properties:
         description:
           description: Description.
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         memo:
           description: Memo.
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         reference_number:
           description: Reference number.
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
       type: object
     ApproveRequest:
       description: Request body for approving a transaction.
       properties:
         approval_notes:
           description: Optional approval notes.
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
       type: object
     RejectRequest:
       description: Request body for rejecting a transaction.
@@ -278,9 +265,8 @@ components:
       properties:
         approval_notes:
           description: Optional approval notes.
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         transaction_ids:
           description: Transaction IDs to approve.
           items:
@@ -316,9 +302,8 @@ components:
       properties:
         error:
           description: Error message if failed.
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         success:
           description: Whether the approval succeeded.
           type: boolean
@@ -339,9 +324,8 @@ components:
           type: string
         description:
           description: Optional description.
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         exchange_rate:
           description: Exchange rate for the payment.
           example: '1.0850'
@@ -353,9 +337,8 @@ components:
         idempotency_key:
           description: Optional idempotency key.
           format: uuid
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         invoice_id:
           description: ID of the invoice (transaction) being paid.
           format: uuid
@@ -417,9 +400,8 @@ components:
           type: string
         memo:
           description: Memo.
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         source_amount:
           description: Source amount.
           type: string
@@ -491,17 +473,15 @@ components:
           type: string
         reference_number:
           description: Reference number.
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         status:
           description: Status.
           type: string
         submitted_at:
           description: Submitted at timestamp.
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         total_amount:
           description: Total amount.
           type: string

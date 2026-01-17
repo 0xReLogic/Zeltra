@@ -8,9 +8,8 @@ components:
           type: string
         description:
           description: Description.
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         id:
           description: Rule ID.
           format: uuid
@@ -20,14 +19,12 @@ components:
           type: boolean
         max_amount:
           description: Maximum amount threshold.
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         min_amount:
           description: Minimum amount threshold.
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         name:
           description: Name.
           type: string
@@ -66,20 +63,17 @@ components:
       properties:
         description:
           description: Optional description.
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         max_amount:
           description: Maximum amount threshold (inclusive).
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         min_amount:
           description: Minimum amount threshold (inclusive).
           example: '1000.00'
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         name:
           description: Name of the approval rule.
           example: High Value Bills
@@ -111,45 +105,37 @@ components:
       properties:
         description:
           description: New description.
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         is_active:
           description: Active status.
-          type:
-          - boolean
-          - 'null'
+          type: boolean
+          nullable: true
         max_amount:
           description: New maximum amount.
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         min_amount:
           description: New minimum amount.
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         name:
           description: New name.
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         priority:
           description: New priority.
           format: int32
-          type:
-          - integer
-          - 'null'
+          type: integer
+          nullable: true
         required_role:
           description: New required role.
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         transaction_types:
           description: New transaction types.
           items:
             type: string
-          type:
-          - array
-          - 'null'
+          type: array
+          nullable: true
       type: object

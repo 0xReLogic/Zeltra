@@ -5,9 +5,8 @@ components:
       properties:
         approval_limit:
           description: Approval limit (for approver role).
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         email:
           description: User email to add.
           type: string
@@ -161,9 +160,8 @@ components:
         trial_ends_at:
           description: Trial expiration date (if applicable).
           format: date-time
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
       required:
       - id
       - name
@@ -179,9 +177,8 @@ components:
       properties:
         approval_limit:
           description: Individual approval limit.
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         created_at:
           description: Creation timestamp.
           format: date-time
@@ -211,9 +208,8 @@ components:
       properties:
         approval_limit:
           description: Individual approval limit.
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         created_at:
           description: Creation timestamp.
           format: date-time
@@ -316,15 +312,13 @@ components:
         max_transactions_per_month:
           description: Maximum transactions per month allowed (None = unlimited).
           format: int32
-          type:
-          - integer
-          - 'null'
+          type: integer
+          nullable: true
         max_users:
           description: Maximum number of users allowed (None = unlimited).
           format: int32
-          type:
-          - integer
-          - 'null'
+          type: integer
+          nullable: true
       required:
       - max_dimensions
       - has_multi_currency
@@ -339,33 +333,28 @@ components:
       properties:
         base_currency:
           description: Base currency (optional, ISO 4217 code).
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         name:
           description: Organization name (optional).
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         timezone:
           description: Timezone (optional, IANA format).
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
       type: object
     UpdateMemberRequest:
       description: Update organization member request.
       properties:
         approval_limit:
           description: New approval limit (optional, null to clear).
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         role:
           description: New role (optional).
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
       type: object
     UserInfo:
       description: User info returned in auth responses.

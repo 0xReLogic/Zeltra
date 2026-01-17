@@ -30,9 +30,8 @@ paths:
         required: true
         schema:
           format: date
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
       responses:
         '200':
           content:
@@ -95,35 +94,31 @@ paths:
         name: from
         required: true
         schema:
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
       - description: Filter by target currency.
         in: path
         name: to
         required: true
         schema:
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
       - description: Filter by start date (inclusive).
         in: path
         name: start_date
         required: true
         schema:
           format: date
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
       - description: Filter by end date (inclusive).
         in: path
         name: end_date
         required: true
         schema:
           format: date
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
       - description: Pagination parameters.
         in: path
         name: page

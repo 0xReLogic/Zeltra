@@ -37,6 +37,19 @@ pub fn routes() -> Router<AppState> {
             "/organizations/{org_id}/transactions/{transaction_id}/attachments",
             get(list_attachments),
         )
+        // Simulation-scoped attachment routes
+        .route(
+            "/organizations/{org_id}/simulations/{simulation_id}/attachments/upload",
+            post(request_simulation_upload),
+        )
+        .route(
+            "/organizations/{org_id}/simulations/{simulation_id}/attachments",
+            post(confirm_simulation_upload),
+        )
+        .route(
+            "/organizations/{org_id}/simulations/{simulation_id}/attachments",
+            get(list_simulation_attachments),
+        )
         // Direct attachment routes
         .route(
             "/organizations/{org_id}/attachments/{attachment_id}",
@@ -115,8 +128,10 @@ pub struct ConfirmUploadRequest {
 pub struct AttachmentResponse {
     /// Attachment ID.
     pub id: Uuid,
-    /// Transaction ID.
+    /// Transaction ID (for transaction attachments).
     pub transaction_id: Option<Uuid>,
+    /// Simulation ID (for simulation attachments).
+    pub simulation_id: Option<Uuid>,
     /// Attachment type.
     #[schema(example = "invoice")]
     pub attachment_type: String,
@@ -282,7 +297,8 @@ async fn request_upload(
 
     let input = RequestUploadInput {
         organization_id: org_id,
-        transaction_id,
+        transaction_id: Some(transaction_id),
+        simulation_id: None,
         filename: payload.filename,
         content_type: payload.content_type,
         file_size: payload.file_size,
@@ -416,7 +432,8 @@ async fn confirm_upload(
     let input = ConfirmUploadInput {
         attachment_id: payload.attachment_id,
         organization_id: org_id,
-        transaction_id,
+        transaction_id: Some(transaction_id),
+        simulation_id: None,
         filename: payload.filename,
         content_type: payload.content_type,
         file_size: payload.file_size,
@@ -437,6 +454,7 @@ async fn confirm_upload(
             let response = AttachmentResponse {
                 id: attachment.id,
                 transaction_id: attachment.transaction_id,
+                simulation_id: attachment.simulation_id,
                 attachment_type: attachment_type_to_string(attachment.attachment_type).to_string(),
                 filename: attachment.filename,
                 file_size: attachment.file_size,
@@ -522,6 +540,7 @@ async fn list_attachments(
                 .map(|a| AttachmentResponse {
                     id: a.id,
                     transaction_id: a.transaction_id,
+                    simulation_id: a.simulation_id,
                     attachment_type: attachment_type_to_string(a.attachment_type).to_string(),
                     filename: a.filename,
                     file_size: a.file_size,
@@ -538,6 +557,336 @@ async fn list_attachments(
         }
         Err(e) => {
             error!(error = %e, "Failed to list attachments");
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": "internal_error",
+                    "message": "An error occurred"
+                })),
+            )
+                .into_response()
+        }
+    }
+}
+
+// ============================================================================
+// Simulation Attachment Handlers
+// ============================================================================
+
+/// POST `/organizations/{org_id}/simulations/{simulation_id}/attachments/upload`
+/// Request a presigned upload URL for simulation attachment.
+#[utoipa::path(
+    post,
+    path = "/organizations/{org_id}/simulations/{simulation_id}/attachments/upload",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        ("simulation_id" = Uuid, Path, description = "Simulation ID")
+    ),
+    request_body = RequestUploadRequest,
+    responses(
+        (status = 200, description = "Upload URL generated successfully", body = RequestUploadResponse),
+        (status = 400, description = "Invalid request or file too large"),
+        (status = 403, description = "Forbidden"),
+        (status = 503, description = "Storage service not available")
+    ),
+    tag = "Attachments",
+    security(("bearerAuth" = []))
+)]
+#[allow(clippy::too_many_lines)]
+async fn request_simulation_upload(
+    State(state): State<AppState>,
+    auth: AuthUser,
+    Path((org_id, simulation_id)): Path<(Uuid, Uuid)>,
+    Json(payload): Json<RequestUploadRequest>,
+) -> impl IntoResponse {
+    let org_repo = OrganizationRepository::new((*state.db).clone());
+
+    // Check membership
+    if let Err(response) = check_membership(&org_repo, org_id, auth.user_id()).await {
+        return response;
+    }
+
+    // Check if storage service is available
+    let Some(storage) = &state.storage else {
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(json!({
+                "error": "storage_not_configured",
+                "message": "File storage is not configured"
+            })),
+        )
+            .into_response();
+    };
+
+    // Check storage quota
+    let attachment_repo = AttachmentRepository::new((*state.db).clone());
+    if let Ok(Some(limits)) = org_repo.get_tier_limits(org_id).await {
+        if let Ok(current_storage_bytes) = attachment_repo.get_total_storage_used(org_id).await {
+            let storage_limit_bytes = i64::from(limits.attachment_storage_gb) * 1024 * 1024 * 1024;
+            #[allow(clippy::cast_possible_wrap)]
+            let new_total = current_storage_bytes + payload.file_size as i64;
+
+            if new_total > storage_limit_bytes {
+                #[allow(clippy::float_arithmetic)]
+                #[allow(clippy::cast_precision_loss)]
+                let used_gb = current_storage_bytes as f64 / (1024.0 * 1024.0 * 1024.0);
+                return (
+                    StatusCode::PAYMENT_REQUIRED,
+                    Json(json!({
+                        "error": "storage_quota_exceeded",
+                        "message": format!("Storage quota exceeded. Your tier allows {} GB, currently using {:.2} GB.", limits.attachment_storage_gb, used_gb),
+                        "limit_gb": limits.attachment_storage_gb,
+                        "used_gb": used_gb
+                    })),
+                )
+                    .into_response();
+            }
+        }
+    }
+
+    let service = AttachmentService::new(storage.clone(), std::sync::Arc::new(attachment_repo));
+
+    let input = RequestUploadInput {
+        organization_id: org_id,
+        transaction_id: None,
+        simulation_id: Some(simulation_id),
+        filename: payload.filename,
+        content_type: payload.content_type,
+        file_size: payload.file_size,
+        attachment_type: parse_attachment_type(payload.attachment_type.as_deref()),
+        user_id: auth.user_id(),
+    };
+
+    match service.request_simulation_upload(input).await {
+        Ok(result) => {
+            info!(
+                org_id = %org_id,
+                simulation_id = %simulation_id,
+                attachment_id = %result.attachment_id,
+                "Simulation upload URL requested"
+            );
+
+            let response = RequestUploadResponse {
+                attachment_id: result.attachment_id,
+                upload_url: result.upload_url,
+                upload_method: result.upload_method,
+                upload_headers: result.upload_headers,
+                expires_at: result.expires_at.to_rfc3339(),
+                storage_key: result.storage_key,
+            };
+
+            (StatusCode::OK, Json(response)).into_response()
+        }
+        Err(e) => {
+            error!(error = %e, "Failed to request simulation upload URL");
+            let msg = e.to_string();
+            if msg.contains("too large") {
+                (
+                    StatusCode::BAD_REQUEST,
+                    Json(json!({
+                        "error": "file_too_large",
+                        "message": msg
+                    })),
+                )
+                    .into_response()
+            } else if msg.contains("MIME type") {
+                (
+                    StatusCode::BAD_REQUEST,
+                    Json(json!({
+                        "error": "invalid_mime_type",
+                        "message": msg
+                    })),
+                )
+                    .into_response()
+            } else {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(json!({
+                        "error": "internal_error",
+                        "message": "An error occurred"
+                    })),
+                )
+                    .into_response()
+            }
+        }
+    }
+}
+
+/// POST `/organizations/{org_id}/simulations/{simulation_id}/attachments`
+/// Confirm a simulation upload and create the attachment record.
+#[utoipa::path(
+    post,
+    path = "/organizations/{org_id}/simulations/{simulation_id}/attachments",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        ("simulation_id" = Uuid, Path, description = "Simulation ID")
+    ),
+    request_body = ConfirmUploadRequest,
+    responses(
+        (status = 201, description = "Attachment confirmed and created", body = AttachmentResponse),
+        (status = 400, description = "Invalid request or file size mismatch"),
+        (status = 403, description = "Forbidden"),
+        (status = 503, description = "Storage service not available")
+    ),
+    tag = "Attachments",
+    security(("bearerAuth" = []))
+)]
+async fn confirm_simulation_upload(
+    State(state): State<AppState>,
+    auth: AuthUser,
+    Path((org_id, simulation_id)): Path<(Uuid, Uuid)>,
+    Json(payload): Json<ConfirmUploadRequest>,
+) -> impl IntoResponse {
+    let org_repo = OrganizationRepository::new((*state.db).clone());
+
+    // Check membership
+    if let Err(response) = check_membership(&org_repo, org_id, auth.user_id()).await {
+        return response;
+    }
+
+    // Check if storage service is available
+    let Some(storage) = &state.storage else {
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(json!({
+                "error": "storage_not_configured",
+                "message": "File storage is not configured"
+            })),
+        )
+            .into_response();
+    };
+
+    let attachment_repo = AttachmentRepository::new((*state.db).clone());
+    let service = AttachmentService::new(storage.clone(), std::sync::Arc::new(attachment_repo));
+
+    let input = ConfirmUploadInput {
+        attachment_id: payload.attachment_id,
+        organization_id: org_id,
+        transaction_id: None,
+        simulation_id: Some(simulation_id),
+        filename: payload.filename,
+        content_type: payload.content_type,
+        file_size: payload.file_size,
+        storage_key: payload.storage_key,
+        attachment_type: parse_attachment_type(payload.attachment_type.as_deref()),
+        uploaded_by: auth.user_id(),
+    };
+
+    match service.confirm_simulation_upload(input).await {
+        Ok(attachment) => {
+            info!(
+                org_id = %org_id,
+                simulation_id = %simulation_id,
+                attachment_id = %attachment.id,
+                "Simulation attachment confirmed"
+            );
+
+            let response = AttachmentResponse {
+                id: attachment.id,
+                transaction_id: attachment.transaction_id,
+                simulation_id: attachment.simulation_id,
+                attachment_type: attachment_type_to_string(attachment.attachment_type).to_string(),
+                filename: attachment.filename,
+                file_size: attachment.file_size,
+                mime_type: attachment.mime_type,
+                storage_provider: attachment.storage_provider,
+                uploaded_by: attachment.uploaded_by,
+                created_at: attachment.created_at.to_rfc3339(),
+                download_url: None,
+                download_url_expires_at: None,
+            };
+
+            (StatusCode::CREATED, Json(response)).into_response()
+        }
+        Err(e) => {
+            error!(error = %e, "Failed to confirm simulation upload");
+            match e {
+                zeltra_core::attachment::AttachmentError::UploadNotVerified => (
+                    StatusCode::BAD_REQUEST,
+                    Json(json!({
+                        "error": "upload_not_verified",
+                        "message": "File not found in storage. Please upload the file first."
+                    })),
+                )
+                    .into_response(),
+                zeltra_core::attachment::AttachmentError::FileSizeMismatch { expected, actual } => (
+                    StatusCode::BAD_REQUEST,
+                    Json(json!({
+                        "error": "file_size_mismatch",
+                        "message": format!("File size mismatch. Expected: {}, Actual: {}", expected, actual)
+                    })),
+                )
+                    .into_response(),
+                _ => (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(json!({
+                        "error": "internal_error",
+                        "message": "An error occurred"
+                    })),
+                )
+                    .into_response(),
+            }
+        }
+    }
+}
+
+/// GET `/organizations/{org_id}/simulations/{simulation_id}/attachments`
+/// List attachments for a simulation.
+#[utoipa::path(
+    get,
+    path = "/organizations/{org_id}/simulations/{simulation_id}/attachments",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        ("simulation_id" = Uuid, Path, description = "Simulation ID")
+    ),
+    responses(
+        (status = 200, description = "List of attachments for simulation", body = [AttachmentResponse]),
+        (status = 403, description = "Forbidden")
+    ),
+    tag = "Attachments",
+    security(("bearerAuth" = []))
+)]
+async fn list_simulation_attachments(
+    State(state): State<AppState>,
+    auth: AuthUser,
+    Path((org_id, simulation_id)): Path<(Uuid, Uuid)>,
+) -> impl IntoResponse {
+    let org_repo = OrganizationRepository::new((*state.db).clone());
+
+    // Check membership
+    if let Err(response) = check_membership(&org_repo, org_id, auth.user_id()).await {
+        return response;
+    }
+
+    let attachment_repo = AttachmentRepository::new((*state.db).clone());
+
+    match attachment_repo
+        .list_by_simulation(simulation_id, org_id)
+        .await
+    {
+        Ok(attachments) => {
+            let items: Vec<AttachmentResponse> = attachments
+                .into_iter()
+                .map(|a| AttachmentResponse {
+                    id: a.id,
+                    transaction_id: a.transaction_id,
+                    simulation_id: a.simulation_id,
+                    attachment_type: attachment_type_to_string(a.attachment_type).to_string(),
+                    filename: a.filename,
+                    file_size: a.file_size,
+                    mime_type: a.mime_type,
+                    storage_provider: a.storage_provider,
+                    uploaded_by: a.uploaded_by,
+                    created_at: a.created_at.to_rfc3339(),
+                    download_url: None,
+                    download_url_expires_at: None,
+                })
+                .collect();
+
+            (StatusCode::OK, Json(json!({ "attachments": items }))).into_response()
+        }
+        Err(e) => {
+            error!(error = %e, "Failed to list simulation attachments");
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({
@@ -634,6 +983,7 @@ async fn get_attachment(
     let response = AttachmentResponse {
         id: attachment.id,
         transaction_id: attachment.transaction_id,
+        simulation_id: attachment.simulation_id,
         attachment_type: attachment_type_to_string(attachment.attachment_type).to_string(),
         filename: attachment.filename,
         file_size: attachment.file_size,

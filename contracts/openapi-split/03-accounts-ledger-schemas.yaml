@@ -17,9 +17,8 @@ components:
           type: string
         description:
           description: Account description.
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         id:
           description: Account ID.
           format: uuid
@@ -33,14 +32,12 @@ components:
         parent_id:
           description: Parent account ID.
           format: uuid
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         subtype:
           description: Account subtype.
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         type:
           description: Account type.
           type: string
@@ -59,9 +56,8 @@ components:
       properties:
         allow_direct_posting:
           description: 'Whether direct posting is allowed (default: true).'
-          type:
-          - boolean
-          - 'null'
+          type: boolean
+          nullable: true
         code:
           description: Account code (must be unique within organization).
           example: '1000'
@@ -72,14 +68,12 @@ components:
           type: string
         description:
           description: Account description.
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         is_active:
           description: 'Whether the account is active (default: true).'
-          type:
-          - boolean
-          - 'null'
+          type: boolean
+          nullable: true
         name:
           description: Account name.
           example: Petty Cash
@@ -87,15 +81,13 @@ components:
         parent_id:
           description: Parent account ID for hierarchical structure.
           format: uuid
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         subtype:
           description: Account subtype for more specific categorization.
           example: cash
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         type:
           description: 'Account type: asset, liability, equity, revenue, expense.'
           example: asset
@@ -111,45 +103,37 @@ components:
       properties:
         allow_direct_posting:
           description: Whether direct posting is allowed.
-          type:
-          - boolean
-          - 'null'
+          type: boolean
+          nullable: true
         code:
           description: Account code.
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         description:
           description: Account description.
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         is_active:
           description: Whether the account is active.
-          type:
-          - boolean
-          - 'null'
+          type: boolean
+          nullable: true
         name:
           description: Account name.
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         parent_id:
           description: Parent account ID.
           format: uuid
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         subtype:
           description: Account subtype.
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         type:
           description: Account type (only if no ledger entries).
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
       type: object
     AccountLedgerResponse:
       description: Response for account ledger.

@@ -14,9 +14,8 @@ components:
           type: string
         description:
           description: Budget description.
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         fiscal_year_id:
           description: Fiscal year ID.
           format: uuid
@@ -65,9 +64,8 @@ components:
           type: string
         description:
           description: Budget description.
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         fiscal_year_id:
           description: Fiscal year ID.
           format: uuid
@@ -86,19 +84,16 @@ components:
       properties:
         description:
           description: Budget description.
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         is_active:
           description: Whether the budget is active.
-          type:
-          - boolean
-          - 'null'
+          type: boolean
+          nullable: true
         name:
           description: Budget name.
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
       type: object
     CreateBudgetLinesRequest:
       description: Request body for creating budget lines in bulk.
@@ -127,18 +122,16 @@ components:
           items:
             format: uuid
             type: string
-          type:
-          - array
-          - 'null'
+          type: array
+          nullable: true
         fiscal_period_id:
           description: Fiscal period ID.
           format: uuid
           type: string
         notes:
           description: Notes.
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
       required:
       - account_id
       - fiscal_period_id
@@ -192,9 +185,8 @@ components:
           type: string
         notes:
           description: Notes.
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
       required:
       - id
       - account_id
@@ -208,15 +200,13 @@ components:
         budget_id:
           description: Budget ID.
           format: uuid
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         budget_name:
           description: Budget name.
           example: Annual Budget 2023
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         line_items:
           description: Line items.
           items:

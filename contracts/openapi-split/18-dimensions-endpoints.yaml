@@ -15,9 +15,8 @@ paths:
         name: active
         required: true
         schema:
-          type:
-          - boolean
-          - 'null'
+          type: boolean
+          nullable: true
       responses:
         '200':
           content:
@@ -80,17 +79,15 @@ paths:
         required: true
         schema:
           format: uuid
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
       - description: Filter by active status.
         in: path
         name: active
         required: true
         schema:
-          type:
-          - boolean
-          - 'null'
+          type: boolean
+          nullable: true
       responses:
         '200':
           content:

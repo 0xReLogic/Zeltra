@@ -134,9 +134,8 @@ components:
           type: string
         description:
           description: Description.
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         id:
           description: Dimension type ID.
           format: uuid
@@ -191,19 +190,16 @@ components:
           type: string
         description:
           description: Description.
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         is_active:
           description: 'Whether this dimension type is active (default: true).'
-          type:
-          - boolean
-          - 'null'
+          type: boolean
+          nullable: true
         is_required:
           description: Whether this dimension is required on transactions.
-          type:
-          - boolean
-          - 'null'
+          type: boolean
+          nullable: true
         name:
           description: Dimension type name.
           example: Department
@@ -211,9 +207,8 @@ components:
         sort_order:
           description: 'Sort order for display (default: 0).'
           format: int32
-          type:
-          - integer
-          - 'null'
+          type: integer
+          nullable: true
       required:
       - code
       - name
@@ -227,9 +222,8 @@ components:
           type: string
         description:
           description: Description.
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         dimension_type_id:
           description: Dimension type ID.
           format: uuid
@@ -237,20 +231,17 @@ components:
         effective_from:
           description: Effective from date.
           format: date
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         effective_to:
           description: Effective to date.
           format: date
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         is_active:
           description: 'Whether this value is active (default: true).'
-          type:
-          - boolean
-          - 'null'
+          type: boolean
+          nullable: true
         name:
           description: Dimension value name.
           example: Marketing Department
@@ -258,9 +249,8 @@ components:
         parent_id:
           description: Parent dimension value ID for hierarchical structure.
           format: uuid
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
       required:
       - dimension_type_id
       - code
@@ -280,19 +270,16 @@ components:
       properties:
         code:
           description: Dimension value code.
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         description:
           description: Description.
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         name:
           description: Dimension value name.
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
       type: object
     ExchangeRateResponse:
       description: Response for an exchange rate lookup.
@@ -373,14 +360,12 @@ components:
           type: string
         source:
           description: 'Source of the rate: "manual", "api", "bank_feed".'
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         source_reference:
           description: Optional reference (e.g., API provider, bank name).
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         to_currency:
           description: Target currency code.
           example: USD
@@ -473,9 +458,8 @@ components:
         date:
           description: Optional date for historical rates (defaults to today).
           format: date
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         target_currencies:
           description: Target currency codes to fetch rates for.
           example: '["USD", "GBP"]'

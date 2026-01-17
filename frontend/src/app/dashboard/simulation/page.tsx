@@ -3,9 +3,11 @@
 
 import { SimulationControls } from '@/components/simulation/SimulationControls'
 import { SimulationChart } from '@/components/simulation/SimulationChart'
+import { SimulationAttachmentUpload } from '@/components/simulation/SimulationAttachmentUpload'
+import { SimulationAttachmentList } from '@/components/simulation/SimulationAttachmentList'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { ArrowUpRight, ArrowDownRight, TrendingUp, AlertCircle } from 'lucide-react'
+import { ArrowUpRight, ArrowDownRight, TrendingUp, AlertCircle, Paperclip } from 'lucide-react'
 import { useRunSimulation } from '@/lib/queries/simulation'
 import type { RunSimulationRequest } from '@/types/simulation'
 import { toast } from 'sonner'
@@ -21,6 +23,9 @@ export default function SimulationPage() {
       }
     })
   }
+
+  // Generate a simulation ID for attachments (in real app, this would come from the simulation result)
+  const simulationId = simulation.data?.simulation_id || 'temp-simulation-id'
 
   return (
     <div className="p-8 space-y-8">
@@ -81,6 +86,29 @@ export default function SimulationPage() {
                 </div>
 
                 <SimulationChart data={simulation.data.projections as unknown as { month: string; revenue: number; expenses: number; net_income: number }[]} />
+
+                {/* Attachments Section */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Paperclip className="h-5 w-5" />
+                      Attachments
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <SimulationAttachmentUpload 
+                      simulationId={simulationId}
+                      onUploadComplete={() => {
+                        // Refresh attachments list
+                        toast.success('Attachment uploaded successfully')
+                      }}
+                    />
+                    <SimulationAttachmentList 
+                      simulationId={simulationId}
+                      allowDelete={true}
+                    />
+                  </CardContent>
+                </Card>
              </div>
           ) : (
             <div className="h-[400px] flex items-center justify-center border rounded-lg bg-muted/10 border-dashed">

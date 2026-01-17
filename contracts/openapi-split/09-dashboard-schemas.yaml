@@ -116,14 +116,12 @@ components:
           type: string
         amount:
           description: Amount (if applicable).
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         currency:
           description: Currency (if applicable).
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         description:
           description: Description.
           example: New transaction created for 120.00 USD

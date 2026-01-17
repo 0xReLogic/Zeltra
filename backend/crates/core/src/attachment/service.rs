@@ -34,6 +34,13 @@ pub trait AttachmentRepository: Send + Sync {
         organization_id: Uuid,
     ) -> impl std::future::Future<Output = Result<Vec<Attachment>, AttachmentError>> + Send;
 
+    /// List attachments for a simulation.
+    fn list_by_simulation(
+        &self,
+        simulation_id: Uuid,
+        organization_id: Uuid,
+    ) -> impl std::future::Future<Output = Result<Vec<Attachment>, AttachmentError>> + Send;
+
     /// Delete attachment by ID.
     fn delete(
         &self,
@@ -69,7 +76,7 @@ impl<R: AttachmentRepository> AttachmentService<R> {
     /// # Errors
     ///
     /// Returns an error if:
-    /// - Transaction does not exist
+    /// - Transaction does not exist (when transaction_id is provided)
     /// - File size exceeds limit
     /// - MIME type is not allowed
     /// - Storage service fails
@@ -77,14 +84,16 @@ impl<R: AttachmentRepository> AttachmentService<R> {
         &self,
         input: RequestUploadInput,
     ) -> Result<RequestUploadResult, AttachmentError> {
-        // Verify transaction exists
-        let tx_exists = self
-            .repo
-            .transaction_exists(input.transaction_id, input.organization_id)
-            .await?;
+        // Verify transaction exists if transaction_id is provided
+        if let Some(transaction_id) = input.transaction_id {
+            let tx_exists = self
+                .repo
+                .transaction_exists(transaction_id, input.organization_id)
+                .await?;
 
-        if !tx_exists {
-            return Err(AttachmentError::transaction_not_found(input.transaction_id));
+            if !tx_exists {
+                return Err(AttachmentError::transaction_not_found(transaction_id));
+            }
         }
 
         // Generate attachment ID
@@ -93,7 +102,7 @@ impl<R: AttachmentRepository> AttachmentService<R> {
         // Create upload request for storage service
         let upload_req = UploadRequest {
             organization_id: input.organization_id,
-            transaction_id: Some(input.transaction_id),
+            transaction_id: input.transaction_id,
             attachment_id,
             filename: input.filename.clone(),
             content_type: input.content_type.clone(),
@@ -151,7 +160,8 @@ impl<R: AttachmentRepository> AttachmentService<R> {
         let create_input = CreateAttachmentInput {
             id: input.attachment_id,
             organization_id: input.organization_id,
-            transaction_id: Some(input.transaction_id),
+            transaction_id: input.transaction_id,
+            simulation_id: input.simulation_id,
             attachment_type: input.attachment_type,
             filename: input.filename,
             file_size: input.file_size,
@@ -241,6 +251,111 @@ impl<R: AttachmentRepository> AttachmentService<R> {
             .await
     }
 
+    /// List attachments for a simulation.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if database operation fails.
+    pub async fn list_by_simulation(
+        &self,
+        simulation_id: Uuid,
+        organization_id: Uuid,
+    ) -> Result<Vec<Attachment>, AttachmentError> {
+        self.repo
+            .list_by_simulation(simulation_id, organization_id)
+            .await
+    }
+
+    /// Request an upload URL for a simulation attachment.
+    ///
+    /// Unlike transaction attachments, simulation attachments don't require
+    /// the simulation to exist in the database (simulations are ephemeral).
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if storage service fails.
+    pub async fn request_simulation_upload(
+        &self,
+        input: RequestUploadInput,
+    ) -> Result<RequestUploadResult, AttachmentError> {
+        // Generate attachment ID
+        let attachment_id = Uuid::new_v4();
+
+        // Create upload request for storage service
+        let upload_req = UploadRequest {
+            organization_id: input.organization_id,
+            transaction_id: None,
+            attachment_id,
+            filename: input.filename.clone(),
+            content_type: input.content_type.clone(),
+            file_size: input.file_size,
+        };
+
+        // Generate presigned URL
+        let presigned = self.storage.presign_upload(&upload_req).await?;
+
+        let storage_key = StorageService::generate_storage_key(&upload_req);
+
+        Ok(RequestUploadResult {
+            attachment_id,
+            upload_url: presigned.url,
+            upload_method: presigned.method,
+            upload_headers: presigned.headers,
+            expires_at: presigned.expires_at,
+            storage_key,
+        })
+    }
+
+    /// Confirm a simulation upload and create the attachment record.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - File not found in storage
+    /// - File size mismatch
+    /// - Database operation fails
+    pub async fn confirm_simulation_upload(
+        &self,
+        input: ConfirmUploadInput,
+    ) -> Result<Attachment, AttachmentError> {
+        // Verify file exists in storage
+        let metadata = self
+            .storage
+            .verify_upload(&input.storage_key)
+            .await
+            .map_err(|_| AttachmentError::UploadNotVerified)?;
+
+        // Verify file size matches
+        let expected_size = u64::try_from(input.file_size).unwrap_or(0);
+        let actual_size = metadata.file_size;
+        if actual_size != expected_size {
+            return Err(AttachmentError::file_size_mismatch(
+                expected_size,
+                actual_size,
+            ));
+        }
+
+        // Create attachment record with simulation_id
+        let create_input = CreateAttachmentInput {
+            id: input.attachment_id,
+            organization_id: input.organization_id,
+            transaction_id: None,
+            simulation_id: input.simulation_id,
+            attachment_type: input.attachment_type,
+            filename: input.filename,
+            file_size: input.file_size,
+            mime_type: input.content_type,
+            checksum_sha256: None,
+            storage_provider: self.storage.provider_name().to_string(),
+            storage_bucket: self.storage.bucket().to_string(),
+            storage_key: input.storage_key,
+            storage_region: None,
+            uploaded_by: input.uploaded_by,
+        };
+
+        self.repo.create(create_input).await
+    }
+
     /// Get attachment by ID.
     ///
     /// # Errors
@@ -295,6 +410,7 @@ mod tests {
                 id: input.id,
                 organization_id: input.organization_id,
                 transaction_id: input.transaction_id,
+                simulation_id: input.simulation_id,
                 attachment_type: input.attachment_type,
                 filename: input.filename,
                 file_size: input.file_size,
@@ -337,6 +453,21 @@ mod tests {
                 .collect())
         }
 
+        async fn list_by_simulation(
+            &self,
+            simulation_id: Uuid,
+            _organization_id: Uuid,
+        ) -> Result<Vec<Attachment>, AttachmentError> {
+            Ok(self
+                .attachments
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|a| a.simulation_id == Some(simulation_id))
+                .cloned()
+                .collect())
+        }
+
         async fn delete(&self, id: Uuid, _organization_id: Uuid) -> Result<bool, AttachmentError> {
             Ok(self.attachments.lock().unwrap().remove(&id).is_some())
         }
@@ -359,7 +490,8 @@ mod tests {
 
         let input = RequestUploadInput {
             organization_id: Uuid::new_v4(),
-            transaction_id: Uuid::new_v4(),
+            transaction_id: Some(Uuid::new_v4()),
+            simulation_id: None,
             filename: "test.pdf".to_string(),
             content_type: "application/pdf".to_string(),
             file_size: 1024,

@@ -19,9 +19,8 @@ components:
           type: string
         description:
           description: Description.
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         end_date:
           description: End date.
           type: string
@@ -37,9 +36,8 @@ components:
           type: string
         next_run_date:
           description: Next run date.
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         organization_id:
           description: Organization ID.
           format: uuid
@@ -94,9 +92,8 @@ components:
           type: string
         description:
           description: Optional description.
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         end_date:
           description: End date (YYYY-MM-DD).
           example: 2026-12-31
@@ -175,9 +172,8 @@ components:
         transaction_id:
           description: Related transaction ID.
           format: uuid
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
       required:
       - id
       - account_id

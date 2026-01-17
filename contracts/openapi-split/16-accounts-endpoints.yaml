@@ -274,9 +274,8 @@ paths:
         required: true
         schema:
           format: date
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
       responses:
         '200':
           description: Account balance

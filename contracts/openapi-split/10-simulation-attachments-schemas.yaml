@@ -10,9 +10,8 @@ components:
             value is growth rate.
           propertyNames:
             type: string
-          type:
-          - object
-          - 'null'
+          type: object
+          nullable: true
         base_period_end:
           description: End date of historical period for baseline calculation.
           example: 2023-12-31
@@ -28,16 +27,14 @@ components:
           items:
             format: uuid
             type: string
-          type:
-          - array
-          - 'null'
+          type: array
+          nullable: true
         expense_growth_rate:
           description: Global growth rate for expense accounts (decimal, e.g. "0.05"
             for 5%).
           example: '0.05'
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         projection_months:
           description: Number of months to project into the future (1-60).
           example: 12
@@ -48,9 +45,8 @@ components:
           description: Global growth rate for revenue accounts (decimal, e.g. "0.10"
             for 10%).
           example: '0.10'
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
       required:
       - base_period_start
       - base_period_end
@@ -197,14 +193,12 @@ components:
           type: string
         download_url:
           description: Download URL (presigned, optional).
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         download_url_expires_at:
           description: Download URL expiration (ISO 8601, optional).
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         file_size:
           description: File size in bytes.
           example: 1024
@@ -229,9 +223,8 @@ components:
         transaction_id:
           description: Transaction ID.
           format: uuid
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         uploaded_by:
           description: Uploaded by user ID.
           format: uuid
@@ -252,9 +245,8 @@ components:
         attachment_type:
           description: Attachment type classification.
           example: invoice
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         content_type:
           description: MIME type of the file.
           example: application/pdf
@@ -319,9 +311,8 @@ components:
         attachment_type:
           description: Attachment type classification.
           example: invoice
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
         content_type:
           description: MIME type.
           example: application/pdf

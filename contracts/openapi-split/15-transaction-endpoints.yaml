@@ -15,44 +15,39 @@ paths:
         name: status
         required: true
         schema:
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
       - description: Filter by transaction type.
         in: path
         name: type
         required: true
         schema:
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
       - description: Filter by date range start (YYYY-MM-DD).
         in: path
         name: from
         required: true
         schema:
           format: date
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
       - description: Filter by date range end (YYYY-MM-DD).
         in: path
         name: to
         required: true
         schema:
           format: date
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
       - description: Filter by dimension value ID.
         in: path
         name: dimension
         required: true
         schema:
           format: uuid
-          type:
-          - string
-          - 'null'
+          type: string
+          nullable: true
       - description: Page number (1-indexed).
         in: path
         name: page
@@ -60,9 +55,8 @@ paths:
         schema:
           format: int64
           minimum: 0
-          type:
-          - integer
-          - 'null'
+          type: integer
+          nullable: true
       - description: 'Page size (default: 50, max: 100).'
         in: path
         name: limit
@@ -70,9 +64,8 @@ paths:
         schema:
           format: int64
           minimum: 0
-          type:
-          - integer
-          - 'null'
+          type: integer
+          nullable: true
       responses:
         '200':
           content:

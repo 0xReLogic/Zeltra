@@ -53,8 +53,10 @@ impl AttachmentType {
 pub struct RequestUploadInput {
     /// Organization ID.
     pub organization_id: Uuid,
-    /// Transaction ID to attach to.
-    pub transaction_id: Uuid,
+    /// Transaction ID to attach to (for transaction attachments).
+    pub transaction_id: Option<Uuid>,
+    /// Simulation ID to attach to (for simulation attachments).
+    pub simulation_id: Option<Uuid>,
     /// Original filename.
     pub filename: String,
     /// MIME type of the file.
@@ -91,8 +93,10 @@ pub struct ConfirmUploadInput {
     pub attachment_id: Uuid,
     /// Organization ID.
     pub organization_id: Uuid,
-    /// Transaction ID.
-    pub transaction_id: Uuid,
+    /// Transaction ID (for transaction attachments).
+    pub transaction_id: Option<Uuid>,
+    /// Simulation ID (for simulation attachments).
+    pub simulation_id: Option<Uuid>,
     /// Original filename.
     pub filename: String,
     /// MIME type.
@@ -114,8 +118,10 @@ pub struct CreateAttachmentInput {
     pub id: Uuid,
     /// Organization ID.
     pub organization_id: Uuid,
-    /// Transaction ID.
+    /// Transaction ID (for transaction attachments).
     pub transaction_id: Option<Uuid>,
+    /// Simulation ID (for simulation attachments).
+    pub simulation_id: Option<Uuid>,
     /// Attachment type.
     pub attachment_type: AttachmentType,
     /// Original filename.
@@ -145,8 +151,10 @@ pub struct Attachment {
     pub id: Uuid,
     /// Organization ID.
     pub organization_id: Uuid,
-    /// Transaction ID (optional).
+    /// Transaction ID (for transaction attachments).
     pub transaction_id: Option<Uuid>,
+    /// Simulation ID (for simulation attachments).
+    pub simulation_id: Option<Uuid>,
     /// Attachment type.
     pub attachment_type: AttachmentType,
     /// Original filename.
