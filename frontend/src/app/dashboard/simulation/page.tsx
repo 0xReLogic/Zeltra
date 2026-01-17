@@ -24,8 +24,8 @@ export default function SimulationPage() {
     })
   }
 
-  // Generate a simulation ID for attachments (in real app, this would come from the simulation result)
-  const simulationId = simulation.data?.simulation_id || 'temp-simulation-id'
+  // Get simulation ID from API response
+  const simulationId = simulation.data?.simulation_id
 
   return (
     <div className="p-8 space-y-8">
@@ -88,27 +88,29 @@ export default function SimulationPage() {
                 <SimulationChart data={simulation.data.projections as unknown as { month: string; revenue: number; expenses: number; net_income: number }[]} />
 
                 {/* Attachments Section */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Paperclip className="h-5 w-5" />
-                      Attachments
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <SimulationAttachmentUpload 
-                      simulationId={simulationId}
-                      onUploadComplete={() => {
-                        // Refresh attachments list
-                        toast.success('Attachment uploaded successfully')
-                      }}
-                    />
-                    <SimulationAttachmentList 
-                      simulationId={simulationId}
-                      allowDelete={true}
-                    />
-                  </CardContent>
-                </Card>
+                {simulationId && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Paperclip className="h-5 w-5" />
+                        Attachments
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <SimulationAttachmentUpload 
+                        simulationId={simulationId}
+                        onUploadComplete={() => {
+                          // Refresh attachments list
+                          toast.success('Attachment uploaded successfully')
+                        }}
+                      />
+                      <SimulationAttachmentList 
+                        simulationId={simulationId}
+                        allowDelete={true}
+                      />
+                    </CardContent>
+                  </Card>
+                )}
              </div>
           ) : (
             <div className="h-[400px] flex items-center justify-center border rounded-lg bg-muted/10 border-dashed">
