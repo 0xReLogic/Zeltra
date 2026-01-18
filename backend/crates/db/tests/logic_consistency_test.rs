@@ -9,6 +9,7 @@ use sea_orm::{ColumnTrait, Database, DatabaseConnection, EntityTrait, QueryFilte
 use std::env;
 use uuid::Uuid;
 
+use serial_test::serial;
 use zeltra_db::{
     entities::{
         budget_line_dimensions, budget_lines, sea_orm_active_enums::TransactionType, transactions,
@@ -27,6 +28,7 @@ fn get_database_url() -> String {
 }
 
 #[tokio::test]
+#[serial]
 async fn test_budget_dimension_validation() {
     let db = Database::connect(&get_database_url())
         .await
@@ -193,6 +195,7 @@ async fn test_budget_dimension_validation() {
 }
 
 #[tokio::test]
+#[serial]
 async fn test_sequential_account_versions() {
     let db = Database::connect(&get_database_url())
         .await

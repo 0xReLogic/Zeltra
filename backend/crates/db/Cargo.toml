@@ -37,6 +37,7 @@ proptest = { workspace = true }
 rust_decimal_macros = "1"
 testcontainers = { workspace = true }
 testcontainers-modules = { workspace = true }
+serial_test = "3.0"
 futures = "0.3"
 
 [lints]

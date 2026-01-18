@@ -404,13 +404,16 @@ mod edge_case_tests {
     }
 
     #[test]
-    fn test_approver_without_limit_can_approve_any_amount() {
+    fn test_approver_without_limit_has_zero_limit() {
         let result = ApprovalEngine::can_approve(
             "approver",
-            None, // No limit set
+            None, // No limit set = 0 limit
             "approver",
-            Decimal::new(999_999_999, 0),
+            Decimal::new(1, 0), // Even 1.00 is too much
         );
-        assert!(result.is_ok());
+        assert!(matches!(
+            result,
+            Err(WorkflowError::ExceedsApprovalLimit { .. })
+        ));
     }
 }

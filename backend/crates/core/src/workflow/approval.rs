@@ -163,6 +163,13 @@ impl ApprovalEngine {
                     limit,
                 });
             }
+            (UserRole::Approver, None) => {
+                // If limit is None (NULL), Approver has NO approval rights (effectively 0 limit)
+                return Err(WorkflowError::ExceedsApprovalLimit {
+                    amount: transaction_amount,
+                    limit: Decimal::new(0, 0),
+                });
+            }
             _ => {}
         }
 

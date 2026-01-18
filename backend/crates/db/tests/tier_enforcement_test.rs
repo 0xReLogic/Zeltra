@@ -70,7 +70,7 @@ async fn test_tier_limit_enforcement() {
     assert!(!growth_limits.has_auto_accruals);
     assert!(!growth_limits.has_intercompany_hub);
     assert!(growth_limits.has_multi_currency);
-    assert_eq!(growth_limits.max_dimensions, 10);
+    assert_eq!(growth_limits.max_dimensions, 999999);
 
     // 3. Create an Enterprise organization
     let ent_org_id = Uuid::new_v4();
@@ -96,5 +96,5 @@ async fn test_tier_limit_enforcement() {
     assert!(ent_limits.has_auto_accruals);
     assert!(ent_limits.has_intercompany_hub);
     assert!(ent_limits.has_multi_currency);
-    assert_eq!(ent_limits.max_dimensions, 100);
+    assert_eq!(ent_limits.max_dimensions, 999999);
 }

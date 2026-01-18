@@ -632,24 +632,15 @@ impl WorkflowRepository {
         approved_by: Uuid,
         approval_notes: Option<String>,
     ) -> Result<BulkApproveResult, WorkflowError> {
-        let txn = self
-            .db
-            .begin()
-            .await
-            .map_err(|e| WorkflowError::Database(e.to_string()))?;
-
         let mut results = Vec::with_capacity(transaction_ids.len());
         let mut success_count = 0;
+        let mut failure_count = 0;
 
         for tx_id in transaction_ids {
+            // We process each transaction independently to allow partial success (Req 5.4).
+            // We allow the loop to continue even if one approval fails.
             match self
-                .approve_transaction_internal(
-                    &txn,
-                    organization_id,
-                    tx_id,
-                    approved_by,
-                    approval_notes.clone(),
-                )
+                .approve_transaction(organization_id, tx_id, approved_by, approval_notes.clone())
                 .await
             {
                 Ok(_) => {
@@ -661,32 +652,20 @@ impl WorkflowRepository {
                     });
                 }
                 Err(e) => {
-                    // In atomic mode, if one fails, we rollback and return the error
-                    txn.rollback().await.map_err(|rollback_err| {
-                        WorkflowError::Database(rollback_err.to_string())
-                    })?;
-
-                    return Ok(BulkApproveResult {
-                        results: vec![BulkApproveItemResult {
-                            transaction_id: tx_id,
-                            success: false,
-                            error: Some(e.to_string()),
-                        }],
-                        success_count: 0,
-                        failure_count: 1,
+                    failure_count += 1;
+                    results.push(BulkApproveItemResult {
+                        transaction_id: tx_id,
+                        success: false,
+                        error: Some(e.to_string()),
                     });
                 }
             }
         }
 
-        txn.commit()
-            .await
-            .map_err(|e| WorkflowError::Database(e.to_string()))?;
-
         Ok(BulkApproveResult {
             results,
             success_count,
-            failure_count: 0,
+            failure_count,
         })
     }
 

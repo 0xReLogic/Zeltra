@@ -1,5 +1,5 @@
 #![allow(missing_docs)]
-use chrono::NaiveDate;
+use chrono::{NaiveDate, Utc};
 use rust_decimal_macros::dec;
 use sea_orm::{Database, EntityTrait, Set};
 use std::env;
@@ -8,7 +8,7 @@ use uuid::Uuid;
 use zeltra_core::workflow::{ApprovalEngine, ApprovalRule};
 use zeltra_db::{
     entities::{
-        approval_rules,
+        approval_rules, organization_users,
         sea_orm_active_enums::{TransactionStatus, TransactionType, UserRole},
         transactions,
     },
@@ -187,16 +187,96 @@ async fn test_recursive_void_protection() {
 }
 
 #[tokio::test]
-async fn test_bulk_approval_atomicity() {
+async fn test_bulk_approval_partial_success() {
     let db = Database::connect(&get_database_url())
         .await
         .expect("Failed to connect to database");
-    let repo = WorkflowRepository::new(db.clone());
-    let org_id = Uuid::parse_str("d2b40c00-d207-4104-b8b6-b4e925abb507").unwrap();
-    let user_id = Uuid::parse_str("00000000-0000-0000-0000-000000000002").unwrap();
-    let fiscal_period_id = Uuid::parse_str("a46ede63-994d-4c5d-9c67-3af65116a05c").unwrap();
 
-    // Create 3 pending transactions
+    let repo = WorkflowRepository::new(db.clone());
+
+    // Setup: Create Org and User first to satisfy FKs
+    let org_id = Uuid::new_v4();
+    let user_id = Uuid::new_v4();
+    let fiscal_period_id = Uuid::new_v4();
+
+    let org = zeltra_db::entities::organizations::ActiveModel {
+        id: Set(org_id),
+        name: Set("Test Org".to_string()),
+        slug: Set(format!("test-org-{}", org_id)),
+        base_currency: Set("USD".to_string()),
+        created_at: Set(Utc::now().into()),
+        updated_at: Set(Utc::now().into()),
+        ..Default::default()
+    };
+    zeltra_db::entities::organizations::Entity::insert(org)
+        .exec(&db)
+        .await
+        .unwrap();
+
+    let fiscal_year_id = Uuid::new_v4();
+    let fiscal_year = zeltra_db::entities::fiscal_years::ActiveModel {
+        id: Set(fiscal_year_id),
+        organization_id: Set(org_id),
+        name: Set("2026".to_string()),
+        status: Set(zeltra_db::entities::sea_orm_active_enums::FiscalYearStatus::Open),
+        start_date: Set(NaiveDate::from_ymd_opt(2026, 1, 1).unwrap()),
+        end_date: Set(NaiveDate::from_ymd_opt(2026, 12, 31).unwrap()),
+        created_at: Set(Utc::now().into()),
+        updated_at: Set(Utc::now().into()),
+        ..Default::default()
+    };
+    zeltra_db::entities::fiscal_years::Entity::insert(fiscal_year)
+        .exec(&db)
+        .await
+        .unwrap();
+
+    let fiscal_period = zeltra_db::entities::fiscal_periods::ActiveModel {
+        id: Set(fiscal_period_id),
+        organization_id: Set(org_id),
+        fiscal_year_id: Set(fiscal_year_id),
+        name: Set("Jan 2026".to_string()),
+        period_number: Set(1),
+        start_date: Set(NaiveDate::from_ymd_opt(2026, 1, 1).unwrap()),
+        end_date: Set(NaiveDate::from_ymd_opt(2026, 1, 31).unwrap()),
+        status: Set(zeltra_db::entities::sea_orm_active_enums::FiscalPeriodStatus::Open),
+        created_at: Set(Utc::now().into()),
+        updated_at: Set(Utc::now().into()),
+        ..Default::default()
+    };
+    zeltra_db::entities::fiscal_periods::Entity::insert(fiscal_period)
+        .exec(&db)
+        .await
+        .unwrap();
+
+    let user = zeltra_db::entities::users::ActiveModel {
+        id: Set(user_id),
+        email: Set(format!("user-{}@example.com", user_id)),
+        password_hash: Set("hashed_pass".to_string()),
+        full_name: Set("Test User".to_string()),
+        created_at: Set(Utc::now().into()),
+        updated_at: Set(Utc::now().into()),
+        ..Default::default()
+    };
+    zeltra_db::entities::users::Entity::insert(user)
+        .exec(&db)
+        .await
+        .unwrap();
+
+    // Add user to org with approver role
+    let org_user = organization_users::ActiveModel {
+        organization_id: Set(org_id),
+        user_id: Set(user_id),
+        role: Set(zeltra_db::entities::sea_orm_active_enums::UserRole::Approver),
+        approval_limit: Set(Some(rust_decimal::Decimal::new(1_000_000, 0))), // High limit for test
+        created_at: Set(Utc::now().into()),
+        updated_at: Set(Utc::now().into()),
+        ..Default::default()
+    };
+    organization_users::Entity::insert(org_user)
+        .exec(&db)
+        .await
+        .unwrap();
+
     let id1 = Uuid::new_v4();
     let id2 = Uuid::new_v4();
     let id3 = Uuid::new_v4(); // This one will be already "Posted" to cause failure in approve_transaction
@@ -252,13 +332,10 @@ async fn test_bulk_approval_atomicity() {
         .await
         .unwrap();
 
-    assert_eq!(
-        res.success_count, 0,
-        "No transactions should be approved because one failed"
-    );
-    assert_eq!(res.failure_count, 1);
+    assert_eq!(res.success_count, 2, "Should approve 2 valid transactions");
+    assert_eq!(res.failure_count, 1, "Should fail 1 invalid transaction");
 
-    // Verify txn1 and txn2 are still Pending (weren't committed)
+    // Verify txn1 and txn2 are Approved
     let t1 = transactions::Entity::find_by_id(id1)
         .one(&db)
         .await
@@ -270,16 +347,16 @@ async fn test_bulk_approval_atomicity() {
         .unwrap()
         .unwrap();
 
-    assert_eq!(
-        t1.status,
-        TransactionStatus::Pending,
-        "Txn 1 should remain Pending after rollback"
-    );
-    assert_eq!(
-        t2.status,
-        TransactionStatus::Pending,
-        "Txn 2 should remain Pending after rollback"
-    );
+    assert_eq!(t1.status, TransactionStatus::Approved);
+    assert_eq!(t2.status, TransactionStatus::Approved);
+
+    // Verify txn3 is still Posted
+    let t3 = transactions::Entity::find_by_id(id3)
+        .one(&db)
+        .await
+        .unwrap()
+        .unwrap();
+    assert_eq!(t3.status, TransactionStatus::Posted);
 
     // Cleanup
     let _ = transactions::Entity::delete_by_id(id1).exec(&db).await;
