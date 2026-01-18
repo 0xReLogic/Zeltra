@@ -394,6 +394,8 @@ components:
       properties:
         created_at:
           description: Created at timestamp.
+          example: 2024-01-15T10:30:00Z
+          format: date-time
           type: string
         description:
           description: Description.
@@ -408,12 +410,16 @@ components:
           description: Active status.
           type: boolean
         max_amount:
-          description: Maximum amount threshold.
+          description: Maximum amount threshold (must be a valid decimal with up to 2 decimal places).
+          example: '5000.00'
+          pattern: ^[0-9]+(\.[0-9]{1,2})?$
           type:
           - string
           - 'null'
         min_amount:
-          description: Minimum amount threshold.
+          description: Minimum amount threshold (must be a valid decimal with up to 2 decimal places).
+          example: '1000.00'
+          pattern: ^[0-9]+(\.[0-9]{1,2})?$
           type:
           - string
           - 'null'
@@ -429,15 +435,21 @@ components:
           format: int32
           type: integer
         required_role:
-          description: Required role.
+          description: 'Required role (valid values: viewer, submitter, approver, accountant, admin, owner).'
+          example: approver
           type: string
         transaction_types:
-          description: Transaction types.
+          description: 'Transaction types (valid values: journal, invoice, bill, payment, expense, transfer, adjustment, opening_balance, reversal, accrual, revaluation, intercompany).'
+          example:
+          - bill
+          - invoice
           items:
             type: string
           type: array
         updated_at:
           description: Updated at timestamp.
+          example: 2024-01-15T10:30:00Z
+          format: date-time
           type: string
       required:
       - id
@@ -1252,37 +1264,47 @@ components:
       description: Request body for creating an approval rule.
       properties:
         description:
-          description: Optional description.
+          description: Optional description (max 1000 characters).
+          maxLength: 1000
           type:
           - string
           - 'null'
         max_amount:
-          description: Maximum amount threshold (inclusive).
+          description: Maximum amount threshold (inclusive, must be a valid decimal with up to 2 decimal places).
+          example: '5000.00'
+          pattern: ^[0-9]+(\.[0-9]{1,2})?$
           type:
           - string
           - 'null'
         min_amount:
-          description: Minimum amount threshold (inclusive).
+          description: Minimum amount threshold (inclusive, must be a valid decimal with up to 2 decimal places).
           example: '1000.00'
+          pattern: ^[0-9]+(\.[0-9]{1,2})?$
           type:
           - string
           - 'null'
         name:
-          description: Name of the approval rule.
+          description: Name of the approval rule (1-255 characters).
           example: High Value Bills
+          maxLength: 255
+          minLength: 1
           type: string
         priority:
-          description: Priority (lower = higher priority).
+          description: 'Priority (lower = higher priority, valid range: 1-100).'
           example: 1
           format: int32
+          maximum: 100
+          minimum: 1
           type: integer
         required_role:
-          description: Required role to approve (viewer, submitter, approver, accountant, admin, owner).
+          description: 'Required role to approve (valid values: viewer, submitter, approver, accountant, admin, owner).'
           example: approver
           type: string
         transaction_types:
-          description: Transaction types this rule applies to.
-          example: '["bill"]'
+          description: 'Transaction types this rule applies to (valid values: journal, invoice, bill, payment, expense, transfer, adjustment, opening_balance, reversal, accrual, revaluation, intercompany).'
+          example:
+          - bill
+          - invoice
           items:
             type: string
           type: array
@@ -3398,7 +3420,8 @@ components:
       description: Request body for updating an approval rule.
       properties:
         description:
-          description: New description.
+          description: New description (max 1000 characters).
+          maxLength: 1000
           type:
           - string
           - 'null'
@@ -3408,33 +3431,45 @@ components:
           - boolean
           - 'null'
         max_amount:
-          description: New maximum amount.
+          description: New maximum amount (must be a valid decimal with up to 2 decimal places).
+          example: '5000.00'
+          pattern: ^[0-9]+(\.[0-9]{1,2})?$
           type:
           - string
           - 'null'
         min_amount:
-          description: New minimum amount.
+          description: New minimum amount (must be a valid decimal with up to 2 decimal places).
+          example: '1000.00'
+          pattern: ^[0-9]+(\.[0-9]{1,2})?$
           type:
           - string
           - 'null'
         name:
-          description: New name.
+          description: New name (1-255 characters).
+          maxLength: 255
+          minLength: 1
           type:
           - string
           - 'null'
         priority:
-          description: New priority.
+          description: 'New priority (valid range: 1-100).'
           format: int32
+          maximum: 100
+          minimum: 1
           type:
           - integer
           - 'null'
         required_role:
-          description: New required role.
+          description: 'New required role (valid values: viewer, submitter, approver, accountant, admin, owner).'
+          example: approver
           type:
           - string
           - 'null'
         transaction_types:
-          description: New transaction types.
+          description: 'New transaction types (valid values: journal, invoice, bill, payment, expense, transfer, adjustment, opening_balance, reversal, accrual, revaluation, intercompany).'
+          example:
+          - bill
+          - invoice
           items:
             type: string
           type:
@@ -4308,17 +4343,81 @@ paths:
         schema:
           format: uuid
           type: string
+      - description: 'Page number (default: 1, min: 1)'
+        in: query
+        name: page
+        required: false
+        schema:
+          format: int32
+          minimum: 0
+          type: integer
+      - description: 'Items per page (default: 20, min: 1, max: 100)'
+        in: query
+        name: per_page
+        required: false
+        schema:
+          format: int32
+          minimum: 0
+          type: integer
+      - description: Filter by active status
+        in: query
+        name: is_active
+        required: false
+        schema:
+          type: boolean
+      - description: Filter by transaction type
+        in: query
+        name: transaction_type
+        required: false
+        schema:
+          type: string
+      - description: Sort by field (priority, created_at, name)
+        in: query
+        name: sort_by
+        required: false
+        schema:
+          type: string
+      - description: Sort order (asc, desc)
+        in: query
+        name: sort_order
+        required: false
+        schema:
+          type: string
       responses:
         '200':
           content:
             application/json:
+              example:
+                data:
+                - created_at: 2024-01-15T10:30:00Z
+                  description: Requires approval for bills over $5000
+                  id: 550e8400-e29b-41d4-a716-446655440000
+                  is_active: true
+                  max_amount: null
+                  min_amount: '5000.00'
+                  name: High Value Bills
+                  organization_id: 550e8400-e29b-41d4-a716-446655440001
+                  priority: 1
+                  required_role: approver
+                  transaction_types:
+                  - bill
+                  updated_at: 2024-01-15T10:30:00Z
+                meta:
+                  page: 1
+                  per_page: 20
+                  total: 150
+                  total_pages: 8
               schema:
-                items:
-                  $ref: '#/components/schemas/ApprovalRuleResponse'
-                type: array
-          description: List of approval rules
+                type: object
+          description: Paginated list of approval rules
+        '400':
+          description: Invalid query parameters
+        '401':
+          description: Unauthorized
         '403':
           description: Forbidden
+        '500':
+          description: Internal server error
       security:
       - bearerAuth: []
       summary: GET `/organizations/{org_id}/approval-rules` - List approval rules.
@@ -4348,9 +4447,29 @@ paths:
                 $ref: '#/components/schemas/ApprovalRuleResponse'
           description: Approval rule created successfully
         '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
           description: Invalid input or amount format
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
         '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
           description: Forbidden
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Internal server error
       security:
       - bearerAuth: []
       summary: POST `/organizations/{org_id}/approval-rules` - Create approval rule.
@@ -4377,10 +4496,30 @@ paths:
       responses:
         '204':
           description: Approval rule deleted successfully
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
         '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
           description: Forbidden
         '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
           description: Approval rule not found
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Internal server error
       security:
       - bearerAuth: []
       summary: DELETE `/organizations/{org_id}/approval-rules/{rule_id}` - Delete approval rule.
@@ -4410,10 +4549,30 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApprovalRuleResponse'
           description: Approval rule details
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
         '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
           description: Forbidden
         '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
           description: Approval rule not found
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Internal server error
       security:
       - bearerAuth: []
       summary: GET `/organizations/{org_id}/approval-rules/{rule_id}` - Get approval rule.
@@ -4450,11 +4609,35 @@ paths:
                 $ref: '#/components/schemas/ApprovalRuleResponse'
           description: Approval rule updated successfully
         '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
           description: Invalid input or amount format
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
         '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
           description: Forbidden
         '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
           description: Approval rule not found
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Internal server error
       security:
       - bearerAuth: []
       summary: PATCH `/organizations/{org_id}/approval-rules/{rule_id}` - Update approval rule.

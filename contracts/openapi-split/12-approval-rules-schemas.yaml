@@ -5,6 +5,8 @@ components:
       properties:
         created_at:
           description: Created at timestamp.
+          example: 2024-01-15 10:30:00+00:00
+          format: date-time
           type: string
         description:
           description: Description.
@@ -18,11 +20,17 @@ components:
           description: Active status.
           type: boolean
         max_amount:
-          description: Maximum amount threshold.
+          description: Maximum amount threshold (must be a valid decimal with up to
+            2 decimal places).
+          example: '5000.00'
+          pattern: ^[0-9]+(\.[0-9]{1,2})?$
           type: string
           nullable: true
         min_amount:
-          description: Minimum amount threshold.
+          description: Minimum amount threshold (must be a valid decimal with up to
+            2 decimal places).
+          example: '1000.00'
+          pattern: ^[0-9]+(\.[0-9]{1,2})?$
           type: string
           nullable: true
         name:
@@ -37,15 +45,24 @@ components:
           format: int32
           type: integer
         required_role:
-          description: Required role.
+          description: 'Required role (valid values: viewer, submitter, approver,
+            accountant, admin, owner).'
+          example: approver
           type: string
         transaction_types:
-          description: Transaction types.
+          description: 'Transaction types (valid values: journal, invoice, bill, payment,
+            expense, transfer, adjustment, opening_balance, reversal, accrual, revaluation,
+            intercompany).'
+          example:
+          - bill
+          - invoice
           items:
             type: string
           type: array
         updated_at:
           description: Updated at timestamp.
+          example: 2024-01-15 10:30:00+00:00
+          format: date-time
           type: string
       required:
       - id
@@ -62,35 +79,49 @@ components:
       description: Request body for creating an approval rule.
       properties:
         description:
-          description: Optional description.
+          description: Optional description (max 1000 characters).
+          maxLength: 1000
           type: string
           nullable: true
         max_amount:
-          description: Maximum amount threshold (inclusive).
+          description: Maximum amount threshold (inclusive, must be a valid decimal
+            with up to 2 decimal places).
+          example: '5000.00'
+          pattern: ^[0-9]+(\.[0-9]{1,2})?$
           type: string
           nullable: true
         min_amount:
-          description: Minimum amount threshold (inclusive).
+          description: Minimum amount threshold (inclusive, must be a valid decimal
+            with up to 2 decimal places).
           example: '1000.00'
+          pattern: ^[0-9]+(\.[0-9]{1,2})?$
           type: string
           nullable: true
         name:
-          description: Name of the approval rule.
+          description: Name of the approval rule (1-255 characters).
           example: High Value Bills
+          maxLength: 255
+          minLength: 1
           type: string
         priority:
-          description: Priority (lower = higher priority).
+          description: 'Priority (lower = higher priority, valid range: 1-100).'
           example: 1
           format: int32
+          maximum: 100
+          minimum: 1
           type: integer
         required_role:
-          description: Required role to approve (viewer, submitter, approver, accountant,
-            admin, owner).
+          description: 'Required role to approve (valid values: viewer, submitter,
+            approver, accountant, admin, owner).'
           example: approver
           type: string
         transaction_types:
-          description: Transaction types this rule applies to.
-          example: '["bill"]'
+          description: 'Transaction types this rule applies to (valid values: journal,
+            invoice, bill, payment, expense, transfer, adjustment, opening_balance,
+            reversal, accrual, revaluation, intercompany).'
+          example:
+          - bill
+          - invoice
           items:
             type: string
           type: array
@@ -104,7 +135,8 @@ components:
       description: Request body for updating an approval rule.
       properties:
         description:
-          description: New description.
+          description: New description (max 1000 characters).
+          maxLength: 1000
           type: string
           nullable: true
         is_active:
@@ -112,28 +144,45 @@ components:
           type: boolean
           nullable: true
         max_amount:
-          description: New maximum amount.
+          description: New maximum amount (must be a valid decimal with up to 2 decimal
+            places).
+          example: '5000.00'
+          pattern: ^[0-9]+(\.[0-9]{1,2})?$
           type: string
           nullable: true
         min_amount:
-          description: New minimum amount.
+          description: New minimum amount (must be a valid decimal with up to 2 decimal
+            places).
+          example: '1000.00'
+          pattern: ^[0-9]+(\.[0-9]{1,2})?$
           type: string
           nullable: true
         name:
-          description: New name.
+          description: New name (1-255 characters).
+          maxLength: 255
+          minLength: 1
           type: string
           nullable: true
         priority:
-          description: New priority.
+          description: 'New priority (valid range: 1-100).'
           format: int32
+          maximum: 100
+          minimum: 1
           type: integer
           nullable: true
         required_role:
-          description: New required role.
+          description: 'New required role (valid values: viewer, submitter, approver,
+            accountant, admin, owner).'
+          example: approver
           type: string
           nullable: true
         transaction_types:
-          description: New transaction types.
+          description: 'New transaction types (valid values: journal, invoice, bill,
+            payment, expense, transfer, adjustment, opening_balance, reversal, accrual,
+            revaluation, intercompany).'
+          example:
+          - bill
+          - invoice
           items:
             type: string
           type: array

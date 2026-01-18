@@ -10,17 +10,81 @@ paths:
         schema:
           format: uuid
           type: string
+      - description: 'Page number (default: 1, min: 1)'
+        in: query
+        name: page
+        required: false
+        schema:
+          format: int32
+          minimum: 0
+          type: integer
+      - description: 'Items per page (default: 20, min: 1, max: 100)'
+        in: query
+        name: per_page
+        required: false
+        schema:
+          format: int32
+          minimum: 0
+          type: integer
+      - description: Filter by active status
+        in: query
+        name: is_active
+        required: false
+        schema:
+          type: boolean
+      - description: Filter by transaction type
+        in: query
+        name: transaction_type
+        required: false
+        schema:
+          type: string
+      - description: Sort by field (priority, created_at, name)
+        in: query
+        name: sort_by
+        required: false
+        schema:
+          type: string
+      - description: Sort order (asc, desc)
+        in: query
+        name: sort_order
+        required: false
+        schema:
+          type: string
       responses:
         '200':
           content:
             application/json:
+              example:
+                data:
+                - created_at: 2024-01-15 10:30:00+00:00
+                  description: Requires approval for bills over $5000
+                  id: 550e8400-e29b-41d4-a716-446655440000
+                  is_active: true
+                  max_amount: null
+                  min_amount: '5000.00'
+                  name: High Value Bills
+                  organization_id: 550e8400-e29b-41d4-a716-446655440001
+                  priority: 1
+                  required_role: approver
+                  transaction_types:
+                  - bill
+                  updated_at: 2024-01-15 10:30:00+00:00
+                meta:
+                  page: 1
+                  per_page: 20
+                  total: 150
+                  total_pages: 8
               schema:
-                items:
-                  $ref: '#/components/schemas/ApprovalRuleResponse'
-                type: array
-          description: List of approval rules
+                type: object
+          description: Paginated list of approval rules
+        '400':
+          description: Invalid query parameters
+        '401':
+          description: Unauthorized
         '403':
           description: Forbidden
+        '500':
+          description: Internal server error
       security:
       - bearerAuth: []
       summary: GET `/organizations/{org_id}/approval-rules` - List approval rules.
@@ -50,9 +114,29 @@ paths:
                 $ref: '#/components/schemas/ApprovalRuleResponse'
           description: Approval rule created successfully
         '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
           description: Invalid input or amount format
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
         '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
           description: Forbidden
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Internal server error
       security:
       - bearerAuth: []
       summary: POST `/organizations/{org_id}/approval-rules` - Create approval rule.
@@ -79,10 +163,30 @@ paths:
       responses:
         '204':
           description: Approval rule deleted successfully
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
         '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
           description: Forbidden
         '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
           description: Approval rule not found
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Internal server error
       security:
       - bearerAuth: []
       summary: DELETE `/organizations/{org_id}/approval-rules/{rule_id}` - Delete
@@ -113,10 +217,30 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApprovalRuleResponse'
           description: Approval rule details
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
         '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
           description: Forbidden
         '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
           description: Approval rule not found
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Internal server error
       security:
       - bearerAuth: []
       summary: GET `/organizations/{org_id}/approval-rules/{rule_id}` - Get approval
@@ -154,11 +278,35 @@ paths:
                 $ref: '#/components/schemas/ApprovalRuleResponse'
           description: Approval rule updated successfully
         '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
           description: Invalid input or amount format
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
         '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
           description: Forbidden
         '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
           description: Approval rule not found
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Internal server error
       security:
       - bearerAuth: []
       summary: PATCH `/organizations/{org_id}/approval-rules/{rule_id}` - Update approval

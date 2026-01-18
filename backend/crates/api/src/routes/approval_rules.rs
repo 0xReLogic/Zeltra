@@ -16,7 +16,7 @@ use std::str::FromStr;
 use tracing::{error, info};
 use uuid::Uuid;
 
-use crate::{AppState, middleware::AuthUser};
+use crate::{AppState, error::ApiError, middleware::AuthUser};
 use zeltra_db::{
     OrganizationRepository,
     repositories::approval_rule::{
@@ -56,43 +56,52 @@ pub fn routes() -> Router<AppState> {
 /// Request body for creating an approval rule.
 #[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct CreateApprovalRuleRequest {
-    /// Name of the approval rule.
-    #[schema(example = "High Value Bills")]
+    /// Name of the approval rule (1-255 characters).
+    #[schema(min_length = 1, max_length = 255, example = "High Value Bills")]
     pub name: String,
-    /// Optional description.
+    /// Optional description (max 1000 characters).
+    #[schema(max_length = 1000)]
     pub description: Option<String>,
-    /// Minimum amount threshold (inclusive).
-    #[schema(example = "1000.00")]
+    /// Minimum amount threshold (inclusive, must be a valid decimal with up to 2 decimal places).
+    #[schema(pattern = "^[0-9]+(\\.[0-9]{1,2})?$", example = "1000.00")]
     pub min_amount: Option<String>,
-    /// Maximum amount threshold (inclusive).
+    /// Maximum amount threshold (inclusive, must be a valid decimal with up to 2 decimal places).
+    #[schema(pattern = "^[0-9]+(\\.[0-9]{1,2})?$", example = "5000.00")]
     pub max_amount: Option<String>,
-    /// Transaction types this rule applies to.
-    #[schema(example = "[\"bill\"]")]
+    /// Transaction types this rule applies to (valid values: journal, invoice, bill, payment, expense, transfer, adjustment, opening_balance, reversal, accrual, revaluation, intercompany).
+    #[schema(inline, example = json!(["bill", "invoice"]))]
     pub transaction_types: Vec<String>,
-    /// Required role to approve (viewer, submitter, approver, accountant, admin, owner).
-    #[schema(example = "approver")]
+    /// Required role to approve (valid values: viewer, submitter, approver, accountant, admin, owner).
+    #[schema(inline, example = "approver")]
     pub required_role: String,
-    /// Priority (lower = higher priority).
-    #[schema(example = 1)]
+    /// Priority (lower = higher priority, valid range: 1-100).
+    #[schema(minimum = 1, maximum = 100, example = 1)]
     pub priority: i16,
 }
 
 /// Request body for updating an approval rule.
 #[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct UpdateApprovalRuleRequest {
-    /// New name.
+    /// New name (1-255 characters).
+    #[schema(min_length = 1, max_length = 255)]
     pub name: Option<String>,
-    /// New description.
+    /// New description (max 1000 characters).
+    #[schema(max_length = 1000)]
     pub description: Option<String>,
-    /// New minimum amount.
+    /// New minimum amount (must be a valid decimal with up to 2 decimal places).
+    #[schema(pattern = "^[0-9]+(\\.[0-9]{1,2})?$", example = "1000.00")]
     pub min_amount: Option<String>,
-    /// New maximum amount.
+    /// New maximum amount (must be a valid decimal with up to 2 decimal places).
+    #[schema(pattern = "^[0-9]+(\\.[0-9]{1,2})?$", example = "5000.00")]
     pub max_amount: Option<String>,
-    /// New transaction types.
+    /// New transaction types (valid values: journal, invoice, bill, payment, expense, transfer, adjustment, opening_balance, reversal, accrual, revaluation, intercompany).
+    #[schema(inline, example = json!(["bill", "invoice"]))]
     pub transaction_types: Option<Vec<String>>,
-    /// New required role.
+    /// New required role (valid values: viewer, submitter, approver, accountant, admin, owner).
+    #[schema(inline, example = "approver")]
     pub required_role: Option<String>,
-    /// New priority.
+    /// New priority (valid range: 1-100).
+    #[schema(minimum = 1, maximum = 100)]
     pub priority: Option<i16>,
     /// Active status.
     pub is_active: Option<bool>,
@@ -109,21 +118,27 @@ pub struct ApprovalRuleResponse {
     pub name: String,
     /// Description.
     pub description: Option<String>,
-    /// Minimum amount threshold.
+    /// Minimum amount threshold (must be a valid decimal with up to 2 decimal places).
+    #[schema(pattern = "^[0-9]+(\\.[0-9]{1,2})?$", example = "1000.00")]
     pub min_amount: Option<String>,
-    /// Maximum amount threshold.
+    /// Maximum amount threshold (must be a valid decimal with up to 2 decimal places).
+    #[schema(pattern = "^[0-9]+(\\.[0-9]{1,2})?$", example = "5000.00")]
     pub max_amount: Option<String>,
-    /// Transaction types.
+    /// Transaction types (valid values: journal, invoice, bill, payment, expense, transfer, adjustment, opening_balance, reversal, accrual, revaluation, intercompany).
+    #[schema(inline, example = json!(["bill", "invoice"]))]
     pub transaction_types: Vec<String>,
-    /// Required role.
+    /// Required role (valid values: viewer, submitter, approver, accountant, admin, owner).
+    #[schema(inline, example = "approver")]
     pub required_role: String,
     /// Priority.
     pub priority: i16,
     /// Active status.
     pub is_active: bool,
     /// Created at timestamp.
+    #[schema(value_type = String, format = "date-time", example = "2024-01-15T10:30:00Z")]
     pub created_at: String,
     /// Updated at timestamp.
+    #[schema(value_type = String, format = "date-time", example = "2024-01-15T10:30:00Z")]
     pub updated_at: String,
 }
 
@@ -136,11 +151,43 @@ pub struct ApprovalRuleResponse {
     get,
     path = "/organizations/{org_id}/approval-rules",
     params(
-        ("org_id" = Uuid, Path, description = "Organization ID")
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        ("page" = Option<u32>, Query, description = "Page number (default: 1, min: 1)"),
+        ("per_page" = Option<u32>, Query, description = "Items per page (default: 20, min: 1, max: 100)"),
+        ("is_active" = Option<bool>, Query, description = "Filter by active status"),
+        ("transaction_type" = Option<String>, Query, description = "Filter by transaction type"),
+        ("sort_by" = Option<String>, Query, description = "Sort by field (priority, created_at, name)"),
+        ("sort_order" = Option<String>, Query, description = "Sort order (asc, desc)")
     ),
     responses(
-        (status = 200, description = "List of approval rules", body = [ApprovalRuleResponse]),
-        (status = 403, description = "Forbidden")
+        (status = 200, description = "Paginated list of approval rules", body = inline(Object), example = json!({
+            "data": [
+                {
+                    "id": "550e8400-e29b-41d4-a716-446655440000",
+                    "organization_id": "550e8400-e29b-41d4-a716-446655440001",
+                    "name": "High Value Bills",
+                    "description": "Requires approval for bills over $5000",
+                    "min_amount": "5000.00",
+                    "max_amount": null,
+                    "transaction_types": ["bill"],
+                    "required_role": "approver",
+                    "priority": 1,
+                    "is_active": true,
+                    "created_at": "2024-01-15T10:30:00Z",
+                    "updated_at": "2024-01-15T10:30:00Z"
+                }
+            ],
+            "meta": {
+                "page": 1,
+                "per_page": 20,
+                "total": 150,
+                "total_pages": 8
+            }
+        })),
+        (status = 400, description = "Invalid query parameters"),
+        (status = 401, description = "Unauthorized"),
+        (status = 403, description = "Forbidden"),
+        (status = 500, description = "Internal server error")
     ),
     tag = "Approval Rules",
     security(("bearerAuth" = []))
@@ -183,7 +230,9 @@ async fn list_approval_rules(
     responses(
         (status = 201, description = "Approval rule created successfully", body = ApprovalRuleResponse),
         (status = 400, description = "Invalid input or amount format"),
-        (status = 403, description = "Forbidden")
+        (status = 401, description = "Unauthorized"),
+        (status = 403, description = "Forbidden"),
+        (status = 500, description = "Internal server error")
     ),
     tag = "Approval Rules",
     security(("bearerAuth" = []))
@@ -289,8 +338,10 @@ async fn create_approval_rule(
     ),
     responses(
         (status = 200, description = "Approval rule details", body = ApprovalRuleResponse),
+        (status = 401, description = "Unauthorized"),
         (status = 403, description = "Forbidden"),
-        (status = 404, description = "Approval rule not found")
+        (status = 404, description = "Approval rule not found"),
+        (status = 500, description = "Internal server error")
     ),
     tag = "Approval Rules",
     security(("bearerAuth" = []))
@@ -329,8 +380,10 @@ async fn get_approval_rule(
     responses(
         (status = 200, description = "Approval rule updated successfully", body = ApprovalRuleResponse),
         (status = 400, description = "Invalid input or amount format"),
+        (status = 401, description = "Unauthorized"),
         (status = 403, description = "Forbidden"),
-        (status = 404, description = "Approval rule not found")
+        (status = 404, description = "Approval rule not found"),
+        (status = 500, description = "Internal server error")
     ),
     tag = "Approval Rules",
     security(("bearerAuth" = []))
@@ -405,8 +458,10 @@ async fn update_approval_rule(
     ),
     responses(
         (status = 204, description = "Approval rule deleted successfully"),
+        (status = 401, description = "Unauthorized"),
         (status = 403, description = "Forbidden"),
-        (status = 404, description = "Approval rule not found")
+        (status = 404, description = "Approval rule not found"),
+        (status = 500, description = "Internal server error")
     ),
     tag = "Approval Rules",
     security(("bearerAuth" = []))

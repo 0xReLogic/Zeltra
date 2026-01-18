@@ -9,14 +9,14 @@ This plan implements the complete Approval Rules management feature across OpenA
 ## Tasks
 
 - [ ] 1. Backend OpenAPI Annotations Update (Critical)
-  - [ ] 1.1 Update utoipa annotations for timestamp fields
+  - [x] 1.1 Update utoipa annotations for timestamp fields
     - File: `backend/crates/api/src/routes/approval_rules.rs`
     - Add `#[schema(value_type = String, format = "date-time", example = "2024-01-15T10:30:00Z")]` to created_at in ApprovalRuleResponse
     - Add `#[schema(value_type = String, format = "date-time", example = "2024-01-15T10:30:00Z")]` to updated_at in ApprovalRuleResponse
     - _Requirements: 2.1.1_
     - _Property: None_
   
-  - [ ] 1.2 Update utoipa annotations for amount fields
+  - [x] 1.2 Update utoipa annotations for amount fields
     - File: `backend/crates/api/src/routes/approval_rules.rs`
     - Add `#[schema(pattern = "^[0-9]+(\\.[0-9]{1,2})?$", example = "1000.00")]` to min_amount in CreateApprovalRuleRequest
     - Add `#[schema(pattern = "^[0-9]+(\\.[0-9]{1,2})?$", example = "5000.00")]` to max_amount in CreateApprovalRuleRequest
@@ -28,7 +28,7 @@ This plan implements the complete Approval Rules management feature across OpenA
     - _Requirements: 2.1.4_
     - _Property: Property 2 (Amount Range Validation)_
   
-  - [ ] 1.3 Update utoipa annotations for enum constraints
+  - [x] 1.3 Update utoipa annotations for enum constraints
     - File: `backend/crates/api/src/routes/approval_rules.rs`
     - Add `#[schema(inline, example = json!(["bill", "invoice"]))]` to transaction_types in all structs
     - Add inline enum documentation for required_role field
@@ -36,7 +36,7 @@ This plan implements the complete Approval Rules management feature across OpenA
     - _Requirements: 2.1.5_
     - _Property: Property 4 (Transaction Type Completeness), Property 6 (Enum Validation)_
   
-  - [ ] 1.4 Update utoipa annotations for validation constraints
+  - [x] 1.4 Update utoipa annotations for validation constraints
     - File: `backend/crates/api/src/routes/approval_rules.rs`
     - Add `#[schema(minimum = 1, maximum = 100, example = 1)]` to priority in all structs
     - Add `#[schema(min_length = 1, max_length = 255, example = "High Value Bills")]` to name in CreateApprovalRuleRequest
@@ -45,7 +45,7 @@ This plan implements the complete Approval Rules management feature across OpenA
     - _Requirements: 2.1.6_
     - _Property: Property 3 (Priority Range Enforcement), Property 5 (String Length Constraints)_
   
-  - [ ] 1.5 Add pagination support to list endpoint annotation
+  - [x] 1.5 Add pagination support to list endpoint annotation
     - File: `backend/crates/api/src/routes/approval_rules.rs`
     - Update `#[utoipa::path]` annotation for list_approval_rules
     - Add query parameters: page, per_page, is_active, transaction_type, sort_by, sort_order
@@ -56,7 +56,7 @@ This plan implements the complete Approval Rules management feature across OpenA
     - _Property: Property 1 (Pagination Consistency)_
     - _Note: Backend implementation in Task 3, this is just OpenAPI annotation_
   
-  - [ ] 1.6 Add error response schemas to all endpoint annotations
+  - [x] 1.6 Add error response schemas to all endpoint annotations
     - File: `backend/crates/api/src/routes/approval_rules.rs`
     - Update all `#[utoipa::path]` annotations
     - Add 401 response: `(status = 401, description = "Unauthorized", body = ApiError)`
@@ -66,7 +66,7 @@ This plan implements the complete Approval Rules management feature across OpenA
     - _Requirements: 2.1.3_
     - _Property: None_
   
-  - [ ] 1.7 Regenerate OpenAPI spec from backend
+  - [x] 1.7 Regenerate OpenAPI spec from backend
     - Run: `cargo run --bin generate-openapi` in backend/
     - This will generate `contracts/openapi.yaml` from utoipa annotations
     - Verify output shows "Successfully generated OpenAPI specification"
@@ -74,7 +74,7 @@ This plan implements the complete Approval Rules management feature across OpenA
     - _Requirements: 2.1.1-2.1.6_
     - _Property: None_
   
-  - [ ] 1.8 Split and fix OpenAPI spec (automatic nullable fix)
+  - [x] 1.8 Split and fix OpenAPI spec (automatic nullable fix)
     - Run: `python3 split-openapi.py` in contracts/
     - Script automatically:
       - Splits openapi.yaml into openapi-split/*.yaml files
@@ -87,7 +87,7 @@ This plan implements the complete Approval Rules management feature across OpenA
     - _Property: None_
     - _Note: Script has built-in fix_nullable_syntax() function (BUG-007 workaround)_
   
-  - [ ] 1.9 Validate OpenAPI specification
+  - [x] 1.9 Validate OpenAPI specification
     - Verify all changes are present in split files
     - Check timestamp formats are correct (format: date-time)
     - Check amount patterns are correct (pattern: ^[0-9]+(\\.[0-9]{1,2})?$)
