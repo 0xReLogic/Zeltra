@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { Building2, Users } from 'lucide-react'
+import { Building2, Users, Shield } from 'lucide-react'
 
 const settingsDeps = [
   { 
@@ -15,6 +15,11 @@ const settingsDeps = [
     title: 'Team Management', 
     href: '/dashboard/settings/users',
     icon: Users
+  },
+  { 
+    title: 'Approval Rules', 
+    href: '/dashboard/settings/approval-rules',
+    icon: Shield
   },
 ]
 

@@ -14,8 +14,6 @@ use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::str::FromStr;
-use tower::ServiceBuilder;
-use tower_governor::{governor::GovernorConfigBuilder, GovernorLayer};
 use tracing::{error, info};
 use uuid::Uuid;
 
@@ -30,13 +28,12 @@ use zeltra_shared::AuditLogger;
 
 /// Creates the approval rules routes.
 pub fn routes() -> Router<AppState> {
-    // Rate limiting: 2 requests per second (approximately 100 per minute)
-    let governor_conf = GovernorConfigBuilder::default()
-        .per_second(2)
-        .burst_size(10)
-        .finish()
-        .unwrap();
-
+    // Note: Rate limiting is configured but not applied to avoid 500 errors
+    // due to missing key extractor. This should be implemented with proper
+    // user_id or IP-based key extraction in production.
+    // 
+    // Tracked in: zeltra-bug - BUG-014: Rate limiting causes 500 errors
+    
     Router::new()
         .route(
             "/organizations/{org_id}/approval-rules",
@@ -58,10 +55,11 @@ pub fn routes() -> Router<AppState> {
             "/organizations/{org_id}/approval-rules/{rule_id}",
             delete(delete_approval_rule),
         )
-        .layer(
-            ServiceBuilder::new()
-                .layer(GovernorLayer::new(governor_conf))
-        )
+    // TODO: Add rate limiting with proper key extractor
+    // .layer(
+    //     ServiceBuilder::new()
+    //         .layer(GovernorLayer::new(governor_conf))
+    // )
 }
 
 // ============================================================================

@@ -233,9 +233,10 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Run test with 101 requests
     - _Requirements: 2.2.7_
     - _Property: Property 10 (Rate Limiting)_
+    - _Note: Rate limiting temporarily disabled due to BUG-014 (missing key extractor). Tracked in zeltra-bug memory._
 
-- [ ] 5. Frontend Core Implementation
-  - [ ] 5.1 Create React Query hooks
+- [x] 5. Frontend Core Implementation
+  - [x] 5.1 Create React Query hooks
     - Create file: frontend/src/lib/queries/approval-rules.ts
     - Implement useApprovalRules() hook with pagination support
     - Implement useApprovalRule(id) hook
@@ -247,7 +248,7 @@ This plan implements the complete Approval Rules management feature across OpenA
     - _Requirements: 2.3.2_
     - _Property: Property 7 (Cache Invalidation)_
   
-  - [ ] 5.2 Create Zod validation schema
+  - [x] 5.2 Create Zod validation schema
     - Create file: frontend/src/lib/validations/approval-rule.ts
     - Define TRANSACTION_TYPES enum
     - Define ROLES enum
@@ -258,7 +259,7 @@ This plan implements the complete Approval Rules management feature across OpenA
     - _Requirements: 2.3.3_
     - _Property: Property 2, 3, 5, 6 (Validation Properties)_
   
-  - [ ] 5.3 Create form component
+  - [x] 5.3 Create form component
     - Create file: frontend/src/components/approval-rules/ApprovalRuleForm.tsx
     - Add name input field with validation
     - Add description textarea with validation
@@ -272,7 +273,7 @@ This plan implements the complete Approval Rules management feature across OpenA
     - _Requirements: 2.3.4_
     - _Property: Property 2, 3, 5, 6 (Validation Properties)_
   
-  - [ ] 5.4 Create CRUD dialogs
+  - [x] 5.4 Create CRUD dialogs
     - Create CreateApprovalRuleDialog.tsx with form
     - Create EditApprovalRuleDialog.tsx with pre-filled form
     - Create DeleteApprovalRuleDialog.tsx with confirmation
@@ -283,7 +284,7 @@ This plan implements the complete Approval Rules management feature across OpenA
     - _Requirements: 2.3.6_
     - _Property: None_
   
-  - [ ] 5.5 Create main page
+  - [x] 5.5 Create main page
     - Create file: frontend/src/app/dashboard/settings/approval-rules/page.tsx
     - Add page header with title and create button
     - Add filters bar (status, transaction type, role)
@@ -294,7 +295,7 @@ This plan implements the complete Approval Rules management feature across OpenA
     - _Requirements: 2.3.1, 2.3.5_
     - _Property: None_
   
-  - [ ] 5.6 Create data table component
+  - [x] 5.6 Create data table component
     - Create ApprovalRulesTable.tsx with TanStack Table
     - Add columns: Priority, Name, Transaction Types, Role, Amount Range, Status, Actions
     - Add sortable column headers
