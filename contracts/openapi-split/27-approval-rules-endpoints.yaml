@@ -75,7 +75,7 @@ paths:
                   total: 150
                   total_pages: 8
               schema:
-                type: object
+                $ref: '#/components/schemas/PaginatedApprovalRulesResponse'
           description: Paginated list of approval rules
         '400':
           description: Invalid query parameters
@@ -114,28 +114,12 @@ paths:
                 $ref: '#/components/schemas/ApprovalRuleResponse'
           description: Approval rule created successfully
         '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiError'
           description: Invalid input or amount format
         '401':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiError'
           description: Unauthorized
         '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiError'
           description: Forbidden
         '500':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiError'
           description: Internal server error
       security:
       - bearerAuth: []
@@ -164,28 +148,12 @@ paths:
         '204':
           description: Approval rule deleted successfully
         '401':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiError'
           description: Unauthorized
         '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiError'
           description: Forbidden
         '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiError'
           description: Approval rule not found
         '500':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiError'
           description: Internal server error
       security:
       - bearerAuth: []
@@ -218,28 +186,12 @@ paths:
                 $ref: '#/components/schemas/ApprovalRuleResponse'
           description: Approval rule details
         '401':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiError'
           description: Unauthorized
         '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiError'
           description: Forbidden
         '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiError'
           description: Approval rule not found
         '500':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiError'
           description: Internal server error
       security:
       - bearerAuth: []
@@ -278,34 +230,14 @@ paths:
                 $ref: '#/components/schemas/ApprovalRuleResponse'
           description: Approval rule updated successfully
         '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiError'
           description: Invalid input or amount format
         '401':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiError'
           description: Unauthorized
         '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiError'
           description: Forbidden
         '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiError'
           description: Approval rule not found
         '500':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiError'
           description: Internal server error
       security:
       - bearerAuth: []

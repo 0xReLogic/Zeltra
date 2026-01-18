@@ -162,9 +162,9 @@ pub struct ApprovalRuleResponse {
     pub updated_at: String,
 }
 
-/// Pagination metadata for list responses.
+/// Pagination metadata for approval rules list responses.
 #[derive(Debug, Serialize, utoipa::ToSchema)]
-pub struct PaginationMeta {
+pub struct ApprovalRulePaginationMeta {
     /// Current page number.
     pub page: u32,
     /// Items per page.
@@ -181,7 +181,7 @@ pub struct PaginatedApprovalRulesResponse {
     /// List of approval rules.
     pub data: Vec<ApprovalRuleResponse>,
     /// Pagination metadata.
-    pub meta: PaginationMeta,
+    pub meta: ApprovalRulePaginationMeta,
 }
 
 // ============================================================================
@@ -272,7 +272,7 @@ async fn list_approval_rules(
 
             let response = PaginatedApprovalRulesResponse {
                 data: items,
-                meta: PaginationMeta {
+                meta: ApprovalRulePaginationMeta {
                     page,
                     per_page,
                     total,

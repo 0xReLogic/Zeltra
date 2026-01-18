@@ -389,6 +389,35 @@ components:
       - error
       - message
       type: object
+    ApprovalRulePaginationMeta:
+      description: Pagination metadata for approval rules list responses.
+      properties:
+        page:
+          description: Current page number.
+          format: int32
+          minimum: 0
+          type: integer
+        per_page:
+          description: Items per page.
+          format: int32
+          minimum: 0
+          type: integer
+        total:
+          description: Total number of items.
+          format: int64
+          minimum: 0
+          type: integer
+        total_pages:
+          description: Total number of pages.
+          format: int32
+          minimum: 0
+          type: integer
+      required:
+      - page
+      - per_page
+      - total
+      - total_pages
+      type: object
     ApprovalRuleResponse:
       description: Response for an approval rule.
       properties:
@@ -2619,6 +2648,21 @@ components:
       - data
       - meta
       type: object
+    PaginatedApprovalRulesResponse:
+      description: Paginated list response for approval rules.
+      properties:
+        data:
+          description: List of approval rules.
+          items:
+            $ref: '#/components/schemas/ApprovalRuleResponse'
+          type: array
+        meta:
+          $ref: '#/components/schemas/ApprovalRulePaginationMeta'
+          description: Pagination metadata.
+      required:
+      - data
+      - meta
+      type: object
     PaginatedTransactionsResponse:
       description: Response for a paginated list of transactions.
       properties:
@@ -4408,7 +4452,7 @@ paths:
                   total: 150
                   total_pages: 8
               schema:
-                type: object
+                $ref: '#/components/schemas/PaginatedApprovalRulesResponse'
           description: Paginated list of approval rules
         '400':
           description: Invalid query parameters
@@ -4447,28 +4491,12 @@ paths:
                 $ref: '#/components/schemas/ApprovalRuleResponse'
           description: Approval rule created successfully
         '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiError'
           description: Invalid input or amount format
         '401':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiError'
           description: Unauthorized
         '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiError'
           description: Forbidden
         '500':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiError'
           description: Internal server error
       security:
       - bearerAuth: []
@@ -4497,28 +4525,12 @@ paths:
         '204':
           description: Approval rule deleted successfully
         '401':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiError'
           description: Unauthorized
         '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiError'
           description: Forbidden
         '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiError'
           description: Approval rule not found
         '500':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiError'
           description: Internal server error
       security:
       - bearerAuth: []
@@ -4550,28 +4562,12 @@ paths:
                 $ref: '#/components/schemas/ApprovalRuleResponse'
           description: Approval rule details
         '401':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiError'
           description: Unauthorized
         '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiError'
           description: Forbidden
         '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiError'
           description: Approval rule not found
         '500':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiError'
           description: Internal server error
       security:
       - bearerAuth: []
@@ -4609,34 +4605,14 @@ paths:
                 $ref: '#/components/schemas/ApprovalRuleResponse'
           description: Approval rule updated successfully
         '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiError'
           description: Invalid input or amount format
         '401':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiError'
           description: Unauthorized
         '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiError'
           description: Forbidden
         '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiError'
           description: Approval rule not found
         '500':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiError'
           description: Internal server error
       security:
       - bearerAuth: []

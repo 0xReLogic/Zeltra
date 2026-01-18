@@ -1422,9 +1422,36 @@ export interface components {
             /** @description Request ID for tracing. */
             request_id?: string | null;
         };
+        /** @description Pagination metadata for approval rules list responses. */
+        ApprovalRulePaginationMeta: {
+            /**
+             * Format: int32
+             * @description Current page number.
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description Items per page.
+             */
+            per_page: number;
+            /**
+             * Format: int64
+             * @description Total number of items.
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description Total number of pages.
+             */
+            total_pages: number;
+        };
         /** @description Response for an approval rule. */
         ApprovalRuleResponse: {
-            /** @description Created at timestamp. */
+            /**
+             * Format: date-time
+             * @description Created at timestamp.
+             * @example 2024-01-15T10:30:00Z
+             */
             created_at: string;
             /** @description Description. */
             description?: string | null;
@@ -1435,9 +1462,15 @@ export interface components {
             id: string;
             /** @description Active status. */
             is_active: boolean;
-            /** @description Maximum amount threshold. */
+            /**
+             * @description Maximum amount threshold (must be a valid decimal with up to 2 decimal places).
+             * @example 5000.00
+             */
             max_amount?: string | null;
-            /** @description Minimum amount threshold. */
+            /**
+             * @description Minimum amount threshold (must be a valid decimal with up to 2 decimal places).
+             * @example 1000.00
+             */
             min_amount?: string | null;
             /** @description Name. */
             name: string;
@@ -1451,11 +1484,24 @@ export interface components {
              * @description Priority.
              */
             priority: number;
-            /** @description Required role. */
+            /**
+             * @description Required role (valid values: viewer, submitter, approver, accountant, admin, owner).
+             * @example approver
+             */
             required_role: string;
-            /** @description Transaction types. */
+            /**
+             * @description Transaction types (valid values: journal, invoice, bill, payment, expense, transfer, adjustment, opening_balance, reversal, accrual, revaluation, intercompany).
+             * @example [
+             *       "bill",
+             *       "invoice"
+             *     ]
+             */
             transaction_types: string[];
-            /** @description Updated at timestamp. */
+            /**
+             * Format: date-time
+             * @description Updated at timestamp.
+             * @example 2024-01-15T10:30:00Z
+             */
             updated_at: string;
         };
         /** @description Request body for approving a transaction. */
@@ -1498,13 +1544,18 @@ export interface components {
              */
             mime_type: string;
             /**
+             * Format: uuid
+             * @description Simulation ID (for simulation attachments).
+             */
+            simulation_id?: string | null;
+            /**
              * @description Storage provider.
              * @example s3
              */
             storage_provider: string;
             /**
              * Format: uuid
-             * @description Transaction ID.
+             * @description Transaction ID (for transaction attachments).
              */
             transaction_id?: string | null;
             /**
@@ -2022,34 +2073,40 @@ export interface components {
         };
         /** @description Request body for creating an approval rule. */
         CreateApprovalRuleRequest: {
-            /** @description Optional description. */
+            /** @description Optional description (max 1000 characters). */
             description?: string | null;
-            /** @description Maximum amount threshold (inclusive). */
+            /**
+             * @description Maximum amount threshold (inclusive, must be a valid decimal with up to 2 decimal places).
+             * @example 5000.00
+             */
             max_amount?: string | null;
             /**
-             * @description Minimum amount threshold (inclusive).
+             * @description Minimum amount threshold (inclusive, must be a valid decimal with up to 2 decimal places).
              * @example 1000.00
              */
             min_amount?: string | null;
             /**
-             * @description Name of the approval rule.
+             * @description Name of the approval rule (1-255 characters).
              * @example High Value Bills
              */
             name: string;
             /**
              * Format: int32
-             * @description Priority (lower = higher priority).
+             * @description Priority (lower = higher priority, valid range: 1-100).
              * @example 1
              */
             priority: number;
             /**
-             * @description Required role to approve (viewer, submitter, approver, accountant, admin, owner).
+             * @description Required role to approve (valid values: viewer, submitter, approver, accountant, admin, owner).
              * @example approver
              */
             required_role: string;
             /**
-             * @description Transaction types this rule applies to.
-             * @example ["bill"]
+             * @description Transaction types this rule applies to (valid values: journal, invoice, bill, payment, expense, transfer, adjustment, opening_balance, reversal, accrual, revaluation, intercompany).
+             * @example [
+             *       "bill",
+             *       "invoice"
+             *     ]
              */
             transaction_types: string[];
         };
@@ -2957,6 +3014,13 @@ export interface components {
             /** @description Pagination metadata. */
             meta: components["schemas"]["PageMeta"];
         };
+        /** @description Paginated list response for approval rules. */
+        PaginatedApprovalRulesResponse: {
+            /** @description List of approval rules. */
+            data: components["schemas"]["ApprovalRuleResponse"][];
+            /** @description Pagination metadata. */
+            meta: components["schemas"]["ApprovalRulePaginationMeta"];
+        };
         /** @description Response for a paginated list of transactions. */
         PaginatedTransactionsResponse: {
             /** @description Pagination metadata. */
@@ -2976,21 +3040,24 @@ export interface components {
             /** @description Next cursor. */
             next_cursor?: string | null;
         };
-        /** @description Pagination metadata. */
+        /** @description Simple pagination metadata for transactions (0-indexed pages, no total_pages calculation) */
         PaginationMeta: {
             /**
              * Format: int64
-             * @description Items per page.
+             * @description Maximum number of items per page.
+             * @example 20
              */
             limit: number;
             /**
              * Format: int64
              * @description Current page number (0-indexed).
+             * @example 0
              */
             page: number;
             /**
              * Format: int64
-             * @description Total number of items.
+             * @description Total number of items across all pages.
+             * @example 100
              */
             total: number;
         };
@@ -3478,24 +3545,39 @@ export interface components {
         };
         /** @description Request body for updating an approval rule. */
         UpdateApprovalRuleRequest: {
-            /** @description New description. */
+            /** @description New description (max 1000 characters). */
             description?: string | null;
             /** @description Active status. */
             is_active?: boolean | null;
-            /** @description New maximum amount. */
+            /**
+             * @description New maximum amount (must be a valid decimal with up to 2 decimal places).
+             * @example 5000.00
+             */
             max_amount?: string | null;
-            /** @description New minimum amount. */
+            /**
+             * @description New minimum amount (must be a valid decimal with up to 2 decimal places).
+             * @example 1000.00
+             */
             min_amount?: string | null;
-            /** @description New name. */
+            /** @description New name (1-255 characters). */
             name?: string | null;
             /**
              * Format: int32
-             * @description New priority.
+             * @description New priority (valid range: 1-100).
              */
             priority?: number | null;
-            /** @description New required role. */
+            /**
+             * @description New required role (valid values: viewer, submitter, approver, accountant, admin, owner).
+             * @example approver
+             */
             required_role?: string | null;
-            /** @description New transaction types. */
+            /**
+             * @description New transaction types (valid values: journal, invoice, bill, payment, expense, transfer, adjustment, opening_balance, reversal, accrual, revaluation, intercompany).
+             * @example [
+             *       "bill",
+             *       "invoice"
+             *     ]
+             */
             transaction_types?: string[] | null;
         };
         /** @description Request body for updating a budget. */
@@ -4407,7 +4489,20 @@ export interface operations {
     };
     list_approval_rules: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Page number (default: 1, min: 1) */
+                page?: number;
+                /** @description Items per page (default: 20, min: 1, max: 100) */
+                per_page?: number;
+                /** @description Filter by active status */
+                is_active?: boolean;
+                /** @description Filter by transaction type */
+                transaction_type?: string;
+                /** @description Sort by field (priority, created_at, name) */
+                sort_by?: string;
+                /** @description Sort order (asc, desc) */
+                sort_order?: string;
+            };
             header?: never;
             path: {
                 /** @description Organization ID */
@@ -4417,17 +4512,66 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description List of approval rules */
+            /** @description Paginated list of approval rules */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApprovalRuleResponse"][];
+                    /**
+                     * @example {
+                     *       "data": [
+                     *         {
+                     *           "created_at": "2024-01-15T10:30:00Z",
+                     *           "description": "Requires approval for bills over $5000",
+                     *           "id": "550e8400-e29b-41d4-a716-446655440000",
+                     *           "is_active": true,
+                     *           "max_amount": null,
+                     *           "min_amount": "5000.00",
+                     *           "name": "High Value Bills",
+                     *           "organization_id": "550e8400-e29b-41d4-a716-446655440001",
+                     *           "priority": 1,
+                     *           "required_role": "approver",
+                     *           "transaction_types": [
+                     *             "bill"
+                     *           ],
+                     *           "updated_at": "2024-01-15T10:30:00Z"
+                     *         }
+                     *       ],
+                     *       "meta": {
+                     *         "page": 1,
+                     *         "per_page": 20,
+                     *         "total": 150,
+                     *         "total_pages": 8
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PaginatedApprovalRulesResponse"];
                 };
+            };
+            /** @description Invalid query parameters */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Internal server error */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4467,8 +4611,22 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Internal server error */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4499,6 +4657,13 @@ export interface operations {
                     "application/json": components["schemas"]["ApprovalRuleResponse"];
                 };
             };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Forbidden */
             403: {
                 headers: {
@@ -4508,6 +4673,13 @@ export interface operations {
             };
             /** @description Approval rule not found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Internal server error */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4536,6 +4708,13 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Forbidden */
             403: {
                 headers: {
@@ -4545,6 +4724,13 @@ export interface operations {
             };
             /** @description Approval rule not found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Internal server error */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4586,6 +4772,13 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Forbidden */
             403: {
                 headers: {
@@ -4595,6 +4788,13 @@ export interface operations {
             };
             /** @description Approval rule not found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Internal server error */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };
