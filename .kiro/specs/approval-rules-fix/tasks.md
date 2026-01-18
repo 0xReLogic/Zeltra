@@ -67,10 +67,9 @@ This plan implements the complete Approval Rules management feature across OpenA
     - _Property: None_
   
   - [ ] 1.7 Regenerate OpenAPI spec from backend
-    - Run backend to generate new OpenAPI spec: `cargo run --bin zeltra` in backend/
-    - Backend will auto-generate `contracts/openapi.yaml` on startup
-    - Wait for server to start (check logs for "Listening on")
-    - Stop server (Ctrl+C)
+    - Run: `cargo run --bin generate-openapi` in backend/
+    - This will generate `contracts/openapi.yaml` from utoipa annotations
+    - Verify output shows "Successfully generated OpenAPI specification"
     - Verify `contracts/openapi.yaml` has been updated with new annotations
     - _Requirements: 2.1.1-2.1.6_
     - _Property: None_
