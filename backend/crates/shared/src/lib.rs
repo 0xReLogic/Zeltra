@@ -8,7 +8,9 @@
 //! - Configuration management
 //! - JWT claims and auth types
 //! - Email service for transactional emails
+//! - Audit logging for system changes
 
+pub mod audit_log;
 pub mod auth;
 pub mod config;
 pub mod email;
@@ -25,6 +27,7 @@ mod error_tests;
 #[cfg(test)]
 mod jwt_tests;
 
+pub use audit_log::{AuditLogEntry, AuditLogger};
 pub use auth::{Claims, TokenPair};
 pub use config::{AppConfig, EmailConfig};
 pub use email::{EmailError, EmailService};

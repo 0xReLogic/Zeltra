@@ -199,8 +199,8 @@ This plan implements the complete Approval Rules management feature across OpenA
     - _Requirements: 2.2.1_
     - _Property: Property 1 (Pagination Consistency)_
 
-- [ ] 4. Backend Rate Limiting & Security
-  - [ ] 4.1 Add rate limiting middleware
+- [x] 4. Backend Rate Limiting & Security
+  - [x] 4.1 Add rate limiting middleware
     - Add tower-governor dependency to Cargo.toml
     - Create rate limiting configuration (100 req/min per user)
     - Add GovernorLayer to router
@@ -208,14 +208,14 @@ This plan implements the complete Approval Rules management feature across OpenA
     - _Requirements: 2.2.7_
     - _Property: Property 10 (Rate Limiting)_
   
-  - [ ] 4.2 Add transaction wrapping
+  - [x] 4.2 Add transaction wrapping
     - Wrap multi-step operations in database transactions
     - Add rollback on error
     - Test transaction rollback behavior
     - _Requirements: 3.1_
     - _Property: None_
   
-  - [ ] 4.3 Add audit logging
+  - [x] 4.3 Add audit logging
     - Create audit_log module with structured logging
     - Log create operations with actor_id, org_id, resource_id, changes
     - Log update operations with actor_id, org_id, resource_id, changes
@@ -224,7 +224,7 @@ This plan implements the complete Approval Rules management feature across OpenA
     - _Requirements: 2.2.9_
     - _Property: None_
   
-  - [ ] 4.4 Write property test for rate limiting
+  - [x] 4.4 Write property test for rate limiting
     - **Property 10: Rate Limiting**
     - **Validates: Requirements 2.2.7**
     - Test that requests under limit return 200

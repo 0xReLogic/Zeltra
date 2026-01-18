@@ -6025,6 +6025,7 @@ dependencies = [
  "temp-env",
  "thiserror 2.0.17",
  "tokio",
+ "tracing",
  "utoipa",
  "uuid",
 ]

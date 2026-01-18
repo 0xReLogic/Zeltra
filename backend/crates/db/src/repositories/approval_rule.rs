@@ -6,7 +6,7 @@
 
 use rust_decimal::Decimal;
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, Set,
+    ActiveModelTrait, ColumnTrait, DatabaseConnection, DatabaseTransaction, EntityTrait, QueryFilter, QueryOrder, Set, TransactionTrait,
 };
 use thiserror::Error;
 use uuid::Uuid;
@@ -95,6 +95,29 @@ impl ApprovalRuleRepository {
         organization_id: Uuid,
         input: CreateApprovalRuleInput,
     ) -> Result<ApprovalRuleModel, ApprovalRuleError> {
+        let txn = self.db.begin().await?;
+        
+        let result = self.create_rule_in_txn(&txn, organization_id, input).await;
+        
+        match result {
+            Ok(rule) => {
+                txn.commit().await?;
+                Ok(rule)
+            }
+            Err(e) => {
+                txn.rollback().await?;
+                Err(e)
+            }
+        }
+    }
+
+    /// Creates a new approval rule within a transaction.
+    async fn create_rule_in_txn(
+        &self,
+        txn: &DatabaseTransaction,
+        organization_id: Uuid,
+        input: CreateApprovalRuleInput,
+    ) -> Result<ApprovalRuleModel, ApprovalRuleError> {
         let transaction_types = Self::parse_transaction_types(&input.transaction_types)?;
         let required_role = Self::parse_role_static(&input.required_role)?;
 
@@ -113,7 +136,7 @@ impl ApprovalRuleRepository {
             updated_at: Set(chrono::Utc::now().into()),
         };
 
-        let result = rule.insert(&self.db).await?;
+        let result = rule.insert(txn).await?;
         Ok(result)
     }
 
@@ -245,7 +268,35 @@ impl ApprovalRuleRepository {
         rule_id: Uuid,
         input: UpdateApprovalRuleInput,
     ) -> Result<ApprovalRuleModel, ApprovalRuleError> {
-        let existing = self.get_rule(organization_id, rule_id).await?;
+        let txn = self.db.begin().await?;
+        
+        let result = self.update_rule_in_txn(&txn, organization_id, rule_id, input).await;
+        
+        match result {
+            Ok(rule) => {
+                txn.commit().await?;
+                Ok(rule)
+            }
+            Err(e) => {
+                txn.rollback().await?;
+                Err(e)
+            }
+        }
+    }
+
+    /// Updates an approval rule within a transaction.
+    async fn update_rule_in_txn(
+        &self,
+        txn: &DatabaseTransaction,
+        organization_id: Uuid,
+        rule_id: Uuid,
+        input: UpdateApprovalRuleInput,
+    ) -> Result<ApprovalRuleModel, ApprovalRuleError> {
+        let existing = ApprovalRuleEntity::find_by_id(rule_id)
+            .filter(approval_rules::Column::OrganizationId.eq(organization_id))
+            .one(txn)
+            .await?
+            .ok_or(ApprovalRuleError::NotFound(rule_id))?;
 
         let mut rule: ActiveModel = existing.into();
 
@@ -276,7 +327,7 @@ impl ApprovalRuleRepository {
 
         rule.updated_at = Set(chrono::Utc::now().into());
 
-        let result = rule.update(&self.db).await?;
+        let result = rule.update(txn).await?;
         Ok(result)
     }
 
@@ -286,13 +337,40 @@ impl ApprovalRuleRepository {
         organization_id: Uuid,
         rule_id: Uuid,
     ) -> Result<(), ApprovalRuleError> {
-        let existing = self.get_rule(organization_id, rule_id).await?;
+        let txn = self.db.begin().await?;
+        
+        let result = self.delete_rule_in_txn(&txn, organization_id, rule_id).await;
+        
+        match result {
+            Ok(()) => {
+                txn.commit().await?;
+                Ok(())
+            }
+            Err(e) => {
+                txn.rollback().await?;
+                Err(e)
+            }
+        }
+    }
+
+    /// Soft deletes an approval rule within a transaction.
+    async fn delete_rule_in_txn(
+        &self,
+        txn: &DatabaseTransaction,
+        organization_id: Uuid,
+        rule_id: Uuid,
+    ) -> Result<(), ApprovalRuleError> {
+        let existing = ApprovalRuleEntity::find_by_id(rule_id)
+            .filter(approval_rules::Column::OrganizationId.eq(organization_id))
+            .one(txn)
+            .await?
+            .ok_or(ApprovalRuleError::NotFound(rule_id))?;
 
         let mut rule: ActiveModel = existing.into();
         rule.is_active = Set(false);
         rule.updated_at = Set(chrono::Utc::now().into());
 
-        rule.update(&self.db).await?;
+        rule.update(txn).await?;
         Ok(())
     }
 
@@ -602,5 +680,79 @@ mod tests {
                 }
             }
         }
+    }
+
+    /// Test transaction rollback behavior.
+    /// 
+    /// Tests that database transactions are properly rolled back on errors.
+    #[tokio::test]
+    async fn test_transaction_rollback_on_create_error() {
+        let db = Database::connect(&get_database_url())
+            .await
+            .expect("Failed to connect to database");
+        let repo = ApprovalRuleRepository::new(db);
+        
+        let org_id = Uuid::new_v4();
+        
+        // Create input with invalid transaction type to force an error
+        let input = CreateApprovalRuleInput {
+            name: "Test Rule".to_string(),
+            description: Some("Test Description".to_string()),
+            min_amount: None,
+            max_amount: None,
+            transaction_types: vec!["invalid_type".to_string()], // This should cause an error
+            required_role: "approver".to_string(),
+            priority: 1,
+        };
+        
+        // Attempt to create the rule - should fail
+        let result = repo.create_rule(org_id, input).await;
+        assert!(result.is_err());
+        assert!(matches!(result, Err(ApprovalRuleError::InvalidTransactionType(_))));
+        
+        // Verify no rule was created (transaction was rolled back)
+        let rules = repo.list_rules(org_id).await.unwrap();
+        assert!(rules.is_empty(), "No rules should exist after failed transaction");
+    }
+
+    /// Test transaction rollback behavior on update.
+    #[tokio::test]
+    async fn test_transaction_rollback_on_update_error() {
+        let db = Database::connect(&get_database_url())
+            .await
+            .expect("Failed to connect to database");
+        let repo = ApprovalRuleRepository::new(db);
+        
+        let org_id = Uuid::new_v4();
+        
+        // First create a valid rule
+        let create_input = CreateApprovalRuleInput {
+            name: "Original Rule".to_string(),
+            description: Some("Original Description".to_string()),
+            min_amount: None,
+            max_amount: None,
+            transaction_types: vec!["bill".to_string()],
+            required_role: "approver".to_string(),
+            priority: 1,
+        };
+        
+        let created_rule = repo.create_rule(org_id, create_input).await.unwrap();
+        
+        // Now try to update with invalid data
+        let update_input = UpdateApprovalRuleInput {
+            name: Some("Updated Rule".to_string()),
+            transaction_types: Some(vec!["invalid_type".to_string()]), // This should cause an error
+            ..Default::default()
+        };
+        
+        // Attempt to update - should fail
+        let result = repo.update_rule(org_id, created_rule.id, update_input).await;
+        assert!(result.is_err());
+        assert!(matches!(result, Err(ApprovalRuleError::InvalidTransactionType(_))));
+        
+        // Verify the original rule is unchanged (transaction was rolled back)
+        let unchanged_rule = repo.get_rule(org_id, created_rule.id).await.unwrap();
+        assert_eq!(unchanged_rule.name, "Original Rule");
+        assert_eq!(unchanged_rule.transaction_types, vec![TransactionType::Bill]);
     }
 }
