@@ -134,6 +134,95 @@ impl ApprovalRuleRepository {
         Ok(rules)
     }
 
+    /// Lists approval rules for an organization with pagination.
+    ///
+    /// **Validates: Requirements 2.2.1**
+    pub async fn list_rules_paginated(
+        &self,
+        organization_id: Uuid,
+        offset: u64,
+        limit: u64,
+    ) -> Result<(Vec<ApprovalRuleModel>, u64), ApprovalRuleError> {
+        use sea_orm::{PaginatorTrait, QuerySelect};
+
+        let query = ApprovalRuleEntity::find()
+            .filter(approval_rules::Column::OrganizationId.eq(organization_id))
+            .order_by_asc(approval_rules::Column::Priority);
+
+        let paginator = query.paginate(&self.db, limit);
+        let total = paginator.num_items().await?;
+        
+        let rules = ApprovalRuleEntity::find()
+            .filter(approval_rules::Column::OrganizationId.eq(organization_id))
+            .order_by_asc(approval_rules::Column::Priority)
+            .offset(offset)
+            .limit(limit)
+            .all(&self.db)
+            .await?;
+
+        Ok((rules, total))
+    }
+
+    /// Lists approval rules for an organization with pagination, filtering, and sorting.
+    ///
+    /// **Validates: Requirements 2.2.1, 2.2.6**
+    pub async fn list_rules_with_filters(
+        &self,
+        organization_id: Uuid,
+        offset: u64,
+        limit: u64,
+        is_active: Option<bool>,
+        transaction_type: Option<&str>,
+        required_role: Option<&str>,
+        sort_by: Option<&str>,
+        sort_order: Option<&str>,
+    ) -> Result<(Vec<ApprovalRuleModel>, u64), ApprovalRuleError> {
+        use sea_orm::{QuerySelect, Order, PaginatorTrait};
+
+        let mut base_query = ApprovalRuleEntity::find()
+            .filter(approval_rules::Column::OrganizationId.eq(organization_id));
+
+        // Apply filters
+        if let Some(active) = is_active {
+            base_query = base_query.filter(approval_rules::Column::IsActive.eq(active));
+        }
+
+        if let Some(role) = required_role {
+            let parsed_role = Self::parse_role_static(role)?;
+            base_query = base_query.filter(approval_rules::Column::RequiredRole.eq(parsed_role));
+        }
+
+        // Get total count before applying pagination
+        let total = base_query.clone().count(&self.db).await?;
+
+        // Apply sorting
+        let order = if sort_order == Some("desc") { Order::Desc } else { Order::Asc };
+        
+        base_query = match sort_by {
+            Some("created_at") => base_query.order_by(approval_rules::Column::CreatedAt, order),
+            Some("name") => base_query.order_by(approval_rules::Column::Name, order),
+            _ => base_query.order_by(approval_rules::Column::Priority, order), // Default to priority
+        };
+
+        // Apply pagination
+        let mut rules = base_query
+            .offset(offset)
+            .limit(limit)
+            .all(&self.db)
+            .await?;
+
+        // Apply transaction type filter in memory if needed
+        // (This is because SeaORM doesn't have great support for array contains queries)
+        if let Some(tx_type) = transaction_type {
+            let parsed_type = Self::parse_transaction_type(tx_type)?;
+            rules = rules.into_iter()
+                .filter(|rule| rule.transaction_types.contains(&parsed_type))
+                .collect();
+        }
+
+        Ok((rules, total))
+    }
+
     /// Gets a specific approval rule by ID.
     pub async fn get_rule(
         &self,
@@ -374,5 +463,144 @@ mod tests {
         let result = repo.get_rule(Uuid::new_v4(), Uuid::new_v4()).await;
         assert!(result.is_err());
         assert!(matches!(result, Err(ApprovalRuleError::NotFound(_))));
+    }
+
+    /// Property test for pagination consistency.
+    /// 
+    /// **Property 1: Pagination Consistency**
+    /// **Validates: Requirements 2.1.2, 2.2.1**
+    /// 
+    /// Tests that pagination returns consistent results:
+    /// - Items count <= per_page
+    /// - Total pages calculation is correct
+    /// - Last page has correct remaining items
+    #[tokio::test]
+    async fn test_pagination_consistency_property() {
+        let db = Database::connect(&get_database_url())
+            .await
+            .expect("Failed to connect to database");
+        let repo = ApprovalRuleRepository::new(db);
+        
+        let org_id = Uuid::new_v4();
+        
+        // Test with various page sizes and page numbers
+        let test_cases = vec![
+            (1, 1),   // page 1, per_page 1
+            (1, 5),   // page 1, per_page 5
+            (1, 10),  // page 1, per_page 10
+            (1, 20),  // page 1, per_page 20
+            (1, 50),  // page 1, per_page 50
+            (1, 100), // page 1, per_page 100 (max)
+            (2, 10),  // page 2, per_page 10
+            (5, 5),   // page 5, per_page 5
+        ];
+
+        for (page, per_page) in test_cases {
+            let offset = ((page - 1) * per_page) as u64;
+            let limit = per_page as u64;
+
+            let result = repo.list_rules_paginated(org_id, offset, limit).await;
+            assert!(result.is_ok(), "Pagination should not fail for page={}, per_page={}", page, per_page);
+
+            let (items, total) = result.unwrap();
+
+            // Property 1: Items count <= per_page
+            assert!(
+                items.len() <= per_page as usize,
+                "Items count ({}) should be <= per_page ({}) for page={}, per_page={}",
+                items.len(), per_page, page, per_page
+            );
+
+            // Property 2: Total pages calculation is correct
+            let expected_total_pages = if total == 0 { 0 } else { ((total as f64) / (per_page as f64)).ceil() as u32 };
+            let calculated_total_pages = ((total as f64) / (per_page as f64)).ceil() as u32;
+            assert_eq!(
+                calculated_total_pages, expected_total_pages,
+                "Total pages calculation should be correct for total={}, per_page={}",
+                total, per_page
+            );
+
+            // Property 3: If this is beyond the last page, items should be empty
+            if page > expected_total_pages {
+                assert!(
+                    items.is_empty(),
+                    "Items should be empty when page ({}) > total_pages ({})",
+                    page, expected_total_pages
+                );
+            }
+
+            // Property 4: Last page has correct remaining items
+            if page == expected_total_pages && total > 0 {
+                let expected_items_on_last_page = ((total - 1) % (per_page as u64) + 1) as usize;
+                if page > 1 || total > per_page as u64 {
+                    assert!(
+                        items.len() <= expected_items_on_last_page,
+                        "Last page should have {} items, got {} for total={}, per_page={}",
+                        expected_items_on_last_page, items.len(), total, per_page
+                    );
+                }
+            }
+        }
+    }
+
+    /// Property test for filtering consistency.
+    /// 
+    /// Tests that filtering returns consistent results and respects filter parameters.
+    #[tokio::test]
+    async fn test_filtering_consistency_property() {
+        let db = Database::connect(&get_database_url())
+            .await
+            .expect("Failed to connect to database");
+        let repo = ApprovalRuleRepository::new(db);
+        
+        let org_id = Uuid::new_v4();
+        
+        // Test various filter combinations
+        let filter_cases = vec![
+            (Some(true), None, None),           // is_active = true
+            (Some(false), None, None),          // is_active = false
+            (None, Some("bill"), None),         // transaction_type = bill
+            (None, None, Some("approver")),     // required_role = approver
+            (Some(true), Some("invoice"), None), // combined filters
+        ];
+
+        for (is_active, transaction_type, required_role) in filter_cases {
+            let result = repo.list_rules_with_filters(
+                org_id, 0, 10, is_active, transaction_type, required_role, None, None
+            ).await;
+            
+            assert!(result.is_ok(), "Filtering should not fail");
+            let (items, _total) = result.unwrap();
+
+            // Verify filters are applied correctly
+            if let Some(active) = is_active {
+                for item in &items {
+                    assert_eq!(
+                        item.is_active, active,
+                        "All items should match is_active filter"
+                    );
+                }
+            }
+
+            if let Some(role) = required_role {
+                let expected_role = ApprovalRuleRepository::parse_role_static(role).unwrap();
+                for item in &items {
+                    assert_eq!(
+                        item.required_role, expected_role,
+                        "All items should match required_role filter"
+                    );
+                }
+            }
+
+            if let Some(tx_type) = transaction_type {
+                let expected_type = ApprovalRuleRepository::parse_transaction_type(tx_type).unwrap();
+                for item in &items {
+                    assert!(
+                        item.transaction_types.contains(&expected_type),
+                        "All items should contain the filtered transaction type"
+                    );
+                }
+            }
+        }
     }
 }

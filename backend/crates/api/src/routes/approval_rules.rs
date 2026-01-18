@@ -4,7 +4,7 @@
 
 use axum::{
     Json, Router,
-    extract::{Path, State},
+    extract::{Path, Query, State},
     http::StatusCode,
     response::IntoResponse,
     routing::{delete, get, patch, post},
@@ -53,6 +53,25 @@ pub fn routes() -> Router<AppState> {
 // ============================================================================
 // Request/Response Types
 // ============================================================================
+
+/// Pagination parameters for listing approval rules.
+#[derive(Debug, Deserialize)]
+pub struct PaginationParams {
+    /// Page number (default: 1, min: 1).
+    pub page: Option<u32>,
+    /// Items per page (default: 20, min: 1, max: 100).
+    pub per_page: Option<u32>,
+    /// Filter by active status.
+    pub is_active: Option<bool>,
+    /// Filter by transaction type.
+    pub transaction_type: Option<String>,
+    /// Filter by required role.
+    pub required_role: Option<String>,
+    /// Sort by field (priority, created_at, name).
+    pub sort_by: Option<String>,
+    /// Sort order (asc, desc).
+    pub sort_order: Option<String>,
+}
 
 /// Request body for creating an approval rule.
 #[derive(Debug, Deserialize, utoipa::ToSchema)]
@@ -143,6 +162,28 @@ pub struct ApprovalRuleResponse {
     pub updated_at: String,
 }
 
+/// Pagination metadata for list responses.
+#[derive(Debug, Serialize, utoipa::ToSchema)]
+pub struct PaginationMeta {
+    /// Current page number.
+    pub page: u32,
+    /// Items per page.
+    pub per_page: u32,
+    /// Total number of items.
+    pub total: u64,
+    /// Total number of pages.
+    pub total_pages: u32,
+}
+
+/// Paginated list response for approval rules.
+#[derive(Debug, Serialize, utoipa::ToSchema)]
+pub struct PaginatedApprovalRulesResponse {
+    /// List of approval rules.
+    pub data: Vec<ApprovalRuleResponse>,
+    /// Pagination metadata.
+    pub meta: PaginationMeta,
+}
+
 // ============================================================================
 // Route Handlers
 // ============================================================================
@@ -161,7 +202,7 @@ pub struct ApprovalRuleResponse {
         ("sort_order" = Option<String>, Query, description = "Sort order (asc, desc)")
     ),
     responses(
-        (status = 200, description = "Paginated list of approval rules", body = inline(Object), example = json!({
+        (status = 200, description = "Paginated list of approval rules", body = PaginatedApprovalRulesResponse, example = json!({
             "data": [
                 {
                     "id": "550e8400-e29b-41d4-a716-446655440000",
@@ -197,6 +238,7 @@ async fn list_approval_rules(
     State(state): State<AppState>,
     auth: AuthUser,
     Path(org_id): Path<Uuid>,
+    Query(params): Query<PaginationParams>,
 ) -> impl IntoResponse {
     let org_repo = OrganizationRepository::new((*state.db).clone());
 
@@ -204,14 +246,41 @@ async fn list_approval_rules(
         return response;
     }
 
+    // Parse and validate pagination parameters
+    let page = params.page.unwrap_or(1).max(1);
+    let per_page = params.per_page.unwrap_or(20).clamp(1, 100);
+    let offset = ((page - 1) * per_page) as u64;
+    let limit = per_page as u64;
+
     let rule_repo = ApprovalRuleRepository::new((*state.db).clone());
 
-    match rule_repo.list_rules(org_id).await {
-        Ok(rules) => {
+    match rule_repo.list_rules_with_filters(
+        org_id,
+        offset,
+        limit,
+        params.is_active,
+        params.transaction_type.as_deref(),
+        params.required_role.as_deref(),
+        params.sort_by.as_deref(),
+        params.sort_order.as_deref(),
+    ).await {
+        Ok((rules, total)) => {
             let items: Vec<ApprovalRuleResponse> =
                 rules.into_iter().map(rule_to_response).collect();
 
-            (StatusCode::OK, Json(json!({ "data": items }))).into_response()
+            let total_pages = ((total as f64) / (per_page as f64)).ceil() as u32;
+
+            let response = PaginatedApprovalRulesResponse {
+                data: items,
+                meta: PaginationMeta {
+                    page,
+                    per_page,
+                    total,
+                    total_pages,
+                },
+            };
+
+            (StatusCode::OK, Json(response)).into_response()
         }
         Err(e) => {
             error!(error = %e, "Failed to list approval rules");
