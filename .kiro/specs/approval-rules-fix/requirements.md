@@ -19,6 +19,8 @@ This specification addresses the complete implementation gap and critical issues
 **AC 2.1.1**: Timestamp fields MUST have `format: date-time` specification
 - created_at and updated_at fields must specify ISO 8601 format
 - Example values must be provided
+- **Known Issue (BUG-007)**: utoipa generates nullable fields as `type: [T, 'null']` instead of `nullable: true`
+- Manual fix required after OpenAPI spec generation
 
 **AC 2.1.2**: List endpoint MUST support pagination
 - Response structure: `{ data: [], meta: { page, per_page, total, total_pages } }`

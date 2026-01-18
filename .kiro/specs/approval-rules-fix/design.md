@@ -793,3 +793,70 @@ async fn rate_limiting() {
 - Database schema
 - API integration guide
 - Testing guide
+
+
+## 13. Known Issues & Workarounds
+
+### 13.1 utoipa Nullable Type Syntax (BUG-007)
+
+**Issue**: The utoipa Rust library (used for OpenAPI spec generation) generates nullable fields using OpenAPI 3.1 syntax `type: [T, 'null']` instead of the more widely supported OpenAPI 3.0 syntax `nullable: true`.
+
+**Impact**:
+- Many OpenAPI tools and validators expect `nullable: true` format
+- Type generators may fail or produce incorrect types
+- API documentation may display incorrectly
+
+**Affected Fields in Approval Rules**:
+- `description` (optional string)
+- `min_amount` (optional decimal)
+- `max_amount` (optional decimal)
+
+**Workaround** (Task 1.7):
+The `contracts/split-openapi.py` script **automatically fixes** this issue using the `fix_nullable_syntax()` function:
+
+1. Run: `cd contracts && python3 split-openapi.py`
+2. Script automatically converts `type: [T, 'null']` to `type: T, nullable: true`
+3. Verify the output in `contracts/openapi-split/12-approval-rules-schemas.yaml`
+
+**No manual intervention required** - the script handles this automatically for all schemas.
+
+**Script Logic**:
+```python
+def fix_nullable_syntax(obj):
+    """
+    Recursively fix utoipa's OpenAPI 3.1 nullable syntax to OpenAPI 3.0 compatible.
+    Converts: type: [string, 'null'] -> type: string, nullable: true
+    """
+    if isinstance(obj, dict):
+        if 'type' in obj and isinstance(obj['type'], list):
+            type_list = obj['type']
+            non_null_types = [t for t in type_list if t != 'null']
+            has_null = 'null' in type_list
+            
+            if has_null and len(non_null_types) == 1:
+                obj['type'] = non_null_types[0]
+                obj['nullable'] = True
+    # ... recursively processes all schemas
+```
+
+**Example Fix** (Automatic):
+```yaml
+# BEFORE (utoipa generates this)
+description:
+  type: [string, 'null']
+  maxLength: 1000
+
+# AFTER (split-openapi.py automatically converts)
+description:
+  type: string
+  nullable: true
+  maxLength: 1000
+```
+
+**Automation**: ✅ **Already automated** in `contracts/split-openapi.py` via the `fix_nullable_syntax()` function. No manual intervention needed.
+
+**Related Bugs**:
+- BUG-007: OpenAPI Nullable Type Syntax (simulation-attachments)
+- BUG-008: Missing Simulation Attachment Feature
+
+**Upstream Issue**: This is a known limitation of utoipa when targeting OpenAPI 3.0 compatibility. The library prioritizes OpenAPI 3.1 spec compliance.

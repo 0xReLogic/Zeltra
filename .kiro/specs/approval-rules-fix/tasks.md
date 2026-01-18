@@ -8,63 +8,95 @@ This plan implements the complete Approval Rules management feature across OpenA
 
 ## Tasks
 
-- [ ] 1. OpenAPI Specification Fixes (Critical)
-  - [ ] 1.1 Add timestamp format specifications
-    - Add `format: date-time` to created_at in ApprovalRuleResponse
-    - Add `format: date-time` to updated_at in ApprovalRuleResponse
-    - Add example values: `"2024-01-15T10:30:00Z"`
-    - Validate with OpenAPI validator
+- [ ] 1. Backend OpenAPI Annotations Update (Critical)
+  - [ ] 1.1 Update utoipa annotations for timestamp fields
+    - File: `backend/crates/api/src/routes/approval_rules.rs`
+    - Add `#[schema(value_type = String, format = "date-time", example = "2024-01-15T10:30:00Z")]` to created_at in ApprovalRuleResponse
+    - Add `#[schema(value_type = String, format = "date-time", example = "2024-01-15T10:30:00Z")]` to updated_at in ApprovalRuleResponse
     - _Requirements: 2.1.1_
     - _Property: None_
   
-  - [ ] 1.2 Add pagination to list endpoint
-    - Modify GET `/organizations/{org_id}/approval-rules` response structure
-    - Add `data` array and `meta` object with PageMeta schema
-    - Add query parameters: page, per_page, is_active, transaction_type, sort_by, sort_order
-    - Add parameter descriptions and examples
-    - Update response description
-    - _Requirements: 2.1.2_
-    - _Property: Property 1 (Pagination Consistency)_
-  
-  - [ ] 1.3 Add error response schemas
-    - Add ApiError schema reference to all 400 responses
-    - Add ApiError schema reference to all 401 responses
-    - Add ApiError schema reference to all 403 responses
-    - Add ApiError schema reference to all 404 responses
-    - Add ApiError schema reference to all 500 responses
-    - Add example error responses for each status code
-    - _Requirements: 2.1.3_
-    - _Property: None_
-  
-  - [ ] 1.4 Add amount field pattern validation
-    - Add `pattern: '^[0-9]+(\.[0-9]{1,2})?$'` to min_amount in all schemas
-    - Add `pattern: '^[0-9]+(\.[0-9]{1,2})?$'` to max_amount in all schemas
-    - Update descriptions to mention format requirements
-    - Ensure examples match pattern (e.g., "1000.00")
+  - [ ] 1.2 Update utoipa annotations for amount fields
+    - File: `backend/crates/api/src/routes/approval_rules.rs`
+    - Add `#[schema(pattern = "^[0-9]+(\\.[0-9]{1,2})?$", example = "1000.00")]` to min_amount in CreateApprovalRuleRequest
+    - Add `#[schema(pattern = "^[0-9]+(\\.[0-9]{1,2})?$", example = "5000.00")]` to max_amount in CreateApprovalRuleRequest
+    - Add `#[schema(pattern = "^[0-9]+(\\.[0-9]{1,2})?$", example = "1000.00")]` to min_amount in UpdateApprovalRuleRequest
+    - Add `#[schema(pattern = "^[0-9]+(\\.[0-9]{1,2})?$", example = "5000.00")]` to max_amount in UpdateApprovalRuleRequest
+    - Add `#[schema(pattern = "^[0-9]+(\\.[0-9]{1,2})?$", example = "1000.00")]` to min_amount in ApprovalRuleResponse
+    - Add `#[schema(pattern = "^[0-9]+(\\.[0-9]{1,2})?$", example = "5000.00")]` to max_amount in ApprovalRuleResponse
+    - Update field descriptions to mention format requirements
     - _Requirements: 2.1.4_
     - _Property: Property 2 (Amount Range Validation)_
   
-  - [ ] 1.5 Add enum constraints
-    - Add enum to required_role: [viewer, submitter, approver, accountant, admin, owner]
-    - Add enum to transaction_types items: [bill, invoice, journal, payment, expense, transfer, accrual, revaluation, intercompany]
-    - Add minItems: 1 and maxItems: 10 to transaction_types
-    - Verify examples use valid enum values
+  - [ ] 1.3 Update utoipa annotations for enum constraints
+    - File: `backend/crates/api/src/routes/approval_rules.rs`
+    - Add `#[schema(inline, example = json!(["bill", "invoice"]))]` to transaction_types in all structs
+    - Add inline enum documentation for required_role field
+    - Update descriptions to list valid enum values
     - _Requirements: 2.1.5_
     - _Property: Property 4 (Transaction Type Completeness), Property 6 (Enum Validation)_
   
-  - [ ] 1.6 Add validation constraints
-    - Add minimum: 1 and maximum: 100 to priority in all schemas
-    - Add minLength: 1 and maxLength: 255 to name in all schemas
-    - Add maxLength: 1000 to description in all schemas
-    - Update descriptions to mention valid ranges
+  - [ ] 1.4 Update utoipa annotations for validation constraints
+    - File: `backend/crates/api/src/routes/approval_rules.rs`
+    - Add `#[schema(minimum = 1, maximum = 100, example = 1)]` to priority in all structs
+    - Add `#[schema(min_length = 1, max_length = 255, example = "High Value Bills")]` to name in CreateApprovalRuleRequest
+    - Add `#[schema(max_length = 1000)]` to description in all structs
+    - Update field descriptions to mention valid ranges
     - _Requirements: 2.1.6_
     - _Property: Property 3 (Priority Range Enforcement), Property 5 (String Length Constraints)_
   
-  - [ ] 1.7 Validate OpenAPI specification
-    - Run openapi-generator validate on all spec files
-    - Verify no errors or warnings
-    - Verify all $ref references resolve correctly
-    - Generate TypeScript types and verify no errors
+  - [ ] 1.5 Add pagination support to list endpoint annotation
+    - File: `backend/crates/api/src/routes/approval_rules.rs`
+    - Update `#[utoipa::path]` annotation for list_approval_rules
+    - Add query parameters: page, per_page, is_active, transaction_type, sort_by, sort_order
+    - Change response from `body = [ApprovalRuleResponse]` to paginated response with data and meta
+    - Add parameter descriptions and examples
+    - Add 400, 401, 500 error responses with ApiError schema
+    - _Requirements: 2.1.2_
+    - _Property: Property 1 (Pagination Consistency)_
+    - _Note: Backend implementation in Task 3, this is just OpenAPI annotation_
+  
+  - [ ] 1.6 Add error response schemas to all endpoint annotations
+    - File: `backend/crates/api/src/routes/approval_rules.rs`
+    - Update all `#[utoipa::path]` annotations
+    - Add 401 response: `(status = 401, description = "Unauthorized", body = ApiError)`
+    - Add 500 response: `(status = 500, description = "Internal server error", body = ApiError)`
+    - Update existing 400, 403, 404 responses to include `body = ApiError`
+    - Add example error responses in descriptions
+    - _Requirements: 2.1.3_
+    - _Property: None_
+  
+  - [ ] 1.7 Regenerate OpenAPI spec from backend
+    - Run backend to generate new OpenAPI spec: `cargo run --bin zeltra` in backend/
+    - Backend will auto-generate `contracts/openapi.yaml` on startup
+    - Wait for server to start (check logs for "Listening on")
+    - Stop server (Ctrl+C)
+    - Verify `contracts/openapi.yaml` has been updated with new annotations
+    - _Requirements: 2.1.1-2.1.6_
+    - _Property: None_
+  
+  - [ ] 1.8 Split and fix OpenAPI spec (automatic nullable fix)
+    - Run: `python3 split-openapi.py` in contracts/
+    - Script automatically:
+      - Splits openapi.yaml into openapi-split/*.yaml files
+      - Fixes utoipa nullable syntax: `type: [T, 'null']` → `type: T, nullable: true`
+    - Verify `contracts/openapi-split/12-approval-rules-schemas.yaml` has correct nullable syntax
+    - Verify `contracts/openapi-split/27-approval-rules-endpoints.yaml` has all updates
+    - Common nullable fields: description, min_amount, max_amount
+    - Verify no `type: [` patterns remain in approval rules schemas
+    - _Requirements: 2.1.1_
+    - _Property: None_
+    - _Note: Script has built-in fix_nullable_syntax() function (BUG-007 workaround)_
+  
+  - [ ] 1.9 Validate OpenAPI specification
+    - Verify all changes are present in split files
+    - Check timestamp formats are correct (format: date-time)
+    - Check amount patterns are correct (pattern: ^[0-9]+(\\.[0-9]{1,2})?$)
+    - Check enum constraints are correct (9 transaction types, 6 roles)
+    - Check validation constraints are correct (priority 1-100, name 1-255, description max 1000)
+    - Check pagination parameters are correct (page, per_page, filters, sorting)
+    - Check error responses are correct (ApiError schema on all error responses)
+    - Verify no `type: [` patterns remain (nullable syntax fixed)
     - _Requirements: 2.1.1-2.1.6_
     - _Property: None_
 
