@@ -99,8 +99,8 @@ This plan implements the complete Approval Rules management feature across OpenA
     - _Requirements: 2.1.1-2.1.6_
     - _Property: None_
 
-- [ ] 2. Backend Quick Wins (Non-Breaking)
-  - [-] 2.1 Add missing transaction types to parser
+- [x] 2. Backend Quick Wins (Non-Breaking)
+  - [x] 2.1 Add missing transaction types to parser
     - Add "accrual" => Ok(TransactionType::Accrual) to parse_transaction_type
     - Add "revaluation" => Ok(TransactionType::Revaluation) to parse_transaction_type
     - Add "intercompany" => Ok(TransactionType::Intercompany) to parse_transaction_type
