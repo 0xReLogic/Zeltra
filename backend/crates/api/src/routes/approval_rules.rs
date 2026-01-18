@@ -16,7 +16,7 @@ use std::str::FromStr;
 use tracing::{error, info};
 use uuid::Uuid;
 
-use crate::{AppState, error::ApiError, middleware::AuthUser};
+use crate::{AppState, middleware::AuthUser};
 use zeltra_db::{
     OrganizationRepository,
     repositories::approval_rule::{
@@ -262,6 +262,31 @@ async fn create_approval_rule(
             .into_response();
     }
 
+    if payload.name.len() > 255 {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({
+                "error": "name_too_long",
+                "message": "Name must not exceed 255 characters"
+            })),
+        )
+            .into_response();
+    }
+
+    // Validate description length
+    if let Some(ref desc) = payload.description {
+        if desc.len() > 1000 {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(json!({
+                    "error": "description_too_long",
+                    "message": "Description must not exceed 1000 characters"
+                })),
+            )
+                .into_response();
+        }
+    }
+
     // Validate transaction types
     if payload.transaction_types.is_empty() {
         return (
@@ -269,6 +294,18 @@ async fn create_approval_rule(
             Json(json!({
                 "error": "transaction_types_required",
                 "message": "At least one transaction type is required"
+            })),
+        )
+            .into_response();
+    }
+
+    // Validate priority range
+    if payload.priority < 1 || payload.priority > 100 {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({
+                "error": "invalid_priority",
+                "message": "Priority must be between 1 and 100"
             })),
         )
             .into_response();
@@ -399,6 +436,59 @@ async fn update_approval_rule(
     // Check membership and admin role
     if let Err(response) = check_admin_membership(&org_repo, org_id, auth.user_id()).await {
         return response;
+    }
+
+    // Validate name length if provided
+    if let Some(ref name) = payload.name {
+        if name.trim().is_empty() {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(json!({
+                    "error": "name_required",
+                    "message": "Name is required"
+                })),
+            )
+                .into_response();
+        }
+
+        if name.len() > 255 {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(json!({
+                    "error": "name_too_long",
+                    "message": "Name must not exceed 255 characters"
+                })),
+            )
+                .into_response();
+        }
+    }
+
+    // Validate description length if provided
+    if let Some(ref desc) = payload.description {
+        if desc.len() > 1000 {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(json!({
+                    "error": "description_too_long",
+                    "message": "Description must not exceed 1000 characters"
+                })),
+            )
+                .into_response();
+        }
+    }
+
+    // Validate priority range if provided
+    if let Some(priority) = payload.priority {
+        if priority < 1 || priority > 100 {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(json!({
+                    "error": "invalid_priority",
+                    "message": "Priority must be between 1 and 100"
+                })),
+            )
+                .into_response();
+        }
     }
 
     // Parse amounts if provided

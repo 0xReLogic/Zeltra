@@ -100,7 +100,7 @@ This plan implements the complete Approval Rules management feature across OpenA
     - _Property: None_
 
 - [ ] 2. Backend Quick Wins (Non-Breaking)
-  - [ ] 2.1 Add missing transaction types to parser
+  - [-] 2.1 Add missing transaction types to parser
     - Add "accrual" => Ok(TransactionType::Accrual) to parse_transaction_type
     - Add "revaluation" => Ok(TransactionType::Revaluation) to parse_transaction_type
     - Add "intercompany" => Ok(TransactionType::Intercompany) to parse_transaction_type
@@ -108,7 +108,7 @@ This plan implements the complete Approval Rules management feature across OpenA
     - _Requirements: 2.2.3_
     - _Property: Property 4 (Transaction Type Completeness)_
   
-  - [ ] 2.2 Add string length validation
+  - [x] 2.2 Add string length validation
     - Add name length check (1-255) in create_approval_rule
     - Add name length check (1-255) in update_approval_rule
     - Add description length check (max 1000) in create_approval_rule
@@ -117,14 +117,14 @@ This plan implements the complete Approval Rules management feature across OpenA
     - _Requirements: 2.2.4_
     - _Property: Property 5 (String Length Constraints)_
   
-  - [ ] 2.3 Add priority range validation
+  - [x] 2.3 Add priority range validation
     - Add priority range check (1-100) in create_approval_rule
     - Add priority range check (1-100) in update_approval_rule
     - Return 400 error with specific message if outside range
     - _Requirements: 2.2.5_
     - _Property: Property 3 (Priority Range Enforcement)_
   
-  - [ ] 2.4 Add database indexes
+  - [x] 2.4 Add database indexes
     - Create index on (organization_id, priority) WHERE is_active = true
     - Create GIN index on transaction_types WHERE is_active = true
     - Create index on (organization_id, required_role) WHERE is_active = true

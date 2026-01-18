@@ -17,6 +17,7 @@ mod m20260114_000003_tier_enforcement;
 mod m20260114_000004_tier_limit_updates;
 mod m20260114_000005_fix_unlimited_dimensions;
 mod m20260116_000001_simulation_attachments;
+mod m20260118_000001_approval_rules_indexes;
 
 /// Migrator for running database migrations.
 pub struct Migrator;
@@ -38,6 +39,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20260114_000004_tier_limit_updates::Migration),
             Box::new(m20260114_000005_fix_unlimited_dimensions::Migration),
             Box::new(m20260116_000001_simulation_attachments::Migration),
+            Box::new(m20260118_000001_approval_rules_indexes::Migration),
         ]
     }
 }

@@ -261,6 +261,9 @@ impl ApprovalRuleRepository {
             "adjustment" => Ok(TransactionType::Adjustment),
             "opening_balance" => Ok(TransactionType::OpeningBalance),
             "reversal" => Ok(TransactionType::Reversal),
+            "accrual" => Ok(TransactionType::Accrual),
+            "revaluation" => Ok(TransactionType::Revaluation),
+            "intercompany" => Ok(TransactionType::Intercompany),
             _ => Err(ApprovalRuleError::InvalidTransactionType(t.to_string())),
         }
     }
@@ -304,6 +307,12 @@ mod tests {
         assert!(ApprovalRuleRepository::parse_transaction_type("transfer").is_ok());
         assert!(ApprovalRuleRepository::parse_transaction_type("adjustment").is_ok());
         assert!(ApprovalRuleRepository::parse_transaction_type("reversal").is_ok());
+        assert!(ApprovalRuleRepository::parse_transaction_type("accrual").is_ok());
+        assert!(ApprovalRuleRepository::parse_transaction_type("ACCRUAL").is_ok());
+        assert!(ApprovalRuleRepository::parse_transaction_type("revaluation").is_ok());
+        assert!(ApprovalRuleRepository::parse_transaction_type("Revaluation").is_ok());
+        assert!(ApprovalRuleRepository::parse_transaction_type("intercompany").is_ok());
+        assert!(ApprovalRuleRepository::parse_transaction_type("INTERCOMPANY").is_ok());
     }
 
     #[tokio::test]
