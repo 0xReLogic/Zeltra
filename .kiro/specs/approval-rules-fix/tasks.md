@@ -133,14 +133,14 @@ This plan implements the complete Approval Rules management feature across OpenA
     - _Requirements: 2.2.2_
     - _Property: Property 9 (Database Index Usage)_
   
-  - [ ] 2.5 Add input sanitization
+  - [x] 2.5 Add input sanitization
     - Add ammonia::clean() for name field
     - Add ammonia::clean() for description field
     - Verify sanitized strings are not empty after cleaning
     - _Requirements: 3.1_
     - _Property: None_
   
-  - [ ] 2.6 Add amount pattern validation
+  - [x] 2.6 Add amount pattern validation
     - Add regex pattern validation for min_amount
     - Add regex pattern validation for max_amount
     - Add maximum amount check (999,999,999)

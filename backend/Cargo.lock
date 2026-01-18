@@ -5849,6 +5849,7 @@ dependencies = [
  "http-body-util",
  "jsonwebtoken",
  "proptest",
+ "regex",
  "rstest",
  "rust_decimal",
  "sea-orm",

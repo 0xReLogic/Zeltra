@@ -9,6 +9,7 @@ use axum::{
     response::IntoResponse,
     routing::{delete, get, patch, post},
 };
+use regex;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -251,7 +252,8 @@ async fn create_approval_rule(
     }
 
     // Validate name
-    if payload.name.trim().is_empty() {
+    let name = payload.name.trim();
+    if name.is_empty() {
         return (
             StatusCode::BAD_REQUEST,
             Json(json!({
@@ -262,7 +264,7 @@ async fn create_approval_rule(
             .into_response();
     }
 
-    if payload.name.len() > 255 {
+    if name.len() > 255 {
         return (
             StatusCode::BAD_REQUEST,
             Json(json!({
@@ -273,8 +275,9 @@ async fn create_approval_rule(
             .into_response();
     }
 
-    // Validate description length
-    if let Some(ref desc) = payload.description {
+    // Sanitize and validate description
+    let description = payload.description.as_ref().map(|d| d.trim().to_string());
+    if let Some(ref desc) = description {
         if desc.len() > 1000 {
             return (
                 StatusCode::BAD_REQUEST,
@@ -339,8 +342,8 @@ async fn create_approval_rule(
     let rule_repo = ApprovalRuleRepository::new((*state.db).clone());
 
     let input = CreateApprovalRuleInput {
-        name: payload.name,
-        description: payload.description,
+        name: name.to_string(),
+        description,
         min_amount,
         max_amount,
         transaction_types: payload.transaction_types,
@@ -439,8 +442,9 @@ async fn update_approval_rule(
     }
 
     // Validate name length if provided
-    if let Some(ref name) = payload.name {
-        if name.trim().is_empty() {
+    let name = payload.name.as_ref().map(|n| n.trim().to_string());
+    if let Some(ref n) = name {
+        if n.is_empty() {
             return (
                 StatusCode::BAD_REQUEST,
                 Json(json!({
@@ -451,7 +455,7 @@ async fn update_approval_rule(
                 .into_response();
         }
 
-        if name.len() > 255 {
+        if n.len() > 255 {
             return (
                 StatusCode::BAD_REQUEST,
                 Json(json!({
@@ -463,8 +467,9 @@ async fn update_approval_rule(
         }
     }
 
-    // Validate description length if provided
-    if let Some(ref desc) = payload.description {
+    // Sanitize and validate description length if provided
+    let description = payload.description.as_ref().map(|d| Some(d.trim().to_string()));
+    if let Some(Some(ref desc)) = description {
         if desc.len() > 1000 {
             return (
                 StatusCode::BAD_REQUEST,
@@ -511,8 +516,8 @@ async fn update_approval_rule(
     let rule_repo = ApprovalRuleRepository::new((*state.db).clone());
 
     let input = UpdateApprovalRuleInput {
-        name: payload.name,
-        description: payload.description.map(Some),
+        name,
+        description,
         min_amount,
         max_amount,
         transaction_types: payload.transaction_types,
@@ -641,25 +646,48 @@ fn rule_to_response(rule: zeltra_db::entities::approval_rules::Model) -> Approva
 #[allow(clippy::result_large_err)]
 fn parse_optional_decimal(s: Option<&str>) -> Result<Option<Decimal>, axum::response::Response> {
     match s {
-        Some(s) if !s.is_empty() => match Decimal::from_str(s) {
-            Ok(d) if d >= Decimal::ZERO => Ok(Some(d)),
-            Ok(_) => Err((
-                StatusCode::BAD_REQUEST,
-                Json(json!({
-                    "error": "invalid_amount",
-                    "message": "Amount must be non-negative"
-                })),
-            )
-                .into_response()),
-            Err(_) => Err((
-                StatusCode::BAD_REQUEST,
-                Json(json!({
-                    "error": "invalid_amount",
-                    "message": "Invalid amount format"
-                })),
-            )
-                .into_response()),
-        },
+        Some(s) if !s.is_empty() => {
+            // Validate pattern: must be digits with optional 2 decimal places
+            let pattern = regex::Regex::new(r"^[0-9]+(\.[0-9]{1,2})?$").unwrap();
+            if !pattern.is_match(s) {
+                return Err((
+                    StatusCode::BAD_REQUEST,
+                    Json(json!({
+                        "error": "invalid_amount_format",
+                        "message": "Amount must be a valid decimal with up to 2 decimal places (e.g., 1000.00)"
+                    })),
+                )
+                    .into_response());
+            }
+
+            match Decimal::from_str(s) {
+                Ok(d) if d < Decimal::ZERO => Err((
+                    StatusCode::BAD_REQUEST,
+                    Json(json!({
+                        "error": "invalid_amount",
+                        "message": "Amount must be non-negative"
+                    })),
+                )
+                    .into_response()),
+                Ok(d) if d > Decimal::from(999_999_999) => Err((
+                    StatusCode::BAD_REQUEST,
+                    Json(json!({
+                        "error": "amount_too_large",
+                        "message": "Amount must not exceed 999,999,999"
+                    })),
+                )
+                    .into_response()),
+                Ok(d) => Ok(Some(d)),
+                Err(_) => Err((
+                    StatusCode::BAD_REQUEST,
+                    Json(json!({
+                        "error": "invalid_amount",
+                        "message": "Invalid amount format"
+                    })),
+                )
+                    .into_response()),
+            }
+        }
         _ => Ok(None),
     }
 }

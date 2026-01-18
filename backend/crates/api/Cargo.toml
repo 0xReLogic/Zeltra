@@ -36,6 +36,7 @@ tracing = { workspace = true }
 uuid = { workspace = true }
 chrono = { workspace = true }
 rust_decimal = { workspace = true }
+regex = "1"
 
 # Rate limiting
 governor = "0.10.4"
