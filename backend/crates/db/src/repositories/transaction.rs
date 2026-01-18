@@ -644,7 +644,7 @@ impl TransactionRepository {
             .order_by_desc(transactions::Column::TransactionDate)
             .order_by_desc(transactions::Column::CreatedAt)
             .paginate(&self.db, limit);
-            
+
         let total_items = paginator.num_items().await?;
         let transactions = paginator.fetch_page(page).await?;
 
@@ -665,7 +665,10 @@ impl TransactionRepository {
         // Group dimensions by entry
         let mut dims_map: HashMap<Uuid, Vec<Uuid>> = HashMap::new();
         for dim in all_dims {
-            dims_map.entry(dim.ledger_entry_id).or_default().push(dim.dimension_value_id);
+            dims_map
+                .entry(dim.ledger_entry_id)
+                .or_default()
+                .push(dim.dimension_value_id);
         }
 
         // Group entries by transaction
@@ -680,13 +683,16 @@ impl TransactionRepository {
             entries_map.entry(tid).or_default().push(entry_with_dims);
         }
 
-        let result = transactions.into_iter().map(|t| {
-             let t_entries = entries_map.remove(&t.id).unwrap_or_default();
-             TransactionWithEntries {
-                 transaction: t,
-                 entries: t_entries,
-             }
-        }).collect();
+        let result = transactions
+            .into_iter()
+            .map(|t| {
+                let t_entries = entries_map.remove(&t.id).unwrap_or_default();
+                TransactionWithEntries {
+                    transaction: t,
+                    entries: t_entries,
+                }
+            })
+            .collect();
 
         Ok((result, total_items))
     }

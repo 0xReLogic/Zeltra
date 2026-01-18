@@ -102,12 +102,12 @@ async fn test_list_transactions_with_filters() {
     // Use a random org_id that likely doesn't exist
     let org_id = Uuid::new_v4();
 
-    let result = repo.list_transactions(org_id, filter).await;
+    let result = repo.list_transactions(org_id, filter, 1, 10).await;
 
     // Should return empty list, not error
     assert!(result.is_ok(), "List should succeed even with no results");
     assert!(
-        result.unwrap().is_empty(),
+        result.unwrap().0.is_empty(),
         "Should return empty list for non-existent org"
     );
 }
@@ -224,7 +224,7 @@ async fn test_list_transactions_filter_by_status() {
     };
 
     let org_id = Uuid::new_v4();
-    let result = repo.list_transactions(org_id, filter).await;
+    let result = repo.list_transactions(org_id, filter, 1, 10).await;
 
     assert!(result.is_ok(), "Filter by status should work");
 }
@@ -246,7 +246,7 @@ async fn test_list_transactions_filter_by_type() {
     };
 
     let org_id = Uuid::new_v4();
-    let result = repo.list_transactions(org_id, filter).await;
+    let result = repo.list_transactions(org_id, filter, 1, 10).await;
 
     assert!(result.is_ok(), "Filter by type should work");
 }
@@ -269,7 +269,7 @@ async fn test_list_transactions_filter_by_date_range() {
     };
 
     let org_id = Uuid::new_v4();
-    let result = repo.list_transactions(org_id, filter).await;
+    let result = repo.list_transactions(org_id, filter, 1, 10).await;
 
     assert!(result.is_ok(), "Filter by date range should work");
 }

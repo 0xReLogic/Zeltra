@@ -1,14 +1,15 @@
+//! Fiscal period race tests.
+
 use chrono::{NaiveDate, Utc};
-use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 use sea_orm::{ActiveModelTrait, Database, DatabaseConnection, EntityTrait, Set};
 use uuid::Uuid;
 use zeltra_db::entities::{
-    chart_of_accounts, fiscal_periods, fiscal_years, ledger_entries, organizations,
+    chart_of_accounts, fiscal_periods, fiscal_years, organizations,
     sea_orm_active_enums::{
         AccountType, FiscalPeriodStatus, FiscalYearStatus, TransactionStatus, TransactionType,
     },
-    transactions, users,
+    users,
 };
 use zeltra_db::repositories::{
     organization::OrganizationRepository,
@@ -95,7 +96,7 @@ async fn create_fiscal_year(
     let fy = fiscal_years::ActiveModel {
         id: Set(Uuid::new_v4()),
         organization_id: Set(org_id),
-        name: Set(format!("FY {}", year)),
+        name: Set(format!("FY {year}")),
         start_date: Set(NaiveDate::from_ymd_opt(year, 1, 1).unwrap()),
         end_date: Set(NaiveDate::from_ymd_opt(year, 12, 31).unwrap()),
         status: Set(FiscalYearStatus::Open),
@@ -113,17 +114,62 @@ async fn create_fiscal_year(
 #[tokio::test]
 async fn test_post_transaction_to_closed_period_race() {
     let db = setup_db().await;
+
+    let workflow_repo = WorkflowRepository::new(db.clone());
+
+    let (org, user, tx_final, period_id) = setup_race_scenario(&db).await;
+    assert_eq!(tx_final.status, TransactionStatus::Approved);
+
+    // 5. ATTACK SIMULATION: Admin CLOSES the period
+    let mut period_active: fiscal_periods::ActiveModel =
+        fiscal_periods::Entity::find_by_id(period_id)
+            .one(&db)
+            .await
+            .unwrap()
+            .unwrap()
+            .into();
+    period_active.status = Set(FiscalPeriodStatus::Closed);
+    period_active.update(&db).await.unwrap();
+
+    // 6. User attempts to POST (Race Condition)
+    // This SHOULD FAIL because the period is now closed.
+    let result = workflow_repo
+        .post_transaction(org.id, tx_final.id, user.id)
+        .await;
+
+    match result {
+        Ok(_) => panic!(
+            "CRITICAL: Transaction posted to CLOSED fiscal period! Security invariant violated."
+        ),
+        Err(e) => {
+            let error_msg = e.to_string();
+            assert!(
+                error_msg.contains("Cannot post to closed fiscal period"),
+                "Expected 'Cannot post to closed fiscal period' error, got: {error_msg}"
+            );
+        }
+    }
+}
+
+async fn setup_race_scenario(
+    db: &DatabaseConnection,
+) -> (
+    organizations::Model,
+    users::Model,
+    zeltra_db::entities::transactions::Model,
+    Uuid,
+) {
     let tx_repo = TransactionRepository::new(db.clone());
     let workflow_repo = WorkflowRepository::new(db.clone());
 
-    // 1. Setup Data: User, Org, Accounts
-    let user = create_user(&db).await;
-    let org = create_org(&db, user.id).await;
-    let asset_acct = create_account(&db, org.id, "Cash", AccountType::Asset).await;
-    let expense_acct = create_account(&db, org.id, "Expense", AccountType::Expense).await;
+    // 1. Setup Data
+    let user = create_user(db).await;
+    let org = create_org(db, user.id).await;
+    let asset_acct = create_account(db, org.id, "Cash", AccountType::Asset).await;
+    let expense_acct = create_account(db, org.id, "Expense", AccountType::Expense).await;
 
     // 2. Create FY and OPEN Fiscal Period (Jan 2026)
-    let fy = create_fiscal_year(&db, org.id, 2026).await;
+    let fy = create_fiscal_year(db, org.id, 2026).await;
     let period_id = Uuid::new_v4();
     let period = fiscal_periods::ActiveModel {
         id: Set(period_id),
@@ -140,11 +186,11 @@ async fn test_post_transaction_to_closed_period_race() {
         ..Default::default()
     };
     period
-        .insert(&db)
+        .insert(db)
         .await
         .expect("Failed to create fiscal period");
 
-    // 3. Create Draft Transaction (Date: Jan 15)
+    // 3. Create Draft Transaction
     let tx_date = NaiveDate::from_ymd_opt(2026, 1, 15).unwrap();
     let input = CreateTransactionInput {
         organization_id: org.id,
@@ -194,7 +240,7 @@ async fn test_post_transaction_to_closed_period_race() {
         .transaction;
     assert_eq!(tx_draft.status, TransactionStatus::Draft);
 
-    // 4. Move to Approved (Simulate Workflow)
+    // 4. Move to Approved
     let _ = workflow_repo
         .submit_transaction(org.id, tx_draft.id, user.id)
         .await
@@ -203,36 +249,6 @@ async fn test_post_transaction_to_closed_period_race() {
         .approve_transaction(org.id, tx_draft.id, user.id, None)
         .await
         .expect("Failed to approve");
-    assert_eq!(tx_final.status, TransactionStatus::Approved);
 
-    // 5. ATTACK SIMULATION: Admin CLOSES the period
-    let mut period_active: fiscal_periods::ActiveModel =
-        fiscal_periods::Entity::find_by_id(period_id)
-            .one(&db)
-            .await
-            .unwrap()
-            .unwrap()
-            .into();
-    period_active.status = Set(FiscalPeriodStatus::Closed);
-    period_active.update(&db).await.unwrap();
-
-    // 6. User attempts to POST (Race Condition)
-    // This SHOULD FAIL because the period is now closed.
-    let result = workflow_repo
-        .post_transaction(org.id, tx_draft.id, user.id)
-        .await;
-
-    match result {
-        Ok(_) => panic!(
-            "CRITICAL: Transaction posted to CLOSED fiscal period! Security invariant violated."
-        ),
-        Err(e) => {
-            let error_msg = e.to_string();
-            assert!(
-                error_msg.contains("Cannot post to closed fiscal period"),
-                "Expected 'Cannot post to closed fiscal period' error, got: {}",
-                error_msg
-            );
-        }
-    }
+    (org, user, tx_final, period_id)
 }

@@ -576,21 +576,33 @@ impl WorkflowRepository {
                 Some(ref role) => {
                     let res = ApprovalEngine::can_approve(&user_role, approval_limit, role, total);
                     if res.is_err() {
-                         tracing::warn!(
-                             "User {} cannot approve tx {} (role={}, limit={:?}, required={}, amount={}): {:?}",
-                             user_id, tx.id, user_role, approval_limit, role, total, res
-                         );
+                        tracing::warn!(
+                            "User {} cannot approve tx {} (role={}, limit={:?}, required={}, amount={}): {:?}",
+                            user_id,
+                            tx.id,
+                            user_role,
+                            approval_limit,
+                            role,
+                            total,
+                            res
+                        );
                     }
                     res.is_ok()
                 }
                 None => {
                     // No rule matches, default to Approver role
-                    let res = ApprovalEngine::can_approve(&user_role, approval_limit, "approver", total);
-                     if res.is_err() {
-                         tracing::warn!(
-                             "User {} cannot approve tx {} (role={}, limit={:?}, required=approver, amount={}): {:?}",
-                             user_id, tx.id, user_role, approval_limit, total, res
-                         );
+                    let res =
+                        ApprovalEngine::can_approve(&user_role, approval_limit, "approver", total);
+                    if res.is_err() {
+                        tracing::warn!(
+                            "User {} cannot approve tx {} (role={}, limit={:?}, required=approver, amount={}): {:?}",
+                            user_id,
+                            tx.id,
+                            user_role,
+                            approval_limit,
+                            total,
+                            res
+                        );
                     }
                     res.is_ok()
                 }

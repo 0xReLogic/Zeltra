@@ -478,9 +478,13 @@ async fn get_reconciliation(
         Ok(c) => c,
         Err(e) => {
             error!("Failed to get balance comparisons: {:?}", e);
-            return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({
-                "error": { "message": "Failed to fetch account balances" }
-            }))).into_response();
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": { "message": "Failed to fetch account balances" }
+                })),
+            )
+                .into_response();
         }
     };
 

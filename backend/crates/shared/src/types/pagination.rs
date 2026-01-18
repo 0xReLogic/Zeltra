@@ -8,14 +8,14 @@ where
     D: Deserializer<'de>,
 {
     use serde::de::Error;
-    
+
     #[derive(Deserialize)]
     #[serde(untagged)]
     enum StringOrU32 {
         String(String),
         Number(u32),
     }
-    
+
     match StringOrU32::deserialize(deserializer)? {
         StringOrU32::String(s) => s.parse::<u32>().map_err(D::Error::custom),
         StringOrU32::Number(n) => Ok(n),
@@ -26,12 +26,18 @@ where
 #[derive(Debug, Clone, Serialize, Deserialize, utoipa::IntoParams, utoipa::ToSchema)]
 pub struct PageRequest {
     /// Page number (1-indexed).
-    #[serde(default = "default_page", deserialize_with = "deserialize_u32_from_string")]
+    #[serde(
+        default = "default_page",
+        deserialize_with = "deserialize_u32_from_string"
+    )]
     #[param(default = 1, example = 1)]
     #[schema(default = 1, example = 1)]
     pub page: u32,
     /// Number of items per page.
-    #[serde(default = "default_per_page", deserialize_with = "deserialize_u32_from_string")]
+    #[serde(
+        default = "default_per_page",
+        deserialize_with = "deserialize_u32_from_string"
+    )]
     #[param(default = 20, example = 10)]
     #[schema(default = 20, example = 10)]
     pub per_page: u32,

@@ -1,6 +1,8 @@
+//! Idempotency tests.
+
 use chrono::{NaiveDate, Utc};
 use rust_decimal_macros::dec;
-use sea_orm::{ActiveModelTrait, Database, DatabaseConnection, EntityTrait, Set};
+use sea_orm::{ActiveModelTrait, Database, DatabaseConnection, Set};
 use uuid::Uuid;
 use zeltra_db::entities::{
     chart_of_accounts, fiscal_periods, fiscal_years, organizations,

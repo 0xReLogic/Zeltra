@@ -718,13 +718,7 @@ impl AccountRepository {
             // Use ZERO as "stored" since there's no persisted balance column
             let stored = Decimal::ZERO;
 
-            comparisons.push((
-                account.id,
-                account.code,
-                account.name,
-                stored,
-                calculated,
-            ));
+            comparisons.push((account.id, account.code, account.name, stored, calculated));
         }
 
         Ok(comparisons)

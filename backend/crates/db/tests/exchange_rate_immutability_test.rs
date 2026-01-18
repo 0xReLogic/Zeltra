@@ -1,13 +1,13 @@
+//! Exchange rate immutability tests.
+
 use chrono::{NaiveDate, Utc};
 use rust_decimal_macros::dec;
-use sea_orm::{
-    ActiveModelTrait, Database, DatabaseConnection, EntityTrait, Set,
-};
+use sea_orm::{ActiveModelTrait, Database, DatabaseConnection, Set};
 use uuid::Uuid;
 use zeltra_db::entities::{
-    currencies, fiscal_periods, fiscal_years,
+    currencies, fiscal_periods, fiscal_years, organizations,
     sea_orm_active_enums::{FiscalPeriodStatus, FiscalYearStatus, RateSource},
-    users, organizations,
+    users,
 };
 use zeltra_db::repositories::{
     exchange_rate::{CreateExchangeRateInput, ExchangeRateRepository},
@@ -60,7 +60,7 @@ async fn create_org(db: &DatabaseConnection, owner_id: Uuid) -> organizations::M
 async fn ensure_currency(db: &DatabaseConnection, code: &str) {
     let currency = currencies::ActiveModel {
         code: Set(code.to_string()),
-        name: Set(format!("Test {}", code)),
+        name: Set(format!("Test {code}")),
         symbol: Set("$".to_string()),
         decimal_places: Set(2),
         is_active: Set(true),
@@ -74,7 +74,7 @@ async fn create_closed_fiscal_period(db: &DatabaseConnection, org_id: Uuid, year
     let fy = fiscal_years::ActiveModel {
         id: Set(fy_id),
         organization_id: Set(org_id),
-        name: Set(format!("FY {}", year)),
+        name: Set(format!("FY {year}")),
         start_date: Set(NaiveDate::from_ymd_opt(year, 1, 1).unwrap()),
         end_date: Set(NaiveDate::from_ymd_opt(year, 12, 31).unwrap()),
         status: Set(FiscalYearStatus::Open),
@@ -88,17 +88,20 @@ async fn create_closed_fiscal_period(db: &DatabaseConnection, org_id: Uuid, year
         id: Set(Uuid::new_v4()),
         organization_id: Set(org_id),
         fiscal_year_id: Set(fy_id),
-        name: Set(format!("Period {}", month)),
-        period_number: Set(month as i16),
+        name: Set(format!("Period {month}")),
+        period_number: Set(i16::try_from(month).unwrap()),
         is_adjustment_period: Set(false),
         start_date: Set(NaiveDate::from_ymd_opt(year, month, 1).unwrap()),
         end_date: Set(NaiveDate::from_ymd_opt(year, month, 28).unwrap()), // Simplification
-        status: Set(FiscalPeriodStatus::Closed), // <--- CLOSED
+        status: Set(FiscalPeriodStatus::Closed),                          // <--- CLOSED
         created_at: Set(Utc::now().into()),
         updated_at: Set(Utc::now().into()),
         ..Default::default()
     };
-    period.insert(db).await.expect("Failed to create closed fiscal period");
+    period
+        .insert(db)
+        .await
+        .expect("Failed to create closed fiscal period");
 }
 
 // ============================================================================
@@ -139,7 +142,10 @@ async fn test_cannot_update_rate_in_closed_period() {
         Err(e) => {
             let msg = e.to_string();
             // Match the actual error message format "Cannot modify exchange rate in closed fiscal period covering {0}"
-            assert!(msg.contains("closed fiscal period"), "Unexpected error: {}", msg);
+            assert!(
+                msg.contains("closed fiscal period"),
+                "Unexpected error: {msg}"
+            );
         }
     }
 }

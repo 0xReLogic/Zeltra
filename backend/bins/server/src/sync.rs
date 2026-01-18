@@ -12,9 +12,9 @@ use tokio::time::interval;
 use tracing::{error, info, warn};
 
 use zeltra_core::currency::{ExchangeRateService, RateSource};
-use zeltra_db::entities::sea_orm_active_enums::RateSource as DbRateSource;
-use zeltra_db::repositories::exchange_rate::{CreateExchangeRateInput, ExchangeRateRepository};
 use zeltra_db::OrganizationRepository;
+use zeltra_db::entities::sea_orm_active_enums::{RateSource as DbRateSource, SubscriptionTier};
+use zeltra_db::repositories::exchange_rate::{CreateExchangeRateInput, ExchangeRateRepository};
 
 /// Configuration for the exchange rate sync task.
 #[derive(Debug, Clone)]
@@ -73,7 +73,7 @@ pub async fn run_sync_loop(db: Arc<DatabaseConnection>, config: SyncConfig) {
 
     // Then run on interval
     let mut ticker = interval(Duration::from_secs(config.interval_secs));
-    
+
     loop {
         ticker.tick().await;
         sync_rates(&db, &service, &config).await;
@@ -81,15 +81,14 @@ pub async fn run_sync_loop(db: Arc<DatabaseConnection>, config: SyncConfig) {
 }
 
 /// Perform a single sync of exchange rates.
-async fn sync_rates(
-    db: &DatabaseConnection,
-    service: &ExchangeRateService,
-    config: &SyncConfig,
-) {
+async fn sync_rates(db: &DatabaseConnection, service: &ExchangeRateService, config: &SyncConfig) {
     info!("Starting exchange rate sync...");
 
     // Fetch rates from external API
-    let rates = match service.fetch_latest(&config.base_currency, &config.target_currencies).await {
+    let rates = match service
+        .fetch_latest(&config.base_currency, &config.target_currencies)
+        .await
+    {
         Ok(r) => r,
         Err(e) => {
             error!(error = %e, "Failed to fetch exchange rates from API");
@@ -102,7 +101,11 @@ async fn sync_rates(
         return;
     }
 
-    info!(count = rates.len(), "Fetched {} rates from API", rates.len());
+    info!(
+        count = rates.len(),
+        "Fetched {} rates from API",
+        rates.len()
+    );
 
     // Get all organizations to sync rates for
     let org_repo = OrganizationRepository::new(db.clone());
@@ -120,8 +123,7 @@ async fn sync_rates(
     }
 
     // Store rates for each organization (skip STARTER tier - manual input only per BUSINESS_MODEL.md)
-    use zeltra_db::entities::sea_orm_active_enums::SubscriptionTier;
-    
+
     let rate_repo = ExchangeRateRepository::new(db.clone());
     let today = Utc::now().date_naive();
     let mut success_count = 0;
@@ -134,7 +136,7 @@ async fn sync_rates(
             skipped_starter += 1;
             continue;
         }
-        
+
         for rate in &rates {
             let input = CreateExchangeRateInput {
                 organization_id: org.id,

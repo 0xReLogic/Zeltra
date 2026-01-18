@@ -1,3 +1,5 @@
+//! Allocation overflow tests.
+
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 use zeltra_core::currency::AllocationUtil;
@@ -15,7 +17,7 @@ fn prop_allocation_handles_extreme_counts() {
             std::panic::catch_unwind(|| AllocationUtil::allocate_equal(dec!(100), count, 2));
         if let Ok(allocations) = result {
             let sum: Decimal = allocations.iter().copied().sum();
-            assert_eq!(sum, dec!(100), "Sum mismatch for count={}", count);
+            assert_eq!(sum, dec!(100), "Sum mismatch for count={count}");
         }
     }
 }
@@ -40,7 +42,6 @@ fn prop_allocation_handles_negative_totals() {
 
     assert_eq!(
         sum, total,
-        "CRITICAL: Sum invariant failed for negative total! Got {}, expected {}",
-        sum, total
+        "CRITICAL: Sum invariant failed for negative total! Got {sum}, expected {total}"
     );
 }

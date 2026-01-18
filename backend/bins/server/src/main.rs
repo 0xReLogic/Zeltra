@@ -73,7 +73,7 @@ async fn main() -> anyhow::Result<()> {
 
     // Start exchange rate sync background task
     {
-        use crate::sync::{run_sync_loop, SyncConfig};
+        use crate::sync::{SyncConfig, run_sync_loop};
         let sync_config = SyncConfig::default();
         info!(
             interval_secs = sync_config.interval_secs,

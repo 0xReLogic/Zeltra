@@ -1,9 +1,9 @@
+//! Global invariant tests.
+
 use chrono::{NaiveDate, Utc};
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
-use sea_orm::{
-    ActiveModelTrait, ConnectionTrait, Database, DatabaseConnection, EntityTrait, Set, Statement,
-};
+use sea_orm::{ActiveModelTrait, ConnectionTrait, Database, DatabaseConnection, Set, Statement};
 use uuid::Uuid;
 use zeltra_db::entities::{
     chart_of_accounts, fiscal_periods, fiscal_years, organizations,
@@ -128,8 +128,6 @@ async fn create_fiscal_data(db: &DatabaseConnection, org_id: Uuid) -> fiscal_per
 #[tokio::test]
 async fn test_global_invariant_sum_debits_eq_credits() {
     let db = setup_db().await;
-    let tx_repo = TransactionRepository::new(db.clone());
-    let workflow_repo = WorkflowRepository::new(db.clone());
 
     // 1. Setup Environment
     let user = create_user(&db).await;
@@ -145,29 +143,87 @@ async fn test_global_invariant_sum_debits_eq_credits() {
     // We will create a mix of simple USD transactions and Simulated Multi-Currency transactions
     // Note: The system assumes the client (or service) calculates conversions.
     // We will inject pre-calculated entries that respect the DB trigger `check_transaction_balance`.
+    generate_invariant_transactions(
+        &db,
+        org.id,
+        user.id,
+        cash_account.id,
+        revenue_account.id,
+        expense_account.id,
+    )
+    .await;
+
+    // 4. Verify Global Invariant via Raw SQL
+    // We check specifically for THIS organization to filter out noise from other tests if concurrent
+    let sql = r"
+        SELECT 
+            COALESCE(SUM(debit), 0) as total_debit, 
+            COALESCE(SUM(credit), 0) as total_credit
+        FROM ledger_entries
+        JOIN transactions ON transactions.id = ledger_entries.transaction_id
+        WHERE transactions.organization_id = $1
+          AND transactions.status = 'posted'
+    ";
+
+    let stmt = Statement::from_sql_and_values(
+        sea_orm::DatabaseBackend::Postgres,
+        sql,
+        vec![org.id.into()],
+    );
+
+    let result = db.query_one(stmt).await.unwrap().unwrap();
+    let total_debit: Decimal = result.try_get("", "total_debit").unwrap();
+    let total_credit: Decimal = result.try_get("", "total_credit").unwrap();
+
+    println!("Global Invariant Check for Org {}:", org.id);
+    println!("  TOTAL DEBIT:  {total_debit}");
+    println!("  TOTAL CREDIT: {total_credit}");
+    println!("  DIFFERENCE:   {}", total_debit - total_credit);
+
+    assert_eq!(
+        total_debit, total_credit,
+        "CRITICAL FAILURE: System is not balanced! Debits != Credits"
+    );
+
+    assert!(
+        total_debit > dec!(0),
+        "Sanity Check Failed: Total debit should be positive after transactions"
+    );
+}
+
+async fn generate_invariant_transactions(
+    db: &DatabaseConnection,
+    org_id: Uuid,
+    user_id: Uuid,
+    cash_account_id: Uuid,
+    revenue_account_id: Uuid,
+    expense_account_id: Uuid,
+) {
+    let tx_repo = TransactionRepository::new(db.clone());
+    let workflow_repo = WorkflowRepository::new(db.clone());
 
     let transactions_to_create = vec![
         // Tx 1: Simple Revenue (USD 1000)
         (
             dec!(1000),
-            cash_account.id,    // Debit
-            revenue_account.id, // Credit
+            cash_account_id,    // Debit
+            revenue_account_id, // Credit
             "USD",
             dec!(1), // Rate
         ),
         // Tx 2: Expense (USD 50.55)
         (
             dec!(50.55),
-            expense_account.id, // Debit
-            cash_account.id,    // Credit
+            expense_account_id, // Debit
+            cash_account_id,    // Credit
             "USD",
             dec!(1),
         ),
         // Tx 3: Large Amount (USD 1,000,000.00)
         (
             dec!(1000000),
-            cash_account.id,
-            revenue_account.id,
+            cash_account_id,
+            revenue_account_id,
             "USD",
             dec!(1),
         ),
@@ -175,8 +231,8 @@ async fn test_global_invariant_sum_debits_eq_credits() {
         // Wait, DB limited to 4 decimals for amounts.
         (
             dec!(123.4567),
-            expense_account.id,
-            cash_account.id,
+            expense_account_id,
+            cash_account_id,
             "USD",
             dec!(1),
         ),
@@ -184,10 +240,10 @@ async fn test_global_invariant_sum_debits_eq_credits() {
 
     for (amount, debit_acct, credit_acct, currency, rate) in transactions_to_create {
         let input = CreateTransactionInput {
-            organization_id: org.id,
+            organization_id: org_id,
             transaction_type: TransactionType::Journal,
             transaction_date: NaiveDate::from_ymd_opt(2026, 1, 15).unwrap(),
-            description: format!("Global Invariant Test Tx {}", amount),
+            description: format!("Global Invariant Test Tx {amount}"),
             reference_number: None,
             memo: None,
             entries: vec![
@@ -218,7 +274,7 @@ async fn test_global_invariant_sum_debits_eq_credits() {
                     dimensions: vec![],
                 },
             ],
-            created_by: user.id,
+            created_by: user_id,
             timezone: "UTC".to_string(),
             idempotency_key: None,
             iso_metadata: None,
@@ -232,55 +288,18 @@ async fn test_global_invariant_sum_debits_eq_credits() {
 
         // Follow workflow: Draft -> Pending -> Approved -> Posted
         workflow_repo
-            .submit_transaction(org.id, tx_id, user.id)
+            .submit_transaction(org_id, tx_id, user_id)
             .await
             .expect("Failed to submit");
         workflow_repo
-            .approve_transaction(org.id, tx_id, user.id, None)
+            .approve_transaction(org_id, tx_id, user_id, None)
             .await
             .expect("Failed to approve");
 
         // Post checks existing balance triggers
         workflow_repo
-            .post_transaction(org.id, tx_id, user.id)
+            .post_transaction(org_id, tx_id, user_id)
             .await
             .expect("Failed to post transaction");
     }
-
-    // 4. Verify Global Invariant via Raw SQL
-    // We check specifically for THIS organization to filter out noise from other tests if concurrent
-    let sql = r#"
-        SELECT 
-            COALESCE(SUM(debit), 0) as total_debit, 
-            COALESCE(SUM(credit), 0) as total_credit
-        FROM ledger_entries
-        JOIN transactions ON transactions.id = ledger_entries.transaction_id
-        WHERE transactions.organization_id = $1
-          AND transactions.status = 'posted'
-    "#;
-
-    let stmt = Statement::from_sql_and_values(
-        sea_orm::DatabaseBackend::Postgres,
-        sql,
-        vec![org.id.into()],
-    );
-
-    let result = db.query_one(stmt).await.unwrap().unwrap();
-    let total_debit: Decimal = result.try_get("", "total_debit").unwrap();
-    let total_credit: Decimal = result.try_get("", "total_credit").unwrap();
-
-    println!("Global Invariant Check for Org {}:", org.id);
-    println!("  TOTAL DEBIT:  {}", total_debit);
-    println!("  TOTAL CREDIT: {}", total_credit);
-    println!("  DIFFERENCE:   {}", total_debit - total_credit);
-
-    assert_eq!(
-        total_debit, total_credit,
-        "CRITICAL FAILURE: System is not balanced! Debits != Credits"
-    );
-
-    assert!(
-        total_debit > dec!(0),
-        "Sanity Check Failed: Total debit should be positive after transactions"
-    );
 }

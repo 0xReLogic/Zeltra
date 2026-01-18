@@ -620,27 +620,27 @@ async fn request_simulation_upload(
 
     // Check storage quota
     let attachment_repo = AttachmentRepository::new((*state.db).clone());
-    if let Ok(Some(limits)) = org_repo.get_tier_limits(org_id).await {
-        if let Ok(current_storage_bytes) = attachment_repo.get_total_storage_used(org_id).await {
-            let storage_limit_bytes = i64::from(limits.attachment_storage_gb) * 1024 * 1024 * 1024;
-            #[allow(clippy::cast_possible_wrap)]
-            let new_total = current_storage_bytes + payload.file_size as i64;
+    if let Ok(Some(limits)) = org_repo.get_tier_limits(org_id).await
+        && let Ok(current_storage_bytes) = attachment_repo.get_total_storage_used(org_id).await
+    {
+        let storage_limit_bytes = i64::from(limits.attachment_storage_gb) * 1024 * 1024 * 1024;
+        #[allow(clippy::cast_possible_wrap)]
+        let new_total = current_storage_bytes + payload.file_size as i64;
 
-            if new_total > storage_limit_bytes {
-                #[allow(clippy::float_arithmetic)]
-                #[allow(clippy::cast_precision_loss)]
-                let used_gb = current_storage_bytes as f64 / (1024.0 * 1024.0 * 1024.0);
-                return (
-                    StatusCode::PAYMENT_REQUIRED,
-                    Json(json!({
-                        "error": "storage_quota_exceeded",
-                        "message": format!("Storage quota exceeded. Your tier allows {} GB, currently using {:.2} GB.", limits.attachment_storage_gb, used_gb),
-                        "limit_gb": limits.attachment_storage_gb,
-                        "used_gb": used_gb
-                    })),
-                )
-                    .into_response();
-            }
+        if new_total > storage_limit_bytes {
+            #[allow(clippy::float_arithmetic)]
+            #[allow(clippy::cast_precision_loss)]
+            let used_gb = current_storage_bytes as f64 / (1024.0 * 1024.0 * 1024.0);
+            return (
+                StatusCode::PAYMENT_REQUIRED,
+                Json(json!({
+                    "error": "storage_quota_exceeded",
+                    "message": format!("Storage quota exceeded. Your tier allows {} GB, currently using {:.2} GB.", limits.attachment_storage_gb, used_gb),
+                    "limit_gb": limits.attachment_storage_gb,
+                    "used_gb": used_gb
+                })),
+            )
+                .into_response();
         }
     }
 

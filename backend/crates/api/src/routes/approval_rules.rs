@@ -253,91 +253,16 @@ async fn create_approval_rule(
 
     // Validate name
     let name = payload.name.trim();
-    if name.is_empty() {
-        return (
-            StatusCode::BAD_REQUEST,
-            Json(json!({
-                "error": "name_required",
-                "message": "Name is required"
-            })),
-        )
-            .into_response();
-    }
-
-    if name.len() > 255 {
-        return (
-            StatusCode::BAD_REQUEST,
-            Json(json!({
-                "error": "name_too_long",
-                "message": "Name must not exceed 255 characters"
-            })),
-        )
-            .into_response();
-    }
 
     // Sanitize and validate description
     let description = payload.description.as_ref().map(|d| d.trim().to_string());
-    if let Some(ref desc) = description {
-        if desc.len() > 1000 {
-            return (
-                StatusCode::BAD_REQUEST,
-                Json(json!({
-                    "error": "description_too_long",
-                    "message": "Description must not exceed 1000 characters"
-                })),
-            )
-                .into_response();
-        }
-    }
 
-    // Validate transaction types
-    if payload.transaction_types.is_empty() {
-        return (
-            StatusCode::BAD_REQUEST,
-            Json(json!({
-                "error": "transaction_types_required",
-                "message": "At least one transaction type is required"
-            })),
-        )
-            .into_response();
-    }
-
-    // Validate priority range
-    if payload.priority < 1 || payload.priority > 100 {
-        return (
-            StatusCode::BAD_REQUEST,
-            Json(json!({
-                "error": "invalid_priority",
-                "message": "Priority must be between 1 and 100"
-            })),
-        )
-            .into_response();
-    }
-
-    // Parse amounts
-    let min_amount = match parse_optional_decimal(payload.min_amount.as_deref()) {
-        Ok(a) => a,
-        Err(e) => return e,
-    };
-
-    let max_amount = match parse_optional_decimal(payload.max_amount.as_deref()) {
-        Ok(a) => a,
-        Err(e) => return e,
-    };
-
-    // Validate amount range
-    if let (Some(min), Some(max)) = (min_amount, max_amount)
-        && min > max
-    {
-        return (
-            StatusCode::BAD_REQUEST,
-            Json(json!({
-                "error": "invalid_amount_range",
-                "message": "min_amount cannot be greater than max_amount"
-            })),
-        )
-            .into_response();
-    }
+    // Validate input and parse amounts
+    let (min_amount, max_amount) =
+        match validate_create_rule_input(&payload, name, description.as_ref()) {
+            Ok(amounts) => amounts,
+            Err(response) => return response,
+        };
 
     let rule_repo = ApprovalRuleRepository::new((*state.db).clone());
 
@@ -468,32 +393,35 @@ async fn update_approval_rule(
     }
 
     // Sanitize and validate description length if provided
-    let description = payload.description.as_ref().map(|d| Some(d.trim().to_string()));
-    if let Some(Some(ref desc)) = description {
-        if desc.len() > 1000 {
-            return (
-                StatusCode::BAD_REQUEST,
-                Json(json!({
-                    "error": "description_too_long",
-                    "message": "Description must not exceed 1000 characters"
-                })),
-            )
-                .into_response();
-        }
+    let description = payload
+        .description
+        .as_ref()
+        .map(|d| Some(d.trim().to_string()));
+    if let Some(Some(ref desc)) = description
+        && desc.len() > 1000
+    {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({
+                "error": "description_too_long",
+                "message": "Description must not exceed 1000 characters"
+            })),
+        )
+            .into_response();
     }
 
     // Validate priority range if provided
-    if let Some(priority) = payload.priority {
-        if priority < 1 || priority > 100 {
-            return (
-                StatusCode::BAD_REQUEST,
-                Json(json!({
-                    "error": "invalid_priority",
-                    "message": "Priority must be between 1 and 100"
-                })),
-            )
-                .into_response();
-        }
+    if let Some(priority) = payload.priority
+        && !(1..=100).contains(&priority)
+    {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({
+                "error": "invalid_priority",
+                "message": "Priority must be between 1 and 100"
+            })),
+        )
+            .into_response();
     }
 
     // Parse amounts if provided
@@ -799,4 +727,86 @@ fn approval_rule_error_response(e: ApprovalRuleError) -> axum::response::Respons
         )
             .into_response(),
     }
+}
+
+#[allow(clippy::result_large_err)]
+fn validate_create_rule_input(
+    payload: &CreateApprovalRuleRequest,
+    name: &str,
+    description: Option<&String>,
+) -> Result<(Option<Decimal>, Option<Decimal>), axum::response::Response> {
+    if name.is_empty() {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json(json!({
+                "error": "name_required",
+                "message": "Name is required"
+            })),
+        )
+            .into_response());
+    }
+
+    if name.len() > 255 {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json(json!({
+                "error": "name_too_long",
+                "message": "Name must not exceed 255 characters"
+            })),
+        )
+            .into_response());
+    }
+
+    if let Some(desc) = description
+        && desc.len() > 1000
+    {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json(json!({
+                "error": "description_too_long",
+                "message": "Description must not exceed 1000 characters"
+            })),
+        )
+            .into_response());
+    }
+
+    if payload.transaction_types.is_empty() {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json(json!({
+                "error": "transaction_types_required",
+                "message": "At least one transaction type is required"
+            })),
+        )
+            .into_response());
+    }
+
+    if !(1..=100).contains(&payload.priority) {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json(json!({
+                "error": "invalid_priority",
+                "message": "Priority must be between 1 and 100"
+            })),
+        )
+            .into_response());
+    }
+
+    let min_amount = parse_optional_decimal(payload.min_amount.as_deref())?;
+    let max_amount = parse_optional_decimal(payload.max_amount.as_deref())?;
+
+    if let (Some(min), Some(max)) = (min_amount, max_amount)
+        && min > max
+    {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json(json!({
+                "error": "invalid_amount_range",
+                "message": "min_amount cannot be greater than max_amount"
+            })),
+        )
+            .into_response());
+    }
+
+    Ok((min_amount, max_amount))
 }

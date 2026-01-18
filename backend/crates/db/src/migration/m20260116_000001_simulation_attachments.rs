@@ -15,11 +15,7 @@ impl MigrationTrait for Migration {
             .alter_table(
                 Table::alter()
                     .table(Attachments::Table)
-                    .add_column(
-                        ColumnDef::new(Attachments::SimulationId)
-                            .uuid()
-                            .null(),
-                    )
+                    .add_column(ColumnDef::new(Attachments::SimulationId).uuid().null())
                     .to_owned(),
             )
             .await?;
@@ -56,8 +52,10 @@ impl MigrationTrait for Migration {
         let db = manager.get_connection();
 
         // Drop check constraint
-        db.execute_unprepared("ALTER TABLE attachments DROP CONSTRAINT IF EXISTS chk_attachment_parent")
-            .await?;
+        db.execute_unprepared(
+            "ALTER TABLE attachments DROP CONSTRAINT IF EXISTS chk_attachment_parent",
+        )
+        .await?;
 
         // Drop index
         manager

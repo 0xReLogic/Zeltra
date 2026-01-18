@@ -315,7 +315,9 @@ pub struct PayInvoiceRequest {
 
 /// Pagination metadata.
 #[derive(Debug, Serialize, utoipa::ToSchema)]
-#[schema(description = "Simple pagination metadata for transactions (0-indexed pages, no total_pages calculation)")]
+#[schema(
+    description = "Simple pagination metadata for transactions (0-indexed pages, no total_pages calculation)"
+)]
 pub struct PaginationMeta {
     /// Current page number (0-indexed).
     #[schema(example = 0)]
@@ -425,7 +427,6 @@ pub struct EntryResponse {
     /// Dimension value IDs.
     pub dimensions: Vec<Uuid>,
 }
-
 
 // ============================================================================
 // Workflow Request/Response Types
@@ -589,11 +590,7 @@ async fn list_transactions(
 
             let response = PaginatedTransactionsResponse {
                 transactions: items,
-                pagination: PaginationMeta {
-                    page,
-                    limit,
-                    total,
-                },
+                pagination: PaginationMeta { page, limit, total },
             };
 
             (StatusCode::OK, Json(response)).into_response()
@@ -776,31 +773,37 @@ async fn create_transaction(
         // Get exchange rate logic with Override support
         // Item 43: Advanced Transaction Fields (Manual Rate Override)
         let exchange_rate = if let Some(rate_str) = &entry_req.exchange_rate {
-             match Decimal::from_str(rate_str) {
+            match Decimal::from_str(rate_str) {
                 Ok(rate) => rate,
-                Err(_) => return (
-                    StatusCode::BAD_REQUEST,
-                    Json(json!({
-                        "error": "invalid_exchange_rate",
-                        "message": "Invalid exchange rate format"
-                    })),
-                ).into_response()
-             }
+                Err(_) => {
+                    return (
+                        StatusCode::BAD_REQUEST,
+                        Json(json!({
+                            "error": "invalid_exchange_rate",
+                            "message": "Invalid exchange rate format"
+                        })),
+                    )
+                        .into_response();
+                }
+            }
         } else if entry_req.source_currency == functional_currency {
             Decimal::ONE
         } else {
             // Lookup rate from database
             use zeltra_db::repositories::exchange_rate::ExchangeRateRepository;
-            
+
             let rate_repo = ExchangeRateRepository::new((*state.db).clone());
             let tx_date = payload.transaction_date;
-            
-            match rate_repo.find_rate(
-                org_id,
-                &entry_req.source_currency,
-                &functional_currency,
-                tx_date,
-            ).await {
+
+            match rate_repo
+                .find_rate(
+                    org_id,
+                    &entry_req.source_currency,
+                    &functional_currency,
+                    tx_date,
+                )
+                .await
+            {
                 Ok(lookup) => lookup.rate,
                 Err(e) => {
                     info!(
