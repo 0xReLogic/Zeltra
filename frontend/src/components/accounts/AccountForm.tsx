@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/select'
 import { CreateAccountRequest } from '@/types/accounts'
 
-const accountTypes = ['asset', 'liability', 'equity', 'revenue', 'expense'] as const
+
 
 const formSchema = z.object({
   code: z.string().min(1, 'Code is required'),

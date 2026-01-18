@@ -52,7 +52,7 @@ const formSchema = z.object({
 
 export default function ExchangeRatesPage() {
   const [page, setPage] = React.useState(1)
-  const [perPage, setPerPage] = React.useState(20)
+  const [perPage] = React.useState(20)
   const { data, isLoading } = useExchangeRates({ page, per_page: perPage })
   const { data: currenciesData } = useCurrencies()
   const createRate = useCreateExchangeRate()

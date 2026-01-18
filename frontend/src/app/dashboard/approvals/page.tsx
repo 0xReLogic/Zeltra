@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { CheckCircle, XCircle } from 'lucide-react'
 
 import { usePendingTransactions, useApproveTransaction, useRejectTransaction, useBulkApprove } from '@/lib/queries/transactions'
-import type { TransactionListItem } from '@/types/transactions'
+import type { PendingTransactionResponse } from '@/types/transactions'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -49,7 +49,7 @@ export default function ApprovalsPage() {
 
   const handleBulkApprove = () => {
       bulkApprove(selectedIds, {
-          onSuccess: (data) => {
+          onSuccess: () => {
               toast.success(`Processed ${selectedIds.length} transactions`)
               setSelectedIds([])
           },
@@ -138,7 +138,7 @@ export default function ApprovalsPage() {
                     </TableCell>
                   </TableRow>
                 ) : transactions.length > 0 ? (
-                  transactions.map((txn: TransactionListItem) => {
+                  transactions.map((txn: PendingTransactionResponse) => {
                      // Total amount is now available in transaction list item
                      const totalAmount = parseFloat(txn.total_amount) || 0
                      
