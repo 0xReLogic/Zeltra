@@ -33,8 +33,13 @@ pub enum ApprovalRuleError {
     InvalidTransactionType(String),
 
     /// Invalid role.
+    /// Invalid role.
     #[error("Invalid role: {0}")]
     InvalidRole(String),
+
+    /// Validation error.
+    #[error("Validation error: {0}")]
+    ValidationError(String),
 }
 
 /// Input for creating an approval rule.
@@ -131,6 +136,41 @@ impl ApprovalRuleRepository {
     ) -> Result<ApprovalRuleModel, ApprovalRuleError> {
         let transaction_types = Self::parse_transaction_types(&input.transaction_types)?;
         let required_role = Self::parse_role_static(&input.required_role)?;
+
+        // Validation
+        if input.name.is_empty() {
+            return Err(ApprovalRuleError::ValidationError(
+                "Name cannot be empty".to_string(),
+            ));
+        }
+        if input.name.len() > 255 {
+            return Err(ApprovalRuleError::ValidationError(
+                "Name too long".to_string(),
+            ));
+        }
+        if input
+            .description
+            .as_ref()
+            .is_some_and(|desc| desc.len() > 1000)
+        {
+            return Err(ApprovalRuleError::ValidationError(
+                "Description too long".to_string(),
+            ));
+        }
+        if input.priority < 1 || input.priority > 100 {
+            return Err(ApprovalRuleError::ValidationError(
+                "Priority must be between 1 and 100".to_string(),
+            ));
+        }
+        if input
+            .min_amount
+            .zip(input.max_amount)
+            .is_some_and(|(min, max)| min > max)
+        {
+            return Err(ApprovalRuleError::ValidationError(
+                "Min amount cannot be greater than max amount".to_string(),
+            ));
+        }
 
         let rule = ActiveModel {
             id: Set(Uuid::new_v4()),

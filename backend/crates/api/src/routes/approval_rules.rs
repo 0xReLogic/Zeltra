@@ -782,6 +782,14 @@ fn approval_rule_error_response(e: ApprovalRuleError) -> axum::response::Respons
             })),
         )
             .into_response(),
+        ApprovalRuleError::ValidationError(msg) => (
+            StatusCode::BAD_REQUEST,
+            Json(json!({
+                "error": "validation_error",
+                "message": msg
+            })),
+        )
+            .into_response(),
         ApprovalRuleError::Database(_) => (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({
