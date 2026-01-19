@@ -15,7 +15,6 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Add `#[schema(value_type = String, format = "date-time", example = "2024-01-15T10:30:00Z")]` to updated_at in ApprovalRuleResponse
     - _Requirements: 2.1.1_
     - _Property: None_
-  
   - [x] 1.2 Update utoipa annotations for amount fields
     - File: `backend/crates/api/src/routes/approval_rules.rs`
     - Add `#[schema(pattern = "^[0-9]+(\\.[0-9]{1,2})?$", example = "1000.00")]` to min_amount in CreateApprovalRuleRequest
@@ -27,7 +26,6 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Update field descriptions to mention format requirements
     - _Requirements: 2.1.4_
     - _Property: Property 2 (Amount Range Validation)_
-  
   - [x] 1.3 Update utoipa annotations for enum constraints
     - File: `backend/crates/api/src/routes/approval_rules.rs`
     - Add `#[schema(inline, example = json!(["bill", "invoice"]))]` to transaction_types in all structs
@@ -35,7 +33,6 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Update descriptions to list valid enum values
     - _Requirements: 2.1.5_
     - _Property: Property 4 (Transaction Type Completeness), Property 6 (Enum Validation)_
-  
   - [x] 1.4 Update utoipa annotations for validation constraints
     - File: `backend/crates/api/src/routes/approval_rules.rs`
     - Add `#[schema(minimum = 1, maximum = 100, example = 1)]` to priority in all structs
@@ -44,7 +41,6 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Update field descriptions to mention valid ranges
     - _Requirements: 2.1.6_
     - _Property: Property 3 (Priority Range Enforcement), Property 5 (String Length Constraints)_
-  
   - [x] 1.5 Add pagination support to list endpoint annotation
     - File: `backend/crates/api/src/routes/approval_rules.rs`
     - Update `#[utoipa::path]` annotation for list_approval_rules
@@ -55,7 +51,6 @@ This plan implements the complete Approval Rules management feature across OpenA
     - _Requirements: 2.1.2_
     - _Property: Property 1 (Pagination Consistency)_
     - _Note: Backend implementation in Task 3, this is just OpenAPI annotation_
-  
   - [x] 1.6 Add error response schemas to all endpoint annotations
     - File: `backend/crates/api/src/routes/approval_rules.rs`
     - Update all `#[utoipa::path]` annotations
@@ -65,7 +60,6 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Add example error responses in descriptions
     - _Requirements: 2.1.3_
     - _Property: None_
-  
   - [x] 1.7 Regenerate OpenAPI spec from backend
     - Run: `cargo run --bin generate-openapi` in backend/
     - This will generate `contracts/openapi.yaml` from utoipa annotations
@@ -73,11 +67,10 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Verify `contracts/openapi.yaml` has been updated with new annotations
     - _Requirements: 2.1.1-2.1.6_
     - _Property: None_
-  
   - [x] 1.8 Split and fix OpenAPI spec (automatic nullable fix)
     - Run: `python3 split-openapi.py` in contracts/
     - Script automatically:
-      - Splits openapi.yaml into openapi-split/*.yaml files
+      - Splits openapi.yaml into openapi-split/\*.yaml files
       - Fixes utoipa nullable syntax: `type: [T, 'null']` → `type: T, nullable: true`
     - Verify `contracts/openapi-split/12-approval-rules-schemas.yaml` has correct nullable syntax
     - Verify `contracts/openapi-split/27-approval-rules-endpoints.yaml` has all updates
@@ -86,7 +79,6 @@ This plan implements the complete Approval Rules management feature across OpenA
     - _Requirements: 2.1.1_
     - _Property: None_
     - _Note: Script has built-in fix_nullable_syntax() function (BUG-007 workaround)_
-  
   - [x] 1.9 Validate OpenAPI specification
     - Verify all changes are present in split files
     - Check timestamp formats are correct (format: date-time)
@@ -107,7 +99,6 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Update tests to verify all 12 types parse correctly
     - _Requirements: 2.2.3_
     - _Property: Property 4 (Transaction Type Completeness)_
-  
   - [x] 2.2 Add string length validation
     - Add name length check (1-255) in create_approval_rule
     - Add name length check (1-255) in update_approval_rule
@@ -116,14 +107,12 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Return 400 error with specific message if exceeded
     - _Requirements: 2.2.4_
     - _Property: Property 5 (String Length Constraints)_
-  
   - [x] 2.3 Add priority range validation
     - Add priority range check (1-100) in create_approval_rule
     - Add priority range check (1-100) in update_approval_rule
     - Return 400 error with specific message if outside range
     - _Requirements: 2.2.5_
     - _Property: Property 3 (Priority Range Enforcement)_
-  
   - [x] 2.4 Add database indexes
     - Create index on (organization_id, priority) WHERE is_active = true
     - Create GIN index on transaction_types WHERE is_active = true
@@ -132,14 +121,12 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Run EXPLAIN to verify index usage
     - _Requirements: 2.2.2_
     - _Property: Property 9 (Database Index Usage)_
-  
   - [x] 2.5 Add input sanitization
     - Add ammonia::clean() for name field
     - Add ammonia::clean() for description field
     - Verify sanitized strings are not empty after cleaning
     - _Requirements: 3.1_
     - _Property: None_
-  
   - [x] 2.6 Add amount pattern validation
     - Add regex pattern validation for min_amount
     - Add regex pattern validation for max_amount
@@ -157,7 +144,6 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Count total rules for organization
     - _Requirements: 2.2.1_
     - _Property: Property 1 (Pagination Consistency)_
-  
   - [x] 3.2 Add pagination parameters to route handler
     - Add PaginationParams struct with page and per_page fields
     - Add Query(params) extractor to list_approval_rules
@@ -165,14 +151,12 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Calculate offset from page and per_page
     - _Requirements: 2.2.1_
     - _Property: Property 1 (Pagination Consistency)_
-  
   - [x] 3.3 Update response structure
     - Change response to include data array and meta object
     - Calculate total_pages from total and per_page
     - Return JSON with data and meta fields
     - _Requirements: 2.2.1_
     - _Property: Property 1 (Pagination Consistency)_
-  
   - [x] 3.4 Add query parameters for filtering
     - Add is_active filter parameter
     - Add transaction_type filter parameter
@@ -180,7 +164,6 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Apply filters in repository query
     - _Requirements: 2.2.6_
     - _Property: None_
-  
   - [x] 3.5 Add query parameters for sorting
     - Add sort_by parameter (priority, created_at, name)
     - Add sort_order parameter (asc, desc)
@@ -188,7 +171,6 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Default to priority ascending
     - _Requirements: 2.2.6_
     - _Property: None_
-  
   - [x] 3.6 Write property test for pagination
     - **Property 1: Pagination Consistency**
     - **Validates: Requirements 2.1.2, 2.2.1**
@@ -207,14 +189,12 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Return 429 with Retry-After header when exceeded
     - _Requirements: 2.2.7_
     - _Property: Property 10 (Rate Limiting)_
-  
   - [x] 4.2 Add transaction wrapping
     - Wrap multi-step operations in database transactions
     - Add rollback on error
     - Test transaction rollback behavior
     - _Requirements: 3.1_
     - _Property: None_
-  
   - [x] 4.3 Add audit logging
     - Create audit_log module with structured logging
     - Log create operations with actor_id, org_id, resource_id, changes
@@ -223,7 +203,6 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Use structured JSON format
     - _Requirements: 2.2.9_
     - _Property: None_
-  
   - [x] 4.4 Write property test for rate limiting
     - **Property 10: Rate Limiting**
     - **Validates: Requirements 2.2.7**
@@ -247,7 +226,6 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Add cache invalidation on mutations
     - _Requirements: 2.3.2_
     - _Property: Property 7 (Cache Invalidation)_
-  
   - [x] 5.2 Create Zod validation schema
     - Create file: frontend/src/lib/validations/approval-rule.ts
     - Define TRANSACTION_TYPES enum
@@ -258,7 +236,6 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Export ApprovalRuleFormValues type
     - _Requirements: 2.3.3_
     - _Property: Property 2, 3, 5, 6 (Validation Properties)_
-  
   - [x] 5.3 Create form component
     - Create file: frontend/src/components/approval-rules/ApprovalRuleForm.tsx
     - Add name input field with validation
@@ -272,7 +249,6 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Display validation errors
     - _Requirements: 2.3.4_
     - _Property: Property 2, 3, 5, 6 (Validation Properties)_
-  
   - [x] 5.4 Create CRUD dialogs
     - Create CreateApprovalRuleDialog.tsx with form
     - Create EditApprovalRuleDialog.tsx with pre-filled form
@@ -283,7 +259,6 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Add error toast on failures
     - _Requirements: 2.3.6_
     - _Property: None_
-  
   - [x] 5.5 Create main page
     - Create file: frontend/src/app/dashboard/settings/approval-rules/page.tsx
     - Add page header with title and create button
@@ -294,7 +269,6 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Add error state with retry button
     - _Requirements: 2.3.1, 2.3.5_
     - _Property: None_
-  
   - [x] 5.6 Create data table component
     - Create ApprovalRulesTable.tsx with TanStack Table
     - Add columns: Priority, Name, Transaction Types, Role, Amount Range, Status, Actions
@@ -316,7 +290,6 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Test rollback behavior
     - _Requirements: 2.3.10_
     - _Property: Property 8 (Optimistic Update Rollback)_
-  
   - [x] 6.2 Add pagination controls
     - Create PaginationControls component
     - Add Previous button (disabled on first page)
@@ -326,7 +299,6 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Sync with React Query pagination state
     - _Requirements: 2.3.5_
     - _Property: Property 1 (Pagination Consistency)_
-  
   - [x] 6.3 Add search and filter UI
     - Add search input for rule name
     - Add status filter dropdown (active/inactive/all)
@@ -336,7 +308,6 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Sync filters with React Query key
     - _Requirements: 2.3.5_
     - _Property: None_
-  
   - [x] 6.4 Add sorting UI
     - Add sortable table headers with icons
     - Add sort indicator (up/down arrow)
@@ -344,7 +315,6 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Default to priority ascending
     - _Requirements: 2.3.5_
     - _Property: None_
-  
   - [x] 6.5 Add navigation link
     - Update frontend/src/app/dashboard/settings/layout.tsx
     - Add "Approval Rules" link with Shield icon
@@ -360,7 +330,6 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Add arrow keys for table navigation
     - _Requirements: 2.6.1_
     - _Property: None_
-  
   - [x] 7.2 Add ARIA labels
     - Add ARIA labels to all interactive elements
     - Add form field descriptions
@@ -368,7 +337,6 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Add success announcements
     - _Requirements: 2.6.2_
     - _Property: None_
-  
   - [x] 7.3 Add focus management
     - Add focus trap in dialogs
     - Add focus return after dialog close
@@ -376,7 +344,6 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Test with keyboard only
     - _Requirements: 2.6.3_
     - _Property: None_
-  
   - [x] 7.4 Add mobile responsiveness
     - Add responsive table (card view on mobile)
     - Add touch-friendly buttons
@@ -386,8 +353,8 @@ This plan implements the complete Approval Rules management feature across OpenA
     - _Requirements: 2.7.1_
     - _Property: None_
 
-- [ ] 8. Property-Based Testing
-  - [ ] 8.1 Write property test for amount range validation
+- [x] 8. Property-Based Testing
+  - [x] 8.1 Write property test for amount range validation
     - **Property 2: Amount Range Validation**
     - **Validates: Requirements 2.1.4, 2.2.8, 2.3.3**
     - Test that min_amount <= max_amount is enforced
@@ -396,8 +363,7 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Run 100+ iterations with random amounts
     - _Requirements: 2.1.4, 2.2.8, 2.3.3_
     - _Property: Property 2 (Amount Range Validation)_
-  
-  - [ ] 8.2 Write property test for priority range enforcement
+  - [x] 8.2 Write property test for priority range enforcement
     - **Property 3: Priority Range Enforcement**
     - **Validates: Requirements 2.1.6, 2.2.5, 2.3.3**
     - Test that priority 1-100 is accepted
@@ -405,8 +371,7 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Run 100+ iterations with random priorities
     - _Requirements: 2.1.6, 2.2.5, 2.3.3_
     - _Property: Property 3 (Priority Range Enforcement)_
-  
-  - [ ] 8.3 Write property test for transaction type completeness
+  - [x] 8.3 Write property test for transaction type completeness
     - **Property 4: Transaction Type Completeness**
     - **Validates: Requirements 2.1.5, 2.2.3, 2.4.4**
     - Test that all 12 transaction types are parseable
@@ -414,8 +379,7 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Verify frontend, backend, and OpenAPI alignment
     - _Requirements: 2.1.5, 2.2.3, 2.4.4_
     - _Property: Property 4 (Transaction Type Completeness)_
-  
-  - [ ] 8.4 Write property test for string length constraints
+  - [x] 8.4 Write property test for string length constraints
     - **Property 5: String Length Constraints**
     - **Validates: Requirements 2.1.6, 2.2.4, 2.3.3**
     - Test that name 1-255 characters is accepted
@@ -424,8 +388,7 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Run 100+ iterations with random strings
     - _Requirements: 2.1.6, 2.2.4, 2.3.3_
     - _Property: Property 5 (String Length Constraints)_
-  
-  - [ ] 8.5 Write property test for enum validation
+  - [x] 8.5 Write property test for enum validation
     - **Property 6: Enum Validation**
     - **Validates: Requirements 2.1.5, 2.3.3**
     - Test that valid roles are accepted
@@ -434,8 +397,7 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Run 100+ iterations with random strings
     - _Requirements: 2.1.5, 2.3.3_
     - _Property: Property 6 (Enum Validation)_
-  
-  - [ ] 8.6 Write property test for cache invalidation
+  - [x] 8.6 Write property test for cache invalidation
     - **Property 7: Cache Invalidation**
     - **Validates: Requirements 2.3.10, 2.7.3**
     - Test that create invalidates list cache
@@ -444,8 +406,7 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Test that subsequent queries return fresh data
     - _Requirements: 2.3.10, 2.7.3_
     - _Property: Property 7 (Cache Invalidation)_
-  
-  - [ ] 8.7 Write property test for optimistic update rollback
+  - [x] 8.7 Write property test for optimistic update rollback
     - **Property 8: Optimistic Update Rollback**
     - **Validates: Requirements 2.3.10**
     - Test that failed optimistic update rolls back
@@ -453,8 +414,7 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Test with toggle active and delete operations
     - _Requirements: 2.3.10_
     - _Property: Property 8 (Optimistic Update Rollback)_
-  
-  - [ ] 8.8 Write property test for database index usage
+  - [x] 8.8 Write property test for database index usage
     - **Property 9: Database Index Usage**
     - **Validates: Requirements 2.2.2, 2.7.2**
     - Test that queries complete in < 100ms
@@ -475,7 +435,6 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Document any UI/UX issues found
     - _Requirements: 2.5.1_
     - _Property: None_
-  
   - [ ] 9.2 Test edit approval rule flow
     - Navigate to approval rules page
     - Click edit button on existing rule
@@ -486,7 +445,6 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Document any UI/UX issues found
     - _Requirements: 2.5.1_
     - _Property: None_
-  
   - [ ] 9.3 Test delete approval rule flow
     - Navigate to approval rules page
     - Click delete button on existing rule
@@ -496,7 +454,6 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Document any UI/UX issues found
     - _Requirements: 2.5.1_
     - _Property: None_
-  
   - [ ] 9.4 Test toggle active status
     - Navigate to approval rules page
     - Click toggle switch on existing rule
@@ -506,7 +463,6 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Document any UI/UX issues found
     - _Requirements: 2.5.1_
     - _Property: Property 8 (Optimistic Update Rollback)_
-  
   - [ ] 9.5 Test filter by status
     - Navigate to approval rules page
     - Select "Active" filter
@@ -518,7 +474,6 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Document any UI/UX issues found
     - _Requirements: 2.5.1_
     - _Property: None_
-  
   - [ ] 9.6 Test sort by priority
     - Navigate to approval rules page
     - Click priority column header
@@ -528,7 +483,6 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Document any UI/UX issues found
     - _Requirements: 2.5.1_
     - _Property: None_
-  
   - [ ] 9.7 Test pagination navigation
     - Navigate to approval rules page (with >20 rules)
     - Verify pagination controls displayed
@@ -540,7 +494,6 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Document any UI/UX issues found
     - _Requirements: 2.5.1_
     - _Property: Property 1 (Pagination Consistency)_
-  
   - [ ] 9.8 Test form validation errors
     - Navigate to approval rules page
     - Click "Create Rule" button
@@ -551,7 +504,6 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Document any UI/UX issues found
     - _Requirements: 2.5.1_
     - _Property: Property 2, 3, 5, 6 (Validation Properties)_
-  
   - [ ] 9.9 Test empty state
     - Create test organization with no approval rules
     - Navigate to approval rules page
@@ -561,7 +513,6 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Document any UI/UX issues found
     - _Requirements: 2.5.1_
     - _Property: None_
-  
   - [ ] 9.10 Test accessibility with keyboard
     - Navigate to approval rules page
     - Tab through all interactive elements
@@ -582,7 +533,6 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Check if any bugs already documented
     - _Requirements: All_
     - _Property: None_
-  
   - [ ] 10.2 Document all bugs found to Cognio
     - For each bug found during implementation and E2E testing:
       - Document with clear title and description
@@ -593,7 +543,6 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Save all new bugs to Cognio project `zeltra-bug`
     - _Requirements: All_
     - _Property: None_
-  
   - [ ] 10.3 Final checkpoint - Verify all changes work together
     - Verify OpenAPI spec is valid
     - Verify backend generates correct spec
@@ -606,7 +555,6 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Run full test suite (unit + integration + property + E2E)
     - _Requirements: All_
     - _Property: All Properties_
-  
   - [ ] 10.4 Create summary report
     - Document all changes made (80 issues resolved)
     - List all bugs found and fixed
