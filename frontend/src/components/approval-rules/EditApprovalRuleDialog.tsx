@@ -15,6 +15,7 @@ import { Edit } from 'lucide-react'
 import { ApprovalRuleForm } from './ApprovalRuleForm'
 import { useUpdateApprovalRule } from '@/lib/queries/approval-rules'
 import type { ApprovalRuleFormValues } from '@/lib/validations/approval-rule'
+import { TRANSACTION_TYPES, ROLES } from '@/lib/validations/approval-rule'
 import type { components } from '@/types/api.generated'
 
 type ApprovalRuleResponse = components['schemas']['ApprovalRuleResponse']
@@ -55,8 +56,8 @@ export function EditApprovalRuleDialog({ rule, children }: EditApprovalRuleDialo
   const defaultValues: Partial<ApprovalRuleFormValues> = {
     name: rule.name,
     description: rule.description,
-    transaction_types: rule.transaction_types as any,
-    required_role: rule.required_role as any,
+    transaction_types: rule.transaction_types as (typeof TRANSACTION_TYPES)[number][],
+    required_role: rule.required_role as (typeof ROLES)[number],
     priority: rule.priority,
     min_amount: rule.min_amount,
     max_amount: rule.max_amount,

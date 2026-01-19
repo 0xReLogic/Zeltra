@@ -20,10 +20,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { ArrowUpDown, ChevronLeft, ChevronRight } from 'lucide-react'
+import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import { EditApprovalRuleDialog } from './EditApprovalRuleDialog'
 import { DeleteApprovalRuleDialog } from './DeleteApprovalRuleDialog'
-import { useUpdateApprovalRule } from '@/lib/queries/approval-rules'
+import { PaginationControls } from './PaginationControls'
+import { useToggleApprovalRuleStatus } from '@/lib/queries/approval-rules'
 import { toast } from 'sonner'
 import type { components } from '@/types/api.generated'
 
@@ -38,7 +39,12 @@ interface ApprovalRulesTableProps {
     sort_by?: string
     sort_order?: 'asc' | 'desc'
   }
-  onFiltersChange: (filters: any) => void
+  onFiltersChange: (filters: {
+    page?: number
+    per_page?: number
+    sort_by?: string
+    sort_order?: 'asc' | 'desc'
+  }) => void
 }
 
 export function ApprovalRulesTable({ data, filters, onFiltersChange }: ApprovalRulesTableProps) {
@@ -46,15 +52,13 @@ export function ApprovalRulesTable({ data, filters, onFiltersChange }: ApprovalR
     { id: filters.sort_by || 'priority', desc: filters.sort_order === 'desc' }
   ])
   
-  const updateMutation = useUpdateApprovalRule()
+  const toggleStatusMutation = useToggleApprovalRuleStatus()
 
   const handleToggleActive = async (rule: ApprovalRuleResponse) => {
     try {
-      await updateMutation.mutateAsync({
+      await toggleStatusMutation.mutateAsync({
         id: rule.id,
-        data: {
-          is_active: !rule.is_active,
-        },
+        is_active: !rule.is_active,
       })
       toast.success(`Rule ${!rule.is_active ? 'activated' : 'deactivated'} successfully`)
     } catch (error) {
@@ -109,16 +113,25 @@ export function ApprovalRulesTable({ data, filters, onFiltersChange }: ApprovalR
   const columns: ColumnDef<ApprovalRuleResponse>[] = [
     {
       accessorKey: 'priority',
-      header: ({ column }) => (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-          className="h-auto p-0 font-semibold"
-        >
-          Priority
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      ),
+      header: ({ column }) => {
+        const isSorted = column.getIsSorted()
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+            className="h-auto p-0 font-semibold hover:bg-transparent"
+          >
+            Priority
+            {isSorted === 'asc' ? (
+              <ArrowUp className="ml-2 h-4 w-4" />
+            ) : isSorted === 'desc' ? (
+              <ArrowDown className="ml-2 h-4 w-4" />
+            ) : (
+              <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />
+            )}
+          </Button>
+        )
+      },
       cell: ({ row }) => (
         <Badge variant={getPriorityBadgeVariant(row.original.priority)}>
           {row.original.priority}
@@ -127,16 +140,25 @@ export function ApprovalRulesTable({ data, filters, onFiltersChange }: ApprovalR
     },
     {
       accessorKey: 'name',
-      header: ({ column }) => (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-          className="h-auto p-0 font-semibold"
-        >
-          Name
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      ),
+      header: ({ column }) => {
+        const isSorted = column.getIsSorted()
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+            className="h-auto p-0 font-semibold hover:bg-transparent"
+          >
+            Name
+            {isSorted === 'asc' ? (
+              <ArrowUp className="ml-2 h-4 w-4" />
+            ) : isSorted === 'desc' ? (
+              <ArrowDown className="ml-2 h-4 w-4" />
+            ) : (
+              <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />
+            )}
+          </Button>
+        )
+      },
       cell: ({ row }) => (
         <div>
           <div className="font-medium">{row.original.name}</div>
@@ -183,7 +205,7 @@ export function ApprovalRulesTable({ data, filters, onFiltersChange }: ApprovalR
           variant="ghost"
           size="sm"
           onClick={() => handleToggleActive(row.original)}
-          disabled={updateMutation.isPending}
+          disabled={toggleStatusMutation.isPending}
           className={`px-3 py-1 text-xs font-medium rounded-full ${
             row.original.is_active
               ? 'bg-green-100 text-green-800 hover:bg-green-200'
@@ -293,36 +315,13 @@ export function ApprovalRulesTable({ data, filters, onFiltersChange }: ApprovalR
 
       {/* Pagination Controls */}
       {data.meta.total_pages > 1 && (
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">
-            Showing {((data.meta.page - 1) * data.meta.per_page) + 1} to{' '}
-            {Math.min(data.meta.page * data.meta.per_page, data.meta.total)} of{' '}
-            {data.meta.total} results
-          </div>
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handlePageChange(data.meta.page - 1)}
-              disabled={data.meta.page <= 1}
-            >
-              <ChevronLeft className="h-4 w-4 mr-1" />
-              Previous
-            </Button>
-            <div className="text-sm">
-              Page {data.meta.page} of {data.meta.total_pages}
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handlePageChange(data.meta.page + 1)}
-              disabled={data.meta.page >= data.meta.total_pages}
-            >
-              Next
-              <ChevronRight className="h-4 w-4 ml-1" />
-            </Button>
-          </div>
-        </div>
+        <PaginationControls
+          currentPage={data.meta.page}
+          totalPages={data.meta.total_pages}
+          totalItems={data.meta.total}
+          itemsPerPage={data.meta.per_page}
+          onPageChange={handlePageChange}
+        />
       )}
     </div>
   )

@@ -283,6 +283,11 @@ export async function apiClient<T>(
       throw new ApiError(message, res.status, code, details)
     }
     
+    // Handle 204 No Content - no body to parse
+    if (res.status === 204) {
+      return undefined as T
+    }
+    
     return res.json()
   } catch (error) {
     // Handle network errors

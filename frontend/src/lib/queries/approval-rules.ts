@@ -103,8 +103,76 @@ export function useUpdateApprovalRule() {
 }
 
 /**
+ * PATCH /organizations/{org_id}/approval-rules/{rule_id}
+ * Toggle active status with optimistic update
+ */
+export function useToggleApprovalRuleStatus() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, is_active }: { id: string; is_active: boolean }) =>
+      apiClient<ApprovalRuleResponse>(`/approval-rules/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ is_active }),
+      }),
+    // Optimistic update
+    onMutate: async ({ id, is_active }) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: APPROVAL_RULE_KEYS.lists() })
+      await queryClient.cancelQueries({ queryKey: APPROVAL_RULE_KEYS.detail(id) })
+
+      // Snapshot previous values
+      const previousLists = queryClient.getQueriesData({ queryKey: APPROVAL_RULE_KEYS.lists() })
+      const previousDetail = queryClient.getQueryData(APPROVAL_RULE_KEYS.detail(id))
+
+      // Optimistically update list cache
+      queryClient.setQueriesData<PaginatedApprovalRulesResponse>(
+        { queryKey: APPROVAL_RULE_KEYS.lists() },
+        (old) => {
+          if (!old) return old
+          return {
+            ...old,
+            data: old.data.map((rule) =>
+              rule.id === id ? { ...rule, is_active } : rule
+            ),
+          }
+        }
+      )
+
+      // Optimistically update detail cache
+      queryClient.setQueryData<ApprovalRuleResponse>(
+        APPROVAL_RULE_KEYS.detail(id),
+        (old) => {
+          if (!old) return old
+          return { ...old, is_active }
+        }
+      )
+
+      // Return context with previous values for rollback
+      return { previousLists, previousDetail }
+    },
+    // Rollback on error
+    onError: (err, { id }, context) => {
+      if (context?.previousLists) {
+        context.previousLists.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data)
+        })
+      }
+      if (context?.previousDetail) {
+        queryClient.setQueryData(APPROVAL_RULE_KEYS.detail(id), context.previousDetail)
+      }
+    },
+    // Refetch on success or error
+    onSettled: (_, __, { id }) => {
+      queryClient.invalidateQueries({ queryKey: APPROVAL_RULE_KEYS.detail(id) })
+      queryClient.invalidateQueries({ queryKey: APPROVAL_RULE_KEYS.lists() })
+    },
+  })
+}
+
+/**
  * DELETE /organizations/{org_id}/approval-rules/{rule_id}
- * Delete an approval rule
+ * Delete an approval rule with optimistic update
  */
 export function useDeleteApprovalRule() {
   const queryClient = useQueryClient()
@@ -114,7 +182,43 @@ export function useDeleteApprovalRule() {
       apiClient<void>(`/approval-rules/${id}`, {
         method: 'DELETE',
       }),
-    onSuccess: () => {
+    // Optimistic update
+    onMutate: async (id) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: APPROVAL_RULE_KEYS.lists() })
+
+      // Snapshot previous values
+      const previousLists = queryClient.getQueriesData({ queryKey: APPROVAL_RULE_KEYS.lists() })
+
+      // Optimistically remove from list cache
+      queryClient.setQueriesData<PaginatedApprovalRulesResponse>(
+        { queryKey: APPROVAL_RULE_KEYS.lists() },
+        (old) => {
+          if (!old) return old
+          return {
+            ...old,
+            data: old.data.filter((rule) => rule.id !== id),
+            meta: {
+              ...old.meta,
+              total: old.meta.total - 1,
+            },
+          }
+        }
+      )
+
+      // Return context with previous values for rollback
+      return { previousLists }
+    },
+    // Rollback on error
+    onError: (err, id, context) => {
+      if (context?.previousLists) {
+        context.previousLists.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data)
+        })
+      }
+    },
+    // Refetch on success or error
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: APPROVAL_RULE_KEYS.all })
     },
   })

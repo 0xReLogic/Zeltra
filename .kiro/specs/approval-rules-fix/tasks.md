@@ -309,7 +309,7 @@ This plan implements the complete Approval Rules management feature across OpenA
     - _Property: None_
 
 - [ ] 6. Frontend UX Enhancements
-  - [ ] 6.1 Add optimistic updates
+  - [x] 6.1 Add optimistic updates
     - Implement optimistic update for toggle active status
     - Implement optimistic update for delete operation
     - Add rollback on error
@@ -317,7 +317,7 @@ This plan implements the complete Approval Rules management feature across OpenA
     - _Requirements: 2.3.10_
     - _Property: Property 8 (Optimistic Update Rollback)_
   
-  - [ ] 6.2 Add pagination controls
+  - [x] 6.2 Add pagination controls
     - Create PaginationControls component
     - Add Previous button (disabled on first page)
     - Add Next button (disabled on last page)
@@ -327,7 +327,7 @@ This plan implements the complete Approval Rules management feature across OpenA
     - _Requirements: 2.3.5_
     - _Property: Property 1 (Pagination Consistency)_
   
-  - [ ] 6.3 Add search and filter UI
+  - [x] 6.3 Add search and filter UI
     - Add search input for rule name
     - Add status filter dropdown (active/inactive/all)
     - Add transaction type filter dropdown
@@ -337,7 +337,7 @@ This plan implements the complete Approval Rules management feature across OpenA
     - _Requirements: 2.3.5_
     - _Property: None_
   
-  - [ ] 6.4 Add sorting UI
+  - [x] 6.4 Add sorting UI
     - Add sortable table headers with icons
     - Add sort indicator (up/down arrow)
     - Sync sort state with React Query key
@@ -345,7 +345,7 @@ This plan implements the complete Approval Rules management feature across OpenA
     - _Requirements: 2.3.5_
     - _Property: None_
   
-  - [ ] 6.5 Add navigation link
+  - [x] 6.5 Add navigation link
     - Update frontend/src/app/dashboard/settings/layout.tsx
     - Add "Approval Rules" link with Shield icon
     - Add to settings navigation menu

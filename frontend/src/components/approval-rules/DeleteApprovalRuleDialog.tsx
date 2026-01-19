@@ -53,7 +53,7 @@ export function DeleteApprovalRuleDialog({ rule, children }: DeleteApprovalRuleD
         <AlertDialogHeader>
           <AlertDialogTitle>Delete Approval Rule</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to delete the approval rule "{rule.name}"? 
+            Are you sure you want to delete the approval rule &ldquo;{rule.name}&rdquo;? 
             This action cannot be undone and may affect existing approval workflows.
           </AlertDialogDescription>
         </AlertDialogHeader>

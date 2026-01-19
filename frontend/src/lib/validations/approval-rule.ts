@@ -26,8 +26,8 @@ export const ROLES = [
   'owner',
 ] as const
 
-// Amount format validation regex (up to 2 decimal places)
-const AMOUNT_REGEX = /^[0-9]+(\.[0-9]{1,2})?$/
+// Amount format validation regex (up to 4 decimal places to match backend)
+const AMOUNT_REGEX = /^[0-9]+(\.[0-9]{1,4})?$/
 
 export const approvalRuleSchema = z.object({
   name: z
@@ -56,15 +56,21 @@ export const approvalRuleSchema = z.object({
   
   min_amount: z
     .string()
-    .regex(AMOUNT_REGEX, 'Amount must be a valid decimal with up to 2 decimal places')
     .optional()
-    .nullable(),
+    .nullable()
+    .refine(
+      (val) => !val || val === '' || AMOUNT_REGEX.test(val),
+      'Amount must be a valid decimal with up to 4 decimal places'
+    ),
   
   max_amount: z
     .string()
-    .regex(AMOUNT_REGEX, 'Amount must be a valid decimal with up to 2 decimal places')
     .optional()
-    .nullable(),
+    .nullable()
+    .refine(
+      (val) => !val || val === '' || AMOUNT_REGEX.test(val),
+      'Amount must be a valid decimal with up to 4 decimal places'
+    ),
   
   is_active: z.boolean(),
 }).refine(

@@ -2,25 +2,19 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { Card, CardContent } from '@/components/ui/card'
 import { Shield, Plus, AlertCircle } from 'lucide-react'
 import { CreateApprovalRuleDialog } from '@/components/approval-rules/CreateApprovalRuleDialog'
 import { ApprovalRulesTable } from '@/components/approval-rules/ApprovalRulesTable'
+import { FiltersBar } from '@/components/approval-rules/FiltersBar'
 import { useApprovalRules } from '@/lib/queries/approval-rules'
-import { TRANSACTION_TYPES, ROLES } from '@/lib/validations/approval-rule'
 import { Skeleton } from '@/components/ui/skeleton'
 
 export default function ApprovalRulesPage() {
   const [filters, setFilters] = useState({
     page: 1,
     per_page: 20,
+    search: undefined as string | undefined,
     is_active: undefined as boolean | undefined,
     transaction_type: undefined as string | undefined,
     required_role: undefined as string | undefined,
@@ -30,21 +24,19 @@ export default function ApprovalRulesPage() {
 
   const { data, isLoading, error } = useApprovalRules(filters)
 
-  const handleFilterChange = (key: string, value: string | boolean | undefined) => {
-    setFilters(prev => ({
+  const handleFiltersChange = (newFilters: {
+    page?: number
+    per_page?: number
+    search?: string
+    is_active?: boolean
+    transaction_type?: string
+    required_role?: string
+    sort_by?: string
+    sort_order?: 'asc' | 'desc'
+  }) => {
+    setFilters((prev) => ({
       ...prev,
-      [key]: value === 'all' ? undefined : value,
-      page: 1, // Reset to first page when filtering
-    }))
-  }
-
-  const clearFilters = () => {
-    setFilters(prev => ({
-      ...prev,
-      is_active: undefined,
-      transaction_type: undefined,
-      required_role: undefined,
-      page: 1,
+      ...newFilters,
     }))
   }
 
@@ -94,82 +86,7 @@ export default function ApprovalRulesPage() {
       </div>
 
       {/* Filters Bar */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Filters</CardTitle>
-          <CardDescription>
-            Filter approval rules by status, transaction type, or required role
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-4">
-            <div className="flex-1 min-w-[200px]">
-              <label className="text-sm font-medium mb-2 block">Status</label>
-              <Select
-                value={filters.is_active === undefined ? 'all' : filters.is_active.toString()}
-                onValueChange={(value) => 
-                  handleFilterChange('is_active', value === 'all' ? undefined : value === 'true')
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="true">Active</SelectItem>
-                  <SelectItem value="false">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex-1 min-w-[200px]">
-              <label className="text-sm font-medium mb-2 block">Transaction Type</label>
-              <Select
-                value={filters.transaction_type || 'all'}
-                onValueChange={(value) => handleFilterChange('transaction_type', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  {TRANSACTION_TYPES.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      <span className="capitalize">{type.replace('_', ' ')}</span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex-1 min-w-[200px]">
-              <label className="text-sm font-medium mb-2 block">Required Role</label>
-              <Select
-                value={filters.required_role || 'all'}
-                onValueChange={(value) => handleFilterChange('required_role', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Roles</SelectItem>
-                  {ROLES.map((role) => (
-                    <SelectItem key={role} value={role}>
-                      <span className="capitalize">{role}</span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex items-end">
-              <Button variant="outline" onClick={clearFilters}>
-                Clear Filters
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <FiltersBar filters={filters} onFiltersChange={handleFiltersChange} />
 
       {/* Data Table */}
       {isLoading ? (
@@ -211,7 +128,7 @@ export default function ApprovalRulesPage() {
         <ApprovalRulesTable 
           data={data} 
           filters={filters}
-          onFiltersChange={setFilters}
+          onFiltersChange={handleFiltersChange}
         />
       ) : null}
     </div>
