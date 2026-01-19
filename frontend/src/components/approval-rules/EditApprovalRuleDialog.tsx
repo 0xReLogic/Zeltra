@@ -39,8 +39,8 @@ export function EditApprovalRuleDialog({ rule, children }: EditApprovalRuleDialo
           transaction_types: values.transaction_types,
           required_role: values.required_role,
           priority: values.priority,
-          min_amount: values.min_amount || null,
-          max_amount: values.max_amount || null,
+          min_amount: values.min_amount || '',
+          max_amount: values.max_amount || '',
           is_active: values.is_active,
         },
       })

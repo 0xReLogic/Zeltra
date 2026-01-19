@@ -649,7 +649,7 @@ fn parse_optional_decimal(s: Option<&str>) -> Result<Option<Decimal>, ApiError> 
     match s {
         Some(s) if !s.is_empty() => {
             // Validate pattern: must be digits with optional 2 decimal places
-            let pattern = regex::Regex::new(r"^[0-9]+(\.[0-9]{1,2})?$").unwrap();
+            let pattern = regex::Regex::new(r"^[0-9]+(\.[0-9]{1,4})?$").unwrap();
             if !pattern.is_match(s) {
                 return Err((
                     StatusCode::BAD_REQUEST,

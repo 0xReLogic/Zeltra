@@ -15,7 +15,7 @@ export default function ApprovalRulesPage() {
     page: 1,
     per_page: 20,
     search: undefined as string | undefined,
-    is_active: undefined as boolean | undefined,
+    is_active: true as boolean | undefined,
     transaction_type: undefined as string | undefined,
     required_role: undefined as string | undefined,
     sort_by: 'priority',
