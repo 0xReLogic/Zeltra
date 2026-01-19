@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Shield, Plus, AlertCircle } from 'lucide-react'
@@ -22,7 +22,22 @@ export default function ApprovalRulesPage() {
     sort_order: 'asc' as 'asc' | 'desc',
   })
 
+  const createButtonRef = useRef<HTMLButtonElement>(null)
   const { data, isLoading, error } = useApprovalRules(filters)
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl+N or Cmd+N to open create dialog
+      if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+        e.preventDefault()
+        createButtonRef.current?.click()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   const handleFiltersChange = (newFilters: {
     page?: number
@@ -82,7 +97,12 @@ export default function ApprovalRulesPage() {
             Manage approval workflows for transactions
           </p>
         </div>
-        <CreateApprovalRuleDialog />
+        <CreateApprovalRuleDialog>
+          <Button ref={createButtonRef}>
+            <Plus className="h-4 w-4 mr-2" />
+            Create Rule
+          </Button>
+        </CreateApprovalRuleDialog>
       </div>
 
       {/* Filters Bar */}
