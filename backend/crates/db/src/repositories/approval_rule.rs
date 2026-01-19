@@ -6,7 +6,8 @@
 
 use rust_decimal::Decimal;
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DatabaseConnection, DatabaseTransaction, EntityTrait, QueryFilter, QueryOrder, Set, TransactionTrait,
+    ActiveModelTrait, ColumnTrait, DatabaseConnection, DatabaseTransaction, EntityTrait,
+    QueryFilter, QueryOrder, Set, TransactionTrait,
 };
 use thiserror::Error;
 use uuid::Uuid;
@@ -76,6 +77,16 @@ pub struct UpdateApprovalRuleInput {
     pub is_active: Option<bool>,
 }
 
+/// Input for filtering approval rules.
+#[derive(Debug, Clone, Default)]
+pub struct ApprovalRuleFilterInput {
+    pub is_active: Option<bool>,
+    pub transaction_type: Option<String>,
+    pub required_role: Option<String>,
+    pub sort_by: Option<String>,
+    pub sort_order: Option<String>,
+}
+
 /// Repository for approval rule operations.
 pub struct ApprovalRuleRepository {
     db: DatabaseConnection,
@@ -96,9 +107,9 @@ impl ApprovalRuleRepository {
         input: CreateApprovalRuleInput,
     ) -> Result<ApprovalRuleModel, ApprovalRuleError> {
         let txn = self.db.begin().await?;
-        
+
         let result = self.create_rule_in_txn(&txn, organization_id, input).await;
-        
+
         match result {
             Ok(rule) => {
                 txn.commit().await?;
@@ -174,7 +185,7 @@ impl ApprovalRuleRepository {
 
         let paginator = query.paginate(&self.db, limit);
         let total = paginator.num_items().await?;
-        
+
         let rules = ApprovalRuleEntity::find()
             .filter(approval_rules::Column::OrganizationId.eq(organization_id))
             .order_by_asc(approval_rules::Column::Priority)
@@ -194,24 +205,20 @@ impl ApprovalRuleRepository {
         organization_id: Uuid,
         offset: u64,
         limit: u64,
-        is_active: Option<bool>,
-        transaction_type: Option<&str>,
-        required_role: Option<&str>,
-        sort_by: Option<&str>,
-        sort_order: Option<&str>,
+        filter: ApprovalRuleFilterInput,
     ) -> Result<(Vec<ApprovalRuleModel>, u64), ApprovalRuleError> {
-        use sea_orm::{QuerySelect, Order, PaginatorTrait};
+        use sea_orm::{Order, PaginatorTrait, QuerySelect};
 
         let mut base_query = ApprovalRuleEntity::find()
             .filter(approval_rules::Column::OrganizationId.eq(organization_id));
 
         // Apply filters
-        if let Some(active) = is_active {
+        if let Some(active) = filter.is_active {
             base_query = base_query.filter(approval_rules::Column::IsActive.eq(active));
         }
 
-        if let Some(role) = required_role {
-            let parsed_role = Self::parse_role_static(role)?;
+        if let Some(role) = filter.required_role {
+            let parsed_role = Self::parse_role_static(&role)?;
             base_query = base_query.filter(approval_rules::Column::RequiredRole.eq(parsed_role));
         }
 
@@ -219,28 +226,26 @@ impl ApprovalRuleRepository {
         let total = base_query.clone().count(&self.db).await?;
 
         // Apply sorting
-        let order = if sort_order == Some("desc") { Order::Desc } else { Order::Asc };
-        
-        base_query = match sort_by {
+        let order = if filter.sort_order.as_deref() == Some("desc") {
+            Order::Desc
+        } else {
+            Order::Asc
+        };
+
+        base_query = match filter.sort_by.as_deref() {
             Some("created_at") => base_query.order_by(approval_rules::Column::CreatedAt, order),
             Some("name") => base_query.order_by(approval_rules::Column::Name, order),
             _ => base_query.order_by(approval_rules::Column::Priority, order), // Default to priority
         };
 
         // Apply pagination
-        let mut rules = base_query
-            .offset(offset)
-            .limit(limit)
-            .all(&self.db)
-            .await?;
+        let mut rules = base_query.offset(offset).limit(limit).all(&self.db).await?;
 
         // Apply transaction type filter in memory if needed
         // (This is because SeaORM doesn't have great support for array contains queries)
-        if let Some(tx_type) = transaction_type {
-            let parsed_type = Self::parse_transaction_type(tx_type)?;
-            rules = rules.into_iter()
-                .filter(|rule| rule.transaction_types.contains(&parsed_type))
-                .collect();
+        if let Some(tx_type) = filter.transaction_type {
+            let parsed_type = Self::parse_transaction_type(&tx_type)?;
+            rules.retain(|rule| rule.transaction_types.contains(&parsed_type));
         }
 
         Ok((rules, total))
@@ -269,9 +274,11 @@ impl ApprovalRuleRepository {
         input: UpdateApprovalRuleInput,
     ) -> Result<ApprovalRuleModel, ApprovalRuleError> {
         let txn = self.db.begin().await?;
-        
-        let result = self.update_rule_in_txn(&txn, organization_id, rule_id, input).await;
-        
+
+        let result = self
+            .update_rule_in_txn(&txn, organization_id, rule_id, input)
+            .await;
+
         match result {
             Ok(rule) => {
                 txn.commit().await?;
@@ -338,9 +345,11 @@ impl ApprovalRuleRepository {
         rule_id: Uuid,
     ) -> Result<(), ApprovalRuleError> {
         let txn = self.db.begin().await?;
-        
-        let result = self.delete_rule_in_txn(&txn, organization_id, rule_id).await;
-        
+
+        let result = self
+            .delete_rule_in_txn(&txn, organization_id, rule_id)
+            .await;
+
         match result {
             Ok(()) => {
                 txn.commit().await?;
@@ -544,10 +553,10 @@ mod tests {
     }
 
     /// Property test for pagination consistency.
-    /// 
+    ///
     /// **Property 1: Pagination Consistency**
     /// **Validates: Requirements 2.1.2, 2.2.1**
-    /// 
+    ///
     /// Tests that pagination returns consistent results:
     /// - Items count <= per_page
     /// - Total pages calculation is correct
@@ -558,9 +567,9 @@ mod tests {
             .await
             .expect("Failed to connect to database");
         let repo = ApprovalRuleRepository::new(db);
-        
+
         let org_id = Uuid::new_v4();
-        
+
         // Test with various page sizes and page numbers
         let test_cases = vec![
             (1, 1),   // page 1, per_page 1
@@ -578,7 +587,12 @@ mod tests {
             let limit = per_page as u64;
 
             let result = repo.list_rules_paginated(org_id, offset, limit).await;
-            assert!(result.is_ok(), "Pagination should not fail for page={}, per_page={}", page, per_page);
+            assert!(
+                result.is_ok(),
+                "Pagination should not fail for page={}, per_page={}",
+                page,
+                per_page
+            );
 
             let (items, total) = result.unwrap();
 
@@ -586,11 +600,18 @@ mod tests {
             assert!(
                 items.len() <= per_page as usize,
                 "Items count ({}) should be <= per_page ({}) for page={}, per_page={}",
-                items.len(), per_page, page, per_page
+                items.len(),
+                per_page,
+                page,
+                per_page
             );
 
             // Property 2: Total pages calculation is correct
-            let expected_total_pages = if total == 0 { 0 } else { ((total as f64) / (per_page as f64)).ceil() as u32 };
+            let expected_total_pages = if total == 0 {
+                0
+            } else {
+                ((total as f64) / (per_page as f64)).ceil() as u32
+            };
             let calculated_total_pages = ((total as f64) / (per_page as f64)).ceil() as u32;
             assert_eq!(
                 calculated_total_pages, expected_total_pages,
@@ -603,7 +624,8 @@ mod tests {
                 assert!(
                     items.is_empty(),
                     "Items should be empty when page ({}) > total_pages ({})",
-                    page, expected_total_pages
+                    page,
+                    expected_total_pages
                 );
             }
 
@@ -614,7 +636,10 @@ mod tests {
                     assert!(
                         items.len() <= expected_items_on_last_page,
                         "Last page should have {} items, got {} for total={}, per_page={}",
-                        expected_items_on_last_page, items.len(), total, per_page
+                        expected_items_on_last_page,
+                        items.len(),
+                        total,
+                        per_page
                     );
                 }
             }
@@ -622,7 +647,7 @@ mod tests {
     }
 
     /// Property test for filtering consistency.
-    /// 
+    ///
     /// Tests that filtering returns consistent results and respects filter parameters.
     #[tokio::test]
     async fn test_filtering_consistency_property() {
@@ -630,23 +655,33 @@ mod tests {
             .await
             .expect("Failed to connect to database");
         let repo = ApprovalRuleRepository::new(db);
-        
+
         let org_id = Uuid::new_v4();
-        
+
         // Test various filter combinations
         let filter_cases = vec![
-            (Some(true), None, None),           // is_active = true
-            (Some(false), None, None),          // is_active = false
-            (None, Some("bill"), None),         // transaction_type = bill
-            (None, None, Some("approver")),     // required_role = approver
+            (Some(true), None, None),            // is_active = true
+            (Some(false), None, None),           // is_active = false
+            (None, Some("bill"), None),          // transaction_type = bill
+            (None, None, Some("approver")),      // required_role = approver
             (Some(true), Some("invoice"), None), // combined filters
         ];
 
         for (is_active, transaction_type, required_role) in filter_cases {
-            let result = repo.list_rules_with_filters(
-                org_id, 0, 10, is_active, transaction_type, required_role, None, None
-            ).await;
-            
+            let result = repo
+                .list_rules_with_filters(
+                    org_id,
+                    0,
+                    10,
+                    ApprovalRuleFilterInput {
+                        is_active,
+                        transaction_type: transaction_type.map(String::from),
+                        required_role: required_role.map(String::from),
+                        ..Default::default()
+                    },
+                )
+                .await;
+
             assert!(result.is_ok(), "Filtering should not fail");
             let (items, _total) = result.unwrap();
 
@@ -671,7 +706,8 @@ mod tests {
             }
 
             if let Some(tx_type) = transaction_type {
-                let expected_type = ApprovalRuleRepository::parse_transaction_type(tx_type).unwrap();
+                let expected_type =
+                    ApprovalRuleRepository::parse_transaction_type(tx_type).unwrap();
                 for item in &items {
                     assert!(
                         item.transaction_types.contains(&expected_type),
@@ -683,7 +719,7 @@ mod tests {
     }
 
     /// Test transaction rollback behavior.
-    /// 
+    ///
     /// Tests that database transactions are properly rolled back on errors.
     #[tokio::test]
     async fn test_transaction_rollback_on_create_error() {
@@ -691,9 +727,9 @@ mod tests {
             .await
             .expect("Failed to connect to database");
         let repo = ApprovalRuleRepository::new(db);
-        
+
         let org_id = Uuid::new_v4();
-        
+
         // Create input with invalid transaction type to force an error
         let input = CreateApprovalRuleInput {
             name: "Test Rule".to_string(),
@@ -704,15 +740,21 @@ mod tests {
             required_role: "approver".to_string(),
             priority: 1,
         };
-        
+
         // Attempt to create the rule - should fail
         let result = repo.create_rule(org_id, input).await;
         assert!(result.is_err());
-        assert!(matches!(result, Err(ApprovalRuleError::InvalidTransactionType(_))));
-        
+        assert!(matches!(
+            result,
+            Err(ApprovalRuleError::InvalidTransactionType(_))
+        ));
+
         // Verify no rule was created (transaction was rolled back)
         let rules = repo.list_rules(org_id).await.unwrap();
-        assert!(rules.is_empty(), "No rules should exist after failed transaction");
+        assert!(
+            rules.is_empty(),
+            "No rules should exist after failed transaction"
+        );
     }
 
     /// Test transaction rollback behavior on update.
@@ -721,10 +763,26 @@ mod tests {
         let db = Database::connect(&get_database_url())
             .await
             .expect("Failed to connect to database");
-        let repo = ApprovalRuleRepository::new(db);
-        
+
         let org_id = Uuid::new_v4();
-        
+
+        // Create an organization (required for foreign key constraint)
+        let org = crate::entities::organizations::ActiveModel {
+            id: Set(org_id),
+            name: Set("Test Org".to_string()),
+            slug: Set(format!("test-org-{org_id}")),
+            base_currency: Set("USD".to_string()),
+            created_at: Set(chrono::Utc::now().into()),
+            updated_at: Set(chrono::Utc::now().into()),
+            ..Default::default()
+        };
+        crate::entities::organizations::Entity::insert(org)
+            .exec(&db)
+            .await
+            .expect("Failed to create organization");
+
+        let repo = ApprovalRuleRepository::new(db);
+
         // First create a valid rule
         let create_input = CreateApprovalRuleInput {
             name: "Original Rule".to_string(),
@@ -735,24 +793,32 @@ mod tests {
             required_role: "approver".to_string(),
             priority: 1,
         };
-        
+
         let created_rule = repo.create_rule(org_id, create_input).await.unwrap();
-        
+
         // Now try to update with invalid data
         let update_input = UpdateApprovalRuleInput {
             name: Some("Updated Rule".to_string()),
             transaction_types: Some(vec!["invalid_type".to_string()]), // This should cause an error
             ..Default::default()
         };
-        
+
         // Attempt to update - should fail
-        let result = repo.update_rule(org_id, created_rule.id, update_input).await;
+        let result = repo
+            .update_rule(org_id, created_rule.id, update_input)
+            .await;
         assert!(result.is_err());
-        assert!(matches!(result, Err(ApprovalRuleError::InvalidTransactionType(_))));
-        
+        assert!(matches!(
+            result,
+            Err(ApprovalRuleError::InvalidTransactionType(_))
+        ));
+
         // Verify the original rule is unchanged (transaction was rolled back)
         let unchanged_rule = repo.get_rule(org_id, created_rule.id).await.unwrap();
         assert_eq!(unchanged_rule.name, "Original Rule");
-        assert_eq!(unchanged_rule.transaction_types, vec![TransactionType::Bill]);
+        assert_eq!(
+            unchanged_rule.transaction_types,
+            vec![TransactionType::Bill]
+        );
     }
 }

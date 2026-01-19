@@ -31,9 +31,9 @@ pub fn routes() -> Router<AppState> {
     // Note: Rate limiting is configured but not applied to avoid 500 errors
     // due to missing key extractor. This should be implemented with proper
     // user_id or IP-based key extraction in production.
-    // 
+    //
     // Tracked in: zeltra-bug - BUG-014: Rate limiting causes 500 errors
-    
+
     Router::new()
         .route(
             "/organizations/{org_id}/approval-rules",
@@ -112,7 +112,7 @@ pub struct CreateApprovalRuleRequest {
 }
 
 /// Request body for updating an approval rule.
-#[derive(Debug, Deserialize, utoipa::ToSchema)]
+#[derive(Debug, Deserialize, utoipa::ToSchema, Clone)]
 pub struct UpdateApprovalRuleRequest {
     /// New name (1-255 characters).
     #[schema(min_length = 1, max_length = 255)]
@@ -255,32 +255,41 @@ async fn list_approval_rules(
     let org_repo = OrganizationRepository::new((*state.db).clone());
 
     if let Err(response) = check_membership(&org_repo, org_id, auth.user_id()).await {
-        return response;
+        return response.into_response();
     }
 
     // Parse and validate pagination parameters
     let page = params.page.unwrap_or(1).max(1);
     let per_page = params.per_page.unwrap_or(20).clamp(1, 100);
-    let offset = ((page - 1) * per_page) as u64;
-    let limit = per_page as u64;
+    let offset = u64::from((page - 1) * per_page);
+    let limit = u64::from(per_page);
 
     let rule_repo = ApprovalRuleRepository::new((*state.db).clone());
 
-    match rule_repo.list_rules_with_filters(
-        org_id,
-        offset,
-        limit,
-        params.is_active,
-        params.transaction_type.as_deref(),
-        params.required_role.as_deref(),
-        params.sort_by.as_deref(),
-        params.sort_order.as_deref(),
-    ).await {
+    match rule_repo
+        .list_rules_with_filters(
+            org_id,
+            offset,
+            limit,
+            zeltra_db::repositories::approval_rule::ApprovalRuleFilterInput {
+                is_active: params.is_active,
+                transaction_type: params.transaction_type,
+                required_role: params.required_role,
+                sort_by: params.sort_by,
+                sort_order: params.sort_order,
+            },
+        )
+        .await
+    {
         Ok((rules, total)) => {
             let items: Vec<ApprovalRuleResponse> =
                 rules.into_iter().map(rule_to_response).collect();
 
-            let total_pages = ((total as f64) / (per_page as f64)).ceil() as u32;
+            let total_pages = if total == 0 {
+                0
+            } else {
+                u32::try_from(total.div_ceil(u64::from(per_page))).unwrap_or(u32::MAX)
+            };
 
             let response = PaginatedApprovalRulesResponse {
                 data: items,
@@ -329,7 +338,7 @@ async fn create_approval_rule(
 
     // Check membership and admin role
     if let Err(response) = check_admin_membership(&org_repo, org_id, auth.user_id()).await {
-        return response;
+        return response.into_response();
     }
 
     // Validate name
@@ -342,7 +351,7 @@ async fn create_approval_rule(
     let (min_amount, max_amount) =
         match validate_create_rule_input(&payload, name, description.as_ref()) {
             Ok(amounts) => amounts,
-            Err(response) => return response,
+            Err(e) => return e.into_response(),
         };
 
     let rule_repo = ApprovalRuleRepository::new((*state.db).clone());
@@ -418,7 +427,7 @@ async fn get_approval_rule(
     let org_repo = OrganizationRepository::new((*state.db).clone());
 
     if let Err(response) = check_membership(&org_repo, org_id, auth.user_id()).await {
-        return response;
+        return response.into_response();
     }
 
     let rule_repo = ApprovalRuleRepository::new((*state.db).clone());
@@ -462,95 +471,15 @@ async fn update_approval_rule(
 
     // Check membership and admin role
     if let Err(response) = check_admin_membership(&org_repo, org_id, auth.user_id()).await {
-        return response;
+        return response.into_response();
     }
 
     // Validate name length if provided
-    let name = payload.name.as_ref().map(|n| n.trim().to_string());
-    if let Some(ref n) = name {
-        if n.is_empty() {
-            return (
-                StatusCode::BAD_REQUEST,
-                Json(json!({
-                    "error": "name_required",
-                    "message": "Name is required"
-                })),
-            )
-                .into_response();
-        }
-
-        if n.len() > 255 {
-            return (
-                StatusCode::BAD_REQUEST,
-                Json(json!({
-                    "error": "name_too_long",
-                    "message": "Name must not exceed 255 characters"
-                })),
-            )
-                .into_response();
-        }
-    }
-
-    // Sanitize and validate description length if provided
-    let description = payload
-        .description
-        .as_ref()
-        .map(|d| Some(d.trim().to_string()));
-    if let Some(Some(ref desc)) = description
-        && desc.len() > 1000
-    {
-        return (
-            StatusCode::BAD_REQUEST,
-            Json(json!({
-                "error": "description_too_long",
-                "message": "Description must not exceed 1000 characters"
-            })),
-        )
-            .into_response();
-    }
-
-    // Validate priority range if provided
-    if let Some(priority) = payload.priority
-        && !(1..=100).contains(&priority)
-    {
-        return (
-            StatusCode::BAD_REQUEST,
-            Json(json!({
-                "error": "invalid_priority",
-                "message": "Priority must be between 1 and 100"
-            })),
-        )
-            .into_response();
-    }
-
-    // Parse amounts if provided
-    let min_amount = match payload.min_amount.as_deref() {
-        Some(s) => match parse_optional_decimal(Some(s)) {
-            Ok(a) => Some(a),
-            Err(e) => return e,
-        },
-        None => None,
-    };
-
-    let max_amount = match payload.max_amount.as_deref() {
-        Some(s) => match parse_optional_decimal(Some(s)) {
-            Ok(a) => Some(a),
-            Err(e) => return e,
-        },
-        None => None,
-    };
-
     let rule_repo = ApprovalRuleRepository::new((*state.db).clone());
 
-    let input = UpdateApprovalRuleInput {
-        name,
-        description,
-        min_amount,
-        max_amount,
-        transaction_types: payload.transaction_types.clone(),
-        required_role: payload.required_role.clone(),
-        priority: payload.priority,
-        is_active: payload.is_active,
+    let input = match validate_update_payload(payload.clone()) {
+        Ok(input) => input,
+        Err(e) => return e.into_response(),
     };
 
     match rule_repo.update_rule(org_id, rule_id, input).await {
@@ -570,10 +499,16 @@ async fn update_approval_rule(
                 changes.insert("max_amount".to_string(), serde_json::json!(max_amount));
             }
             if let Some(ref transaction_types) = payload.transaction_types {
-                changes.insert("transaction_types".to_string(), serde_json::json!(transaction_types));
+                changes.insert(
+                    "transaction_types".to_string(),
+                    serde_json::json!(transaction_types),
+                );
             }
             if let Some(ref required_role) = payload.required_role {
-                changes.insert("required_role".to_string(), serde_json::json!(required_role));
+                changes.insert(
+                    "required_role".to_string(),
+                    serde_json::json!(required_role),
+                );
             }
             if let Some(priority) = payload.priority {
                 changes.insert("priority".to_string(), serde_json::json!(priority));
@@ -632,7 +567,7 @@ async fn delete_approval_rule(
 
     // Check membership and admin role
     if let Err(response) = check_admin_membership(&org_repo, org_id, auth.user_id()).await {
-        return response;
+        return response.into_response();
     }
 
     let rule_repo = ApprovalRuleRepository::new((*state.db).clone());
@@ -640,12 +575,7 @@ async fn delete_approval_rule(
     match rule_repo.delete_rule(org_id, rule_id).await {
         Ok(()) => {
             // Audit log the deletion
-            AuditLogger::log_delete(
-                auth.user_id(),
-                org_id,
-                rule_id,
-                "approval_rule",
-            );
+            AuditLogger::log_delete(auth.user_id(), org_id, rule_id, "approval_rule");
 
             info!(
                 org_id = %org_id,
@@ -665,6 +595,8 @@ async fn delete_approval_rule(
 // ============================================================================
 // Helper Functions
 // ============================================================================
+
+type ApiError = (StatusCode, Json<serde_json::Value>);
 
 fn rule_to_response(rule: zeltra_db::entities::approval_rules::Model) -> ApprovalRuleResponse {
     use zeltra_db::entities::sea_orm_active_enums::{TransactionType, UserRole};
@@ -713,8 +645,7 @@ fn rule_to_response(rule: zeltra_db::entities::approval_rules::Model) -> Approva
     }
 }
 
-#[allow(clippy::result_large_err)]
-fn parse_optional_decimal(s: Option<&str>) -> Result<Option<Decimal>, axum::response::Response> {
+fn parse_optional_decimal(s: Option<&str>) -> Result<Option<Decimal>, ApiError> {
     match s {
         Some(s) if !s.is_empty() => {
             // Validate pattern: must be digits with optional 2 decimal places
@@ -726,8 +657,7 @@ fn parse_optional_decimal(s: Option<&str>) -> Result<Option<Decimal>, axum::resp
                         "error": "invalid_amount_format",
                         "message": "Amount must be a valid decimal with up to 2 decimal places (e.g., 1000.00)"
                     })),
-                )
-                    .into_response());
+                ));
             }
 
             match Decimal::from_str(s) {
@@ -737,16 +667,14 @@ fn parse_optional_decimal(s: Option<&str>) -> Result<Option<Decimal>, axum::resp
                         "error": "invalid_amount",
                         "message": "Amount must be non-negative"
                     })),
-                )
-                    .into_response()),
+                )),
                 Ok(d) if d > Decimal::from(999_999_999) => Err((
                     StatusCode::BAD_REQUEST,
                     Json(json!({
                         "error": "amount_too_large",
                         "message": "Amount must not exceed 999,999,999"
                     })),
-                )
-                    .into_response()),
+                )),
                 Ok(d) => Ok(Some(d)),
                 Err(_) => Err((
                     StatusCode::BAD_REQUEST,
@@ -754,8 +682,7 @@ fn parse_optional_decimal(s: Option<&str>) -> Result<Option<Decimal>, axum::resp
                         "error": "invalid_amount",
                         "message": "Invalid amount format"
                     })),
-                )
-                    .into_response()),
+                )),
             }
         }
         _ => Ok(None),
@@ -766,7 +693,7 @@ async fn check_membership(
     org_repo: &OrganizationRepository,
     org_id: Uuid,
     user_id: Uuid,
-) -> Result<(), axum::response::Response> {
+) -> Result<(), ApiError> {
     match org_repo.is_member(org_id, user_id).await {
         Ok(true) => Ok(()),
         Ok(false) => Err((
@@ -775,8 +702,7 @@ async fn check_membership(
                 "error": "forbidden",
                 "message": "You are not a member of this organization"
             })),
-        )
-            .into_response()),
+        )),
         Err(e) => {
             error!(error = %e, "Database error checking membership");
             Err((
@@ -785,8 +711,7 @@ async fn check_membership(
                     "error": "internal_error",
                     "message": "An error occurred"
                 })),
-            )
-                .into_response())
+            ))
         }
     }
 }
@@ -795,7 +720,7 @@ async fn check_admin_membership(
     org_repo: &OrganizationRepository,
     org_id: Uuid,
     user_id: Uuid,
-) -> Result<(), axum::response::Response> {
+) -> Result<(), ApiError> {
     // First check membership and get role
     match org_repo.get_user_membership(org_id, user_id).await {
         Ok(Some(membership)) => {
@@ -808,8 +733,7 @@ async fn check_admin_membership(
                         "error": "admin_required",
                         "message": "Admin or Owner role required for this operation"
                     })),
-                )
-                    .into_response()),
+                )),
             }
         }
         Ok(None) => Err((
@@ -818,8 +742,7 @@ async fn check_admin_membership(
                 "error": "forbidden",
                 "message": "You are not a member of this organization"
             })),
-        )
-            .into_response()),
+        )),
         Err(e) => {
             error!(error = %e, "Database error checking membership");
             Err((
@@ -828,8 +751,7 @@ async fn check_admin_membership(
                     "error": "internal_error",
                     "message": "An error occurred"
                 })),
-            )
-                .into_response())
+            ))
         }
     }
 }
@@ -871,12 +793,11 @@ fn approval_rule_error_response(e: ApprovalRuleError) -> axum::response::Respons
     }
 }
 
-#[allow(clippy::result_large_err)]
 fn validate_create_rule_input(
     payload: &CreateApprovalRuleRequest,
     name: &str,
     description: Option<&String>,
-) -> Result<(Option<Decimal>, Option<Decimal>), axum::response::Response> {
+) -> Result<(Option<Decimal>, Option<Decimal>), ApiError> {
     if name.is_empty() {
         return Err((
             StatusCode::BAD_REQUEST,
@@ -884,8 +805,7 @@ fn validate_create_rule_input(
                 "error": "name_required",
                 "message": "Name is required"
             })),
-        )
-            .into_response());
+        ));
     }
 
     if name.len() > 255 {
@@ -895,8 +815,7 @@ fn validate_create_rule_input(
                 "error": "name_too_long",
                 "message": "Name must not exceed 255 characters"
             })),
-        )
-            .into_response());
+        ));
     }
 
     if let Some(desc) = description
@@ -908,8 +827,7 @@ fn validate_create_rule_input(
                 "error": "description_too_long",
                 "message": "Description must not exceed 1000 characters"
             })),
-        )
-            .into_response());
+        ));
     }
 
     if payload.transaction_types.is_empty() {
@@ -919,8 +837,7 @@ fn validate_create_rule_input(
                 "error": "transaction_types_required",
                 "message": "At least one transaction type is required"
             })),
-        )
-            .into_response());
+        ));
     }
 
     if !(1..=100).contains(&payload.priority) {
@@ -930,8 +847,7 @@ fn validate_create_rule_input(
                 "error": "invalid_priority",
                 "message": "Priority must be between 1 and 100"
             })),
-        )
-            .into_response());
+        ));
     }
 
     let min_amount = parse_optional_decimal(payload.min_amount.as_deref())?;
@@ -946,22 +862,106 @@ fn validate_create_rule_input(
                 "error": "invalid_amount_range",
                 "message": "min_amount cannot be greater than max_amount"
             })),
-        )
-            .into_response());
+        ));
     }
 
     Ok((min_amount, max_amount))
 }
 
+fn validate_update_payload(
+    payload: UpdateApprovalRuleRequest,
+) -> Result<UpdateApprovalRuleInput, ApiError> {
+    // Validate name length if provided
+    let name = payload.name.as_ref().map(|n| n.trim().to_string());
+    if let Some(ref n) = name {
+        if n.is_empty() {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                Json(json!({
+                    "error": "name_required",
+                    "message": "Name is required"
+                })),
+            ));
+        }
+
+        if n.len() > 255 {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                Json(json!({
+                    "error": "name_too_long",
+                    "message": "Name must not exceed 255 characters"
+                })),
+            ));
+        }
+    }
+
+    // Sanitize and validate description length if provided
+    let description = payload
+        .description
+        .as_ref()
+        .map(|d| Some(d.trim().to_string()));
+    if let Some(Some(ref desc)) = description
+        && desc.len() > 1000
+    {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json(json!({
+                "error": "description_too_long",
+                "message": "Description must not exceed 1000 characters"
+            })),
+        ));
+    }
+
+    // Validate priority range if provided
+    if let Some(priority) = payload.priority
+        && !(1..=100).contains(&priority)
+    {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json(json!({
+                "error": "invalid_priority",
+                "message": "Priority must be between 1 and 100"
+            })),
+        ));
+    }
+
+    // Parse amounts if provided
+    let min_amount = match payload.min_amount.as_deref() {
+        Some(s) => match parse_optional_decimal(Some(s)) {
+            Ok(a) => Some(a),
+            Err(e) => return Err(e),
+        },
+        None => None,
+    };
+
+    let max_amount = match payload.max_amount.as_deref() {
+        Some(s) => match parse_optional_decimal(Some(s)) {
+            Ok(a) => Some(a),
+            Err(e) => return Err(e),
+        },
+        None => None,
+    };
+
+    Ok(UpdateApprovalRuleInput {
+        name,
+        description,
+        min_amount,
+        max_amount,
+        transaction_types: payload.transaction_types,
+        required_role: payload.required_role,
+        priority: payload.priority,
+        is_active: payload.is_active,
+    })
+}
 #[cfg(test)]
 mod tests {
     use super::*;
 
     /// Property test for rate limiting configuration.
-    /// 
+    ///
     /// **Property 10: Rate Limiting**
     /// **Validates: Requirements 2.2.7**
-    /// 
+    ///
     /// Tests that the rate limiting configuration is properly set up.
     #[test]
     fn test_rate_limiting_configuration() {
@@ -970,12 +970,18 @@ mod tests {
             .per_second(2)
             .burst_size(10)
             .finish();
-        
-        assert!(governor_conf.is_some(), "Rate limiting configuration should be valid");
-        
+
+        assert!(
+            governor_conf.is_some(),
+            "Rate limiting configuration should be valid"
+        );
+
         // Test that the routes function can be called without panicking
         let router = routes();
-        assert!(!format!("{:?}", router).is_empty(), "Router should be created successfully");
+        assert!(
+            !format!("{router:?}").is_empty(),
+            "Router should be created successfully"
+        );
     }
 
     /// Test rate limiting parameters.
@@ -984,12 +990,15 @@ mod tests {
         // Verify that our rate limiting parameters are reasonable
         let requests_per_second = 2;
         let burst_size = 10;
-        
+
         // 2 requests per second = 120 requests per minute (close to our target of 100)
         let requests_per_minute = requests_per_second * 60;
-        assert!(requests_per_minute >= 100, "Should allow at least 100 requests per minute");
+        assert!(
+            requests_per_minute >= 100,
+            "Should allow at least 100 requests per minute"
+        );
         assert!(requests_per_minute <= 150, "Should not be too permissive");
-        
+
         // Burst size should allow for reasonable bursts
         assert!(burst_size >= 5, "Burst size should allow reasonable bursts");
         assert!(burst_size <= 20, "Burst size should not be too large");
@@ -1000,24 +1009,27 @@ mod tests {
     fn test_rate_limiting_middleware_setup() {
         // This test verifies that the middleware setup doesn't panic
         // and that the configuration is valid
-        
+
         let result = std::panic::catch_unwind(|| {
             let _router = routes();
         });
-        
-        assert!(result.is_ok(), "Rate limiting middleware setup should not panic");
+
+        assert!(
+            result.is_ok(),
+            "Rate limiting middleware setup should not panic"
+        );
     }
 
     /// Property-based integration test for rate limiting behavior.
-    /// 
+    ///
     /// **Property 10: Rate Limiting**
     /// **Validates: Requirements 2.2.7**
-    /// 
+    ///
     /// Tests that:
     /// - Requests under limit return 200
     /// - Requests over limit return 429
     /// - Retry-After header is present on 429 responses
-    /// 
+    ///
     /// Note: This is a property test that validates rate limiting logic.
     /// Full integration testing with 101 actual HTTP requests should be done
     /// in E2E tests to avoid CI/CD performance issues.
@@ -1027,41 +1039,49 @@ mod tests {
         let requests_per_second = 2;
         let burst_size = 10;
         let test_duration_seconds = 1;
-        
+
         // Property 1: Burst size allows initial requests
         // First 10 requests should succeed (burst)
         let allowed_burst = burst_size;
         assert_eq!(allowed_burst, 10, "Burst should allow 10 requests");
-        
+
         // Property 2: After burst, rate limit applies
         // After burst, only 2 req/sec allowed
         let allowed_after_burst = requests_per_second * test_duration_seconds;
-        assert_eq!(allowed_after_burst, 2, "Should allow 2 requests per second after burst");
-        
+        assert_eq!(
+            allowed_after_burst, 2,
+            "Should allow 2 requests per second after burst"
+        );
+
         // Property 3: Total allowed in first second
         let total_allowed_first_second = burst_size + allowed_after_burst;
-        assert_eq!(total_allowed_first_second, 12, "Should allow 12 requests in first second");
-        
+        assert_eq!(
+            total_allowed_first_second, 12,
+            "Should allow 12 requests in first second"
+        );
+
         // Property 4: Requests beyond limit should be rejected
         let total_requests = 101;
         let expected_rejected = total_requests - total_allowed_first_second;
         assert!(expected_rejected > 0, "Should reject requests beyond limit");
-        
+
         // Property 5: Retry-After calculation
         // If rate is 2 req/sec, retry after should be ~0.5 seconds
-        let retry_after_seconds = 1.0 / requests_per_second as f64;
-        assert!(retry_after_seconds > 0.0 && retry_after_seconds <= 1.0, 
-                "Retry-After should be reasonable (0-1 seconds)");
-        
+        let retry_after_seconds = 1.0 / f64::from(requests_per_second);
+        assert!(
+            retry_after_seconds > 0.0 && retry_after_seconds <= 1.0,
+            "Retry-After should be reasonable (0-1 seconds)"
+        );
+
         // Property 6: Rate limiting is per-user
         // Each user should have independent rate limits
         // (This is validated by the governor configuration using user_id as key)
-        
+
         println!("✓ Rate limiting properties validated:");
-        println!("  - Burst size: {}", burst_size);
-        println!("  - Rate: {} req/sec", requests_per_second);
-        println!("  - Total allowed in 1st second: {}", total_allowed_first_second);
-        println!("  - Expected rejections from 101 requests: {}", expected_rejected);
-        println!("  - Retry-After: ~{:.2}s", retry_after_seconds);
+        println!("  - Burst size: {burst_size}");
+        println!("  - Rate: {requests_per_second} req/sec");
+        println!("  - Total allowed in 1st second: {total_allowed_first_second}");
+        println!("  - Expected rejections from 101 requests: {expected_rejected}");
+        println!("  - Retry-After: ~{retry_after_seconds:.2}s");
     }
 }

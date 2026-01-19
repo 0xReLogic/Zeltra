@@ -1,7 +1,7 @@
 #![allow(missing_docs)]
 use chrono::{NaiveDate, Utc};
 use rust_decimal_macros::dec;
-use sea_orm::{Database, EntityTrait, Set};
+use sea_orm::{Database, DatabaseConnection, EntityTrait, Set};
 use std::env;
 use uuid::Uuid;
 
@@ -194,133 +194,42 @@ async fn test_bulk_approval_partial_success() {
 
     let repo = WorkflowRepository::new(db.clone());
 
-    // Setup: Create Org and User first to satisfy FKs
-    let org_id = Uuid::new_v4();
-    let user_id = Uuid::new_v4();
-    let fiscal_period_id = Uuid::new_v4();
-
-    let org = zeltra_db::entities::organizations::ActiveModel {
-        id: Set(org_id),
-        name: Set("Test Org".to_string()),
-        slug: Set(format!("test-org-{}", org_id)),
-        base_currency: Set("USD".to_string()),
-        created_at: Set(Utc::now().into()),
-        updated_at: Set(Utc::now().into()),
-        ..Default::default()
-    };
-    zeltra_db::entities::organizations::Entity::insert(org)
-        .exec(&db)
-        .await
-        .unwrap();
-
-    let fiscal_year_id = Uuid::new_v4();
-    let fiscal_year = zeltra_db::entities::fiscal_years::ActiveModel {
-        id: Set(fiscal_year_id),
-        organization_id: Set(org_id),
-        name: Set("2026".to_string()),
-        status: Set(zeltra_db::entities::sea_orm_active_enums::FiscalYearStatus::Open),
-        start_date: Set(NaiveDate::from_ymd_opt(2026, 1, 1).unwrap()),
-        end_date: Set(NaiveDate::from_ymd_opt(2026, 12, 31).unwrap()),
-        created_at: Set(Utc::now().into()),
-        updated_at: Set(Utc::now().into()),
-        ..Default::default()
-    };
-    zeltra_db::entities::fiscal_years::Entity::insert(fiscal_year)
-        .exec(&db)
-        .await
-        .unwrap();
-
-    let fiscal_period = zeltra_db::entities::fiscal_periods::ActiveModel {
-        id: Set(fiscal_period_id),
-        organization_id: Set(org_id),
-        fiscal_year_id: Set(fiscal_year_id),
-        name: Set("Jan 2026".to_string()),
-        period_number: Set(1),
-        start_date: Set(NaiveDate::from_ymd_opt(2026, 1, 1).unwrap()),
-        end_date: Set(NaiveDate::from_ymd_opt(2026, 1, 31).unwrap()),
-        status: Set(zeltra_db::entities::sea_orm_active_enums::FiscalPeriodStatus::Open),
-        created_at: Set(Utc::now().into()),
-        updated_at: Set(Utc::now().into()),
-        ..Default::default()
-    };
-    zeltra_db::entities::fiscal_periods::Entity::insert(fiscal_period)
-        .exec(&db)
-        .await
-        .unwrap();
-
-    let user = zeltra_db::entities::users::ActiveModel {
-        id: Set(user_id),
-        email: Set(format!("user-{}@example.com", user_id)),
-        password_hash: Set("hashed_pass".to_string()),
-        full_name: Set("Test User".to_string()),
-        created_at: Set(Utc::now().into()),
-        updated_at: Set(Utc::now().into()),
-        ..Default::default()
-    };
-    zeltra_db::entities::users::Entity::insert(user)
-        .exec(&db)
-        .await
-        .unwrap();
-
-    // Add user to org with approver role
-    let org_user = organization_users::ActiveModel {
-        organization_id: Set(org_id),
-        user_id: Set(user_id),
-        role: Set(zeltra_db::entities::sea_orm_active_enums::UserRole::Approver),
-        approval_limit: Set(Some(rust_decimal::Decimal::new(1_000_000, 0))), // High limit for test
-        created_at: Set(Utc::now().into()),
-        updated_at: Set(Utc::now().into()),
-        ..Default::default()
-    };
-    organization_users::Entity::insert(org_user)
-        .exec(&db)
-        .await
-        .unwrap();
+    let (org_id, user_id, fiscal_period_id) = setup_bulk_test_data(&db).await;
 
     let id1 = Uuid::new_v4();
     let id2 = Uuid::new_v4();
     let id3 = Uuid::new_v4(); // This one will be already "Posted" to cause failure in approve_transaction
 
-    let txn1 = transactions::ActiveModel {
-        id: Set(id1),
-        organization_id: Set(org_id),
-        fiscal_period_id: Set(fiscal_period_id),
-        transaction_type: Set(TransactionType::Journal),
-        transaction_date: Set(NaiveDate::from_ymd_opt(2026, 1, 1).unwrap()),
-        description: Set("Txn 1".to_string()),
-        status: Set(TransactionStatus::Pending),
-        created_by: Set(user_id),
-        timezone: Set("UTC".to_string()),
-        ..Default::default()
-    };
-    let txn2 = transactions::ActiveModel {
-        id: Set(id2),
-        organization_id: Set(org_id),
-        fiscal_period_id: Set(fiscal_period_id),
-        transaction_type: Set(TransactionType::Journal),
-        transaction_date: Set(NaiveDate::from_ymd_opt(2026, 1, 1).unwrap()),
-        description: Set("Txn 2".to_string()),
-        status: Set(TransactionStatus::Pending),
-        created_by: Set(user_id),
-        timezone: Set("UTC".to_string()),
-        ..Default::default()
-    };
-    let txn3 = transactions::ActiveModel {
-        id: Set(id3),
-        organization_id: Set(org_id),
-        fiscal_period_id: Set(fiscal_period_id),
-        transaction_type: Set(TransactionType::Journal),
-        transaction_date: Set(NaiveDate::from_ymd_opt(2026, 1, 1).unwrap()),
-        description: Set("Txn 3 (Posted)".to_string()),
-        status: Set(TransactionStatus::Posted), // WRONG STATUS for approval
-        created_by: Set(user_id),
-        timezone: Set("UTC".to_string()),
-        ..Default::default()
-    };
-
-    transactions::Entity::insert(txn1).exec(&db).await.unwrap();
-    transactions::Entity::insert(txn2).exec(&db).await.unwrap();
-    transactions::Entity::insert(txn3).exec(&db).await.unwrap();
+    create_test_transaction(
+        &db,
+        id1,
+        org_id,
+        fiscal_period_id,
+        user_id,
+        "Txn 1",
+        TransactionStatus::Pending,
+    )
+    .await;
+    create_test_transaction(
+        &db,
+        id2,
+        org_id,
+        fiscal_period_id,
+        user_id,
+        "Txn 2",
+        TransactionStatus::Pending,
+    )
+    .await;
+    create_test_transaction(
+        &db,
+        id3,
+        org_id,
+        fiscal_period_id,
+        user_id,
+        "Txn 3 (Posted)",
+        TransactionStatus::Posted,
+    )
+    .await;
 
     let res = repo
         .bulk_approve(
@@ -362,4 +271,111 @@ async fn test_bulk_approval_partial_success() {
     let _ = transactions::Entity::delete_by_id(id1).exec(&db).await;
     let _ = transactions::Entity::delete_by_id(id2).exec(&db).await;
     let _ = transactions::Entity::delete_by_id(id3).exec(&db).await;
+}
+async fn setup_bulk_test_data(db: &DatabaseConnection) -> (Uuid, Uuid, Uuid) {
+    let org_id = Uuid::new_v4();
+    let user_id = Uuid::new_v4();
+    let fiscal_period_id = Uuid::new_v4();
+
+    let org = zeltra_db::entities::organizations::ActiveModel {
+        id: Set(org_id),
+        name: Set("Test Org".to_string()),
+        slug: Set(format!("test-org-{org_id}")),
+        base_currency: Set("USD".to_string()),
+        created_at: Set(Utc::now().into()),
+        updated_at: Set(Utc::now().into()),
+        ..Default::default()
+    };
+    zeltra_db::entities::organizations::Entity::insert(org)
+        .exec(db)
+        .await
+        .unwrap();
+
+    let fiscal_year_id = Uuid::new_v4();
+    let fiscal_year = zeltra_db::entities::fiscal_years::ActiveModel {
+        id: Set(fiscal_year_id),
+        organization_id: Set(org_id),
+        name: Set("2026".to_string()),
+        status: Set(zeltra_db::entities::sea_orm_active_enums::FiscalYearStatus::Open),
+        start_date: Set(NaiveDate::from_ymd_opt(2026, 1, 1).unwrap()),
+        end_date: Set(NaiveDate::from_ymd_opt(2026, 12, 31).unwrap()),
+        created_at: Set(Utc::now().into()),
+        updated_at: Set(Utc::now().into()),
+        ..Default::default()
+    };
+    zeltra_db::entities::fiscal_years::Entity::insert(fiscal_year)
+        .exec(db)
+        .await
+        .unwrap();
+
+    let fiscal_period = zeltra_db::entities::fiscal_periods::ActiveModel {
+        id: Set(fiscal_period_id),
+        organization_id: Set(org_id),
+        fiscal_year_id: Set(fiscal_year_id),
+        name: Set("Jan 2026".to_string()),
+        period_number: Set(1),
+        start_date: Set(NaiveDate::from_ymd_opt(2026, 1, 1).unwrap()),
+        end_date: Set(NaiveDate::from_ymd_opt(2026, 1, 31).unwrap()),
+        status: Set(zeltra_db::entities::sea_orm_active_enums::FiscalPeriodStatus::Open),
+        created_at: Set(Utc::now().into()),
+        updated_at: Set(Utc::now().into()),
+        ..Default::default()
+    };
+    zeltra_db::entities::fiscal_periods::Entity::insert(fiscal_period)
+        .exec(db)
+        .await
+        .unwrap();
+
+    let user = zeltra_db::entities::users::ActiveModel {
+        id: Set(user_id),
+        email: Set(format!("user-{user_id}@example.com")),
+        password_hash: Set("hashed_pass".to_string()),
+        full_name: Set("Test User".to_string()),
+        created_at: Set(Utc::now().into()),
+        updated_at: Set(Utc::now().into()),
+        ..Default::default()
+    };
+    zeltra_db::entities::users::Entity::insert(user)
+        .exec(db)
+        .await
+        .unwrap();
+
+    let org_user = organization_users::ActiveModel {
+        organization_id: Set(org_id),
+        user_id: Set(user_id),
+        role: Set(zeltra_db::entities::sea_orm_active_enums::UserRole::Approver),
+        approval_limit: Set(Some(rust_decimal::Decimal::new(1_000_000, 0))),
+        created_at: Set(Utc::now().into()),
+        updated_at: Set(Utc::now().into()),
+    };
+    organization_users::Entity::insert(org_user)
+        .exec(db)
+        .await
+        .unwrap();
+
+    (org_id, user_id, fiscal_period_id)
+}
+
+async fn create_test_transaction(
+    db: &DatabaseConnection,
+    id: Uuid,
+    org_id: Uuid,
+    fiscal_period_id: Uuid,
+    user_id: Uuid,
+    description: &str,
+    status: TransactionStatus,
+) {
+    let txn = transactions::ActiveModel {
+        id: Set(id),
+        organization_id: Set(org_id),
+        fiscal_period_id: Set(fiscal_period_id),
+        transaction_type: Set(TransactionType::Journal),
+        transaction_date: Set(NaiveDate::from_ymd_opt(2026, 1, 1).unwrap()),
+        description: Set(description.to_string()),
+        status: Set(status),
+        created_by: Set(user_id),
+        timezone: Set("UTC".to_string()),
+        ..Default::default()
+    };
+    transactions::Entity::insert(txn).exec(db).await.unwrap();
 }

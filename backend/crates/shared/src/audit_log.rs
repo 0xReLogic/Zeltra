@@ -96,12 +96,7 @@ impl AuditLogger {
     }
 
     /// Log a delete operation.
-    pub fn log_delete(
-        actor_id: Uuid,
-        org_id: Uuid,
-        resource_id: Uuid,
-        resource_type: &str,
-    ) {
+    pub fn log_delete(actor_id: Uuid, org_id: Uuid, resource_id: Uuid, resource_type: &str) {
         let entry = AuditLogEntry {
             actor_id,
             org_id,
