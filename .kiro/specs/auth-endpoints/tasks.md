@@ -190,12 +190,14 @@
 - [ ] 7.11 Verify all 21 bugs are fixed
 - [ ] 7.12 Run full E2E test suite with Playwright
 - [ ] 7.13 Manual testing of all auth flows
+- [ ] 7.14 If any weird bugs found, save to Cognio (project: zeltra-bug) immediately
 
 **Acceptance Criteria**:
 - All E2E tests pass
 - All 21 bugs verified as fixed
 - No regressions in existing functionality
 - Manual testing completed
+- Any new bugs found saved to Cognio
 
 ---
 
@@ -213,13 +215,18 @@
 - [ ] 8.6 Document OptionalUpdate enum usage
 - [ ] 8.7 Update API examples with new validation
 - [ ] 8.8 Add security checklist to docs
-- [ ] 8.9 Final `cargo fmt` and `cargo clippy` check
-- [ ] 8.10 Final `pnpm lint` and `pnpm build` check
+- [ ] 8.9 Save all 21 bugs to Cognio memory (project: zeltra-bug)
+- [ ] 8.10 Save utoipa bug patterns to Cognio for future reference
+- [ ] 8.11 Save validation patterns to Cognio
+- [ ] 8.12 If any weird bugs found during implementation, save to Cognio immediately
+- [ ] 8.13 Final `cargo fmt` and `cargo clippy` check
+- [ ] 8.14 Final `pnpm lint` and `pnpm build` check
 
 **Acceptance Criteria**:
 - All documentation updated
 - Best practices documented
 - Security checklist created
+- All bugs saved to Cognio project zeltra-bug
 - Code quality checks pass
 
 ---
