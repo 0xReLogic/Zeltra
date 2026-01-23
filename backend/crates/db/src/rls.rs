@@ -44,8 +44,13 @@ impl RlsConnection {
     ///
     /// # Errors
     ///
-    /// Returns an error if the transaction cannot be started or the RLS
-    /// context cannot be set.
+    /// Returns an error if the transaction cannot be started, the RLS
+    /// context cannot be set, or if the organization_id is nil.
+    ///
+    /// # Security
+    ///
+    /// This function validates that the organization_id is not nil (all zeros) to prevent
+    /// security issues where a nil UUID could bypass RLS policies.
     ///
     /// # Example
     ///
@@ -55,10 +60,17 @@ impl RlsConnection {
     /// rls.commit().await?;
     /// ```
     pub async fn new(db: &DatabaseConnection, organization_id: Uuid) -> Result<Self, DbErr> {
+        // Critical security check: Prevent nil UUID which could bypass RLS
+        if organization_id.is_nil() {
+            return Err(DbErr::Custom(
+                "Invalid organization ID: cannot use nil UUID for RLS context".to_string(),
+            ));
+        }
+
         let txn = db.begin().await?;
 
         // Set the RLS context using SET LOCAL (scoped to transaction)
-        // Using parameterized query to prevent SQL injection
+        // UUID type system already prevents SQL injection
         let sql = format!("SET LOCAL app.current_organization_id = '{organization_id}'");
         txn.execute_unprepared(&sql).await?;
 
@@ -122,11 +134,26 @@ impl RlsExt for DatabaseConnection {
 ///
 /// # Errors
 ///
-/// Returns an error if the RLS context cannot be set.
+/// Returns an error if the RLS context cannot be set or if the UUID is invalid.
+///
+/// # Security
+///
+/// This function validates that the organization_id is not nil (all zeros) to prevent
+/// security issues where a nil UUID could bypass RLS policies.
 pub async fn set_rls_context(
     txn: &DatabaseTransaction,
     organization_id: Uuid,
 ) -> Result<(), DbErr> {
+    // Critical security check: Prevent nil UUID which could bypass RLS
+    if organization_id.is_nil() {
+        return Err(DbErr::Custom(
+            "Invalid organization ID: cannot use nil UUID for RLS context".to_string(),
+        ));
+    }
+
+    // UUID type system already prevents SQL injection, but validate format
+    // The format! macro with UUID is safe because UUID implements Display
+    // which outputs a validated RFC 4122 format string
     let sql = format!("SET LOCAL app.current_organization_id = '{organization_id}'");
     txn.execute_unprepared(&sql).await?;
     Ok(())
@@ -147,5 +174,18 @@ mod tests {
             sql,
             "SET LOCAL app.current_organization_id = '550e8400-e29b-41d4-a716-446655440000'"
         );
+    }
+
+    #[test]
+    fn test_nil_uuid_detection() {
+        let nil_uuid = Uuid::nil();
+        assert!(nil_uuid.is_nil());
+        assert_eq!(nil_uuid.to_string(), "00000000-0000-0000-0000-000000000000");
+    }
+
+    #[test]
+    fn test_valid_uuid_not_nil() {
+        let valid_uuid = Uuid::new_v4();
+        assert!(!valid_uuid.is_nil());
     }
 }
