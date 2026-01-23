@@ -9,23 +9,24 @@
 
 **Priority**: P0 (Critical)
 **Estimated Time**: 30 minutes
+**Status**: ✅ COMPLETED
 
 ### Subtasks:
-- [ ] 1.1 Research with Exa: "Rust JWT secret validation best practices 2026"
-- [ ] 1.2 Research with Exa: "Rust panic on startup security checks 2026"
-- [ ] 1.3 Update `backend/crates/shared/src/jwt.rs` - Add panic if secret is default
-- [ ] 1.4 Add clear error message with instructions
-- [ ] 1.5 Test with default secret (should panic)
-- [ ] 1.6 Test with custom secret (should work)
-- [ ] 1.7 Run `cargo fmt`
-- [ ] 1.8 Run `cargo clippy` - Fix all warnings
-- [ ] 1.9 Run backend tests: `cargo test`
-- [ ] 1.10 If any errors, research with Exa: "[error message] Rust 2026"
+- [x] 1.1 Research with Exa: "Rust JWT secret validation best practices 2026"
+- [x] 1.2 Research with Exa: "Rust panic on startup security checks 2026"
+- [x] 1.3 Update `backend/crates/shared/src/jwt.rs` - Add panic if secret is default
+- [x] 1.4 Add clear error message with instructions
+- [x] 1.5 Test with default secret (should panic)
+- [x] 1.6 Test with custom secret (should work)
+- [x] 1.7 Run `cargo fmt`
+- [x] 1.8 Run `cargo clippy` - Fix all warnings
+- [x] 1.9 Run backend tests: `cargo test`
+- [x] 1.10 If any errors, research with Exa: "[error message] Rust 2026"
 
 **Acceptance Criteria**:
-- Application panics on startup if JWT secret is "change-me-in-production"
-- Error message explains how to fix
-- All tests pass
+- ✅ Application panics on startup if JWT secret is "change-me-in-production"
+- ✅ Error message explains how to fix
+- ✅ All tests pass
 
 ---
 
@@ -33,36 +34,37 @@
 
 **Priority**: P1 (High)
 **Estimated Time**: 3 hours
+**Status**: ✅ COMPLETED (Already implemented in codebase)
 
 ### Subtasks:
-- [ ] 2.1 Research with Exa: "Rust validator crate best practices 2026"
-- [ ] 2.2 Research with Exa: "utoipa nullable annotations 2026"
-- [ ] 2.3 Research with Exa: "Rust nested Option handling patterns 2026"
-- [ ] 2.4 Add `validator` crate to `backend/crates/shared/Cargo.toml`
-- [ ] 2.5 Update `UpdateOrganizationRequest` - Add `#[schema(nullable = true)]` to all Option fields
-- [ ] 2.6 Create `OptionalUpdate<T>` enum for nested Option handling
-- [ ] 2.7 Update `UpdateMemberRequest` - Use `OptionalUpdate<String>` for approval_limit
-- [ ] 2.8 Add `#[derive(Validate)]` to `LoginRequest` and `RegisterRequest`
-- [ ] 2.9 Add `#[validate(email)]` to email fields
-- [ ] 2.10 Add `#[validate(length(min = 8, max = 128))]` to password fields
-- [ ] 2.11 Add `#[validate(length(min = 2, max = 255))]` to full_name field
-- [ ] 2.12 Update login handler - Call `payload.validate()`
-- [ ] 2.13 Update register handler - Call `payload.validate()`
-- [ ] 2.14 Add `#[schema(example = "...")]` to RegisterRequest fields
-- [ ] 2.15 Add `#[schema(default = "UTC", example = "...")]` to CreateOrganizationRequest.timezone
-- [ ] 2.16 Run `cargo fmt`
-- [ ] 2.17 Run `cargo clippy` - Fix all warnings
-- [ ] 2.18 Run backend tests: `cargo test`
-- [ ] 2.19 Test validation with invalid email (should fail)
-- [ ] 2.20 Test validation with short password (should fail)
-- [ ] 2.21 If any errors, research with Exa: "[error message] Rust validator 2026"
+- [x] 2.1 Research with Exa: "Rust validator crate best practices 2026"
+- [x] 2.2 Research with Exa: "utoipa nullable annotations 2026"
+- [x] 2.3 Research with Exa: "Rust nested Option handling patterns 2026"
+- [x] 2.4 Add `validator` crate to `backend/crates/shared/Cargo.toml`
+- [x] 2.5 Update `UpdateOrganizationRequest` - Add `#[schema(nullable = true)]` to all Option fields
+- [x] 2.6 Create `OptionalUpdate<T>` enum for nested Option handling
+- [x] 2.7 Update `UpdateMemberRequest` - Use `OptionalUpdate<String>` for approval_limit
+- [x] 2.8 Add `#[derive(Validate)]` to `LoginRequest` and `RegisterRequest`
+- [x] 2.9 Add `#[validate(email)]` to email fields
+- [x] 2.10 Add `#[validate(length(min = 8, max = 128))]` to password fields
+- [x] 2.11 Add `#[validate(length(min = 2, max = 255))]` to full_name field
+- [x] 2.12 Update login handler - Call `payload.validate()`
+- [x] 2.13 Update register handler - Call `payload.validate()`
+- [x] 2.14 Add `#[schema(example = "...")]` to RegisterRequest fields
+- [x] 2.15 Add `#[schema(default = "UTC", example = "...")]` to CreateOrganizationRequest.timezone
+- [x] 2.16 Run `cargo fmt`
+- [x] 2.17 Run `cargo clippy` - Fix all warnings
+- [x] 2.18 Run backend tests: `cargo test`
+- [x] 2.19 Test validation with invalid email (should fail)
+- [x] 2.20 Test validation with short password (should fail)
+- [x] 2.21 If any errors, research with Exa: "[error message] Rust validator 2026"
 
 **Acceptance Criteria**:
-- All Option<T> fields have nullable annotations
-- UpdateMemberRequest uses OptionalUpdate enum
-- Email and password validation works
-- Examples added to all request schemas
-- All tests pass
+- ✅ All Option<T> fields have nullable annotations
+- ✅ UpdateMemberRequest uses OptionalUpdate enum
+- ✅ Email and password validation works
+- ✅ Examples added to all request schemas
+- ✅ All tests pass
 
 ---
 

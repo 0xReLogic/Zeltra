@@ -1034,13 +1034,11 @@ async fn update_member(
     };
 
     // Parse approval limit if provided
-    let new_approval_limit = payload
-        .approval_limit
-        .and_then(|opt_update| {
-            opt_update.into_option().map(|inner_opt| {
-                inner_opt.and_then(|s| s.parse().ok())
-            })
-        });
+    let new_approval_limit = payload.approval_limit.and_then(|opt_update| {
+        opt_update
+            .into_option()
+            .map(|inner_opt| inner_opt.and_then(|s| s.parse().ok()))
+    });
 
     // Update member
     let membership = match org_repo

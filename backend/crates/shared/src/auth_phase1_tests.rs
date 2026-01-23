@@ -191,7 +191,7 @@ mod tests {
     #[test]
     fn update_member_request_allows_clearing_limit() {
         use crate::auth::OptionalUpdate;
-        
+
         let req = UpdateMemberRequest {
             role: Some("viewer".to_string()),
             approval_limit: Some(OptionalUpdate::Null),
