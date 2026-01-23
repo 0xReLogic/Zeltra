@@ -148,7 +148,7 @@
 - [ ] 5.17 Update `frontend/src/middleware.ts` - Add documentation comment about limitation
 - [ ] 5.18 Run `pnpm lint` - Fix all warnings
 - [ ] 5.19 Run `pnpm build` - Ensure no errors
-- [ ] 5.20 Run frontend tests: `pnpm test`
+- [ ] 5.20 Run frontend tests: `pnpm vitest run`
 - [ ] 5.21 If any errors, research with Exa: "[error message] Next.js 16 2026"
 
 **Acceptance Criteria**:
