@@ -70,8 +70,44 @@ impl std::fmt::Debug for JwtService {
 
 impl JwtService {
     /// Creates a new JWT service with the given configuration.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the JWT secret is set to the default value "change-me-in-production".
+    /// This is a critical security check to prevent production deployments with insecure secrets.
     #[must_use]
     pub fn new(config: JwtConfig) -> Self {
+        // Critical security check: Prevent using default JWT secret in production
+        assert!(
+            config.secret != "change-me-in-production",
+            "\n\n\
+            ╔═══════════════════════════════════════════════════════════════════════════╗\n\
+            ║                      CRITICAL SECURITY ERROR                              ║\n\
+            ╠═══════════════════════════════════════════════════════════════════════════╣\n\
+            ║                                                                           ║\n\
+            ║  JWT secret is set to the default value 'change-me-in-production'        ║\n\
+            ║                                                                           ║\n\
+            ║  This is a CRITICAL SECURITY VULNERABILITY that would allow attackers    ║\n\
+            ║  to forge authentication tokens and gain unauthorized access to your     ║\n\
+            ║  application.                                                            ║\n\
+            ║                                                                           ║\n\
+            ║  HOW TO FIX:                                                             ║\n\
+            ║  1. Generate a strong random secret (at least 32 characters)             ║\n\
+            ║     Example: openssl rand -base64 32                                     ║\n\
+            ║                                                                           ║\n\
+            ║  2. Set the JWT_SECRET environment variable:                             ║\n\
+            ║     export JWT_SECRET=\"your-secure-random-secret-here\"                  ║\n\
+            ║                                                                           ║\n\
+            ║  3. Or update your configuration file (config/default.toml):             ║\n\
+            ║     [jwt]                                                                ║\n\
+            ║     secret = \"your-secure-random-secret-here\"                           ║\n\
+            ║                                                                           ║\n\
+            ║  NEVER commit secrets to version control!                                ║\n\
+            ║  Use environment variables or secure secret management.                  ║\n\
+            ║                                                                           ║\n\
+            ╚═══════════════════════════════════════════════════════════════════════════╝\n\n"
+        );
+
         let encoding_key = EncodingKey::from_secret(config.secret.as_bytes());
         let decoding_key = DecodingKey::from_secret(config.secret.as_bytes());
         Self {
@@ -192,5 +228,29 @@ mod tests {
         let service = create_test_service();
         let result = service.validate_token("invalid.token.here");
         assert!(result.is_err());
+    }
+
+    #[test]
+    #[should_panic(expected = "CRITICAL SECURITY ERROR")]
+    fn test_panic_on_default_secret() {
+        // This should panic because we're using the default secret
+        let _service = JwtService::new(JwtConfig::default());
+    }
+
+    #[test]
+    fn test_custom_secret_works() {
+        // This should NOT panic because we're using a custom secret
+        let service = JwtService::new(JwtConfig {
+            secret: "my-custom-secure-secret-key".to_string(),
+            access_token_expires_minutes: 15,
+            refresh_token_expires_days: 7,
+        });
+
+        let user_id = Uuid::new_v4();
+        let org_id = Uuid::new_v4();
+        let token = service
+            .generate_access_token(user_id, org_id, "admin")
+            .unwrap();
+        assert!(!token.is_empty());
     }
 }
