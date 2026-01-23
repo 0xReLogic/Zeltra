@@ -5,7 +5,7 @@
 
 ---
 
-## Task 1: Backend P0 - JWT Secret Validation
+## Task 1: Backend P0 - JWT Secret Validation ✅
 
 **Priority**: P0 (Critical)
 **Estimated Time**: 30 minutes
@@ -28,9 +28,17 @@
 - ✅ Error message explains how to fix
 - ✅ All tests pass
 
+**Completion Notes**:
+- Added assert! check in JwtService::new() to panic if secret is default
+- Added clear error message with fix instructions
+- Added tests: test_panic_on_default_secret and test_custom_secret_works
+- Fixed test helpers in auth.rs, exchange_rates.rs, and attachments.rs to use custom JWT secret
+- All 5 JWT tests passing, all 95 API tests passing
+- Committed (da14d17) and saved to Cognio project zeltra-bug
+
 ---
 
-## Task 2: Backend P1 - Validation & Schema Fixes
+## Task 2: Backend P1 - Validation & Schema Fixes ✅
 
 **Priority**: P1 (High)
 **Estimated Time**: 3 hours
@@ -66,36 +74,61 @@
 - ✅ Examples added to all request schemas
 - ✅ All tests pass
 
+**Completion Notes**:
+- Verified all items were ALREADY IMPLEMENTED in codebase:
+  - validator crate already in Cargo.toml
+  - LoginRequest and RegisterRequest already have #[derive(Validate)] with email and password validation
+  - Handlers already call .validate()
+  - UpdateOrganizationRequest already has #[schema(nullable = true)] on Option fields
+  - OptionalUpdate enum already exists for nested Option handling
+  - UpdateMemberRequest already uses OptionalUpdate
+  - Examples already added to schemas
+  - Timezone default already documented
+- All 19 shared tests passing, all 95 API tests passing
+- Saved to Cognio project zeltra-bug
+
 ---
 
-## Task 3: Backend P1 - Security Fixes
+## Task 3: Backend P1 - Security Fixes ✅
 
 **Priority**: P1 (High)
 **Estimated Time**: 2 hours
+**Status**: ✅ COMPLETED
 
 ### Subtasks:
-- [ ] 3.1 Research with Exa: "Rust UUID validation security best practices 2026"
-- [ ] 3.2 Research with Exa: "Rust per-user rate limiting patterns 2026"
-- [ ] 3.3 Research with Exa: "Rust HashMap rate limiter implementation 2026"
-- [ ] 3.4 Update `backend/crates/db/src/rls.rs` - Add UUID validation in set_rls_context
-- [ ] 3.5 Add error handling for nil UUID
-- [ ] 3.6 Create `backend/crates/api/src/middleware/keyed_rate_limit.rs`
-- [ ] 3.7 Implement `KeyedRateLimiter` struct with HashMap of limiters
-- [ ] 3.8 Implement `extract_rate_limit_key()` function (user_id or IP)
-- [ ] 3.9 Update rate limit middleware to use keyed limiting
-- [ ] 3.10 Add configuration for per-user limits
-- [ ] 3.11 Run `cargo fmt`
-- [ ] 3.12 Run `cargo clippy` - Fix all warnings
-- [ ] 3.13 Run backend tests: `cargo test`
-- [ ] 3.14 Test rate limiting with multiple users
-- [ ] 3.15 Test rate limiting with same user (should be limited)
-- [ ] 3.16 If any errors, research with Exa: "[error message] Rust rate limiting 2026"
+- [x] 3.1 Research with Exa: "Rust UUID validation security best practices 2026"
+- [x] 3.2 Research with Exa: "Rust per-user rate limiting patterns 2026"
+- [x] 3.3 Research with Exa: "Rust HashMap rate limiter implementation 2026"
+- [x] 3.4 Update `backend/crates/db/src/rls.rs` - Add UUID validation in set_rls_context
+- [x] 3.5 Add error handling for nil UUID
+- [x] 3.6 Create `backend/crates/api/src/middleware/keyed_rate_limit.rs`
+- [x] 3.7 Implement `KeyedRateLimiter` struct with HashMap of limiters
+- [x] 3.8 Implement `extract_rate_limit_key()` function (user_id or IP)
+- [x] 3.9 Update rate limit middleware to use keyed limiting
+- [x] 3.10 Add configuration for per-user limits
+- [x] 3.11 Run `cargo fmt`
+- [x] 3.12 Run `cargo clippy` - Fix all warnings
+- [x] 3.13 Run backend tests: `cargo test`
+- [x] 3.14 Test rate limiting with multiple users
+- [x] 3.15 Test rate limiting with same user (should be limited)
+- [x] 3.16 If any errors, research with Exa: "[error message] Rust rate limiting 2026"
 
 **Acceptance Criteria**:
-- RLS context validates UUID
-- Per-user rate limiting implemented
-- Rate limits configurable
-- All tests pass
+- ✅ RLS context validates UUID
+- ✅ Per-user rate limiting implemented
+- ✅ Rate limits configurable
+- ✅ All tests pass
+
+**Completion Notes**:
+- RLS UUID validation was already implemented in rls.rs with nil UUID checks
+- Created keyed_rate_limit.rs with KeyedRateLimiter using governor's DashMap
+- Implemented extract_rate_limit_key() with priority: user_id > X-Forwarded-For > ConnectInfo > anonymous
+- Added KeyedRateLimitConfig with default 10 req/s, burst 20
+- Added dashmap dependency and governor dashmap feature
+- All 7 keyed rate limit tests passing
+- All 813 backend tests passing (102 API + 394 core + 247 db + 70 shared)
+- cargo fmt and cargo clippy passed
+- Saved to Cognio project zeltra-bug
 
 ---
 
