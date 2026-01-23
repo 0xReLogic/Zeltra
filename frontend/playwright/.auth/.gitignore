@@ -1,2 +1,0 @@
-# Ignore auth storage state files (contains sensitive tokens)
-*.json
