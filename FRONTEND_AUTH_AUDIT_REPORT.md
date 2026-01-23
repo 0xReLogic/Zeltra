@@ -7,9 +7,11 @@
 ## Executive Summary
 
 ✅ **Strengths**: All auth types correctly generated, mutex-based token refresh, all 6 endpoints have hooks, Zustand persistence works  
-⚠️ **5 Bugs Found**: Missing useRefresh hook, weak password validation, middleware gaps, no UpdateOrganizationRequest nullable handling, error toast duplication
+⚠️ **6 Bugs Found**: Missing useRefresh hook, weak password validation, middleware gaps, no auth redirect on login/register, error toast duplication (confirmed via E2E)
 
-**Audit Scope**: TypeScript types, API client, React Query hooks, Zustand store, UI components (login/register/verify-email)
+**Audit Scope**: TypeScript types, API client, React Query hooks, Zustand store, UI components, E2E testing with Playwright
+
+**E2E Test Results**: 5/6 test cases passed, 3 bugs confirmed (weak password accepted, duplicate error toasts, no auth redirect)
 
 ---
 
@@ -179,12 +181,139 @@ const token = request.cookies.get('auth-storage')?.value
 
 ---
 
+## 6.5 E2E Testing Results (Playwright)
+
+**Test Date**: 2026-01-23  
+**Test Credentials**: corp@zeltra.io / qwertyui  
+**Frontend URL**: http://10.0.0.5:3000
+
+### 6.5.1 Login Flow ✅ PASSED
+
+**Steps**:
+1. Navigate to /login
+2. Fill email: corp@zeltra.io
+3. Fill password: qwertyui
+4. Click "Sign in"
+
+**Results**:
+- ✅ Login successful
+- ✅ Token stored (expires in 60 minutes)
+- ✅ Redirect to /dashboard
+- ✅ User info displayed correctly
+- ✅ Toast notification shown: "Login successful"
+
+**Console Logs**:
+```
+🔐 setAuth called: user=corp@zeltra.io, expires in 60 minutes
+✅ Auth check passed: {hasAccessToken: true, hasUser: true}
+```
+
+### 6.5.2 Logout Flow ✅ PASSED
+
+**Steps**:
+1. Click user menu (corp@zeltra.io)
+2. Click "Log out"
+
+**Results**:
+- ✅ Logout successful
+- ✅ Auth state cleared
+- ✅ Redirect to /login
+- ✅ Toast notification shown: "Logged out"
+
+**Console Logs**:
+```
+🚪 LOGOUT CALLED - Clearing auth state
+🌊 useHydration: State after hydration: {hasAccessToken: false, hasUser: false}
+```
+
+### 6.5.3 Register Flow ⚠️ PASSED WITH BUG
+
+**Steps**:
+1. Navigate to /register
+2. Fill full name: Test User
+3. Fill email: test@example.com
+4. Fill password: 12345678 (weak password - only numbers)
+5. Click "Create account"
+
+**Results**:
+- ✅ Registration successful
+- ✅ Redirect to /login
+- ✅ Toast notification shown: "Registration successful. Please check your email..."
+- ⚠️ **BUG CONFIRMED**: Weak password "12345678" accepted (BUG-FRONTEND-004)
+
+**Expected**: Should reject password with no uppercase, lowercase, or special characters
+
+### 6.5.4 Email Verification Flow ⚠️ PASSED WITH BUG
+
+**Steps**:
+1. Navigate to /verify-email?token=invalid-token-test
+2. Observe error handling
+
+**Results**:
+- ✅ Invalid token detected
+- ✅ Error message shown: "The verification link is invalid or has expired"
+- ✅ Resend form displayed
+- ⚠️ **BUG CONFIRMED**: Error toast shown twice (BUG-FRONTEND-001)
+
+**Console Logs**:
+```
+API Error: 400 Bad Request (shown 2x in toast notifications)
+```
+
+### 6.5.5 Resend Verification Flow ✅ PASSED
+
+**Steps**:
+1. Fill email: test@example.com
+2. Click "Resend Verification Email"
+
+**Results**:
+- ✅ Request successful
+- ✅ Generic message shown (no email enumeration): "If an account exists with this email, a verification link has been sent."
+- ✅ Security best practice followed
+
+### 6.5.6 Auth Redirect Test ⚠️ FAILED
+
+**Steps**:
+1. Login as corp@zeltra.io
+2. Navigate to /login while still logged in
+
+**Results**:
+- ❌ **BUG CONFIRMED**: Login page displayed instead of redirect to dashboard (BUG-FRONTEND-006)
+- ✅ Zustand shows user is logged in: {hasUser: true, hasAccessToken: true, hasRefreshToken: true}
+- ❌ No client-side redirect logic in login page
+
+**Expected**: Should automatically redirect to /dashboard
+
+**Root Cause**: Login/register pages missing useEffect to check auth state and redirect
+
+### 6.5.7 E2E Test Summary
+
+| Test Case | Status | Bugs Found |
+|-----------|--------|------------|
+| Login Flow | ✅ PASSED | None |
+| Logout Flow | ✅ PASSED | None |
+| Register Flow | ⚠️ PASSED WITH BUG | BUG-FRONTEND-004 (weak password accepted) |
+| Email Verification | ⚠️ PASSED WITH BUG | BUG-FRONTEND-001 (duplicate error toasts) |
+| Resend Verification | ✅ PASSED | None |
+| Auth Redirect | ❌ FAILED | BUG-FRONTEND-006 (no redirect when logged in) |
+| Token Refresh | ❌ NOT TESTED | Need to wait for token expiry |
+
+**Overall E2E Assessment**: 
+- Core auth flows work correctly
+- 3 bugs confirmed through E2E testing
+- Security best practices followed (no email enumeration)
+- User experience has issues: duplicate toasts, weak password validation, no auth redirect
+
+---
+
 ## 7. Bugs Found
 
 ### BUG-FRONTEND-001: Duplicate Error Toasts
 - **Severity**: P2 (Medium)
 - **Location**: All mutation hooks in `auth.ts`
 - **Issue**: Errors toasted twice (apiClient + onError)
+- **Impact**: Poor UX, confusing error messages
+- **E2E Confirmation**: ✅ Confirmed - Invalid token error shown 2x in verify-email flow
 - **Fix**: Remove toast from mutation onError
 
 ### BUG-FRONTEND-002: Missing useRefresh Hook
@@ -206,7 +335,18 @@ const token = request.cookies.get('auth-storage')?.value
 - **Location**: Login and register pages
 - **Issue**: Only checks length (8 chars), no complexity
 - **Impact**: Weak passwords allowed, security risk
+- **E2E Confirmation**: ✅ Confirmed - Password "12345678" (only numbers) accepted in registration
 - **Fix**: Add regex for uppercase, lowercase, number, special char
+
+```typescript
+// Add to register page validation
+password: z.string()
+  .min(8, 'Password must be at least 8 characters')
+  .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+  .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+  .regex(/[0-9]/, 'Password must contain at least one number')
+  .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character')
+```
 
 ### BUG-FRONTEND-005: Middleware Cannot Protect Routes
 - **Severity**: P1 (High)
@@ -214,6 +354,39 @@ const token = request.cookies.get('auth-storage')?.value
 - **Issue**: Cannot access localStorage, route protection doesn't work
 - **Impact**: Protected routes not actually protected server-side
 - **Fix**: Sync to httpOnly cookie OR use client-side guards OR document limitation
+
+### BUG-FRONTEND-006: No Auth Redirect on Login/Register Pages
+- **Severity**: P1 (High)
+- **Location**: `frontend/src/app/(auth)/login/page.tsx`, `frontend/src/app/(auth)/register/page.tsx`
+- **Issue**: Authenticated users can still access /login and /register pages
+- **Impact**: Poor UX - logged-in users see login form instead of being redirected to dashboard
+- **E2E Confirmation**: ✅ Confirmed - User with valid token can access /login page
+- **Root Cause**: No client-side auth check in login/register pages
+- **Fix**: Add useEffect to check auth state and redirect
+
+```typescript
+// Add to login page
+'use client'
+
+import { useAuthStore } from '@/lib/stores/authStore'
+import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
+
+export default function LoginPage() {
+  const router = useRouter()
+  const user = useAuthStore((state) => state.user)
+  const accessToken = useAuthStore((state) => state.accessToken)
+  
+  useEffect(() => {
+    // Redirect to dashboard if already logged in
+    if (user && accessToken) {
+      router.push('/dashboard')
+    }
+  }, [user, accessToken, router])
+  
+  // ... rest of component
+}
+```
 
 ---
 
@@ -266,13 +439,23 @@ const token = request.cookies.get('auth-storage')?.value
 - ✅ Comprehensive error handling
 - ✅ Proper Zustand persistence
 - ✅ Good form validation
+- ✅ Core auth flows work end-to-end
 
 **Issues**:
 - ⚠️ Missing proactive token refresh (P1)
-- ⚠️ Weak password validation (P1)
+- ⚠️ Weak password validation (P1) - **Confirmed via E2E**
 - ⚠️ Middleware cannot protect routes (P1)
+- ⚠️ No auth redirect on login/register pages (P1) - **Confirmed via E2E**
 - ⚠️ Missing useRefresh hook (P1)
-- ⚠️ Duplicate error toasts (P2)
+- ⚠️ Duplicate error toasts (P2) - **Confirmed via E2E**
+
+**E2E Test Results**:
+- ✅ Login flow: PASSED
+- ✅ Logout flow: PASSED
+- ⚠️ Register flow: PASSED WITH BUG (weak password accepted)
+- ⚠️ Email verification: PASSED WITH BUG (duplicate error toasts)
+- ✅ Resend verification: PASSED
+- ❌ Auth redirect: FAILED (logged-in users can access login page)
 
 **Risk Level**: Medium → Low (with P1 fixes)  
 **Production Readiness**: Ready with P1 fixes
@@ -280,11 +463,12 @@ const token = request.cookies.get('auth-storage')?.value
 **Comparison**:
 - Backend: 12 bugs (3 critical)
 - OpenAPI: 3 bugs (1 critical)
-- Frontend: 5 bugs (4 high priority)
+- Frontend: 6 bugs (5 high priority, 3 confirmed via E2E)
 
 **Overall System Health**: Good - core auth flow is solid, issues are mostly validation/UX improvements
 
 ---
 
 **Report Generated**: 2026-01-23  
-**Next Steps**: Fix P1 bugs, run E2E tests, implement proactive token refresh
+**E2E Testing**: Completed with Playwright  
+**Next Steps**: Fix P1 bugs, implement proactive token refresh, strengthen password validation
