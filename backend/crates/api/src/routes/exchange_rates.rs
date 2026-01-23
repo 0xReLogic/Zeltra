@@ -1202,7 +1202,11 @@ mod integration_tests {
         let db = sea_orm::Database::connect(&db_url)
             .await
             .expect("Failed to connect to database");
-        let jwt_service = JwtService::new(JwtConfig::default());
+        let jwt_service = JwtService::new(JwtConfig {
+            secret: "test-secret-key-for-testing-only".to_string(),
+            access_token_expires_minutes: 15,
+            refresh_token_expires_days: 7,
+        });
         let email_service = EmailService::new(EmailConfig::default());
 
         AppState {

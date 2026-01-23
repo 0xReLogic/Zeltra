@@ -173,7 +173,11 @@ mod tests {
     fn create_test_state() -> AppState {
         // Use Disconnected variant since we don't need DB for auth middleware tests
         let db = DatabaseConnection::Disconnected;
-        let jwt_service = JwtService::new(JwtConfig::default());
+        let jwt_service = JwtService::new(JwtConfig {
+            secret: "test-secret-key-for-testing-only".to_string(),
+            access_token_expires_minutes: 15,
+            refresh_token_expires_days: 7,
+        });
         let email_service = EmailService::new(EmailConfig::default());
 
         AppState {
