@@ -3,6 +3,7 @@
 use axum::{Json, Router, extract::State, http::StatusCode, response::IntoResponse, routing::post};
 use serde_json::json;
 use tracing::{error, info, warn};
+use validator::Validate;
 
 use crate::AppState;
 use zeltra_core::auth::{hash_password, verify_password};
@@ -43,6 +44,19 @@ pub async fn login(
     State(state): State<AppState>,
     Json(payload): Json<LoginRequest>,
 ) -> impl IntoResponse {
+    // Validate request payload
+    if let Err(e) = payload.validate() {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({
+                "error": "validation_error",
+                "message": "Invalid request data",
+                "details": e.to_string()
+            })),
+        )
+            .into_response();
+    }
+
     let user_repo = UserRepository::new((*state.db).clone());
     let session_repo = SessionRepository::new((*state.db).clone());
 
@@ -234,10 +248,24 @@ pub async fn login(
     ),
     tag = "Auth"
 )]
+#[allow(clippy::too_many_lines)]
 pub async fn register(
     State(state): State<AppState>,
     Json(payload): Json<RegisterRequest>,
 ) -> impl IntoResponse {
+    // Validate request payload
+    if let Err(e) = payload.validate() {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({
+                "error": "validation_error",
+                "message": "Invalid request data",
+                "details": e.to_string()
+            })),
+        )
+            .into_response();
+    }
+
     let user_repo = UserRepository::new((*state.db).clone());
     let email_verification_repo = EmailVerificationRepository::new((*state.db).clone());
 

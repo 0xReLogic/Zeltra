@@ -3,6 +3,46 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+use validator::Validate;
+
+/// Helper enum for handling nested Option updates.
+///
+/// This solves the problem of distinguishing between:
+/// - Field not provided in request (None)
+/// - Field explicitly set to null (Some(None))
+/// - Field set to a value (Some(Some(value)))
+#[derive(Debug, Clone, Deserialize, Serialize, utoipa::ToSchema)]
+#[serde(untagged)]
+pub enum OptionalUpdate<T> {
+    /// Value is provided.
+    Value(T),
+    /// Value is explicitly set to null.
+    #[serde(deserialize_with = "deserialize_null")]
+    Null,
+}
+
+fn deserialize_null<'de, D>(deserializer: D) -> Result<(), D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    use serde::de::Error;
+    let value = serde_json::Value::deserialize(deserializer)?;
+    if value.is_null() {
+        Ok(())
+    } else {
+        Err(Error::custom("expected null"))
+    }
+}
+
+impl<T> OptionalUpdate<T> {
+    /// Converts to Option<Option<T>> for database operations.
+    pub fn into_option(self) -> Option<Option<T>> {
+        match self {
+            OptionalUpdate::Value(v) => Some(Some(v)),
+            OptionalUpdate::Null => Some(None),
+        }
+    }
+}
 
 /// JWT claims for access tokens.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -70,24 +110,32 @@ impl TokenPair {
 }
 
 /// Login request payload.
-#[derive(Debug, Clone, Deserialize, utoipa::ToSchema)]
+#[derive(Debug, Clone, Deserialize, Validate, utoipa::ToSchema)]
 pub struct LoginRequest {
     /// User email.
+    #[validate(email)]
     #[schema(example = "user@example.com")]
     pub email: String,
     /// User password.
-    #[schema(example = "password123")]
+    #[validate(length(min = 8, max = 128))]
+    #[schema(example = "SecureP@ssw0rd!")]
     pub password: String,
 }
 
 /// Registration request payload.
-#[derive(Debug, Clone, Deserialize, utoipa::ToSchema)]
+#[derive(Debug, Clone, Deserialize, Validate, utoipa::ToSchema)]
 pub struct RegisterRequest {
     /// User email.
+    #[validate(email)]
+    #[schema(example = "user@example.com")]
     pub email: String,
-    /// User password.
+    /// User password (minimum 8 characters).
+    #[validate(length(min = 8, max = 128))]
+    #[schema(example = "SecureP@ssw0rd!")]
     pub password: String,
     /// User full name.
+    #[validate(length(min = 2, max = 255))]
+    #[schema(example = "John Doe")]
     pub full_name: String,
 }
 
@@ -169,13 +217,17 @@ pub struct LogoutRequest {
 #[derive(Debug, Clone, Deserialize, utoipa::ToSchema)]
 pub struct CreateOrganizationRequest {
     /// Organization name.
+    #[schema(example = "Acme Corporation")]
     pub name: String,
     /// Organization slug (URL-friendly).
+    #[schema(example = "acme-corp")]
     pub slug: String,
     /// Base currency (ISO 4217 code).
+    #[schema(example = "USD")]
     pub base_currency: String,
     /// Timezone (IANA format).
     #[serde(default = "default_timezone")]
+    #[schema(default = "UTC", example = "America/New_York")]
     pub timezone: String,
 }
 
@@ -198,10 +250,13 @@ pub struct AddUserRequest {
 #[derive(Debug, Clone, Deserialize, utoipa::ToSchema)]
 pub struct UpdateOrganizationRequest {
     /// Organization name (optional).
+    #[schema(nullable = true)]
     pub name: Option<String>,
     /// Base currency (optional, ISO 4217 code).
+    #[schema(nullable = true)]
     pub base_currency: Option<String>,
     /// Timezone (optional, IANA format).
+    #[schema(nullable = true)]
     pub timezone: Option<String>,
 }
 
@@ -239,7 +294,9 @@ pub struct VerifyEmailResponse {
 #[derive(Debug, Clone, Deserialize, utoipa::ToSchema)]
 pub struct UpdateMemberRequest {
     /// New role (optional).
+    #[schema(nullable = true)]
     pub role: Option<String>,
-    /// New approval limit (optional, null to clear).
-    pub approval_limit: Option<Option<String>>,
+    /// New approval limit (optional, use null to clear).
+    #[schema(nullable = true)]
+    pub approval_limit: Option<OptionalUpdate<String>>,
 }
