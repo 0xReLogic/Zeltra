@@ -46,7 +46,7 @@ export const CreateApprovalRuleDialog = forwardRef<HTMLButtonElement, CreateAppr
     }
 
     return (
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={setOpen} modal={true}>
         <DialogTrigger asChild>
           {children || (
             <Button ref={ref}>
@@ -55,7 +55,21 @@ export const CreateApprovalRuleDialog = forwardRef<HTMLButtonElement, CreateAppr
             </Button>
           )}
         </DialogTrigger>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent 
+          className="max-w-2xl max-h-[90vh] overflow-y-auto"
+          onInteractOutside={(e) => {
+            // Prevent closing when clicking outside during form submission
+            if (createMutation.isPending) {
+              e.preventDefault()
+            }
+          }}
+          onEscapeKeyDown={(e) => {
+            // Prevent closing with ESC during form submission
+            if (createMutation.isPending) {
+              e.preventDefault()
+            }
+          }}
+        >
           <DialogHeader>
             <DialogTitle>Create Approval Rule</DialogTitle>
             <DialogDescription>

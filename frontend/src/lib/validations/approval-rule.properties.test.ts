@@ -153,6 +153,46 @@ describe('Approval Rule Zod Schema Properties', () => {
     )
   })
 
+  it('Property 4: Transaction Type Completeness', () => {
+    // All 12 valid transaction types should be accepted
+    const allTypes = [...TRANSACTION_TYPES]
+    
+    fc.assert(
+      fc.property(
+        fc.subarray(allTypes, { minLength: 1, maxLength: 10 }),
+        (types) => {
+          const input = {
+            name: 'Valid Name',
+            transaction_types: types,
+            required_role: 'approver',
+            priority: 1,
+            is_active: true
+          }
+          const result = approvalRuleSchema.safeParse(input)
+          expect(result.success).toBe(true)
+        }
+      )
+    )
+
+    // Invalid transaction types should be rejected
+    fc.assert(
+      fc.property(
+        fc.string().filter(s => !(TRANSACTION_TYPES as readonly string[]).includes(s)),
+        (invalidType) => {
+          const input = {
+            name: 'Valid Name',
+            transaction_types: [invalidType],
+            required_role: 'approver',
+            priority: 1,
+            is_active: true
+          }
+          const result = approvalRuleSchema.safeParse(input)
+          expect(result.success).toBe(false)
+        }
+      )
+    )
+  })
+
   it('Property 6: Enum Validation', () => {
       // Invalid Roles
       fc.assert(

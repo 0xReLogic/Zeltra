@@ -423,8 +423,8 @@ This plan implements the complete Approval Rules management feature across OpenA
     - _Requirements: 2.2.2, 2.7.2_
     - _Property: Property 9 (Database Index Usage)_
 
-- [ ] 9. E2E Testing with Playwright MCP
-  - [ ] 9.1 Test create approval rule flow
+- [x] 9. E2E Testing with Playwright MCP
+  - [x] 9.1 Test create approval rule flow
     - Login with corp@zeltra.io / qwertyui
     - Navigate to /dashboard/settings/approval-rules
     - Click "Create Rule" button
@@ -435,7 +435,7 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Document any UI/UX issues found
     - _Requirements: 2.5.1_
     - _Property: None_
-  - [ ] 9.2 Test edit approval rule flow
+  - [x] 9.2 Test edit approval rule flow
     - Navigate to approval rules page
     - Click edit button on existing rule
     - Modify form fields
@@ -445,7 +445,7 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Document any UI/UX issues found
     - _Requirements: 2.5.1_
     - _Property: None_
-  - [ ] 9.3 Test delete approval rule flow
+  - [x] 9.3 Test delete approval rule flow
     - Navigate to approval rules page
     - Click delete button on existing rule
     - Confirm deletion in dialog
@@ -454,7 +454,7 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Document any UI/UX issues found
     - _Requirements: 2.5.1_
     - _Property: None_
-  - [ ] 9.4 Test toggle active status
+  - [x] 9.4 Test toggle active status
     - Navigate to approval rules page
     - Click toggle switch on existing rule
     - Verify optimistic update (instant feedback)
@@ -463,7 +463,7 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Document any UI/UX issues found
     - _Requirements: 2.5.1_
     - _Property: Property 8 (Optimistic Update Rollback)_
-  - [ ] 9.5 Test filter by status
+  - [x] 9.5 Test filter by status
     - Navigate to approval rules page
     - Select "Active" filter
     - Verify only active rules displayed
@@ -474,7 +474,7 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Document any UI/UX issues found
     - _Requirements: 2.5.1_
     - _Property: None_
-  - [ ] 9.6 Test sort by priority
+  - [x] 9.6 Test sort by priority
     - Navigate to approval rules page
     - Click priority column header
     - Verify rules sorted ascending
@@ -483,7 +483,7 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Document any UI/UX issues found
     - _Requirements: 2.5.1_
     - _Property: None_
-  - [ ] 9.7 Test pagination navigation
+  - [x] 9.7 Test pagination navigation
     - Navigate to approval rules page (with >20 rules)
     - Verify pagination controls displayed
     - Click "Next" button
@@ -494,7 +494,7 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Document any UI/UX issues found
     - _Requirements: 2.5.1_
     - _Property: Property 1 (Pagination Consistency)_
-  - [ ] 9.8 Test form validation errors
+  - [x] 9.8 Test form validation errors
     - Navigate to approval rules page
     - Click "Create Rule" button
     - Submit empty form
@@ -504,7 +504,7 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Document any UI/UX issues found
     - _Requirements: 2.5.1_
     - _Property: Property 2, 3, 5, 6 (Validation Properties)_
-  - [ ] 9.9 Test empty state
+  - [x] 9.9 Test empty state
     - Create test organization with no approval rules
     - Navigate to approval rules page
     - Verify empty state displayed with icon and message
@@ -513,7 +513,7 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Document any UI/UX issues found
     - _Requirements: 2.5.1_
     - _Property: None_
-  - [ ] 9.10 Test accessibility with keyboard
+  - [x] 9.10 Test accessibility with keyboard
     - Navigate to approval rules page
     - Tab through all interactive elements
     - Verify focus indicators visible
@@ -525,15 +525,15 @@ This plan implements the complete Approval Rules management feature across OpenA
     - _Requirements: 2.5.1, 2.6.1, 2.6.2, 2.6.3_
     - _Property: None_
 
-- [ ] 10. Bug Documentation & Final Verification
-  - [ ] 10.1 Search Cognio for similar bugs
+- [x] 10. Bug Documentation & Final Verification
+  - [x] 10.1 Search Cognio for similar bugs
     - Search Cognio project `zeltra-bug` for approval rules issues
     - Search for pagination bugs
     - Search for validation bugs
     - Check if any bugs already documented
     - _Requirements: All_
     - _Property: None_
-  - [ ] 10.2 Document all bugs found to Cognio
+  - [x] 10.2 Document all bugs found to Cognio
     - For each bug found during implementation and E2E testing:
       - Document with clear title and description
       - Include reproduction steps
@@ -543,7 +543,7 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Save all new bugs to Cognio project `zeltra-bug`
     - _Requirements: All_
     - _Property: None_
-  - [ ] 10.3 Final checkpoint - Verify all changes work together
+  - [x] 10.3 Final checkpoint - Verify all changes work together
     - Verify OpenAPI spec is valid
     - Verify backend generates correct spec
     - Verify frontend types are correct
@@ -555,7 +555,7 @@ This plan implements the complete Approval Rules management feature across OpenA
     - Run full test suite (unit + integration + property + E2E)
     - _Requirements: All_
     - _Property: All Properties_
-  - [ ] 10.4 Create summary report
+  - [x] 10.4 Create summary report
     - Document all changes made (80 issues resolved)
     - List all bugs found and fixed
     - List all bugs documented in Cognio

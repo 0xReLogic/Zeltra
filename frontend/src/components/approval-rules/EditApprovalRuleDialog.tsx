@@ -65,7 +65,7 @@ export function EditApprovalRuleDialog({ rule, children }: EditApprovalRuleDialo
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={setOpen} modal={true}>
       <DialogTrigger asChild>
         {children || (
           <Button variant="ghost" size="sm">
@@ -73,7 +73,21 @@ export function EditApprovalRuleDialog({ rule, children }: EditApprovalRuleDialo
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent 
+        className="max-w-2xl max-h-[90vh] overflow-y-auto"
+        onInteractOutside={(e) => {
+          // Prevent closing when clicking outside during form submission
+          if (updateMutation.isPending) {
+            e.preventDefault()
+          }
+        }}
+        onEscapeKeyDown={(e) => {
+          // Prevent closing with ESC during form submission
+          if (updateMutation.isPending) {
+            e.preventDefault()
+          }
+        }}
+      >
         <DialogHeader>
           <DialogTitle>Edit Approval Rule</DialogTitle>
           <DialogDescription>
