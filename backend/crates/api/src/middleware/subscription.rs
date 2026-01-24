@@ -3,11 +3,11 @@
 //! Blocks requests from organizations with expired/cancelled subscriptions.
 
 use axum::{
+    Json,
     extract::{Request, State},
     http::StatusCode,
     middleware::Next,
     response::{IntoResponse, Response},
-    Json,
 };
 use sea_orm::EntityTrait;
 use serde_json::json;

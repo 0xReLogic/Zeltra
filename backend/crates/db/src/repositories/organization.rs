@@ -3,7 +3,7 @@
 use rust_decimal::Decimal;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, DbErr, EntityTrait, PaginatorTrait,
-    QueryFilter, Set, TransactionTrait,
+    QueryFilter, QueryOrder, Set, TransactionTrait,
 };
 use serde_json::json;
 use uuid::Uuid;
@@ -130,9 +130,11 @@ impl OrganizationRepository {
         let org_id = Uuid::new_v4();
 
         // Check if user has existing organizations to inherit trial period
+        // CRITICAL: Order by created_at to get the FIRST (oldest) organization
         let existing_org = organization_users::Entity::find()
             .filter(organization_users::Column::UserId.eq(owner_id))
             .find_also_related(organizations::Entity)
+            .order_by_asc(organization_users::Column::CreatedAt)
             .one(&txn)
             .await?
             .and_then(|(_, org)| org);

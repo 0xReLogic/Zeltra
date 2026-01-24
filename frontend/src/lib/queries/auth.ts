@@ -123,6 +123,7 @@ export function useRefresh() {
 
 export function useSwitchOrganization() {
   const setAuth = useAuthStore((state) => state.setAuth)
+  const setOrg = useAuthStore((state) => state.setOrg)
   const user = useAuthStore((state) => state.user)
   const router = useRouter()
 
@@ -144,6 +145,8 @@ export function useSwitchOrganization() {
           )
         }
         setAuth(updatedUser, data.access_token, data.refresh_token, data.expires_in)
+        // CRITICAL: Update currentOrgId to the new organization
+        setOrg(data.organization.id)
       }
       toast.success(`Switched to ${data.organization.name}`)
       // Reload to refresh all data with new organization context

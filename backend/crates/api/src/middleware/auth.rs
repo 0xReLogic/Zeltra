@@ -46,7 +46,10 @@ pub async fn auth_middleware(
     match state.jwt_service.validate_token(token) {
         Ok(claims) => {
             // Store claims in request extensions
+            let org_id = claims.organization_id();
             request.extensions_mut().insert(claims);
+            // CRITICAL: Also insert org_id as Uuid for subscription middleware
+            request.extensions_mut().insert(org_id);
             next.run(request).await
         }
         Err(e) => {

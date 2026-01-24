@@ -1,6 +1,6 @@
 'use client'
 
-import { Crown, Sparkles, Check, AlertCircle } from 'lucide-react'
+import { Crown, AlertCircle } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -27,6 +27,7 @@ export function UpgradeModal() {
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent
         className={`sm:max-w-md ${blocking ? 'border-red-200 dark:border-red-900' : ''}`}
+        showCloseButton={dismissible}
         // Prevent closing on escape or backdrop click if not dismissible
         onEscapeKeyDown={(e) => !dismissible && e.preventDefault()}
         onPointerDownOutside={(e) => !dismissible && e.preventDefault()}
@@ -56,45 +57,15 @@ export function UpgradeModal() {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
-          <div className="grid gap-2">
-            <div className="flex items-center gap-2">
-              <div className="h-5 w-5 rounded-full bg-green-100 flex items-center justify-center shrink-0 dark:bg-green-900/30">
-                <Check className="h-3 w-3 text-green-600 dark:text-green-500" />
-              </div>
-              <span className="text-sm">Unlimited Transactions</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="h-5 w-5 rounded-full bg-green-100 flex items-center justify-center shrink-0 dark:bg-green-900/30">
-                <Check className="h-3 w-3 text-green-600 dark:text-green-500" />
-              </div>
-              <span className="text-sm">Unlimited Users</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="h-5 w-5 rounded-full bg-green-100 flex items-center justify-center shrink-0 dark:bg-green-900/30">
-                <Check className="h-3 w-3 text-green-600 dark:text-green-500" />
-              </div>
-              <span className="text-sm">Advanced AI Analysis</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="h-5 w-5 rounded-full bg-green-100 flex items-center justify-center shrink-0 dark:bg-green-900/30">
-                <Check className="h-3 w-3 text-green-600 dark:text-green-500" />
-              </div>
-              <span className="text-sm">Priority Support</span>
-            </div>
-          </div>
-        </div>
-
-        <DialogFooter className="flex-col !space-x-0 !space-y-2 sm:!space-y-2">
+        <DialogFooter className="flex flex-col gap-2 sm:flex-col">
           <Button
             className={`w-full text-white border-0 ${
               blocking
-                ? 'bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600'
+                ? 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600'
                 : 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600'
             }`}
             size="lg"
           >
-            <Sparkles className="mr-2 h-4 w-4" />
             {blocking ? 'Upgrade to Continue' : 'Upgrade Now'}
           </Button>
           {dismissible && (
@@ -103,7 +74,7 @@ export function UpgradeModal() {
             </Button>
           )}
           {blocking && (
-            <p className="text-xs text-center text-muted-foreground mt-2">
+            <p className="text-xs text-center text-muted-foreground w-full">
               You must upgrade to continue using Zeltra
             </p>
           )}
