@@ -232,8 +232,9 @@ export async function apiClient<T>(
     // Handle error responses
     if (!res.ok) {
       const errorBody = await res.json().catch(() => ({}))
-      const message = errorBody.error?.message || `API Error: ${res.status} ${res.statusText}`
-      const code = errorBody.error?.code
+      // Backend can return either { error: "code", message: "..." } or { error: { message: "..." } }
+      const message = errorBody.message || errorBody.error?.message || `API Error: ${res.status} ${res.statusText}`
+      const code = errorBody.error || errorBody.error?.code
       const details = errorBody.error?.details
       
       // Show toast notification based on status code
