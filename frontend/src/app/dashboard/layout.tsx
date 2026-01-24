@@ -6,6 +6,7 @@ import { Sidebar } from '@/components/layout/Sidebar'
 import { Header } from '@/components/layout/Header'
 import { UpgradeModal } from '@/components/modals/UpgradeModal'
 import { useAuthStore } from '@/lib/stores/authStore'
+import { useProactiveRefresh } from '@/lib/hooks/useProactiveRefresh'
 import { Loader2 } from 'lucide-react'
 
 /**
@@ -101,10 +102,9 @@ export default function DashboardLayout({
   // This prevents reading stale null values before localStorage is loaded
   const accessToken = useAuthStore((state) => state.accessToken)
   const user = useAuthStore((state) => state.user)
-  const tokenExpiresAt = useAuthStore((state) => state.tokenExpiresAt)
-  const refreshToken = useAuthStore((state) => state.refreshToken)
-  const setTokens = useAuthStore((state) => state.setTokens)
-  const logout = useAuthStore((state) => state.logout)
+  
+  // Use proactive refresh hook to automatically refresh tokens before expiry
+  useProactiveRefresh()
 
   useEffect(() => {
     // Only check auth after hydration is complete
@@ -125,69 +125,6 @@ export default function DashboardLayout({
 
     return () => clearTimeout(timeoutId)
   }, [isHydrated, accessToken, user, router])
-
-  // Proactive token refresh - refresh 2 minutes before expiry
-  useEffect(() => {
-    if (!isHydrated || !accessToken || !refreshToken || !tokenExpiresAt) {
-      console.log('⏸️ Proactive refresh skipped:', { isHydrated, hasAccessToken: !!accessToken, hasRefreshToken: !!refreshToken, hasExpiresAt: !!tokenExpiresAt })
-      return
-    }
-
-    console.log('🔧 Proactive refresh effect mounted')
-
-    const checkAndRefresh = async () => {
-      const now = Date.now()
-      const timeUntilExpiry = tokenExpiresAt - now
-      const twoMinutes = 2 * 60 * 1000
-      const timeUntilExpiryMinutes = Math.floor(timeUntilExpiry / 60000)
-
-      console.log(`⏰ Token check: expires in ${timeUntilExpiryMinutes} minutes (${timeUntilExpiry}ms)`)
-
-      // If token expires in less than 2 minutes, refresh it
-      if (timeUntilExpiry < twoMinutes && timeUntilExpiry > 0) {
-        console.log('🔄 Token expiring soon, refreshing proactively...')
-        try {
-          const baseUrl = process.env.NEXT_PUBLIC_API_URL || '/api/v1'
-          const res = await fetch(`${baseUrl}/auth/refresh`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ refresh_token: refreshToken }),
-          })
-
-          if (res.ok) {
-            const data = await res.json()
-            setTokens(data.access_token, refreshToken, data.expires_in)
-            console.log('✅ Token refreshed proactively, new expiry:', data.expires_in, 'seconds')
-          } else {
-            const errorBody = await res.json().catch(() => ({}))
-            console.error('❌ Proactive refresh failed:', res.status, errorBody)
-            console.log('🚪 LOGOUT TRIGGERED: Proactive refresh failed in dashboard layout')
-            // Refresh failed, logout user
-            logout()
-            router.replace('/login')
-          }
-        } catch (error) {
-          console.error('❌ Proactive refresh error:', error)
-          console.log('🚪 LOGOUT TRIGGERED: Proactive refresh exception in dashboard layout')
-          logout()
-          router.replace('/login')
-        }
-      } else if (timeUntilExpiry <= 0) {
-        console.log('⚠️ Token already expired!')
-      }
-    }
-
-    // Check immediately
-    checkAndRefresh()
-
-    // Then check every minute
-    const interval = setInterval(checkAndRefresh, 60 * 1000)
-
-    return () => {
-      console.log('🔧 Proactive refresh effect unmounted')
-      clearInterval(interval)
-    }
-  }, [isHydrated, accessToken, refreshToken, tokenExpiresAt, setTokens, logout, router])
 
   // Show loading while waiting for hydration
   if (!isHydrated) {

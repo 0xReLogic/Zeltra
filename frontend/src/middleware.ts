@@ -1,47 +1,51 @@
 import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
 
-// Routes that require authentication
-const protectedRoutes = ['/dashboard']
-
-// Routes that are only for public (redirect to dashboard if logged in)
-const authRoutes = ['/login', '/register']
-
-export function middleware(request: NextRequest) {
-  // We can't access localStorage in middleware, but typically auth state
-  // would be in cookies. For this implementation (Zustand persist to localStorage),
-  // middleware checking is limited. 
-  // Ideally we would sync token to cookie.
+/**
+ * Next.js Middleware for route protection.
+ * 
+ * IMPORTANT LIMITATION: This middleware cannot access localStorage where our auth tokens are stored.
+ * Zustand persist uses localStorage by default, which is only available in the browser (client-side).
+ * Middleware runs on the server/edge, so it cannot read localStorage.
+ * 
+ * CURRENT IMPLEMENTATION:
+ * - We rely on client-side protection in layout components (dashboard/layout.tsx)
+ * - The dashboard layout checks auth state after hydration and redirects if needed
+ * - This provides adequate protection for our use case
+ * 
+ * ALTERNATIVE APPROACHES (if needed in future):
+ * 1. Sync auth tokens to httpOnly cookies (most secure)
+ *    - Middleware can read cookies
+ *    - Protects against XSS attacks
+ *    - Requires backend to set cookies on login
+ * 
+ * 2. Use Zustand persist with cookie storage instead of localStorage
+ *    - Middleware can read cookies
+ *    - Less secure than httpOnly cookies (accessible via JS)
+ *    - Simpler to implement than option 1
+ * 
+ * 3. Keep current approach (client-side only protection)
+ *    - Simplest implementation
+ *    - Adequate for most use cases
+ *    - User might briefly see protected content before redirect
+ * 
+ * For now, we use approach #3 with client-side protection.
+ */
+export function middleware() {
+  // For now, we pass through all requests and rely on client-side protection
+  // If we implement cookie-based auth in future, we can add checks here
   
-  // NOTE: In a real app with localStorage auth, middleware can't fully protect routes.
-  // We should rely on Client Component protection (HOC or hook) or sync to cookies.
-  // For this phase, we'll keep it simple and rely on client-side redirection
-  // or simple cookie check if available.
+  // Example of how to use these in future:
+  // const protectedRoutes = ['/dashboard']
+  // const authRoutes = ['/login', '/register']
+  // const { pathname } = request.nextUrl
+  // const authCookie = request.cookies.get('auth-storage')?.value
+  // if (authCookie && authRoutes.some(route => pathname.startsWith(route))) {
+  //   return NextResponse.redirect(new URL('/dashboard', request.url))
+  // }
+  // if (!authCookie && protectedRoutes.some(route => pathname.startsWith(route))) {
+  //   return NextResponse.redirect(new URL('/login', request.url))
+  // }
   
-  const token = request.cookies.get('auth-storage')?.value // accessing zustand persist cookie if available, or just a placeholder
-  
-  // For this mock implementation, we'll rely on client-side mostly, 
-  // but let's allow the middleware to pass for now.
-  // Real implementation would verify JWT here.
-  
-  const { pathname } = request.nextUrl
-
-  // Simple check: if trying to access dashboard and we know for sure they aren't logged in (no storage cookie)
-  // Note: Zustand's default persist uses localStorage, not cookies. 
-  // So middleware can't strictly enforce this without cookie syncing.
-  // We will leave this open for now and rely on Client Components.
-  
-  // To satisfy linter about unused variables:
-  if (token && authRoutes.some(route => pathname.startsWith(route))) {
-     // If we had a token in cookie, we'd redirect to dashboard
-     // return NextResponse.redirect(new URL('/dashboard', request.url))
-  }
-
-  if (!token && protectedRoutes.some(route => pathname.startsWith(route))) {
-     // If no token in cookie, redirect to login
-     // return NextResponse.redirect(new URL('/login', request.url))
-  }
-
   return NextResponse.next()
 }
 

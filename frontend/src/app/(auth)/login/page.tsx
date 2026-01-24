@@ -16,6 +16,9 @@ import {
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { useLogin } from '@/lib/queries/auth'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useAuthStore } from '@/lib/stores/authStore'
+import { useEffect } from 'react'
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -37,10 +40,20 @@ import { useState } from 'react'
 import { useResendVerification } from '@/lib/queries/auth'
 
 export default function LoginPage() {
+  const router = useRouter()
+  const user = useAuthStore((state) => state.user)
+  const accessToken = useAuthStore((state) => state.accessToken)
   const { mutate: login, isPending } = useLogin()
   const resendVerification = useResendVerification()
   const [resendEmail, setResendEmail] = useState('')
   const [open, setOpen] = useState(false)
+
+  // Redirect to dashboard if already logged in
+  useEffect(() => {
+    if (user && accessToken) {
+      router.push('/dashboard')
+    }
+  }, [user, accessToken, router])
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),

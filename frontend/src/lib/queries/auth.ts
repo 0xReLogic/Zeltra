@@ -27,9 +27,7 @@ export function useLogin() {
         router.push('/dashboard')
       }
     },
-    onError: (error) => {
-      toast.error(error.message || 'Failed to login')
-    },
+    // Error handling is done by apiClient - no duplicate toast needed
   })
 }
 
@@ -46,9 +44,7 @@ export function useRegister() {
       toast.success(data.message || 'Registration successful! Please check your email to verify your account.')
       router.push('/login')
     },
-    onError: (error) => {
-      toast.error(error.message || 'Failed to register')
-    },
+    // Error handling is done by apiClient - no duplicate toast needed
   })
 }
 
@@ -85,9 +81,7 @@ export function useVerifyEmail() {
     onSuccess: (data) => {
       toast.success(data.message || 'Email verified successfully')
     },
-    onError: (error) => {
-      toast.error(error.message || 'Verification failed')
-    },
+    // Error handling is done by apiClient - no duplicate toast needed
   })
 }
 
@@ -101,8 +95,28 @@ export function useResendVerification() {
     onSuccess: (data) => {
       toast.success(data.message || 'Verification email sent')
     },
-    onError: (error) => {
-      toast.error(error.message || 'Failed to resend verification email')
+    // Error handling is done by apiClient - no duplicate toast needed
+  })
+}
+
+interface RefreshResponse {
+  access_token: string
+  refresh_token: string
+  expires_in: number
+}
+
+export function useRefresh() {
+  const setTokens = useAuthStore((state) => state.setTokens)
+  const refreshToken = useAuthStore((state) => state.refreshToken)
+  
+  return useMutation({
+    mutationFn: () => 
+      apiClient<RefreshResponse>('/auth/refresh', {
+        method: 'POST',
+        body: JSON.stringify({ refresh_token: refreshToken || '' }),
+      }),
+    onSuccess: (data) => {
+      setTokens(data.access_token, data.refresh_token, data.expires_in)
     },
   })
 }

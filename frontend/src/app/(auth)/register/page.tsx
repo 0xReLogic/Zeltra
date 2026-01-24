@@ -16,17 +16,35 @@ import {
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { useRegister } from '@/lib/queries/auth'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useAuthStore } from '@/lib/stores/authStore'
+import { useEffect } from 'react'
 
 const registerSchema = z.object({
   full_name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Invalid email address'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
+  password: z.string()
+    .min(8, 'Password must be at least 8 characters')
+    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+    .regex(/[0-9]/, 'Password must contain at least one number')
+    .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character'),
 })
 
 type RegisterFormValues = z.infer<typeof registerSchema>
 
 export default function RegisterPage() {
+  const router = useRouter()
+  const user = useAuthStore((state) => state.user)
+  const accessToken = useAuthStore((state) => state.accessToken)
   const { mutate: register, isPending } = useRegister()
+
+  // Redirect to dashboard if already logged in
+  useEffect(() => {
+    if (user && accessToken) {
+      router.push('/dashboard')
+    }
+  }, [user, accessToken, router])
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
