@@ -1,0 +1,26 @@
+paths:
+  /auth/switch-organization:
+    post:
+      operationId: switch_organization
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SwitchOrganizationRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SwitchOrganizationResponse'
+          description: Organization switched successfully
+        '403':
+          description: User is not a member of the target organization
+        '404':
+          description: Organization not found
+      security:
+      - bearer: []
+      summary: POST /auth/switch-organization - Switch to a different organization.
+      tags:
+      - Auth

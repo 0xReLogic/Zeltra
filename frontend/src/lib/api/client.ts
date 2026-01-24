@@ -248,7 +248,16 @@ export async function apiClient<T>(
           throw new UnauthorizedError(message)
         case 402:
           // Payment Required - Trigger Upgrade Modal
-          useUpgradeStore.getState().openModal(message)
+          // Check if this is subscription expired (blocking) or tier limit (dismissible)
+          const isSubscriptionExpired =
+            errorBody.error === 'subscription_expired' ||
+            errorBody.error === 'subscription_cancelled' ||
+            errorBody.error === 'payment_past_due'
+
+          useUpgradeStore.getState().openModal(message, {
+            dismissible: !isSubscriptionExpired,
+            blocking: isSubscriptionExpired,
+          })
           // We don't throw an error that triggers a toast here, as the modal is the UI feedback
           // But we throw to stop execution flow
           throw new ApiError(message, 402, 'PAYMENT_REQUIRED')

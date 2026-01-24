@@ -36,6 +36,7 @@ use utoipa_swagger_ui::SwaggerUi;
         auth::logout,
         auth::verify_email,
         auth::resend_verification,
+        auth::switch_organization,
         organizations::create_organization,
         organizations::get_organization,
         organizations::update_organization,
@@ -125,6 +126,7 @@ use utoipa_swagger_ui::SwaggerUi;
             zeltra_shared::auth::LogoutRequest,
             zeltra_shared::auth::VerifyEmailRequest, zeltra_shared::auth::VerifyEmailResponse,
             zeltra_shared::auth::ResendVerificationRequest, zeltra_shared::auth::ResendVerificationResponse,
+            zeltra_shared::auth::SwitchOrganizationRequest, zeltra_shared::auth::SwitchOrganizationResponse,
             zeltra_shared::auth::UserInfo, zeltra_shared::auth::UserOrganization,
             organizations::OrganizationResponse,
             organizations::OrgUserResponse,
@@ -299,6 +301,10 @@ pub fn api_routes_with_state(state: AppState) -> Router<AppState> {
         .merge(attachments::routes())
         .merge(sentinel::routes())
         .merge(forensic::routes())
+        .layer(middleware::from_fn_with_state(
+            state.clone(),
+            crate::middleware::check_subscription_status,
+        ))
         .layer(middleware::from_fn_with_state(
             state.clone(),
             auth_middleware,

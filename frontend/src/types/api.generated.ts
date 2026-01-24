@@ -89,6 +89,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/switch-organization": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** POST /auth/switch-organization - Switch to a different organization. */
+        post: operations["switch_organization"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/verify-email": {
         parameters: {
             query?: never;
@@ -3416,6 +3433,29 @@ export interface components {
              */
             simulation_id: string;
         };
+        /** @description Switch organization request. */
+        SwitchOrganizationRequest: {
+            /**
+             * Format: uuid
+             * @description Target organization ID to switch to.
+             * @example 550e8400-e29b-41d4-a716-446655440000
+             */
+            organization_id: string;
+        };
+        /** @description Switch organization response. */
+        SwitchOrganizationResponse: {
+            /** @description New access token with updated organization context. */
+            access_token: string;
+            /**
+             * Format: int64
+             * @description Token expiration in seconds.
+             */
+            expires_in: number;
+            /** @description Updated organization info. */
+            organization: components["schemas"]["UserOrganization"];
+            /** @description New refresh token. */
+            refresh_token: string;
+        };
         /** @description Subscription tier limits and feature flags. */
         TierLimitsResponse: {
             /** @description Whether audit data export is enabled. */
@@ -3883,6 +3923,44 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ResendVerificationResponse"];
                 };
+            };
+        };
+    };
+    switch_organization: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SwitchOrganizationRequest"];
+            };
+        };
+        responses: {
+            /** @description Organization switched successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SwitchOrganizationResponse"];
+                };
+            };
+            /** @description User is not a member of the target organization */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Organization not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

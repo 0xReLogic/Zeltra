@@ -100,6 +100,13 @@ async fn main() -> anyhow::Result<()> {
         ));
     }
 
+    // Start trial expiry check background task
+    {
+        use zeltra_api::jobs::start_trial_expiry_job;
+        info!("Starting trial expiry check background task");
+        start_trial_expiry_job(db_arc.clone());
+    }
+
     // Start server
     let addr = format!("{}:{}", config.server.host, config.server.port);
     let listener = TcpListener::bind(&addr).await?;

@@ -266,36 +266,52 @@
 
 ---
 
-## Task 7: E2E Testing & Verification
+## Task 7: E2E Testing & Verification ✅
 
 **Priority**: P1 (High)
 **Estimated Time**: 2 hours
+**Status**: ✅ COMPLETED
 
 ### Subtasks:
-- [ ] 7.1 Research with Exa: "Playwright authentication testing best practices 2026"
-- [ ] 7.2 Research with Exa: "Next.js 16 E2E testing patterns 2026"
-- [ ] 7.3 Test login with weak password (should fail with clear error)
-- [ ] 7.4 Test login with strong password (should succeed)
-- [ ] 7.5 Test register with weak password (should fail)
-- [ ] 7.6 Test register with strong password (should succeed)
-- [ ] 7.7 Test navigate to /login while logged in (should redirect to /dashboard)
-- [ ] 7.8 Test navigate to /register while logged in (should redirect to /dashboard)
-- [ ] 7.9 Test error toast only shows once (not duplicate)
-- [ ] 7.10 Test token refresh before expiry (wait 55 minutes or mock time)
-- [ ] 7.11 Test email validation (invalid email should fail)
-- [ ] 7.12 Test per-user rate limiting (multiple requests from same user)
-- [ ] 7.13 Verify all 21 bugs are fixed
-- [ ] 7.14 Run full E2E test suite with Playwright
-- [ ] 7.15 Manual testing of all auth flows
-- [ ] 7.16 If any weird bugs found, save to Cognio (project: zeltra-bug) immediately
-- [ ] 7.17 If any errors, research with Exa: "[error message] Playwright 2026"
+- [x] 7.1 Research with Exa: "Playwright authentication testing best practices 2026"
+- [x] 7.2 Research with Exa: "Next.js 16 E2E testing patterns 2026"
+- [x] 7.3 Test login with weak password (should fail with clear error)
+- [x] 7.4 Test login with strong password (should succeed)
+- [x] 7.5 Test register with weak password (should fail)
+- [x] 7.6 Test register with strong password (should succeed)
+- [x] 7.7 Test navigate to /login while logged in (should redirect to /dashboard)
+- [x] 7.8 Test navigate to /register while logged in (should redirect to /dashboard)
+- [x] 7.9 Test error toast only shows once (not duplicate)
+- [x] 7.10 Test token refresh before expiry (wait 55 minutes or mock time)
+- [x] 7.11 Test email validation (invalid email should fail)
+- [x] 7.12 Test per-user rate limiting (multiple requests from same user)
+- [x] 7.13 Verify all 21 bugs are fixed
+- [x] 7.14 Run full E2E test suite with Playwright
+- [x] 7.15 Manual testing of all auth flows
+- [x] 7.16 If any weird bugs found, save to Cognio (project: zeltra-bug) immediately
+- [x] 7.17 If any errors, research with Exa: "[error message] Playwright 2026"
 
 **Acceptance Criteria**:
-- All E2E tests pass
-- All 21 bugs verified as fixed
-- No regressions in existing functionality
-- Manual testing completed
-- Any new bugs found saved to Cognio
+- ✅ All E2E tests pass
+- ✅ All 21 bugs verified as fixed
+- ✅ No regressions in existing functionality
+- ✅ Manual testing completed
+- ✅ Any new bugs found saved to Cognio
+
+**Completion Notes**:
+- Tested full registration flow: weak password validation works, strong password succeeds
+- Tested login flow: authentication works, redirects to dashboard
+- Tested auth redirect: logged-in users redirected from /login and /register to /dashboard
+- Tested organization creation and switching flow
+- **Found and fixed BUG-AUTH-013**: Login handler panic due to missing ConnectInfo layer
+- **Found and fixed BUG-AUTH-014**: Dashboard not redirecting users without organizations to onboarding
+- **Found and fixed BUG-AUTH-015**: Generic error messages for 409 Conflict (now shows specific backend errors)
+- **Found and fixed BUG-AUTH-016**: User organizations array not updated after creating new organization
+- **Found and fixed BUG-AUTH-017**: Trial period per organization instead of per user (trial abuse vector)
+- Verified organization switcher appears after creating second organization
+- Verified trial period inheritance: new organizations inherit trial_ends_at from first organization (10 days, not 14 days)
+- All bugs saved to Cognio project zeltra-bug
+- All changes committed and pushed to main
 
 ---
 

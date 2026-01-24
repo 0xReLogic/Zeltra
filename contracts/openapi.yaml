@@ -3208,6 +3208,39 @@ components:
       - annual_summary
       - monthly_summary
       type: object
+    SwitchOrganizationRequest:
+      description: Switch organization request.
+      properties:
+        organization_id:
+          description: Target organization ID to switch to.
+          example: 550e8400-e29b-41d4-a716-446655440000
+          format: uuid
+          type: string
+      required:
+      - organization_id
+      type: object
+    SwitchOrganizationResponse:
+      description: Switch organization response.
+      properties:
+        access_token:
+          description: New access token with updated organization context.
+          type: string
+        expires_in:
+          description: Token expiration in seconds.
+          format: int64
+          type: integer
+        organization:
+          $ref: '#/components/schemas/UserOrganization'
+          description: Updated organization info.
+        refresh_token:
+          description: New refresh token.
+          type: string
+      required:
+      - access_token
+      - refresh_token
+      - expires_in
+      - organization
+      type: object
     TierLimitsResponse:
       description: Subscription tier limits and feature flags.
       properties:
@@ -3848,6 +3881,31 @@ paths:
                 $ref: '#/components/schemas/ResendVerificationResponse'
           description: Verification email sent if account exists
       summary: POST /auth/resend-verification - Resend verification email.
+      tags:
+      - Auth
+  /auth/switch-organization:
+    post:
+      operationId: switch_organization
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SwitchOrganizationRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SwitchOrganizationResponse'
+          description: Organization switched successfully
+        '403':
+          description: User is not a member of the target organization
+        '404':
+          description: Organization not found
+      security:
+      - bearer: []
+      summary: POST /auth/switch-organization - Switch to a different organization.
       tags:
       - Auth
   /auth/verify-email:

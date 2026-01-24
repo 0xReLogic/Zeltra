@@ -115,7 +115,13 @@ export function CreateOrganizationDialog({
   }
 
   function onSubmit(data: CreateOrgValues) {
-    createOrg.mutate(data, {
+    // Ensure timezone has a default value if not provided
+    const payload = {
+      ...data,
+      timezone: data.timezone || 'UTC',
+    }
+    
+    createOrg.mutate(payload, {
       onSuccess: (newOrg) => {
         toast.success(`Organization "${newOrg.name}" created successfully`)
         form.reset()
