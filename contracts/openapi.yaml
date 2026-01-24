@@ -303,14 +303,17 @@ components:
       properties:
         approval_limit:
           description: Approval limit (for approver role).
+          example: '10000.00'
           type:
           - string
           - 'null'
         email:
           description: User email to add.
+          example: newuser@example.com
           type: string
         role:
           description: Role to assign.
+          example: viewer
           type: string
       required:
       - email
@@ -1592,15 +1595,20 @@ components:
       properties:
         base_currency:
           description: Base currency (ISO 4217 code).
+          example: USD
           type: string
         name:
           description: Organization name.
+          example: Acme Corporation
           type: string
         slug:
           description: Organization slug (URL-friendly).
+          example: acme-corp
           type: string
         timezone:
+          default: UTC
           description: Timezone (IANA format).
+          example: America/New_York
           type: string
       required:
       - name
@@ -2373,7 +2381,7 @@ components:
           type: string
         password:
           description: User password.
-          example: password123
+          example: SecureP@ssw0rd!
           type: string
       required:
       - email
@@ -2466,6 +2474,19 @@ components:
       - expenses
       - net_income
       type: object
+    OptionalUpdate_String:
+      description: |-
+        Helper enum for handling nested Option updates.
+
+        This solves the problem of distinguishing between:
+        - Field not provided in request (None)
+        - Field explicitly set to null (Some(None))
+        - Field set to a value (Some(Some(value)))
+      oneOf:
+      - type: string
+      - default: null
+        description: Value is explicitly set to null.
+        type: 'null'
     OrgUserResponse:
       description: Organization user session response.
       properties:
@@ -2924,12 +2945,15 @@ components:
       properties:
         email:
           description: User email.
+          example: user@example.com
           type: string
         full_name:
           description: User full name.
+          example: John Doe
           type: string
         password:
-          description: User password.
+          description: User password (minimum 8 characters).
+          example: SecureP@ssw0rd!
           type: string
       required:
       - email
@@ -3562,10 +3586,10 @@ components:
       description: Update organization member request.
       properties:
         approval_limit:
-          description: New approval limit (optional, null to clear).
-          type:
-          - string
-          - 'null'
+          oneOf:
+          - type: 'null'
+          - $ref: '#/components/schemas/OptionalUpdate_String'
+            description: New approval limit (optional, use null to clear).
         role:
           description: New role (optional).
           type:
@@ -3577,16 +3601,19 @@ components:
       properties:
         base_currency:
           description: Base currency (optional, ISO 4217 code).
+          example: EUR
           type:
           - string
           - 'null'
         name:
           description: Organization name (optional).
+          example: Acme Corporation
           type:
           - string
           - 'null'
         timezone:
           description: Timezone (optional, IANA format).
+          example: Europe/London
           type:
           - string
           - 'null'

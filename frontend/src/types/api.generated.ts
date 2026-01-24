@@ -1359,11 +1359,20 @@ export interface components {
         };
         /** @description Add user to organization request. */
         AddUserRequest: {
-            /** @description Approval limit (for approver role). */
+            /**
+             * @description Approval limit (for approver role).
+             * @example 10000.00
+             */
             approval_limit?: string | null;
-            /** @description User email to add. */
+            /**
+             * @description User email to add.
+             * @example newuser@example.com
+             */
             email: string;
-            /** @description Role to assign. */
+            /**
+             * @description Role to assign.
+             * @example viewer
+             */
             role: string;
         };
         /** @description Details of the 5 Altman Z-Score factors. */
@@ -2299,14 +2308,27 @@ export interface components {
         };
         /** @description Create organization request. */
         CreateOrganizationRequest: {
-            /** @description Base currency (ISO 4217 code). */
+            /**
+             * @description Base currency (ISO 4217 code).
+             * @example USD
+             */
             base_currency: string;
-            /** @description Organization name. */
+            /**
+             * @description Organization name.
+             * @example Acme Corporation
+             */
             name: string;
-            /** @description Organization slug (URL-friendly). */
+            /**
+             * @description Organization slug (URL-friendly).
+             * @example acme-corp
+             */
             slug: string;
-            /** @description Timezone (IANA format). */
-            timezone?: string;
+            /**
+             * @description Timezone (IANA format).
+             * @default UTC
+             * @example America/New_York
+             */
+            timezone: string;
         };
         /** @description Request body for creating a transaction. */
         CreateTransactionRequest: {
@@ -2823,7 +2845,7 @@ export interface components {
             email: string;
             /**
              * @description User password.
-             * @example password123
+             * @example SecureP@ssw0rd!
              */
             password: string;
         };
@@ -2887,6 +2909,15 @@ export interface components {
             /** @description Total revenue. */
             revenue: string;
         };
+        /**
+         * @description Helper enum for handling nested Option updates.
+         *
+         *     This solves the problem of distinguishing between:
+         *     - Field not provided in request (None)
+         *     - Field explicitly set to null (Some(None))
+         *     - Field set to a value (Some(Some(value)))
+         */
+        OptionalUpdate_String: string | null;
         /** @description Organization user session response. */
         OrgUserResponse: {
             /** @description Individual approval limit. */
@@ -3206,11 +3237,20 @@ export interface components {
         };
         /** @description Registration request payload. */
         RegisterRequest: {
-            /** @description User email. */
+            /**
+             * @description User email.
+             * @example user@example.com
+             */
             email: string;
-            /** @description User full name. */
+            /**
+             * @description User full name.
+             * @example John Doe
+             */
             full_name: string;
-            /** @description User password. */
+            /**
+             * @description User password (minimum 8 characters).
+             * @example SecureP@ssw0rd!
+             */
             password: string;
         };
         /** @description Registration response payload. */
@@ -3600,18 +3640,26 @@ export interface components {
         };
         /** @description Update organization member request. */
         UpdateMemberRequest: {
-            /** @description New approval limit (optional, null to clear). */
-            approval_limit?: string | null;
+            approval_limit?: null | components["schemas"]["OptionalUpdate_String"];
             /** @description New role (optional). */
             role?: string | null;
         };
         /** @description Update organization request. */
         UpdateOrganizationRequest: {
-            /** @description Base currency (optional, ISO 4217 code). */
+            /**
+             * @description Base currency (optional, ISO 4217 code).
+             * @example EUR
+             */
             base_currency?: string | null;
-            /** @description Organization name (optional). */
+            /**
+             * @description Organization name (optional).
+             * @example Acme Corporation
+             */
             name?: string | null;
-            /** @description Timezone (optional, IANA format). */
+            /**
+             * @description Timezone (optional, IANA format).
+             * @example Europe/London
+             */
             timezone?: string | null;
         };
         /** @description Request body for updating period status. */

@@ -239,10 +239,13 @@ fn default_timezone() -> String {
 #[derive(Debug, Clone, Deserialize, utoipa::ToSchema)]
 pub struct AddUserRequest {
     /// User email to add.
+    #[schema(example = "newuser@example.com")]
     pub email: String,
     /// Role to assign.
+    #[schema(example = "viewer")]
     pub role: String,
     /// Approval limit (for approver role).
+    #[schema(example = "10000.00")]
     pub approval_limit: Option<String>,
 }
 
@@ -250,13 +253,13 @@ pub struct AddUserRequest {
 #[derive(Debug, Clone, Deserialize, utoipa::ToSchema)]
 pub struct UpdateOrganizationRequest {
     /// Organization name (optional).
-    #[schema(nullable = true)]
+    #[schema(nullable = true, example = "Acme Corporation")]
     pub name: Option<String>,
     /// Base currency (optional, ISO 4217 code).
-    #[schema(nullable = true)]
+    #[schema(nullable = true, example = "EUR")]
     pub base_currency: Option<String>,
     /// Timezone (optional, IANA format).
-    #[schema(nullable = true)]
+    #[schema(nullable = true, example = "Europe/London")]
     pub timezone: Option<String>,
 }
 
