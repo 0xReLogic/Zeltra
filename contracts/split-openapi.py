@@ -13,6 +13,7 @@ def fix_nullable_syntax(obj):
     """
     Recursively fix utoipa's OpenAPI 3.1 nullable syntax to OpenAPI 3.0 compatible.
     Converts: type: [string, 'null'] -> type: string, nullable: true
+    Converts: oneOf: [type: 'null', $ref] -> allOf: [$ref], nullable: true
     """
     if isinstance(obj, dict):
         # Check if this dict has a 'type' that's a list with 'null'
@@ -31,6 +32,30 @@ def fix_nullable_syntax(obj):
                 obj['nullable'] = True
                 del obj['type']
                 obj['oneOf'] = [{'type': t} for t in non_null_types]
+        
+        # NEW: Handle oneOf with type: 'null' and $ref
+        if 'oneOf' in obj and isinstance(obj['oneOf'], list):
+            has_null_type = any(
+                isinstance(item, dict) and item.get('type') == 'null' 
+                for item in obj['oneOf']
+            )
+            if has_null_type:
+                # Filter out null type items
+                non_null_items = [
+                    item for item in obj['oneOf'] 
+                    if not (isinstance(item, dict) and item.get('type') == 'null')
+                ]
+                
+                if len(non_null_items) == 1:
+                    # Single non-null item: use allOf + nullable
+                    single_item = non_null_items[0]
+                    del obj['oneOf']
+                    obj['allOf'] = [single_item]
+                    obj['nullable'] = True
+                elif len(non_null_items) > 1:
+                    # Multiple non-null items: keep oneOf + nullable
+                    obj['oneOf'] = non_null_items
+                    obj['nullable'] = True
         
         # Recursively process all values
         for key, value in obj.items():

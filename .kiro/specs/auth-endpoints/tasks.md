@@ -132,29 +132,39 @@
 
 ---
 
-## Task 4: OpenAPI - Fix Nullable Syntax
+## Task 4: OpenAPI - Fix Nullable Syntax ✅
 
 **Priority**: P1 (High)
 **Estimated Time**: 1 hour
+**Status**: ✅ COMPLETED
 
 ### Subtasks:
-- [ ] 4.1 Research with Exa: "OpenAPI 3.0 nullable oneOf pattern best practices 2026"
-- [ ] 4.2 Research with Exa: "Python YAML manipulation patterns 2026"
-- [ ] 4.3 Update `contracts/split-openapi.py` - Add oneOf pattern handling to fix_nullable_syntax()
-- [ ] 4.4 Handle `oneOf: [type: 'null', $ref]` pattern
-- [ ] 4.5 Convert to `allOf` with `nullable: true`
-- [ ] 4.6 Run Python script: `python contracts/split-openapi.py`
-- [ ] 4.7 Verify `OrganizationResponse.limits` uses correct syntax
-- [ ] 4.8 Verify `DashboardMetricsResponse.period` uses correct syntax
-- [ ] 4.9 Check all split YAML files for oneOf patterns
-- [ ] 4.10 Commit regenerated OpenAPI files
-- [ ] 4.11 If any errors, research with Exa: "[error message] Python YAML 2026"
+- [x] 4.1 Research with Exa: "OpenAPI 3.0 nullable oneOf pattern best practices 2026"
+- [x] 4.2 Research with Exa: "Python YAML manipulation patterns 2026"
+- [x] 4.3 Update `contracts/split-openapi.py` - Add oneOf pattern handling to fix_nullable_syntax()
+- [x] 4.4 Handle `oneOf: [type: 'null', $ref]` pattern
+- [x] 4.5 Convert to `allOf` with `nullable: true`
+- [x] 4.6 Run Python script: `python contracts/split-openapi.py`
+- [x] 4.7 Verify `OrganizationResponse.limits` uses correct syntax
+- [x] 4.8 Verify `DashboardMetricsResponse.period` uses correct syntax
+- [x] 4.9 Check all split YAML files for oneOf patterns
+- [x] 4.10 Commit regenerated OpenAPI files
+- [x] 4.11 If any errors, research with Exa: "[error message] Python YAML 2026"
 
 **Acceptance Criteria**:
-- Python script handles oneOf patterns
-- All nullable $ref fields use allOf + nullable
-- No oneOf patterns with type: 'null' remain
-- OpenAPI files regenerated
+- ✅ Python script handles oneOf patterns
+- ✅ All nullable $ref fields use allOf + nullable
+- ✅ No oneOf patterns with type: 'null' remain
+- ✅ OpenAPI files regenerated
+
+**Completion Notes**:
+- Updated fix_nullable_syntax() to detect and fix oneOf patterns with type: 'null'
+- Fixed 2 instances: OrganizationResponse.limits and DashboardMetricsResponse.period
+- Both now use correct OpenAPI 3.0 syntax: allOf with nullable: true
+- Regenerated all 28 split YAML files (12 schemas + 16 endpoints)
+- Verified no more type: 'null' patterns exist in any file
+- All schema references still resolve correctly
+- Saved to Cognio project zeltra-bug
 
 ---
 

@@ -13,10 +13,10 @@ components:
           $ref: '#/components/schemas/PendingApprovalsResponse'
           description: Pending approvals.
         period:
-          oneOf:
-          - type: 'null'
+          allOf:
           - $ref: '#/components/schemas/PeriodInfo'
             description: Period info.
+          nullable: true
         runway_days:
           description: Runway days.
           example: 180

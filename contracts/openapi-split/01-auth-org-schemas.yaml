@@ -138,10 +138,10 @@ components:
           format: uuid
           type: string
         limits:
-          oneOf:
-          - type: 'null'
+          allOf:
           - $ref: '#/components/schemas/TierLimitsResponse'
             description: Tier limits and feature flags.
+          nullable: true
         name:
           description: Organization name.
           type: string
