@@ -14,6 +14,9 @@
 | **Pricing**               | **Monthly License**     | **$12 / mo**           | **$25 / mo**              | **Custom**               |
 |                           | **Best For**            | Startups & Small Teams | Scaling Companies         | Corporations             |
 |                           |                         |                        |                           |                          |
+| **Workspace**             | **Organizations**       | 1 Workspace            | 1 Workspace               | 1 Workspace              |
+|                           | **Entities/Companies**  | 1 Entity               | **5 Entities**            | **Unlimited Entities**   |
+|                           |                         |                        |                           |                          |
 | **Usage Limits**          | **Users**               | Up to 50               | Up to 200                 | **Unlimited**            |
 |                           | **Transactions**        | 1,000 / month          | 10,000 / month            | **Unlimited**            |
 |                           | **Storage**             | 5 GB                   | 50 GB                     | 500 GB                   |
@@ -37,7 +40,7 @@
 |                           |                         |                        |                           |                          |
 | **Sentinel Intelligence** | **Accruals Engine**     | ❌                     | ❌                        | ✅ **Auto-Recognize**    |
 |                           | **Budget Simulation**   | ❌                     | ❌                        | ✅ **What-If Scenarios** |
-|                           | **Intercompany Hub**    | ❌                     | ❌                        | ✅ **Branch Mapping**    |
+|                           | **Intercompany Hub**    | ❌                     | ❌                        | ✅ **Entity Mapping**    |
 |                           | **Forensic Suite (AI)** | ❌                     | ❌                        | ✅ **Benford & Beneish** |
 |                           |                         |                        |                           |                          |
 | **Reporting**             | **Financial Stmts**     | ✅ Standard (P&L, BS)  | ✅ Comparative            | ✅ Dimensional           |
@@ -51,6 +54,60 @@
 
 ---
 
+## �️ Multi-Entity Accounting Model
+
+### What are Entities?
+
+**Entities** are separate legal or operational units (companies, subsidiaries, branches, divisions) that you manage within a single Zeltra workspace.
+
+### How It Works
+
+```
+Your Zeltra Account
+  └─ Organization (Workspace)
+      ├─ Entity 1: Main Company
+      ├─ Entity 2: Subsidiary A
+      ├─ Entity 3: Branch B
+      └─ Entity 4: Division C
+```
+
+**Key Benefits**:
+- **Unified Workspace**: Manage all your companies in one place
+- **Entity Selector**: Switch between entities seamlessly
+- **Consolidated Reports**: View individual or combined financials
+- **Intercompany Transactions**: Map accounts between entities for automatic elimination
+
+### Comparison with Competitors
+
+| Feature | Xero | QuickBooks | Zeltra |
+|---------|------|------------|--------|
+| **Multi-Company** | $45/mo per company | $30/mo per company | **5 companies for $25/mo** |
+| **Workspace Model** | Separate logins | Separate logins | **Unified workspace** |
+| **Intercompany** | Manual | Manual | **Automated mapping** |
+| **Consolidation** | External tool | External tool | **Built-in** |
+
+**Zeltra Advantage**: Like NetSuite/Sage Intacct's multi-entity model, but at Xero prices.
+
+### Use Cases
+
+**Starter Tier (1 Entity)**:
+- Single company accounting
+- Freelancers, consultants, small businesses
+
+**Growth Tier (5 Entities)**:
+- Parent company + subsidiaries
+- Multiple business units
+- Franchise operations
+- Holding company structure
+
+**Enterprise Tier (Unlimited Entities)**:
+- Large corporations
+- Multi-national operations
+- Complex group structures
+- Private equity portfolios
+
+---
+
 ## 🌟 Key Differentiators (Why Zeltra?)
 
 | Feature                 | The Zeltra Difference                                                                      |
@@ -60,7 +117,7 @@
 | **True Multi-Currency** | We store historical rates & functional values. Others just "convert on the fly".           |
 | **Dimensionality**      | Slice & dice reports by Project/Dept without paying $15k/year for Sage/NetSuite.           |
 | **Performance**         | Built on **Rust**. Handles high-volume transactions without the bloat of legacy Java ERPs. |
-| **Intercompany Hub**    | Map accounts between branches for seamless inter-entity transactions. Enterprise-only.     |
+| **Intercompany Hub**    | Map accounts between entities for seamless inter-entity transactions. Enterprise-only.     |
 | **Forensic Suite (AI)** | **3-Pillar Integrity**: Advanced Benford ($P(d_2)$), Altman Z-Score, and Beneish M-Score.  |
 
 ---
