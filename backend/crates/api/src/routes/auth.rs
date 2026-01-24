@@ -17,9 +17,9 @@ use zeltra_db::{
 };
 use zeltra_shared::auth::{
     LoginRequest, LoginResponse, LogoutRequest, RefreshRequest, RefreshResponse, RegisterRequest,
-    RegisterResponse, ResendVerificationRequest, ResendVerificationResponse, UserInfo,
-    UserOrganization, VerifyEmailRequest, VerifyEmailResponse, SwitchOrganizationRequest,
-    SwitchOrganizationResponse,
+    RegisterResponse, ResendVerificationRequest, ResendVerificationResponse,
+    SwitchOrganizationRequest, SwitchOrganizationResponse, UserInfo, UserOrganization,
+    VerifyEmailRequest, VerifyEmailResponse,
 };
 
 /// Creates the auth router.
@@ -746,6 +746,7 @@ fn extract_ip_address(headers: &HeaderMap, addr: Option<SocketAddr>) -> Option<S
     tag = "Auth",
     security(("bearer" = []))
 )]
+#[allow(clippy::too_many_lines)]
 pub async fn switch_organization(
     State(state): State<AppState>,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
@@ -753,18 +754,15 @@ pub async fn switch_organization(
     Json(payload): Json<SwitchOrganizationRequest>,
 ) -> impl IntoResponse {
     // Extract user ID from current JWT token
-    let auth_header = match headers.get("authorization") {
-        Some(h) => h,
-        None => {
-            return (
-                StatusCode::UNAUTHORIZED,
-                Json(json!({
-                    "error": "missing_token",
-                    "message": "Authorization header is required"
-                })),
-            )
-                .into_response();
-        }
+    let Some(auth_header) = headers.get("authorization") else {
+        return (
+            StatusCode::UNAUTHORIZED,
+            Json(json!({
+                "error": "missing_token",
+                "message": "Authorization header is required"
+            })),
+        )
+            .into_response();
     };
 
     let token = match auth_header.to_str() {
@@ -782,18 +780,15 @@ pub async fn switch_organization(
     };
 
     // Validate current token and extract user ID
-    let claims = match state.jwt_service.validate_token(token) {
-        Ok(c) => c,
-        Err(_) => {
-            return (
-                StatusCode::UNAUTHORIZED,
-                Json(json!({
-                    "error": "invalid_token",
-                    "message": "Invalid or expired token"
-                })),
-            )
-                .into_response();
-        }
+    let Ok(claims) = state.jwt_service.validate_token(token) else {
+        return (
+            StatusCode::UNAUTHORIZED,
+            Json(json!({
+                "error": "invalid_token",
+                "message": "Invalid or expired token"
+            })),
+        )
+            .into_response();
     };
 
     let user_id = claims.user_id();
@@ -817,7 +812,10 @@ pub async fn switch_organization(
     };
 
     // Check if user is a member of the target organization
-    let target_org = match orgs.iter().find(|(org, _)| org.id == payload.organization_id) {
+    let target_org = match orgs
+        .iter()
+        .find(|(org, _)| org.id == payload.organization_id)
+    {
         Some((org, membership)) => (org.clone(), membership.clone()),
         None => {
             return (

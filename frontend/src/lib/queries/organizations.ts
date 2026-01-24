@@ -13,6 +13,7 @@ export function useOrganizations() {
 export function useCreateOrganization() {
   const queryClient = useQueryClient()
   const setOrg = useAuthStore((state) => state.setOrg)
+  const addOrganization = useAuthStore((state) => state.addOrganization)
 
   return useMutation({
     mutationFn: (data: CreateOrganizationRequest) =>
@@ -22,6 +23,15 @@ export function useCreateOrganization() {
       }),
     onSuccess: (newOrg) => {
       queryClient.invalidateQueries({ queryKey: ['organizations'] })
+      
+      // Add the new organization to user's organizations array
+      addOrganization({
+        id: newOrg.id,
+        name: newOrg.name,
+        slug: newOrg.slug,
+        role: 'owner', // Creator is always owner
+      })
+      
       // Switch to the new organization
       setOrg(newOrg.id)
     },

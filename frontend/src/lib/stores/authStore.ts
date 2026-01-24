@@ -23,6 +23,7 @@ interface AuthState {
   setAuth: (user: User, accessToken: string, refreshToken: string, expiresIn: number) => void
   setTokens: (accessToken: string, refreshToken: string, expiresIn: number) => void
   setOrg: (orgId: string) => void
+  addOrganization: (org: { id: string; name: string; slug: string; role: string }) => void
   logout: () => void
   isTokenExpired: () => boolean
   setRefreshing: (isRefreshing: boolean) => void
@@ -60,6 +61,29 @@ export const useAuthStore = create<AuthState>()(
       },
       
       setOrg: (orgId) => set({ currentOrgId: orgId }),
+      
+      addOrganization: (org) => {
+        const { user } = get()
+        if (!user) {
+          console.warn('⚠️ Cannot add organization: no user logged in')
+          return
+        }
+        
+        // Check if organization already exists
+        const exists = user.organizations.some(o => o.id === org.id)
+        if (exists) {
+          console.log(`ℹ️ Organization ${org.name} already exists in user.organizations`)
+          return
+        }
+        
+        // Add new organization to user's organizations array
+        const updatedUser = {
+          ...user,
+          organizations: [...user.organizations, org]
+        }
+        console.log(`✅ Added organization ${org.name} to user.organizations (total: ${updatedUser.organizations.length})`)
+        set({ user: updatedUser })
+      },
       
       logout: () => {
         console.log('🚪 LOGOUT CALLED - Clearing auth state')

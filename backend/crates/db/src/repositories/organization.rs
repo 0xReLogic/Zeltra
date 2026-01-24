@@ -108,6 +108,11 @@ impl OrganizationRepository {
 
     /// Creates a new organization with the creator as owner.
     ///
+    /// Trial period logic:
+    /// - If user has existing organizations, inherit trial_ends_at from first organization
+    /// - If this is user's first organization, set trial to 14 days from now
+    /// - This prevents trial abuse by creating multiple organizations
+    ///
     /// # Errors
     ///
     /// Returns an error if the database insert fails.
@@ -124,6 +129,23 @@ impl OrganizationRepository {
         let now = chrono::Utc::now().into();
         let org_id = Uuid::new_v4();
 
+        // Check if user has existing organizations to inherit trial period
+        let existing_org = organization_users::Entity::find()
+            .filter(organization_users::Column::UserId.eq(owner_id))
+            .find_also_related(organizations::Entity)
+            .one(&txn)
+            .await?
+            .and_then(|(_, org)| org);
+
+        // Inherit trial_ends_at from first organization, or set 14 days for new users
+        let trial_ends_at = if let Some(first_org) = existing_org {
+            // User has existing org - inherit trial period
+            first_org.trial_ends_at
+        } else {
+            // First organization for this user - set 14 day trial
+            Some((chrono::Utc::now() + chrono::Duration::days(14)).into())
+        };
+
         // Create organization
         let org = organizations::ActiveModel {
             id: Set(org_id),
@@ -135,9 +157,7 @@ impl OrganizationRepository {
             is_active: Set(true),
             subscription_tier: Set(SubscriptionTier::Enterprise),
             subscription_status: Set(SubscriptionStatus::Trialing),
-            trial_ends_at: Set(Some(
-                (chrono::Utc::now() + chrono::Duration::days(14)).into(),
-            )),
+            trial_ends_at: Set(trial_ends_at),
             subscription_ends_at: Set(None),
             payment_provider: Set(None),
             payment_customer_id: Set(None),
