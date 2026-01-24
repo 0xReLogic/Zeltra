@@ -18,7 +18,8 @@ use zeltra_db::{
 use zeltra_shared::auth::{
     LoginRequest, LoginResponse, LogoutRequest, RefreshRequest, RefreshResponse, RegisterRequest,
     RegisterResponse, ResendVerificationRequest, ResendVerificationResponse, UserInfo,
-    UserOrganization, VerifyEmailRequest, VerifyEmailResponse,
+    UserOrganization, VerifyEmailRequest, VerifyEmailResponse, SwitchOrganizationRequest,
+    SwitchOrganizationResponse,
 };
 
 /// Creates the auth router.
@@ -30,6 +31,7 @@ pub fn routes() -> Router<AppState> {
         .route("/auth/logout", post(logout))
         .route("/auth/verify-email", post(verify_email))
         .route("/auth/resend-verification", post(resend_verification))
+        .route("/auth/switch-organization", post(switch_organization))
 }
 
 /// POST /auth/login - Authenticate user and return tokens.
@@ -729,4 +731,186 @@ fn extract_ip_address(headers: &HeaderMap, addr: Option<SocketAddr>) -> Option<S
 
     // Fall back to direct connection info
     addr.map(|a| a.ip().to_string())
+}
+
+/// POST /auth/switch-organization - Switch to a different organization.
+#[utoipa::path(
+    post,
+    path = "/auth/switch-organization",
+    request_body = SwitchOrganizationRequest,
+    responses(
+        (status = 200, description = "Organization switched successfully", body = SwitchOrganizationResponse),
+        (status = 403, description = "User is not a member of the target organization"),
+        (status = 404, description = "Organization not found")
+    ),
+    tag = "Auth",
+    security(("bearer" = []))
+)]
+pub async fn switch_organization(
+    State(state): State<AppState>,
+    ConnectInfo(addr): ConnectInfo<SocketAddr>,
+    headers: HeaderMap,
+    Json(payload): Json<SwitchOrganizationRequest>,
+) -> impl IntoResponse {
+    // Extract user ID from current JWT token
+    let auth_header = match headers.get("authorization") {
+        Some(h) => h,
+        None => {
+            return (
+                StatusCode::UNAUTHORIZED,
+                Json(json!({
+                    "error": "missing_token",
+                    "message": "Authorization header is required"
+                })),
+            )
+                .into_response();
+        }
+    };
+
+    let token = match auth_header.to_str() {
+        Ok(t) => t.trim_start_matches("Bearer ").trim(),
+        Err(_) => {
+            return (
+                StatusCode::UNAUTHORIZED,
+                Json(json!({
+                    "error": "invalid_token",
+                    "message": "Invalid authorization header"
+                })),
+            )
+                .into_response();
+        }
+    };
+
+    // Validate current token and extract user ID
+    let claims = match state.jwt_service.validate_token(token) {
+        Ok(c) => c,
+        Err(_) => {
+            return (
+                StatusCode::UNAUTHORIZED,
+                Json(json!({
+                    "error": "invalid_token",
+                    "message": "Invalid or expired token"
+                })),
+            )
+                .into_response();
+        }
+    };
+
+    let user_id = claims.user_id();
+    let user_repo = UserRepository::new((*state.db).clone());
+    let session_repo = SessionRepository::new((*state.db).clone());
+
+    // Get user's organizations to verify membership
+    let orgs = match user_repo.get_user_organizations(user_id).await {
+        Ok(o) => o,
+        Err(e) => {
+            error!(error = %e, "Failed to get user organizations");
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": "internal_error",
+                    "message": "An error occurred while switching organization"
+                })),
+            )
+                .into_response();
+        }
+    };
+
+    // Check if user is a member of the target organization
+    let target_org = match orgs.iter().find(|(org, _)| org.id == payload.organization_id) {
+        Some((org, membership)) => (org.clone(), membership.clone()),
+        None => {
+            return (
+                StatusCode::FORBIDDEN,
+                Json(json!({
+                    "error": "not_member",
+                    "message": "You are not a member of this organization"
+                })),
+            )
+                .into_response();
+        }
+    };
+
+    let (org, membership) = target_org;
+    let role = role_to_string(&membership.role);
+
+    // Generate new tokens with the target organization
+    let access_token = match state
+        .jwt_service
+        .generate_access_token(user_id, org.id, &role)
+    {
+        Ok(t) => t,
+        Err(e) => {
+            error!(error = %e, "Failed to generate access token");
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": "internal_error",
+                    "message": "An error occurred while switching organization"
+                })),
+            )
+                .into_response();
+        }
+    };
+
+    let refresh_token = match state
+        .jwt_service
+        .generate_refresh_token(user_id, org.id, &role)
+    {
+        Ok(t) => t,
+        Err(e) => {
+            error!(error = %e, "Failed to generate refresh token");
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": "internal_error",
+                    "message": "An error occurred while switching organization"
+                })),
+            )
+                .into_response();
+        }
+    };
+
+    // Store new session in database
+    let expires_at =
+        chrono::Utc::now() + chrono::Duration::days(state.jwt_service.refresh_token_expires_days());
+
+    let user_agent = extract_user_agent(&headers);
+    let ip_address = extract_ip_address(&headers, Some(addr));
+
+    if let Err(e) = session_repo
+        .create(
+            user_id,
+            org.id,
+            &refresh_token,
+            expires_at,
+            user_agent.as_deref(),
+            ip_address.as_deref(),
+        )
+        .await
+    {
+        error!(error = %e, "Failed to create session");
+        // Don't fail the switch if session creation fails - tokens are still valid
+    }
+
+    info!(
+        user_id = %user_id,
+        org_id = %org.id,
+        "User switched organization successfully"
+    );
+
+    // Build response
+    let response = SwitchOrganizationResponse {
+        access_token,
+        refresh_token,
+        expires_in: state.jwt_service.access_token_expires_in(),
+        organization: UserOrganization {
+            id: org.id,
+            name: org.name,
+            slug: org.slug,
+            role,
+        },
+    };
+
+    (StatusCode::OK, Json(response)).into_response()
 }

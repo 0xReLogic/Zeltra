@@ -14,6 +14,8 @@ export type RefreshResponse = components['schemas']['RefreshResponse']
 export type LogoutRequest = components['schemas']['LogoutRequest']
 export type UserInfo = components['schemas']['UserInfo']
 export type UserOrganization = components['schemas']['UserOrganization']
+export type SwitchOrganizationRequest = components['schemas']['SwitchOrganizationRequest']
+export type SwitchOrganizationResponse = components['schemas']['SwitchOrganizationResponse']
 
 // Alias for backward compatibility
 export type AuthResponse = LoginResponse

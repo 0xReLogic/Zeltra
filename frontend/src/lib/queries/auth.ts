@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query'
 import { apiClient } from '../api/client'
 import { useAuthStore } from '../stores/authStore'
-import { type LoginRequest, type RegisterRequest, type AuthResponse, type RegisterResponse, type VerifyEmailRequest, type VerifyEmailResponse, type ResendVerificationRequest, type ResendVerificationResponse } from '@/types/auth'
+import { type LoginRequest, type RegisterRequest, type AuthResponse, type RegisterResponse, type VerifyEmailRequest, type VerifyEmailResponse, type ResendVerificationRequest, type ResendVerificationResponse, type SwitchOrganizationRequest, type SwitchOrganizationResponse } from '@/types/auth'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 
@@ -117,6 +117,37 @@ export function useRefresh() {
       }),
     onSuccess: (data) => {
       setTokens(data.access_token, data.refresh_token, data.expires_in)
+    },
+  })
+}
+
+export function useSwitchOrganization() {
+  const setAuth = useAuthStore((state) => state.setAuth)
+  const user = useAuthStore((state) => state.user)
+  const router = useRouter()
+
+  return useMutation({
+    mutationFn: (data: SwitchOrganizationRequest) =>
+      apiClient<SwitchOrganizationResponse>('/auth/switch-organization', {
+        method: 'POST',
+        body: JSON.stringify(data),
+        skipOrgPrefix: true,
+      }),
+    onSuccess: (data) => {
+      // Update auth store with new tokens and organization
+      if (user) {
+        // Update user's current organization in the organizations array
+        const updatedUser = {
+          ...user,
+          organizations: user.organizations.map(org => 
+            org.id === data.organization.id ? data.organization : org
+          )
+        }
+        setAuth(updatedUser, data.access_token, data.refresh_token, data.expires_in)
+      }
+      toast.success(`Switched to ${data.organization.name}`)
+      // Reload to refresh all data with new organization context
+      window.location.reload()
     },
   })
 }

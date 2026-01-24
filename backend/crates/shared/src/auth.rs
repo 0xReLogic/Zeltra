@@ -293,6 +293,27 @@ pub struct VerifyEmailResponse {
     pub verified: bool,
 }
 
+/// Switch organization request.
+#[derive(Debug, Clone, Deserialize, utoipa::ToSchema)]
+pub struct SwitchOrganizationRequest {
+    /// Target organization ID to switch to.
+    #[schema(example = "550e8400-e29b-41d4-a716-446655440000")]
+    pub organization_id: Uuid,
+}
+
+/// Switch organization response.
+#[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
+pub struct SwitchOrganizationResponse {
+    /// New access token with updated organization context.
+    pub access_token: String,
+    /// New refresh token.
+    pub refresh_token: String,
+    /// Token expiration in seconds.
+    pub expires_in: i64,
+    /// Updated organization info.
+    pub organization: UserOrganization,
+}
+
 /// Update organization member request.
 #[derive(Debug, Clone, Deserialize, utoipa::ToSchema)]
 pub struct UpdateMemberRequest {
