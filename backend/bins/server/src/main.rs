@@ -105,7 +105,12 @@ async fn main() -> anyhow::Result<()> {
     let listener = TcpListener::bind(&addr).await?;
     info!("Server listening on {}", addr);
 
-    axum::serve(listener, app).await?;
+    // Serve with ConnectInfo to enable IP address extraction in handlers
+    axum::serve(
+        listener,
+        app.into_make_service_with_connect_info::<std::net::SocketAddr>(),
+    )
+    .await?;
 
     Ok(())
 }

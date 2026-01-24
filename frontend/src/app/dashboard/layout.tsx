@@ -118,6 +118,9 @@ export default function DashboardLayout({
       if (!accessToken || !user) {
         console.log('🚫 Auth check failed, redirecting to login:', { hasAccessToken: !!accessToken, hasUser: !!user })
         router.replace('/login')
+      } else if (user.organizations.length === 0) {
+        console.log('🏢 User has no organizations, redirecting to onboarding')
+        router.replace('/onboarding/create-organization')
       } else {
         console.log('✅ Auth check passed:', { hasAccessToken: !!accessToken, hasUser: !!user })
       }
