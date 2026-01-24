@@ -1,7 +1,11 @@
 //! Authentication routes for login, register, token refresh, and logout.
 
-use axum::{Json, Router, extract::State, http::StatusCode, response::IntoResponse, routing::post};
+use axum::{
+    Json, Router, extract::ConnectInfo, extract::State, http::HeaderMap, http::StatusCode,
+    response::IntoResponse, routing::post,
+};
 use serde_json::json;
+use std::net::SocketAddr;
 use tracing::{error, info, warn};
 use validator::Validate;
 
@@ -42,6 +46,8 @@ pub fn routes() -> Router<AppState> {
 #[allow(clippy::too_many_lines)]
 pub async fn login(
     State(state): State<AppState>,
+    ConnectInfo(addr): ConnectInfo<SocketAddr>,
+    headers: HeaderMap,
     Json(payload): Json<LoginRequest>,
 ) -> impl IntoResponse {
     // Validate request payload
@@ -195,14 +201,19 @@ pub async fn login(
     if !default_org_id.is_nil() {
         let expires_at = chrono::Utc::now()
             + chrono::Duration::days(state.jwt_service.refresh_token_expires_days());
+
+        // Extract user agent and IP address from request
+        let user_agent = extract_user_agent(&headers);
+        let ip_address = extract_ip_address(&headers, Some(addr));
+
         if let Err(e) = session_repo
             .create(
                 user.id,
                 default_org_id,
                 &refresh_token,
                 expires_at,
-                None, // TODO: Extract user agent from request headers
-                None, // TODO: Extract IP from request
+                user_agent.as_deref(),
+                ip_address.as_deref(),
             )
             .await
         {
@@ -521,18 +532,6 @@ pub async fn logout(
     }
 }
 
-/// Converts `UserRole` enum to string.
-fn role_to_string(role: &UserRole) -> String {
-    match role {
-        UserRole::Owner => "owner".to_string(),
-        UserRole::Admin => "admin".to_string(),
-        UserRole::Approver => "approver".to_string(),
-        UserRole::Accountant => "accountant".to_string(),
-        UserRole::Viewer => "viewer".to_string(),
-        UserRole::Submitter => "submitter".to_string(),
-    }
-}
-
 /// POST /auth/verify-email - Verify user's email with token.
 #[utoipa::path(
     post,
@@ -686,4 +685,48 @@ pub async fn resend_verification(
         }),
     )
         .into_response()
+}
+
+/// Converts `UserRole` enum to string.
+fn role_to_string(role: &UserRole) -> String {
+    match role {
+        UserRole::Owner => "owner".to_string(),
+        UserRole::Admin => "admin".to_string(),
+        UserRole::Approver => "approver".to_string(),
+        UserRole::Accountant => "accountant".to_string(),
+        UserRole::Viewer => "viewer".to_string(),
+        UserRole::Submitter => "submitter".to_string(),
+    }
+}
+
+/// Extracts user agent from request headers.
+fn extract_user_agent(headers: &HeaderMap) -> Option<String> {
+    headers
+        .get("user-agent")
+        .and_then(|v| v.to_str().ok())
+        .map(std::string::ToString::to_string)
+}
+
+/// Extracts IP address from request.
+/// Priority: X-Forwarded-For > X-Real-IP > ConnectInfo
+fn extract_ip_address(headers: &HeaderMap, addr: Option<SocketAddr>) -> Option<String> {
+    // Try X-Forwarded-For first (most common proxy header)
+    if let Some(forwarded) = headers.get("x-forwarded-for")
+        && let Ok(forwarded_str) = forwarded.to_str()
+    {
+        // X-Forwarded-For can contain multiple IPs, take the first one (client IP)
+        if let Some(client_ip) = forwarded_str.split(',').next() {
+            return Some(client_ip.trim().to_string());
+        }
+    }
+
+    // Try X-Real-IP (used by some proxies like nginx)
+    if let Some(real_ip) = headers.get("x-real-ip")
+        && let Ok(ip_str) = real_ip.to_str()
+    {
+        return Some(ip_str.to_string());
+    }
+
+    // Fall back to direct connection info
+    addr.map(|a| a.ip().to_string())
 }

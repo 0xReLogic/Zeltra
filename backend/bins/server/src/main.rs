@@ -79,7 +79,25 @@ async fn main() -> anyhow::Result<()> {
             interval_secs = sync_config.interval_secs,
             "Starting exchange rate sync background task"
         );
-        tokio::spawn(run_sync_loop(db_arc, sync_config));
+        tokio::spawn(run_sync_loop(db_arc.clone(), sync_config));
+    }
+
+    // Start session cleanup background task
+    {
+        use zeltra_api::jobs::start_session_cleanup_job;
+        let cleanup_interval_hours = std::env::var("SESSION_CLEANUP_INTERVAL_HOURS")
+            .ok()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(1); // Default: cleanup every hour
+
+        info!(
+            interval_hours = cleanup_interval_hours,
+            "Starting session cleanup background task"
+        );
+        tokio::spawn(start_session_cleanup_job(
+            db_arc.clone(),
+            cleanup_interval_hours,
+        ));
     }
 
     // Start server

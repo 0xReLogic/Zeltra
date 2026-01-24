@@ -220,35 +220,49 @@
 
 ---
 
-## Task 6: Backend P2 - Session Tracking & Cleanup
+## Task 6: Backend P2 - Session Tracking & Cleanup ✅
 
 **Priority**: P2 (Medium)
 **Estimated Time**: 2 hours
+**Status**: ✅ COMPLETED
 
 ### Subtasks:
-- [ ] 6.1 Research with Exa: "Rust background job patterns tokio 2026"
-- [ ] 6.2 Research with Exa: "Rust HTTP header extraction user agent IP 2026"
-- [ ] 6.3 Research with Exa: "Rust session cleanup best practices 2026"
-- [ ] 6.4 Update `backend/crates/api/src/routes/auth.rs` - Extract user agent from headers
-- [ ] 6.5 Extract IP address from X-Forwarded-For or ConnectInfo
-- [ ] 6.6 Pass user_agent and ip_address to session creation
-- [ ] 6.7 Create `backend/crates/api/src/jobs/session_cleanup.rs`
-- [ ] 6.8 Implement `start_session_cleanup_job()` function
-- [ ] 6.9 Implement `cleanup_expired_sessions()` function
-- [ ] 6.10 Add cleanup job to main.rs startup
-- [ ] 6.11 Configure cleanup interval (default: 1 hour)
-- [ ] 6.12 Add logging for cleanup operations
-- [ ] 6.13 Run `cargo fmt`
-- [ ] 6.14 Run `cargo clippy` - Fix all warnings
-- [ ] 6.15 Run backend tests: `cargo test`
-- [ ] 6.16 Test session cleanup manually
-- [ ] 6.17 If any errors, research with Exa: "[error message] Rust tokio jobs 2026"
+- [x] 6.1 Research with Exa: "Rust background job patterns tokio 2026"
+- [x] 6.2 Research with Exa: "Rust HTTP header extraction user agent IP 2026"
+- [x] 6.3 Research with Exa: "Rust session cleanup best practices 2026"
+- [x] 6.4 Update `backend/crates/api/src/routes/auth.rs` - Extract user agent from headers
+- [x] 6.5 Extract IP address from X-Forwarded-For or ConnectInfo
+- [x] 6.6 Pass user_agent and ip_address to session creation
+- [x] 6.7 Create `backend/crates/api/src/jobs/session_cleanup.rs`
+- [x] 6.8 Implement `start_session_cleanup_job()` function
+- [x] 6.9 Implement `cleanup_expired_sessions()` function
+- [x] 6.10 Add cleanup job to main.rs startup
+- [x] 6.11 Configure cleanup interval (default: 1 hour)
+- [x] 6.12 Add logging for cleanup operations
+- [x] 6.13 Run `cargo fmt`
+- [x] 6.14 Run `cargo clippy` - Fix all warnings
+- [x] 6.15 Run backend tests: `cargo test`
+- [x] 6.16 Test session cleanup manually
+- [x] 6.17 If any errors, research with Exa: "[error message] Rust tokio jobs 2026"
 
 **Acceptance Criteria**:
-- User agent and IP address tracked in sessions
-- Expired sessions cleaned up automatically
-- Cleanup runs every hour
-- All tests pass
+- ✅ User agent and IP address tracked in sessions
+- ✅ Expired sessions cleaned up automatically
+- ✅ Cleanup runs every hour
+- ✅ All tests pass
+
+**Completion Notes**:
+- Added extract_user_agent() helper function to extract User-Agent header
+- Added extract_ip_address() helper function with priority: X-Forwarded-For > X-Real-IP > ConnectInfo
+- Updated login handler to extract and pass user_agent and ip_address to session creation
+- Created jobs module with session_cleanup.rs
+- Implemented start_session_cleanup_job() that runs cleanup every N hours (configurable via SESSION_CLEANUP_INTERVAL_HOURS env var, default: 1 hour)
+- Implemented cleanup_expired_sessions() that uses SessionRepository.cleanup_expired()
+- Added cleanup job startup to backend/bins/server/src/main.rs
+- Added comprehensive logging for cleanup operations
+- cargo fmt and cargo clippy passed
+- All 103 API tests passing
+- Saved to Cognio project zeltra-bug
 
 ---
 

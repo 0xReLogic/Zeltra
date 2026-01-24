@@ -9,11 +9,7 @@ use axum::{
     http::{HeaderMap, Request},
     response::{IntoResponse, Response},
 };
-use governor::{
-    Quota, RateLimiter,
-    clock::DefaultClock,
-    state::InMemoryState,
-};
+use governor::{Quota, RateLimiter, clock::DefaultClock, state::InMemoryState};
 use std::{
     net::SocketAddr,
     num::NonZeroU32,
