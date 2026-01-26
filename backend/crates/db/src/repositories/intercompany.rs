@@ -31,13 +31,13 @@ impl IntercompanyRepository {
         Self { db }
     }
 
-    /// Finds all mappings for a source organization.
+    /// Finds all mappings for a source entity.
     pub async fn get_mappings(
         &self,
-        source_org_id: Uuid,
+        source_entity_id: Uuid,
     ) -> Result<Vec<intercompany_mappings::Model>, IntercompanyError> {
         let mappings = intercompany_mappings::Entity::find()
-            .filter(intercompany_mappings::Column::SourceOrgId.eq(source_org_id))
+            .filter(intercompany_mappings::Column::SourceEntityId.eq(source_entity_id))
             .all(&self.db)
             .await?;
         Ok(mappings)
@@ -46,15 +46,49 @@ impl IntercompanyRepository {
     /// Finds a specific mapping by source account.
     pub async fn find_mapping_by_account(
         &self,
-        source_org_id: Uuid,
+        source_entity_id: Uuid,
         source_account_id: Uuid,
     ) -> Result<Option<intercompany_mappings::Model>, IntercompanyError> {
         let mapping = intercompany_mappings::Entity::find()
-            .filter(intercompany_mappings::Column::SourceOrgId.eq(source_org_id))
+            .filter(intercompany_mappings::Column::SourceEntityId.eq(source_entity_id))
             .filter(intercompany_mappings::Column::SourceAccountId.eq(source_account_id))
             .one(&self.db)
             .await?;
         Ok(mapping)
+    }
+
+    /// Validates that two entities can have an intercompany mapping.
+    /// Both entities must exist and belong to the same organization.
+    pub async fn validate_mapping(
+        &self,
+        source_entity_id: Uuid,
+        target_entity_id: Uuid,
+    ) -> Result<(), IntercompanyError> {
+        use crate::entities::entities;
+
+        // Get both entities
+        let source = entities::Entity::find_by_id(source_entity_id)
+            .one(&self.db)
+            .await?
+            .ok_or_else(|| {
+                IntercompanyError::Database(DbErr::Custom("Source entity not found".to_string()))
+            })?;
+
+        let target = entities::Entity::find_by_id(target_entity_id)
+            .one(&self.db)
+            .await?
+            .ok_or_else(|| {
+                IntercompanyError::Database(DbErr::Custom("Target entity not found".to_string()))
+            })?;
+
+        // Both entities must be in same organization
+        if source.organization_id != target.organization_id {
+            return Err(IntercompanyError::Database(DbErr::Custom(
+                "Entities must belong to the same organization".to_string(),
+            )));
+        }
+
+        Ok(())
     }
 
     /// Identifies ledger entries that hit intercompany accounts and might need mirroring or elimination.

@@ -57,16 +57,8 @@ pub struct OrganizationResponse {
     pub base_currency: String,
     /// Timezone for reports.
     pub timezone: String,
-    /// Subscription tier.
-    pub subscription_tier: String,
-    /// Subscription status.
-    pub subscription_status: String,
-    /// Tier limits and feature flags.
-    pub limits: Option<TierLimitsResponse>,
     /// Creation timestamp.
     pub created_at: chrono::DateTime<chrono::Utc>,
-    /// Trial expiration date (if applicable).
-    pub trial_ends_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 
 /// Organization user session response.
@@ -196,13 +188,6 @@ async fn create_organization(
         "Organization created"
     );
 
-    let limits = org_repo
-        .get_tier_limits(org.id)
-        .await
-        .ok()
-        .flatten()
-        .map(|l| map_tier_limits(&l));
-
     (
         StatusCode::CREATED,
         Json(json!({
@@ -211,11 +196,7 @@ async fn create_organization(
             "slug": org.slug,
             "base_currency": org.base_currency,
             "timezone": org.timezone,
-            "subscription_tier": format!("{:?}", org.subscription_tier).to_lowercase(),
-            "subscription_status": format!("{:?}", org.subscription_status).to_lowercase(),
-            "limits": limits,
-            "created_at": org.created_at,
-            "trial_ends_at": org.trial_ends_at
+            "created_at": org.created_at
         })),
     )
         .into_response()
@@ -295,13 +276,6 @@ async fn get_organization(
         }
     };
 
-    let limits = org_repo
-        .get_tier_limits(org.id)
-        .await
-        .ok()
-        .flatten()
-        .map(|l| map_tier_limits(&l));
-
     (
         StatusCode::OK,
         Json(json!({
@@ -310,11 +284,7 @@ async fn get_organization(
             "slug": org.slug,
             "base_currency": org.base_currency,
             "timezone": org.timezone,
-            "subscription_tier": format!("{:?}", org.subscription_tier).to_lowercase(),
-            "subscription_status": format!("{:?}", org.subscription_status).to_lowercase(),
-            "limits": limits,
-            "created_at": org.created_at,
-            "trial_ends_at": org.trial_ends_at
+            "created_at": org.created_at
         })),
     )
         .into_response()
@@ -460,13 +430,6 @@ async fn update_organization(
 
     info!(org_id = %org_id, "Organization updated");
 
-    let limits = org_repo
-        .get_tier_limits(org.id)
-        .await
-        .ok()
-        .flatten()
-        .map(|l| map_tier_limits(&l));
-
     (
         StatusCode::OK,
         Json(json!({
@@ -475,12 +438,7 @@ async fn update_organization(
             "slug": org.slug,
             "base_currency": org.base_currency,
             "timezone": org.timezone,
-            "subscription_tier": format!("{:?}", org.subscription_tier).to_lowercase(),
-            "subscription_status": format!("{:?}", org.subscription_status).to_lowercase(),
-            "limits": limits,
-            "limits": limits,
-            "updated_at": org.updated_at,
-            "trial_ends_at": org.trial_ends_at
+            "created_at": org.created_at
         })),
     )
         .into_response()

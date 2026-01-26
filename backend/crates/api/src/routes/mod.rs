@@ -13,6 +13,7 @@ pub mod budgets;
 pub mod currencies;
 pub mod dashboard;
 pub mod dimensions;
+pub mod entities;
 pub mod exchange_rates;
 pub mod fiscal;
 pub mod forensic;
@@ -44,6 +45,11 @@ use utoipa_swagger_ui::SwaggerUi;
         organizations::add_user,
         organizations::remove_user,
         organizations::update_member,
+        entities::list_entities,
+        entities::create_entity,
+        entities::get_entity,
+        entities::update_entity,
+        entities::delete_entity,
         accounts::list_accounts,
         accounts::create_account,
         accounts::get_account,
@@ -135,6 +141,10 @@ use utoipa_swagger_ui::SwaggerUi;
             zeltra_shared::auth::UpdateOrganizationRequest,
             zeltra_shared::auth::AddUserRequest,
             zeltra_shared::auth::UpdateMemberRequest,
+            entities::CreateEntityRequest,
+            entities::UpdateEntityRequest,
+            entities::EntityResponse,
+            entities::GetEntitiesResponse,
             accounts::CreateAccountRequest,
             accounts::UpdateAccountRequest,
             accounts::ToggleStatusRequest,
@@ -238,6 +248,7 @@ use utoipa_swagger_ui::SwaggerUi;
         (name = "Auth", description = "Authentication endpoints"),
         (name = "Health", description = "Health check endpoints"),
         (name = "Organizations", description = "Organization management endpoints"),
+        (name = "Entities", description = "Entity management endpoints"),
         (name = "Accounts", description = "Account management endpoints"),
         (name = "Transactions", description = "Transaction management endpoints"),
         (name = "Budgets", description = "Budget management endpoints"),
@@ -287,6 +298,7 @@ pub fn api_routes_with_state(state: AppState) -> Router<AppState> {
     // Protected routes that require authentication
     let protected_routes = Router::new()
         .merge(organizations::routes())
+        .merge(entities::routes())
         .merge(fiscal::routes())
         .merge(accounts::routes())
         .merge(dimensions::routes())

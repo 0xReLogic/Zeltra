@@ -47,6 +47,8 @@ impl IntercompanyEngine {
 pub struct EliminationTransactionInput {
     /// Consolidation organization ID.
     pub consolidation_org_id: Uuid,
+    /// Entity ID for the elimination transaction.
+    pub entity_id: Uuid,
     /// Source account ID.
     pub source_account_id: Uuid,
     /// Target account ID.
@@ -66,9 +68,11 @@ pub struct EliminationTransactionInput {
 pub struct MirrorTransactionInput {
     /// Target organization ID.
     pub target_org_id: Uuid,
+    /// Target entity ID.
+    pub target_entity_id: Uuid,
     /// Target account ID.
     pub target_account_id: Uuid,
-    /// Balancing account ID in target org.
+    /// Balancing account ID in target entity.
     pub balancing_account_id: Uuid,
     /// Source currency ID.
     pub source_currency: String,
@@ -89,6 +93,7 @@ impl IntercompanyEngine {
     ) -> CreateTransactionInput {
         CreateTransactionInput {
             organization_id: input.consolidation_org_id,
+            entity_id: Some(input.entity_id),
             transaction_type: TransactionType::Adjustment,
             transaction_date: input.date,
             description: format!(
@@ -132,6 +137,7 @@ impl IntercompanyEngine {
 
         CreateTransactionInput {
             organization_id: input.target_org_id,
+            entity_id: Some(input.target_entity_id),
             transaction_type: TransactionType::Transfer,
             transaction_date: input.date,
             description: format!("Intercompany Mirror: {ref_str}", ref_str = input.reference),

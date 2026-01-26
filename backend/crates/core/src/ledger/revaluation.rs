@@ -34,6 +34,8 @@ impl RevaluationEngine {
 pub struct RevaluationTransactionInput {
     /// Organization ID.
     pub organization_id: Uuid,
+    /// Entity ID (optional for backward compatibility).
+    pub entity_id: Option<Uuid>,
     /// Account being revalued.
     pub account_id: Uuid,
     /// Unrealized Gain/Loss account.
@@ -79,6 +81,7 @@ impl RevaluationEngine {
 
         CreateTransactionInput {
             organization_id: input.organization_id,
+            entity_id: input.entity_id,
             transaction_type: TransactionType::Revaluation,
             description: memo_text.clone(),
             transaction_date: input.transaction_date,

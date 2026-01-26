@@ -56,7 +56,7 @@ impl UserRepository {
     ) -> Result<users::Model, DbErr> {
         let now = chrono::Utc::now().into();
         let trial_ends_at = chrono::Utc::now() + chrono::Duration::days(14);
-        
+
         let user = users::ActiveModel {
             id: Set(Uuid::new_v4()),
             email: Set(email.to_string()),

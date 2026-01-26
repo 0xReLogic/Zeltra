@@ -184,8 +184,8 @@ This implementation plan breaks down the entities model refactoring into 7 daily
   - [ ] 1.16 Checkpoint - Ensure all tests pass
     - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 2. Entity API Routes & Subscription Middleware (Day 2: 6-8 hours)
-  - [ ] 2.1 Research Axum and utoipa patterns for 2025-2026
+- [-] 2. Entity API Routes & Subscription Middleware (Day 2: 6-8 hours)
+  - [x] 2.1 Research Axum and utoipa patterns for 2025-2026
     - Use Exa or Tavily to search for "Axum middleware best practices 2025 2026"
     - Use Exa or Tavily to search for "utoipa OpenAPI generation patterns 2025"
     - Use Exa or Tavily to search for "Rust API error handling 2025"
@@ -193,7 +193,7 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Document findings for API route implementation
     - _Requirements: 2.1-2.15_
   
-  - [ ] 2.2 Create Entity API request/response types
+  - [x] 2.2 Create Entity API request/response types
     - Create file `backend/crates/api/src/routes/entities.rs`
     - Define CreateEntityRequest struct with utoipa ToSchema
     - Define UpdateEntityRequest struct with utoipa ToSchema
@@ -201,7 +201,7 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Add utoipa examples for all fields
     - _Requirements: 2.1, 2.7_
   
-  - [ ] 2.2 Implement list_entities endpoint
+  - [x] 2.2 Implement list_entities endpoint
     - In file `backend/crates/api/src/routes/entities.rs`
     - Implement GET /organizations/{org_id}/entities
     - Add utoipa path annotation with full documentation
@@ -210,7 +210,7 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Return Vec<EntityResponse>
     - _Requirements: 2.6_
   
-  - [ ] 2.3 Implement create_entity endpoint
+  - [x] 2.3 Implement create_entity endpoint
     - In file `backend/crates/api/src/routes/entities.rs`
     - Implement POST /organizations/{org_id}/entities
     - Add utoipa path annotation with full documentation
@@ -220,7 +220,7 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Handle errors: ENTITY_LIMIT_EXCEEDED, DUPLICATE_ENTITY_NAME
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 19.1, 19.2_
   
-  - [ ] 2.4 Implement get_entity endpoint
+  - [x] 2.4 Implement get_entity endpoint
     - In file `backend/crates/api/src/routes/entities.rs`
     - Implement GET /organizations/{org_id}/entities/{entity_id}
     - Add utoipa path annotation with full documentation
@@ -229,7 +229,7 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Return EntityResponse or 404
     - _Requirements: 2.6_
   
-  - [ ] 2.5 Implement update_entity endpoint
+  - [x] 2.5 Implement update_entity endpoint
     - In file `backend/crates/api/src/routes/entities.rs`
     - Implement PATCH /organizations/{org_id}/entities/{entity_id}
     - Add utoipa path annotation with full documentation
@@ -238,7 +238,7 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Return EntityResponse
     - _Requirements: 2.7_
   
-  - [ ] 2.6 Implement delete_entity endpoint
+  - [x] 2.6 Implement delete_entity endpoint
     - In file `backend/crates/api/src/routes/entities.rs`
     - Implement DELETE /organizations/{org_id}/entities/{entity_id}
     - Add utoipa path annotation with full documentation
@@ -247,7 +247,7 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Return HTTP 204 No Content
     - _Requirements: 2.8_
   
-  - [ ] 2.7 Register entity routes
+  - [x] 2.7 Register entity routes
     - Modify file `backend/crates/api/src/routes/mod.rs`
     - Add entities module
     - Register all entity endpoints in ApiDoc OpenAPI spec
@@ -255,7 +255,7 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Add entity routes to router
     - _Requirements: 2.1, 2.6, 2.7, 2.8_
   
-  - [ ] 2.8 Update subscription middleware
+  - [x] 2.8 Update subscription middleware
     - Modify file `backend/crates/api/src/middleware/subscription.rs`
     - Change to query user's subscription fields instead of organization's
     - Extract user_id from Claims
@@ -266,14 +266,14 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - _Requirements: 1.5, 6.1, 6.2, 6.3, 6.4, 19.5_
 
 
-  - [ ] 2.9 Update organization routes
+  - [x] 2.9 Update organization routes
     - Modify file `backend/crates/api/src/routes/organizations.rs`
     - Remove subscription fields from OrganizationResponse
     - Update create_organization to create default entity
     - Update utoipa annotations
     - _Requirements: 1.4, 2.1_
   
-  - [ ] 2.10 Update intercompany repository
+  - [x] 2.10 Update intercompany repository
     - Modify file `backend/crates/db/src/repositories/intercompany.rs`
     - Update get_mappings() to use source_entity_id parameter
     - Update find_mapping_by_account() to use source_entity_id parameter
@@ -282,7 +282,7 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Simplify validation logic
     - _Requirements: 4.2, 4.3, 4.4, 4.6_
   
-  - [ ] 2.11 Update intercompany core logic
+  - [x] 2.11 Update intercompany core logic
     - Modify file `backend/crates/core/src/ledger/intercompany.rs`
     - Update IntercompanyEngine.validate_entities() to check same organization
     - Simplify validation (no cross-org complexity)
@@ -290,7 +290,7 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Update generate_elimination_transaction() to use entity_id
     - _Requirements: 4.2, 4.5_
   
-  - [ ] 2.12 Update intercompany API routes
+  - [x] 2.12 Update intercompany API routes
     - Modify file `backend/crates/api/src/routes/sentinel.rs`
     - Update CreateIntercompanyMappingRequest to use source_entity_id and target_entity_id
     - Update list_intercompany_mappings endpoint
@@ -298,14 +298,14 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Update utoipa annotations
     - _Requirements: 4.1, 4.2, 4.4_
   
-  - [ ] 2.13 Generate OpenAPI specification
+  - [-] 2.13 Generate OpenAPI specification
     - Run `cd backend && cargo run --bin generate-openapi`
     - Run `cd ../contracts && python3 split-openapi.py`
     - Verify openapi.yaml contains entity endpoints
     - Verify entity_id parameters in existing endpoints
     - _Requirements: 13.1, 13.2_
   
-  - [ ] 2.14 Run backend validation
+  - [x] 2.14 Run backend validation
     - Run `cargo fmt` to format code
     - Run `cargo clippy -- -D warnings` to check for issues
     - Use getDiagnostics tool on all modified backend files

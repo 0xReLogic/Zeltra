@@ -1,6 +1,6 @@
 //! Subscription status middleware.
 //!
-//! Blocks requests from organizations with expired/cancelled subscriptions.
+//! Blocks requests from users with expired/cancelled subscriptions.
 
 use axum::{
     Json,
@@ -12,7 +12,8 @@ use axum::{
 use sea_orm::EntityTrait;
 use serde_json::json;
 use tracing::warn;
-use zeltra_db::entities::{organizations, sea_orm_active_enums::SubscriptionStatus};
+use zeltra_db::entities::{sea_orm_active_enums::SubscriptionStatus, users};
+use zeltra_shared::Claims;
 
 use crate::AppState;
 
@@ -47,27 +48,26 @@ pub async fn check_subscription_status(
         return next.run(request).await;
     }
 
-    // Extract org_id from request extensions (set by auth middleware)
-    let org_id = request.extensions().get::<uuid::Uuid>().copied();
+    // Extract claims from request extensions (set by auth middleware)
+    let claims = request.extensions().get::<Claims>().copied();
 
-    let Some(org_id) = org_id else {
-        // No org_id means not authenticated or auth middleware hasn't run yet
+    let Some(claims) = claims else {
+        // No claims means not authenticated or auth middleware hasn't run yet
         // Let it pass and let auth middleware handle it
         return next.run(request).await;
     };
 
-    // Check subscription status
-    let org = match organizations::Entity::find_by_id(org_id)
-        .one(&*state.db)
-        .await
-    {
-        Ok(Some(org)) => org,
+    let user_id = claims.user_id();
+
+    // Check user's subscription status
+    let user = match users::Entity::find_by_id(user_id).one(&*state.db).await {
+        Ok(Some(user)) => user,
         Ok(None) => {
             return (
                 StatusCode::NOT_FOUND,
                 Json(json!({
-                    "error": "organization_not_found",
-                    "message": "Organization not found"
+                    "error": "user_not_found",
+                    "message": "User not found"
                 })),
             )
                 .into_response();
@@ -80,16 +80,16 @@ pub async fn check_subscription_status(
     };
 
     // Check if subscription is active or trialing
-    match org.subscription_status {
+    match user.subscription_status {
         SubscriptionStatus::Active | SubscriptionStatus::Trialing => {
             // All good, proceed
             next.run(request).await
         }
         SubscriptionStatus::Expired => {
             warn!(
-                org_id = %org_id,
-                org_name = %org.name,
-                "🚫 Blocked request from organization with expired subscription"
+                user_id = %user_id,
+                user_email = %user.email,
+                "🚫 Blocked request from user with expired subscription"
             );
 
             (
@@ -98,16 +98,16 @@ pub async fn check_subscription_status(
                     "error": "subscription_expired",
                     "message": "Your trial has expired. Please upgrade to continue using Zeltra.",
                     "subscription_status": "expired",
-                    "trial_ends_at": org.trial_ends_at
+                    "trial_ends_at": user.trial_ends_at
                 })),
             )
                 .into_response()
         }
         SubscriptionStatus::Cancelled => {
             warn!(
-                org_id = %org_id,
-                org_name = %org.name,
-                "🚫 Blocked request from cancelled organization"
+                user_id = %user_id,
+                user_email = %user.email,
+                "🚫 Blocked request from user with cancelled subscription"
             );
 
             (
@@ -122,9 +122,9 @@ pub async fn check_subscription_status(
         }
         SubscriptionStatus::PastDue => {
             warn!(
-                org_id = %org_id,
-                org_name = %org.name,
-                "🚫 Blocked request from organization with past due payment"
+                user_id = %user_id,
+                user_email = %user.email,
+                "🚫 Blocked request from user with past due payment"
             );
 
             (

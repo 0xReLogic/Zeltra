@@ -112,6 +112,8 @@ impl AccrualEngine {
 pub struct AccrualTransactionInput<'a> {
     /// Organization ID.
     pub org_id: Uuid,
+    /// Entity ID (optional for backward compatibility).
+    pub entity_id: Option<Uuid>,
     /// Schedule name.
     pub schedule_name: &'a str,
     /// Amount to accrue.
@@ -158,6 +160,7 @@ impl AccrualEngine {
 
         CreateTransactionInput {
             organization_id: input.org_id,
+            entity_id: input.entity_id,
             transaction_type: TransactionType::Accrual,
             transaction_date: input.run_date,
             description: format!("Automated Accrual: {name}", name = input.schedule_name),

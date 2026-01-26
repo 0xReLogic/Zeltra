@@ -170,6 +170,8 @@ pub struct LedgerEntryInput {
 pub struct CreateTransactionInput {
     /// The organization this transaction belongs to.
     pub organization_id: Uuid,
+    /// The entity this transaction belongs to (optional for backward compatibility).
+    pub entity_id: Option<Uuid>,
     /// The type of transaction.
     pub transaction_type: TransactionType,
     /// The date of the transaction.

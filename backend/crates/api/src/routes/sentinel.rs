@@ -161,12 +161,12 @@ pub struct RevaluationLogResponse {
 pub struct IntercompanyMappingResponse {
     /// Mapping ID.
     pub id: Uuid,
-    /// Source organization ID.
-    pub source_org_id: Uuid,
+    /// Source entity ID.
+    pub source_entity_id: Uuid,
     /// Source account ID.
     pub source_account_id: Uuid,
-    /// Target organization ID.
-    pub target_org_id: Uuid,
+    /// Target entity ID.
+    pub target_entity_id: Uuid,
     /// Target account ID.
     pub target_account_id: Uuid,
     /// Whether to auto-post transactions.
@@ -180,11 +180,13 @@ pub struct IntercompanyMappingResponse {
 /// Request body for creating an intercompany mapping.
 #[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct CreateIntercompanyMappingRequest {
-    /// Source account ID (in current organization).
+    /// Source account ID (in source entity).
     pub source_account_id: Uuid,
-    /// Target organization ID.
-    pub target_org_id: Uuid,
-    /// Target account ID (in target organization).
+    /// Source entity ID.
+    pub source_entity_id: Uuid,
+    /// Target entity ID (must be in same organization).
+    pub target_entity_id: Uuid,
+    /// Target account ID (in target entity).
     pub target_account_id: Uuid,
 }
 
@@ -528,17 +530,29 @@ async fn list_intercompany_mappings(
         return response;
     }
 
-    let repo = IntercompanyRepository::new((*state.db).clone());
+    // Query all mappings for entities in this organization
+    let mappings = intercompany_mappings::Entity::find()
+        .filter(
+            intercompany_mappings::Column::SourceEntityId.in_subquery(
+                zeltra_db::entities::entities::Entity::find()
+                    .filter(zeltra_db::entities::entities::Column::OrganizationId.eq(org_id))
+                    .select_only()
+                    .column(zeltra_db::entities::entities::Column::Id)
+                    .into_query(),
+            ),
+        )
+        .all(&*state.db)
+        .await;
 
-    match repo.get_mappings(org_id).await {
+    match mappings {
         Ok(mappings) => {
             let items: Vec<IntercompanyMappingResponse> = mappings
                 .into_iter()
                 .map(|m| IntercompanyMappingResponse {
                     id: m.id,
-                    source_org_id: m.source_org_id,
+                    source_entity_id: m.source_entity_id,
                     source_account_id: m.source_account_id,
-                    target_org_id: m.target_org_id,
+                    target_entity_id: m.target_entity_id,
                     target_account_id: m.target_account_id,
                     auto_post: m.auto_post,
                     mapping_type: m.mapping_type.clone(),
@@ -550,7 +564,14 @@ async fn list_intercompany_mappings(
         }
         Err(e) => {
             error!(error = %e, "Failed to list intercompany mappings");
-            intercompany_error_response(&e)
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": "internal_error",
+                    "message": "An error occurred"
+                })),
+            )
+                .into_response()
         }
     }
 }
@@ -587,26 +608,67 @@ async fn create_intercompany_mapping(
         return response;
     }
 
-    // Also verify user has access to target org
-    if check_membership(&org_repo, payload.target_org_id, auth.user_id())
-        .await
-        .is_err()
-    {
-        return (
-            StatusCode::FORBIDDEN,
-            Json(json!({
-                "error": "forbidden",
-                "message": "You must have access to both organizations to create a mapping"
-            })),
-        )
-            .into_response();
+    // Verify both entities belong to the same organization
+    let source_entity = zeltra_db::entities::entities::Entity::find_by_id(payload.source_entity_id)
+        .one(&*state.db)
+        .await;
+
+    let target_entity = zeltra_db::entities::entities::Entity::find_by_id(payload.target_entity_id)
+        .one(&*state.db)
+        .await;
+
+    match (source_entity, target_entity) {
+        (Ok(Some(source)), Ok(Some(target))) => {
+            if source.organization_id != org_id || target.organization_id != org_id {
+                return (
+                    StatusCode::FORBIDDEN,
+                    Json(json!({
+                        "error": "forbidden",
+                        "message": "Both entities must belong to the specified organization"
+                    })),
+                )
+                    .into_response();
+            }
+
+            if source.organization_id != target.organization_id {
+                return (
+                    StatusCode::BAD_REQUEST,
+                    Json(json!({
+                        "error": "invalid_mapping",
+                        "message": "Intercompany mappings can only be created between entities in the same organization"
+                    })),
+                )
+                    .into_response();
+            }
+        }
+        (Ok(None), _) | (_, Ok(None)) => {
+            return (
+                StatusCode::NOT_FOUND,
+                Json(json!({
+                    "error": "entity_not_found",
+                    "message": "One or both entities not found"
+                })),
+            )
+                .into_response();
+        }
+        (Err(e), _) | (_, Err(e)) => {
+            error!(error = %e, "Failed to verify entities");
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": "internal_error",
+                    "message": "An error occurred"
+                })),
+            )
+                .into_response();
+        }
     }
 
     let mapping = intercompany_mappings::ActiveModel {
         id: Set(Uuid::new_v4()),
-        source_org_id: Set(org_id),
+        source_entity_id: Set(payload.source_entity_id),
         source_account_id: Set(payload.source_account_id),
-        target_org_id: Set(payload.target_org_id),
+        target_entity_id: Set(payload.target_entity_id),
         target_account_id: Set(payload.target_account_id),
         mapping_type: Set("mirror".to_string()),
         auto_post: Set(true),
@@ -617,8 +679,8 @@ async fn create_intercompany_mapping(
     match mapping.insert(&*state.db).await {
         Ok(m) => {
             info!(
-                source_org_id = %org_id,
-                target_org_id = %payload.target_org_id,
+                source_entity_id = %payload.source_entity_id,
+                target_entity_id = %payload.target_entity_id,
                 mapping_id = %m.id,
                 "Intercompany mapping created"
             );
@@ -627,9 +689,9 @@ async fn create_intercompany_mapping(
                 StatusCode::CREATED,
                 Json(IntercompanyMappingResponse {
                     id: m.id,
-                    source_org_id: m.source_org_id,
+                    source_entity_id: m.source_entity_id,
                     source_account_id: m.source_account_id,
-                    target_org_id: m.target_org_id,
+                    target_entity_id: m.target_entity_id,
                     target_account_id: m.target_account_id,
                     auto_post: m.auto_post,
                     mapping_type: m.mapping_type,
