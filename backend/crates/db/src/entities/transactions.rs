@@ -18,6 +18,7 @@ impl EntityName for Entity {
 pub struct Model {
     pub id: Uuid,
     pub organization_id: Uuid,
+    pub entity_id: Uuid,
     pub fiscal_period_id: Uuid,
     pub reference_number: Option<String>,
     pub transaction_type: TransactionType,
@@ -49,6 +50,7 @@ pub struct Model {
 pub enum Column {
     Id,
     OrganizationId,
+    EntityId,
     FiscalPeriodId,
     ReferenceNumber,
     TransactionType,
@@ -92,6 +94,7 @@ impl PrimaryKeyTrait for PrimaryKey {
 pub enum Relation {
     AccrualSchedules,
     Attachments,
+    Entities,
     FiscalPeriods,
     LedgerEntries,
     Organizations,
@@ -111,6 +114,7 @@ impl ColumnTrait for Column {
         match self {
             Self::Id => ColumnType::Uuid.def(),
             Self::OrganizationId => ColumnType::Uuid.def(),
+            Self::EntityId => ColumnType::Uuid.def(),
             Self::FiscalPeriodId => ColumnType::Uuid.def(),
             Self::ReferenceNumber => ColumnType::String(StringLen::N(100u32)).def().null(),
             Self::TransactionType => TransactionType::db_type()
@@ -151,6 +155,10 @@ impl RelationTrait for Relation {
         match self {
             Self::AccrualSchedules => Entity::has_many(super::accrual_schedules::Entity).into(),
             Self::Attachments => Entity::has_many(super::attachments::Entity).into(),
+            Self::Entities => Entity::belongs_to(super::entities::Entity)
+                .from(Column::EntityId)
+                .to(super::entities::Column::Id)
+                .into(),
             Self::FiscalPeriods => Entity::belongs_to(super::fiscal_periods::Entity)
                 .from(Column::FiscalPeriodId)
                 .to(super::fiscal_periods::Column::Id)
@@ -202,6 +210,12 @@ impl Related<super::accrual_schedules::Entity> for Entity {
 impl Related<super::attachments::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::Attachments.def()
+    }
+}
+
+impl Related<super::entities::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Entities.def()
     }
 }
 

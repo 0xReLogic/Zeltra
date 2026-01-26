@@ -16,6 +16,7 @@ impl EntityName for Entity {
 pub struct Model {
     pub id: Uuid,
     pub organization_id: Uuid,
+    pub entity_id: Uuid,
     pub name: String,
     pub description: Option<String>,
     pub total_amount: Decimal,
@@ -39,6 +40,7 @@ pub struct Model {
 pub enum Column {
     Id,
     OrganizationId,
+    EntityId,
     Name,
     Description,
     TotalAmount,
@@ -75,6 +77,7 @@ pub enum Relation {
     ChartOfAccounts2,
     ChartOfAccounts1,
     Currencies,
+    Entities,
     Organizations,
     Transactions,
 }
@@ -85,6 +88,7 @@ impl ColumnTrait for Column {
         match self {
             Self::Id => ColumnType::Uuid.def(),
             Self::OrganizationId => ColumnType::Uuid.def(),
+            Self::EntityId => ColumnType::Uuid.def(),
             Self::Name => ColumnType::String(StringLen::N(255u32)).def(),
             Self::Description => ColumnType::Text.def().null(),
             Self::TotalAmount => ColumnType::Decimal(Some((19u32, 4u32))).def(),
@@ -121,6 +125,10 @@ impl RelationTrait for Relation {
                 .from(Column::CurrencyId)
                 .to(super::currencies::Column::Code)
                 .into(),
+            Self::Entities => Entity::belongs_to(super::entities::Entity)
+                .from(Column::EntityId)
+                .to(super::entities::Column::Id)
+                .into(),
             Self::Organizations => Entity::belongs_to(super::organizations::Entity)
                 .from(Column::OrganizationId)
                 .to(super::organizations::Column::Id)
@@ -136,6 +144,12 @@ impl RelationTrait for Relation {
 impl Related<super::currencies::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::Currencies.def()
+    }
+}
+
+impl Related<super::entities::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Entities.def()
     }
 }
 

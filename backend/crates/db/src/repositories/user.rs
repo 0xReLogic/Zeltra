@@ -6,6 +6,7 @@ use sea_orm::{
 };
 use uuid::Uuid;
 
+use crate::entities::sea_orm_active_enums::{SubscriptionStatus, SubscriptionTier};
 use crate::entities::{organization_users, organizations, users};
 
 /// User repository for CRUD operations.
@@ -54,6 +55,8 @@ impl UserRepository {
         full_name: &str,
     ) -> Result<users::Model, DbErr> {
         let now = chrono::Utc::now().into();
+        let trial_ends_at = chrono::Utc::now() + chrono::Duration::days(14);
+        
         let user = users::ActiveModel {
             id: Set(Uuid::new_v4()),
             email: Set(email.to_string()),
@@ -61,6 +64,13 @@ impl UserRepository {
             full_name: Set(full_name.to_string()),
             is_active: Set(true),
             email_verified_at: Set(None),
+            subscription_tier: Set(SubscriptionTier::Starter),
+            subscription_status: Set(SubscriptionStatus::Trialing),
+            trial_ends_at: Set(Some(trial_ends_at.into())),
+            subscription_ends_at: Set(None),
+            payment_provider: Set(None),
+            payment_customer_id: Set(None),
+            payment_subscription_id: Set(None),
             created_at: Set(now),
             updated_at: Set(now),
         };
@@ -120,5 +130,80 @@ impl UserRepository {
             .await?;
 
         Ok(count > 0)
+    }
+
+    /// Gets a user's subscription tier.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the database query fails or user not found.
+    pub async fn get_subscription_tier(&self, user_id: Uuid) -> Result<SubscriptionTier, DbErr> {
+        let user = users::Entity::find_by_id(user_id)
+            .one(&self.db)
+            .await?
+            .ok_or_else(|| DbErr::Custom("User not found".to_string()))?;
+
+        Ok(user.subscription_tier)
+    }
+
+    /// Updates a user's subscription tier.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the database update fails or user not found.
+    pub async fn update_subscription_tier(
+        &self,
+        user_id: Uuid,
+        tier: SubscriptionTier,
+    ) -> Result<users::Model, DbErr> {
+        let user = users::Entity::find_by_id(user_id)
+            .one(&self.db)
+            .await?
+            .ok_or_else(|| DbErr::Custom("User not found".to_string()))?;
+
+        let mut active_user: users::ActiveModel = user.into();
+        active_user.subscription_tier = Set(tier);
+        active_user.updated_at = Set(chrono::Utc::now().into());
+
+        active_user.update(&self.db).await
+    }
+
+    /// Gets a user's subscription status.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the database query fails or user not found.
+    pub async fn get_subscription_status(
+        &self,
+        user_id: Uuid,
+    ) -> Result<SubscriptionStatus, DbErr> {
+        let user = users::Entity::find_by_id(user_id)
+            .one(&self.db)
+            .await?
+            .ok_or_else(|| DbErr::Custom("User not found".to_string()))?;
+
+        Ok(user.subscription_status)
+    }
+
+    /// Updates a user's subscription status.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the database update fails or user not found.
+    pub async fn update_subscription_status(
+        &self,
+        user_id: Uuid,
+        status: SubscriptionStatus,
+    ) -> Result<users::Model, DbErr> {
+        let user = users::Entity::find_by_id(user_id)
+            .one(&self.db)
+            .await?
+            .ok_or_else(|| DbErr::Custom("User not found".to_string()))?;
+
+        let mut active_user: users::ActiveModel = user.into();
+        active_user.subscription_status = Set(status);
+        active_user.updated_at = Set(chrono::Utc::now().into());
+
+        active_user.update(&self.db).await
     }
 }

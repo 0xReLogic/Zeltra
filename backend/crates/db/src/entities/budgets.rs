@@ -17,6 +17,7 @@ impl EntityName for Entity {
 pub struct Model {
     pub id: Uuid,
     pub organization_id: Uuid,
+    pub entity_id: Uuid,
     pub fiscal_year_id: Uuid,
     pub name: String,
     pub description: Option<String>,
@@ -33,6 +34,7 @@ pub struct Model {
 pub enum Column {
     Id,
     OrganizationId,
+    EntityId,
     FiscalYearId,
     Name,
     Description,
@@ -61,6 +63,7 @@ impl PrimaryKeyTrait for PrimaryKey {
 pub enum Relation {
     BudgetLines,
     Currencies,
+    Entities,
     FiscalYears,
     Organizations,
     Users,
@@ -72,6 +75,7 @@ impl ColumnTrait for Column {
         match self {
             Self::Id => ColumnType::Uuid.def(),
             Self::OrganizationId => ColumnType::Uuid.def(),
+            Self::EntityId => ColumnType::Uuid.def(),
             Self::FiscalYearId => ColumnType::Uuid.def(),
             Self::Name => ColumnType::String(StringLen::N(255u32)).def(),
             Self::Description => ColumnType::Text.def().null(),
@@ -93,6 +97,10 @@ impl RelationTrait for Relation {
             Self::Currencies => Entity::belongs_to(super::currencies::Entity)
                 .from(Column::Currency)
                 .to(super::currencies::Column::Code)
+                .into(),
+            Self::Entities => Entity::belongs_to(super::entities::Entity)
+                .from(Column::EntityId)
+                .to(super::entities::Column::Id)
                 .into(),
             Self::FiscalYears => Entity::belongs_to(super::fiscal_years::Entity)
                 .from(Column::FiscalYearId)
@@ -119,6 +127,12 @@ impl Related<super::budget_lines::Entity> for Entity {
 impl Related<super::currencies::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::Currencies.def()
+    }
+}
+
+impl Related<super::entities::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Entities.def()
     }
 }
 

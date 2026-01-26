@@ -17,6 +17,7 @@ impl EntityName for Entity {
 pub struct Model {
     pub id: Uuid,
     pub organization_id: Uuid,
+    pub entity_id: Uuid,
     pub name: String,
     pub start_date: Date,
     pub end_date: Date,
@@ -31,6 +32,7 @@ pub struct Model {
 pub enum Column {
     Id,
     OrganizationId,
+    EntityId,
     Name,
     StartDate,
     EndDate,
@@ -56,6 +58,7 @@ impl PrimaryKeyTrait for PrimaryKey {
 #[derive(Copy, Clone, Debug, EnumIter)]
 pub enum Relation {
     Budgets,
+    Entities,
     FiscalPeriods,
     Organizations,
     Users,
@@ -67,6 +70,7 @@ impl ColumnTrait for Column {
         match self {
             Self::Id => ColumnType::Uuid.def(),
             Self::OrganizationId => ColumnType::Uuid.def(),
+            Self::EntityId => ColumnType::Uuid.def(),
             Self::Name => ColumnType::String(StringLen::N(50u32)).def(),
             Self::StartDate => ColumnType::Date.def(),
             Self::EndDate => ColumnType::Date.def(),
@@ -86,6 +90,10 @@ impl RelationTrait for Relation {
     fn def(&self) -> RelationDef {
         match self {
             Self::Budgets => Entity::has_many(super::budgets::Entity).into(),
+            Self::Entities => Entity::belongs_to(super::entities::Entity)
+                .from(Column::EntityId)
+                .to(super::entities::Column::Id)
+                .into(),
             Self::FiscalPeriods => Entity::has_many(super::fiscal_periods::Entity).into(),
             Self::Organizations => Entity::belongs_to(super::organizations::Entity)
                 .from(Column::OrganizationId)
@@ -102,6 +110,12 @@ impl RelationTrait for Relation {
 impl Related<super::budgets::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::Budgets.def()
+    }
+}
+
+impl Related<super::entities::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Entities.def()
     }
 }
 

@@ -11,6 +11,7 @@ pub mod budget;
 pub mod dashboard;
 pub mod dimension;
 pub mod email_verification;
+pub mod entity;
 pub mod exchange_rate;
 pub mod fiscal;
 pub mod intercompany;
@@ -64,6 +65,7 @@ pub use dimension::{
     DimensionTypeFilter, DimensionValueFilter, UpdateDimensionTypeInput, UpdateDimensionValueInput,
 };
 pub use email_verification::EmailVerificationRepository;
+pub use entity::EntityRepository;
 pub use exchange_rate::{
     CreateExchangeRateInput, ExchangeRateError, ExchangeRateLookup, ExchangeRateRepository,
     RateLookupMethod,

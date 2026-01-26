@@ -15,8 +15,8 @@ impl EntityName for Entity {
 #[derive(Clone, Debug, PartialEq, DeriveModel, DeriveActiveModel, Eq, Serialize, Deserialize)]
 pub struct Model {
     pub id: Uuid,
-    pub source_org_id: Uuid,
-    pub target_org_id: Uuid,
+    pub source_entity_id: Uuid,
+    pub target_entity_id: Uuid,
     pub source_account_id: Uuid,
     pub target_account_id: Uuid,
     pub mapping_type: String,
@@ -28,8 +28,8 @@ pub struct Model {
 #[derive(Copy, Clone, Debug, EnumIter, DeriveColumn)]
 pub enum Column {
     Id,
-    SourceOrgId,
-    TargetOrgId,
+    SourceEntityId,
+    TargetEntityId,
     SourceAccountId,
     TargetAccountId,
     MappingType,
@@ -54,8 +54,8 @@ impl PrimaryKeyTrait for PrimaryKey {
 pub enum Relation {
     ChartOfAccounts2,
     ChartOfAccounts1,
-    Organizations2,
-    Organizations1,
+    Entities2,
+    Entities1,
 }
 
 impl ColumnTrait for Column {
@@ -63,8 +63,8 @@ impl ColumnTrait for Column {
     fn def(&self) -> ColumnDef {
         match self {
             Self::Id => ColumnType::Uuid.def(),
-            Self::SourceOrgId => ColumnType::Uuid.def(),
-            Self::TargetOrgId => ColumnType::Uuid.def(),
+            Self::SourceEntityId => ColumnType::Uuid.def(),
+            Self::TargetEntityId => ColumnType::Uuid.def(),
             Self::SourceAccountId => ColumnType::Uuid.def(),
             Self::TargetAccountId => ColumnType::Uuid.def(),
             Self::MappingType => ColumnType::String(StringLen::N(20u32)).def(),
@@ -86,13 +86,13 @@ impl RelationTrait for Relation {
                 .from(Column::TargetAccountId)
                 .to(super::chart_of_accounts::Column::Id)
                 .into(),
-            Self::Organizations2 => Entity::belongs_to(super::organizations::Entity)
-                .from(Column::SourceOrgId)
-                .to(super::organizations::Column::Id)
+            Self::Entities2 => Entity::belongs_to(super::entities::Entity)
+                .from(Column::SourceEntityId)
+                .to(super::entities::Column::Id)
                 .into(),
-            Self::Organizations1 => Entity::belongs_to(super::organizations::Entity)
-                .from(Column::TargetOrgId)
-                .to(super::organizations::Column::Id)
+            Self::Entities1 => Entity::belongs_to(super::entities::Entity)
+                .from(Column::TargetEntityId)
+                .to(super::entities::Column::Id)
                 .into(),
         }
     }

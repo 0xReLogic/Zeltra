@@ -15,6 +15,7 @@ impl EntityName for Entity {
 #[derive(Clone, Debug, PartialEq, DeriveModel, DeriveActiveModel, Eq, Serialize, Deserialize)]
 pub struct Model {
     pub id: Uuid,
+    pub entity_id: Uuid,
     pub transaction_id: Uuid,
     pub account_id: Uuid,
     pub source_currency: String,
@@ -38,6 +39,7 @@ pub struct Model {
 #[derive(Copy, Clone, Debug, EnumIter, DeriveColumn)]
 pub enum Column {
     Id,
+    EntityId,
     TransactionId,
     AccountId,
     SourceCurrency,
@@ -75,6 +77,7 @@ pub enum Relation {
     ChartOfAccounts,
     Currencies2,
     Currencies1,
+    Entities,
     EntryDimensions,
     Transactions,
 }
@@ -84,6 +87,7 @@ impl ColumnTrait for Column {
     fn def(&self) -> ColumnDef {
         match self {
             Self::Id => ColumnType::Uuid.def(),
+            Self::EntityId => ColumnType::Uuid.def(),
             Self::TransactionId => ColumnType::Uuid.def(),
             Self::AccountId => ColumnType::Uuid.def(),
             Self::SourceCurrency => ColumnType::Char(Some(3u32)).def(),
@@ -120,6 +124,10 @@ impl RelationTrait for Relation {
             Self::Currencies1 => Entity::belongs_to(super::currencies::Entity)
                 .from(Column::SourceCurrency)
                 .to(super::currencies::Column::Code)
+                .into(),
+            Self::Entities => Entity::belongs_to(super::entities::Entity)
+                .from(Column::EntityId)
+                .to(super::entities::Column::Id)
                 .into(),
             Self::EntryDimensions => Entity::has_many(super::entry_dimensions::Entity).into(),
             Self::Transactions => Entity::belongs_to(super::transactions::Entity)
