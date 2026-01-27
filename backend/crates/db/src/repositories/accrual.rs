@@ -27,6 +27,7 @@ pub enum AccrualError {
 #[derive(Debug, Clone)]
 pub struct CreateAccrualScheduleInput {
     pub organization_id: Uuid,
+    pub entity_id: Uuid,
     pub name: String,
     pub description: Option<String>,
     pub total_amount: Decimal,
@@ -61,6 +62,7 @@ impl AccrualRepository {
         let schedule = accrual_schedules::ActiveModel {
             id: Set(Uuid::new_v4()),
             organization_id: Set(input.organization_id),
+            entity_id: Set(input.entity_id),
             name: Set(input.name),
             description: Set(input.description),
             total_amount: Set(input.total_amount),
@@ -168,6 +170,7 @@ impl AccrualRepository {
             // Create the transaction
             let tx_input = crate::repositories::transaction::CreateTransactionInput {
                 organization_id: schedule.organization_id,
+                entity_id: schedule.entity_id,
                 transaction_type: crate::entities::sea_orm_active_enums::TransactionType::Accrual,
                 transaction_date: target_date,
                 description: format!("Automated Accrual: {}", schedule.name),

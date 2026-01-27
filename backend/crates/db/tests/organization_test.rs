@@ -855,6 +855,7 @@ async fn test_data_preservation_on_user_removal() {
     let _fiscal_year = fiscal_repo
         .create_fiscal_year(CreateFiscalYearInput {
             organization_id: org.id,
+            entity_id: Uuid::new_v4(),
             name: "FY 2026".to_string(),
             start_date: NaiveDate::from_ymd_opt(2026, 1, 1).unwrap(),
             end_date: NaiveDate::from_ymd_opt(2026, 12, 31).unwrap(),
@@ -867,6 +868,7 @@ async fn test_data_preservation_on_user_removal() {
     let cash_account = account_repo
         .create_account(CreateAccountInput {
             organization_id: org.id,
+            entity_id: Uuid::new_v4(),
             code: format!(
                 "1000-{}",
                 Uuid::new_v4().to_string().split('-').next().unwrap()
@@ -886,6 +888,7 @@ async fn test_data_preservation_on_user_removal() {
     let expense_account = account_repo
         .create_account(CreateAccountInput {
             organization_id: org.id,
+            entity_id: Uuid::new_v4(),
             code: format!(
                 "5000-{}",
                 Uuid::new_v4().to_string().split('-').next().unwrap()
@@ -906,6 +909,7 @@ async fn test_data_preservation_on_user_removal() {
     let tx = tx_repo
         .create_transaction(CreateTransactionInput {
             organization_id: org.id,
+            entity_id: Uuid::new_v4(),
             transaction_type: TransactionType::Expense,
             transaction_date: NaiveDate::from_ymd_opt(2026, 1, 15).unwrap(),
             description: "Office supplies purchase".to_string(),

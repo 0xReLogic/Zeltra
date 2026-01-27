@@ -24,6 +24,10 @@ components:
         end_date:
           description: End date.
           type: string
+        entity_id:
+          description: Entity ID.
+          format: uuid
+          type: string
         frequency:
           description: Frequency.
           type: string
@@ -62,6 +66,7 @@ components:
       required:
       - id
       - organization_id
+      - entity_id
       - name
       - total_amount
       - currency_id
@@ -98,6 +103,10 @@ components:
           description: End date (YYYY-MM-DD).
           example: 2026-12-31
           type: string
+        entity_id:
+          description: Entity ID.
+          format: uuid
+          type: string
         frequency:
           description: 'Frequency: daily, weekly, monthly, quarterly, yearly.'
           example: monthly
@@ -120,6 +129,7 @@ components:
           format: int32
           type: integer
       required:
+      - entity_id
       - name
       - total_amount
       - currency_id
@@ -207,23 +217,23 @@ components:
           description: Source account ID.
           format: uuid
           type: string
-        source_org_id:
-          description: Source organization ID.
+        source_entity_id:
+          description: Source entity ID.
           format: uuid
           type: string
         target_account_id:
           description: Target account ID.
           format: uuid
           type: string
-        target_org_id:
-          description: Target organization ID.
+        target_entity_id:
+          description: Target entity ID.
           format: uuid
           type: string
       required:
       - id
-      - source_org_id
+      - source_entity_id
       - source_account_id
-      - target_org_id
+      - target_entity_id
       - target_account_id
       - auto_post
       - mapping_type
@@ -233,19 +243,24 @@ components:
       description: Request body for creating an intercompany mapping.
       properties:
         source_account_id:
-          description: Source account ID (in current organization).
+          description: Source account ID (in source entity).
+          format: uuid
+          type: string
+        source_entity_id:
+          description: Source entity ID.
           format: uuid
           type: string
         target_account_id:
-          description: Target account ID (in target organization).
+          description: Target account ID (in target entity).
           format: uuid
           type: string
-        target_org_id:
-          description: Target organization ID.
+        target_entity_id:
+          description: Target entity ID (must be in same organization).
           format: uuid
           type: string
       required:
       - source_account_id
-      - target_org_id
+      - source_entity_id
+      - target_entity_id
       - target_account_id
       type: object

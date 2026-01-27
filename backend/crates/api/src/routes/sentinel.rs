@@ -18,15 +18,15 @@ use tracing::{error, info};
 use uuid::Uuid;
 
 use crate::{AppState, middleware::AuthUser};
-use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, QueryOrder, Set};
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, QueryOrder, QuerySelect, QueryTrait,
+    Set,
+};
 use zeltra_core::ledger::types::AccrualFrequency;
 use zeltra_db::{
     OrganizationRepository,
     entities::{accrual_schedules, intercompany_mappings, revaluation_logs},
-    repositories::{
-        accrual::{AccrualError, AccrualRepository, CreateAccrualScheduleInput},
-        intercompany::{IntercompanyError, IntercompanyRepository},
-    },
+    repositories::accrual::{AccrualError, AccrualRepository, CreateAccrualScheduleInput},
 };
 
 /// Creates the sentinel routes.
@@ -61,6 +61,8 @@ pub fn routes() -> Router<AppState> {
 /// Request body for creating an accrual schedule.
 #[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct CreateAccrualScheduleRequest {
+    /// Entity ID.
+    pub entity_id: Uuid,
     /// Name of the accrual schedule.
     #[schema(example = "Prepaid Insurance")]
     pub name: String,
@@ -97,6 +99,8 @@ pub struct AccrualScheduleResponse {
     pub id: Uuid,
     /// Organization ID.
     pub organization_id: Uuid,
+    /// Entity ID.
+    pub entity_id: Uuid,
     /// Name.
     pub name: String,
     /// Description.
@@ -416,6 +420,7 @@ async fn create_accrual_schedule(
 
     let input = CreateAccrualScheduleInput {
         organization_id: org_id,
+        entity_id: payload.entity_id,
         name: payload.name,
         description: payload.description,
         total_amount,
@@ -592,6 +597,7 @@ async fn list_intercompany_mappings(
     tag = "Sentinel",
     security(("bearerAuth" = []))
 )]
+#[allow(clippy::too_many_lines)]
 async fn create_intercompany_mapping(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -724,6 +730,7 @@ fn schedule_to_response(
     AccrualScheduleResponse {
         id: schedule.id,
         organization_id: schedule.organization_id,
+        entity_id: schedule.entity_id,
         name: schedule.name,
         description: schedule.description,
         total_amount: schedule.total_amount.to_string(),
@@ -874,27 +881,6 @@ fn accrual_error_response(e: &AccrualError) -> axum::response::Response {
         )
             .into_response(),
         AccrualError::Database(_) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({
-                "error": "internal_error",
-                "message": "An error occurred"
-            })),
-        )
-            .into_response(),
-    }
-}
-
-fn intercompany_error_response(e: &IntercompanyError) -> axum::response::Response {
-    match e {
-        IntercompanyError::MappingNotFound => (
-            StatusCode::NOT_FOUND,
-            Json(json!({
-                "error": "not_found",
-                "message": "Intercompany mapping not found"
-            })),
-        )
-            .into_response(),
-        IntercompanyError::Database(_) => (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({
                 "error": "internal_error",

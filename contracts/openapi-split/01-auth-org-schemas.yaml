@@ -145,39 +145,21 @@ components:
           description: Organization ID.
           format: uuid
           type: string
-        limits:
-          allOf:
-          - $ref: '#/components/schemas/TierLimitsResponse'
-            description: Tier limits and feature flags.
-          nullable: true
         name:
           description: Organization name.
           type: string
         slug:
           description: Organization slug.
           type: string
-        subscription_status:
-          description: Subscription status.
-          type: string
-        subscription_tier:
-          description: Subscription tier.
-          type: string
         timezone:
           description: Timezone for reports.
           type: string
-        trial_ends_at:
-          description: Trial expiration date (if applicable).
-          format: date-time
-          type: string
-          nullable: true
       required:
       - id
       - name
       - slug
       - base_currency
       - timezone
-      - subscription_tier
-      - subscription_status
       - created_at
       type: object
     OrgUserResponse:

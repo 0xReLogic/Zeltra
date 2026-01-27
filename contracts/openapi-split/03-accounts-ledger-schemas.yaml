@@ -19,6 +19,11 @@ components:
           description: Account description.
           type: string
           nullable: true
+        entity_id:
+          description: Entity ID.
+          example: 550e8400-e29b-41d4-a716-446655440000
+          format: uuid
+          type: string
         id:
           description: Account ID.
           format: uuid
@@ -43,6 +48,7 @@ components:
           type: string
       required:
       - id
+      - entity_id
       - code
       - name
       - type
@@ -70,6 +76,11 @@ components:
           description: Account description.
           type: string
           nullable: true
+        entity_id:
+          description: Entity ID.
+          example: 550e8400-e29b-41d4-a716-446655440000
+          format: uuid
+          type: string
         is_active:
           description: 'Whether the account is active (default: true).'
           type: boolean
@@ -93,6 +104,7 @@ components:
           example: asset
           type: string
       required:
+      - entity_id
       - code
       - name
       - type

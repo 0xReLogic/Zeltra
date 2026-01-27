@@ -157,6 +157,7 @@ async fn pay_invoice(
     // 4. Create Transaction
     let input = CreateTransactionInput {
         organization_id: org_id,
+        entity_id: payload.entity_id,
         transaction_type: TransactionType::Payment,
         transaction_date: payload.payment_date,
         description: payload
@@ -203,6 +204,8 @@ async fn pay_invoice(
 /// Query parameters for listing transactions.
 #[derive(Debug, Deserialize, utoipa::IntoParams)]
 pub struct ListTransactionsQuery {
+    /// Filter by entity ID (optional).
+    pub entity_id: Option<Uuid>,
     /// Filter by status.
     pub status: Option<String>,
     /// Filter by transaction type.
@@ -223,6 +226,9 @@ pub struct ListTransactionsQuery {
 /// Request body for creating a transaction.
 #[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct CreateTransactionRequest {
+    /// Entity ID.
+    #[schema(example = "550e8400-e29b-41d4-a716-446655440000")]
+    pub entity_id: Uuid,
     /// Transaction type.
     #[serde(rename = "type")]
     #[schema(example = "journal")]
@@ -290,6 +296,9 @@ pub struct UpdateTransactionRequest {
 pub struct PayInvoiceRequest {
     /// ID of the invoice (transaction) being paid.
     pub invoice_id: Uuid,
+    /// Entity ID for the payment transaction.
+    #[schema(example = "550e8400-e29b-41d4-a716-446655440000")]
+    pub entity_id: Uuid,
     /// Account ID to pay from (e.g., Bank).
     pub payment_account_id: Uuid,
     /// Amount to pay (in source currency).
@@ -365,6 +374,9 @@ pub struct PaginatedTransactionsResponse {
 pub struct TransactionResponse {
     /// Transaction ID.
     pub id: Uuid,
+    /// Entity ID.
+    #[schema(example = "550e8400-e29b-41d4-a716-446655440000")]
+    pub entity_id: Uuid,
     /// Reference number.
     pub reference_number: Option<String>,
     /// Transaction type.
@@ -555,6 +567,7 @@ async fn list_transactions(
 
     // Build filter
     let filter = TransactionFilter {
+        entity_id: query.entity_id,
         status: query.status.as_ref().and_then(|s| string_to_status(s)),
         transaction_type: query
             .transaction_type
@@ -641,7 +654,7 @@ fn check_monthly_transaction_limit(
     request_body = CreateTransactionRequest,
     responses(
         (status = 201, description = "Transaction created successfully", body = TransactionResponse),
-        (status = 400, description = "Invalid input, unbalanced transaction, or missing required budget dimensions"),
+        (status = 400, description = "Invalid input, unbalanced transaction, missing entity_id, or missing required budget dimensions"),
         (status = 403, description = "Forbidden")
     ),
     tag = "Transactions",
@@ -655,11 +668,53 @@ async fn create_transaction(
     Path(org_id): Path<Uuid>,
     Json(payload): Json<CreateTransactionRequest>,
 ) -> impl IntoResponse {
+    use zeltra_db::repositories::entity::EntityRepository;
+
     let org_repo = OrganizationRepository::new((*state.db).clone());
 
     // Check membership
     if let Err(response) = check_membership(&org_repo, org_id, auth.user_id()).await {
         return response;
+    }
+
+    // Validate entity_id is provided and user has access to entity
+    let entity_repo = EntityRepository::new((*state.db).clone());
+
+    match entity_repo.find_by_id(payload.entity_id).await {
+        Ok(Some(entity)) => {
+            // Verify entity belongs to the organization
+            if entity.organization_id != org_id {
+                return (
+                    StatusCode::BAD_REQUEST,
+                    Json(json!({
+                        "error": "invalid_entity",
+                        "message": "Entity does not belong to this organization"
+                    })),
+                )
+                    .into_response();
+            }
+        }
+        Ok(None) => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(json!({
+                    "error": "entity_not_found",
+                    "message": "Entity not found"
+                })),
+            )
+                .into_response();
+        }
+        Err(e) => {
+            error!(error = %e, "Failed to validate entity");
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": "internal_error",
+                    "message": "An error occurred"
+                })),
+            )
+                .into_response();
+        }
     }
 
     // Check tier limits - Max Transactions
@@ -892,6 +947,7 @@ async fn create_transaction(
 
     let input = CreateTransactionInput {
         organization_id: org_id,
+        entity_id: payload.entity_id,
         transaction_type,
         transaction_date: payload.transaction_date,
         description: payload.description,
@@ -1887,6 +1943,7 @@ fn map_transaction_to_response(result: TransactionWithEntries) -> TransactionRes
 
     TransactionResponse {
         id: result.transaction.id,
+        entity_id: result.transaction.entity_id,
         reference_number: result.transaction.reference_number,
         transaction_type: tx_type_to_string(&result.transaction.transaction_type),
         transaction_date: result.transaction.transaction_date.to_string(),

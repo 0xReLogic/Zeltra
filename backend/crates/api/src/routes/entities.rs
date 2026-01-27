@@ -14,8 +14,8 @@ use uuid::Uuid;
 
 use crate::{AppState, middleware::AuthUser};
 use zeltra_db::{
-    OrganizationRepository, entities::sea_orm_active_enums::UserRole,
-    repositories::entity::EntityRepository,
+    OrganizationRepository,
+    repositories::entity::{EntityRepository, UpdateEntityParams},
 };
 
 /// Creates the entity routes (requires auth middleware to be applied externally).
@@ -111,8 +111,8 @@ async fn check_membership(
     org_repo: &OrganizationRepository,
     org_id: Uuid,
     user_id: Uuid,
-) -> Result<(), impl IntoResponse> {
-    match org_repo.get_user_role(org_id, user_id).await {
+) -> Result<(), (StatusCode, Json<serde_json::Value>)> {
+    match org_repo.get_user_membership(org_id, user_id).await {
         Ok(Some(_)) => Ok(()),
         Ok(None) => Err((
             StatusCode::FORBIDDEN,
@@ -152,12 +152,12 @@ pub async fn list_entities(
     State(state): State<AppState>,
     auth: AuthUser,
     Path(org_id): Path<Uuid>,
-) -> impl IntoResponse {
+) -> axum::response::Response {
     let org_repo = OrganizationRepository::new((*state.db).clone());
 
     // Check membership
     if let Err(response) = check_membership(&org_repo, org_id, auth.user_id()).await {
-        return response;
+        return response.into_response();
     }
 
     let entity_repo = EntityRepository::new((*state.db).clone());
@@ -225,12 +225,12 @@ pub async fn create_entity(
     auth: AuthUser,
     Path(org_id): Path<Uuid>,
     Json(req): Json<CreateEntityRequest>,
-) -> impl IntoResponse {
+) -> axum::response::Response {
     let org_repo = OrganizationRepository::new((*state.db).clone());
 
     // Check membership
     if let Err(response) = check_membership(&org_repo, org_id, auth.user_id()).await {
-        return response;
+        return response.into_response();
     }
 
     let entity_repo = EntityRepository::new((*state.db).clone());
@@ -326,12 +326,12 @@ pub async fn get_entity(
     State(state): State<AppState>,
     auth: AuthUser,
     Path((org_id, entity_id)): Path<(Uuid, Uuid)>,
-) -> impl IntoResponse {
+) -> axum::response::Response {
     let org_repo = OrganizationRepository::new((*state.db).clone());
 
     // Check membership
     if let Err(response) = check_membership(&org_repo, org_id, auth.user_id()).await {
-        return response;
+        return response.into_response();
     }
 
     let entity_repo = EntityRepository::new((*state.db).clone());
@@ -409,17 +409,18 @@ pub async fn get_entity(
     tag = "Entities",
     security(("bearerAuth" = []))
 )]
+#[allow(clippy::too_many_lines)]
 pub async fn update_entity(
     State(state): State<AppState>,
     auth: AuthUser,
     Path((org_id, entity_id)): Path<(Uuid, Uuid)>,
     Json(req): Json<UpdateEntityRequest>,
-) -> impl IntoResponse {
+) -> axum::response::Response {
     let org_repo = OrganizationRepository::new((*state.db).clone());
 
     // Check membership
     if let Err(response) = check_membership(&org_repo, org_id, auth.user_id()).await {
-        return response;
+        return response.into_response();
     }
 
     let entity_repo = EntityRepository::new((*state.db).clone());
@@ -465,11 +466,14 @@ pub async fn update_entity(
     match entity_repo
         .update(
             entity_id,
-            req.name,
-            req.legal_name,
-            req.tax_id,
-            req.entity_type,
-            req.base_currency,
+            UpdateEntityParams {
+                name: req.name,
+                legal_name: req.legal_name,
+                tax_id: req.tax_id,
+                entity_type: req.entity_type,
+                base_currency: req.base_currency,
+                settings: None,
+            },
         )
         .await
     {
@@ -541,12 +545,12 @@ pub async fn delete_entity(
     State(state): State<AppState>,
     auth: AuthUser,
     Path((org_id, entity_id)): Path<(Uuid, Uuid)>,
-) -> impl IntoResponse {
+) -> axum::response::Response {
     let org_repo = OrganizationRepository::new((*state.db).clone());
 
     // Check membership
     if let Err(response) = check_membership(&org_repo, org_id, auth.user_id()).await {
-        return response;
+        return response.into_response();
     }
 
     let entity_repo = EntityRepository::new((*state.db).clone());
@@ -590,7 +594,7 @@ pub async fn delete_entity(
 
     // Delete entity (soft delete)
     match entity_repo.delete(entity_id).await {
-        Ok(_) => {
+        Ok(()) => {
             info!("Entity deleted: {}", entity_id);
             StatusCode::NO_CONTENT.into_response()
         }

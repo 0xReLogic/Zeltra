@@ -249,6 +249,7 @@ async fn test_accrual_amendment_consistency() {
 
     let input = CreateAccrualScheduleInput {
         organization_id: org_id,
+        entity_id: Uuid::new_v4(),
         name: format!("Accrual-{}", &Uuid::new_v4().to_string()[..8]),
         description: None,
         total_amount: dec!(1200),
@@ -356,6 +357,7 @@ async fn test_revaluation_concurrency_protection() {
     let initial_tx = tx_repo
         .create_transaction(CreateTransactionInput {
             organization_id: org_id,
+            entity_id: Uuid::new_v4(),
             transaction_type: TransactionType::Journal,
             transaction_date: NaiveDate::from_ymd_opt(2026, 1, 1).unwrap(),
             description: "Initial Balance".to_string(),

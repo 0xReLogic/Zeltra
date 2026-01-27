@@ -7,6 +7,11 @@ components:
           description: Description.
           example: Monthly rent payment
           type: string
+        entity_id:
+          description: Entity ID.
+          example: 550e8400-e29b-41d4-a716-446655440000
+          format: uuid
+          type: string
         entries:
           description: Ledger entries.
           items:
@@ -41,6 +46,7 @@ components:
           example: journal
           type: string
       required:
+      - entity_id
       - type
       - transaction_date
       - description
@@ -102,6 +108,11 @@ components:
         description:
           description: Description.
           type: string
+        entity_id:
+          description: Entity ID.
+          example: 550e8400-e29b-41d4-a716-446655440000
+          format: uuid
+          type: string
         entries:
           description: Ledger entries.
           items:
@@ -154,6 +165,7 @@ components:
           type: string
       required:
       - id
+      - entity_id
       - type
       - transaction_date
       - description
@@ -326,6 +338,11 @@ components:
           description: Optional description.
           type: string
           nullable: true
+        entity_id:
+          description: Entity ID for the payment transaction.
+          example: 550e8400-e29b-41d4-a716-446655440000
+          format: uuid
+          type: string
         exchange_rate:
           description: Exchange rate for the payment.
           example: '1.0850'
@@ -359,6 +376,7 @@ components:
           type: string
       required:
       - invoice_id
+      - entity_id
       - payment_account_id
       - amount
       - exchange_rate

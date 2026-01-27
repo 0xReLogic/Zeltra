@@ -53,6 +53,8 @@ pub fn routes() -> Router<AppState> {
 #[derive(Debug, Deserialize, utoipa::IntoParams)]
 #[into_params(parameter_in = Query)]
 pub struct ListAccountsQuery {
+    /// Filter by entity ID (optional).
+    pub entity_id: Option<Uuid>,
     /// Filter by account type.
     #[serde(rename = "type")]
     pub account_type: Option<String>,
@@ -65,6 +67,9 @@ pub struct ListAccountsQuery {
 /// Request body for creating an account.
 #[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct CreateAccountRequest {
+    /// Entity ID.
+    #[schema(example = "550e8400-e29b-41d4-a716-446655440000")]
+    pub entity_id: Uuid,
     /// Account code (must be unique within organization).
     #[schema(example = "1000")]
     pub code: String,
@@ -125,6 +130,9 @@ pub struct ToggleStatusRequest {
 pub struct AccountResponse {
     /// Account ID.
     pub id: Uuid,
+    /// Entity ID.
+    #[schema(example = "550e8400-e29b-41d4-a716-446655440000")]
+    pub entity_id: Uuid,
     /// Account code.
     pub code: String,
     /// Account name.
@@ -194,6 +202,7 @@ pub async fn list_accounts(
 
     // Build filter
     let filter = AccountFilter {
+        entity_id: query.entity_id,
         account_type: query
             .account_type
             .as_ref()
@@ -208,6 +217,7 @@ pub async fn list_accounts(
                 .into_iter()
                 .map(|a| AccountResponse {
                     id: a.account.id,
+                    entity_id: a.account.entity_id,
                     code: a.account.code,
                     name: a.account.name,
                     description: a.account.description,
@@ -250,7 +260,7 @@ pub async fn list_accounts(
     request_body = CreateAccountRequest,
     responses(
         (status = 201, description = "Account created successfully", body = AccountResponse),
-        (status = 400, description = "Invalid input"),
+        (status = 400, description = "Invalid input or entity not found"),
         (status = 403, description = "Forbidden"),
         (status = 409, description = "Duplicate account code")
     ),
@@ -264,11 +274,53 @@ pub async fn create_account(
     Path(org_id): Path<Uuid>,
     Json(payload): Json<CreateAccountRequest>,
 ) -> impl IntoResponse {
+    use zeltra_db::repositories::entity::EntityRepository;
+
     let org_repo = OrganizationRepository::new((*state.db).clone());
 
     // Check admin/owner role
     if let Err(response) = check_admin_role(&org_repo, org_id, auth.user_id()).await {
         return response;
+    }
+
+    // Validate entity_id is provided and user has access to entity
+    let entity_repo = EntityRepository::new((*state.db).clone());
+
+    match entity_repo.find_by_id(payload.entity_id).await {
+        Ok(Some(entity)) => {
+            // Verify entity belongs to the organization
+            if entity.organization_id != org_id {
+                return (
+                    StatusCode::BAD_REQUEST,
+                    Json(json!({
+                        "error": "invalid_entity",
+                        "message": "Entity does not belong to this organization"
+                    })),
+                )
+                    .into_response();
+            }
+        }
+        Ok(None) => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(json!({
+                    "error": "entity_not_found",
+                    "message": "Entity not found"
+                })),
+            )
+                .into_response();
+        }
+        Err(e) => {
+            error!(error = %e, "Failed to validate entity");
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": "internal_error",
+                    "message": "An error occurred"
+                })),
+            )
+                .into_response();
+        }
     }
 
     // Parse account type
@@ -293,6 +345,7 @@ pub async fn create_account(
 
     let input = CreateAccountInput {
         organization_id: org_id,
+        entity_id: payload.entity_id,
         code: payload.code,
         name: payload.name,
         description: payload.description,
@@ -317,6 +370,7 @@ pub async fn create_account(
                 StatusCode::CREATED,
                 Json(json!({
                     "id": account.id,
+                    "entity_id": account.entity_id,
                     "code": account.code,
                     "name": account.name,
                     "description": account.description,
@@ -415,6 +469,7 @@ pub async fn get_account(
             StatusCode::OK,
             Json(json!({
                 "id": a.account.id,
+                "entity_id": a.account.entity_id,
                 "code": a.account.code,
                 "name": a.account.name,
                 "description": a.account.description,
@@ -584,6 +639,7 @@ pub async fn update_account(
                 StatusCode::OK,
                 Json(json!({
                     "id": account.id,
+                    "entity_id": account.entity_id,
                     "code": account.code,
                     "name": account.name,
                     "description": account.description,
@@ -832,6 +888,7 @@ pub async fn toggle_account_status(
                 StatusCode::OK,
                 Json(json!({
                     "id": updated.id,
+                    "entity_id": updated.entity_id,
                     "code": updated.code,
                     "name": updated.name,
                     "is_active": updated.is_active,

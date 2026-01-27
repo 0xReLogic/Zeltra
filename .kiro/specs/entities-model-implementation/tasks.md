@@ -343,8 +343,8 @@ This implementation plan breaks down the entities model refactoring into 7 daily
   - [ ] 2.19 Checkpoint - Ensure all tests pass
     - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 3. Core Transaction & Account Routes (Day 3: 6-8 hours)
-  - [ ] 3.1 Update transaction request/response types
+- [x] 3. Core Transaction & Account Routes (Day 3: 6-8 hours)
+  - [x] 3.1 Update transaction request/response types
     - Modify file `backend/crates/api/src/routes/transactions.rs`
     - Add entity_id field to CreateTransactionRequest
     - Add entity_id field to TransactionResponse
@@ -352,7 +352,7 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Add utoipa examples for entity_id
     - _Requirements: 3.2_
   
-  - [ ] 3.2 Update create_transaction endpoint
+  - [x] 3.2 Update create_transaction endpoint
     - Modify file `backend/crates/api/src/routes/transactions.rs`
     - Add entity_id parameter to request
     - Validate entity_id is provided (return 400 if missing)
@@ -361,14 +361,14 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Update utoipa path annotation
     - _Requirements: 3.2, 19.3_
   
-  - [ ] 3.3 Update list_transactions endpoint
+  - [x] 3.3 Update list_transactions endpoint
     - Modify file `backend/crates/api/src/routes/transactions.rs`
     - Add entity_id query parameter (optional)
     - Filter transactions by entity_id if provided
     - Update utoipa path annotation
     - _Requirements: 3.9_
   
-  - [ ] 3.4 Update other transaction endpoints
+  - [x] 3.4 Update other transaction endpoints
     - Modify file `backend/crates/api/src/routes/transactions.rs`
     - Update get_transaction to include entity_id in response
     - Update update_transaction to validate entity access
@@ -376,7 +376,7 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Update utoipa annotations
     - _Requirements: 3.2, 3.9_
   
-  - [ ] 3.5 Update account request/response types
+  - [x] 3.5 Update account request/response types
     - Modify file `backend/crates/api/src/routes/accounts.rs`
     - Add entity_id field to CreateAccountRequest
     - Add entity_id field to AccountResponse
@@ -384,7 +384,7 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Add utoipa examples for entity_id
     - _Requirements: 3.1_
   
-  - [ ] 3.6 Update create_account endpoint
+  - [x] 3.6 Update create_account endpoint
     - Modify file `backend/crates/api/src/routes/accounts.rs`
     - Add entity_id parameter to request
     - Validate entity_id is provided (return 400 if missing)
@@ -393,14 +393,14 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Update utoipa path annotation
     - _Requirements: 3.1, 19.3_
   
-  - [ ] 3.7 Update list_accounts endpoint
+  - [x] 3.7 Update list_accounts endpoint
     - Modify file `backend/crates/api/src/routes/accounts.rs`
     - Add entity_id query parameter (optional)
     - Filter accounts by entity_id if provided
     - Update utoipa path annotation
     - _Requirements: 3.8_
   
-  - [ ] 3.8 Update other account endpoints
+  - [x] 3.8 Update other account endpoints
     - Modify file `backend/crates/api/src/routes/accounts.rs`
     - Update get_account to include entity_id in response
     - Update update_account to validate entity access
@@ -408,7 +408,7 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Update utoipa annotations
     - _Requirements: 3.1, 3.8_
   
-  - [ ] 3.9 Update budget request/response types
+  - [x] 3.9 Update budget request/response types
     - Modify file `backend/crates/api/src/routes/budgets.rs`
     - Add entity_id field to CreateBudgetRequest
     - Add entity_id field to BudgetResponse
@@ -416,7 +416,7 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Add utoipa examples for entity_id
     - _Requirements: 3.4_
   
-  - [ ] 3.10 Update create_budget endpoint
+  - [x] 3.10 Update create_budget endpoint
     - Modify file `backend/crates/api/src/routes/budgets.rs`
     - Add entity_id parameter to request
     - Validate entity_id is provided (return 400 if missing)
@@ -425,14 +425,14 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Update utoipa path annotation
     - _Requirements: 3.4, 19.3_
   
-  - [ ] 3.11 Update list_budgets endpoint
+  - [x] 3.11 Update list_budgets endpoint
     - Modify file `backend/crates/api/src/routes/budgets.rs`
     - Add entity_id query parameter (optional)
     - Filter budgets by entity_id if provided
     - Update utoipa path annotation
     - _Requirements: 3.10_
   
-  - [ ] 3.12 Update other budget endpoints
+  - [x] 3.12 Update other budget endpoints
     - Modify file `backend/crates/api/src/routes/budgets.rs`
     - Update get_budget to include entity_id in response
     - Update update_budget to validate entity access
@@ -440,7 +440,7 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Update utoipa annotations
     - _Requirements: 3.4, 3.10_
   
-  - [ ] 3.13 Update fiscal year routes
+  - [x] 3.13 Update fiscal year routes
     - Modify file `backend/crates/api/src/routes/fiscal.rs`
     - Add entity_id to CreateFiscalYearRequest
     - Add entity_id to FiscalYearResponse
@@ -448,13 +448,13 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Update all utoipa annotations
     - _Requirements: 3.5_
   
-  - [ ] 3.14 Generate OpenAPI specification
+  - [x] 3.14 Generate OpenAPI specification
     - Run `cd backend && cargo run --bin generate-openapi`
     - Run `cd ../contracts && python3 split-openapi.py`
     - Verify entity_id in transaction/account/budget/fiscal endpoints
     - _Requirements: 13.1, 13.2_
   
-  - [ ] 3.15 Run backend validation
+  - [-] 3.15 Run backend validation
     - Run `cargo fmt` to format code
     - Run `cargo clippy -- -D warnings` to check for issues
     - Use getDiagnostics tool on all modified backend files

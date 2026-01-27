@@ -10,6 +10,14 @@ paths:
         schema:
           format: uuid
           type: string
+      - description: Filter by entity ID (optional).
+        in: path
+        name: entity_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+          nullable: true
       - description: Filter by status.
         in: path
         name: status
@@ -104,8 +112,8 @@ paths:
                 $ref: '#/components/schemas/TransactionResponse'
           description: Transaction created successfully
         '400':
-          description: Invalid input, unbalanced transaction, or missing required
-            budget dimensions
+          description: Invalid input, unbalanced transaction, missing entity_id, or
+            missing required budget dimensions
         '403':
           description: Forbidden
       security:

@@ -40,6 +40,7 @@ fn mock_entry(debit: Decimal, credit: Decimal) -> ledger_entries::Model {
         id: Uuid::new_v4(),
         transaction_id: Uuid::new_v4(),
         account_id: Uuid::new_v4(),
+        entity_id: Uuid::new_v4(),
         source_currency: "USD".to_string(),
         source_amount: debit + credit,
         exchange_rate: dec!(1),

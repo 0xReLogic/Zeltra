@@ -10,6 +10,13 @@ paths:
         schema:
           format: uuid
           type: string
+      - description: Optional entity ID filter
+        in: query
+        name: entity_id
+        required: false
+        schema:
+          format: uuid
+          type: string
       responses:
         '200':
           content:

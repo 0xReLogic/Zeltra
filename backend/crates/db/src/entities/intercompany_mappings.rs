@@ -98,4 +98,8 @@ impl RelationTrait for Relation {
     }
 }
 
+// Note: We don't implement Related<super::entities::Entity> for intercompany_mappings
+// because there are two relations (source and target), which would create ambiguity.
+// The entities.rs file uses explicit has_many with from/to columns instead.
+
 impl ActiveModelBehavior for ActiveModel {}

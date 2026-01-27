@@ -80,6 +80,17 @@ async fn seed_test_user(db: &DatabaseConnection) {
         full_name: Set("Test User".to_string()),
         is_active: Set(true),
         email_verified_at: Set(Some(Utc::now().into())),
+        subscription_tier: Set(
+            zeltra_db::entities::sea_orm_active_enums::SubscriptionTier::Starter,
+        ),
+        subscription_status: Set(
+            zeltra_db::entities::sea_orm_active_enums::SubscriptionStatus::Active,
+        ),
+        trial_ends_at: Set(None),
+        subscription_ends_at: Set(None),
+        payment_provider: Set(None),
+        payment_customer_id: Set(None),
+        payment_subscription_id: Set(None),
         created_at: Set(Utc::now().into()),
         updated_at: Set(Utc::now().into()),
     };

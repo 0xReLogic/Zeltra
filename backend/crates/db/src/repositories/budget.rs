@@ -74,6 +74,8 @@ pub enum BudgetError {
 pub struct CreateBudgetInput {
     /// Organization ID.
     pub organization_id: Uuid,
+    /// Entity ID.
+    pub entity_id: Uuid,
     /// Fiscal year ID.
     pub fiscal_year_id: Uuid,
     /// Budget name.
@@ -238,6 +240,7 @@ impl BudgetRepository {
         let budget = budgets::ActiveModel {
             id: Set(budget_id),
             organization_id: Set(input.organization_id),
+            entity_id: Set(input.entity_id),
             fiscal_year_id: Set(input.fiscal_year_id),
             name: Set(input.name),
             description: Set(input.description),

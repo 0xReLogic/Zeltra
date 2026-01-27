@@ -17,7 +17,10 @@ use crate::{AppState, middleware::AuthUser};
 use zeltra_db::{
     OrganizationRepository,
     entities::sea_orm_active_enums::{FiscalPeriodStatus, UserRole},
-    repositories::fiscal::{CreateFiscalYearInput, FiscalRepository},
+    repositories::{
+        entity::EntityRepository,
+        fiscal::{CreateFiscalYearInput, FiscalRepository},
+    },
 };
 
 /// Creates the fiscal routes (requires auth middleware to be applied externally).
@@ -40,6 +43,9 @@ pub fn routes() -> Router<AppState> {
 /// Request body for creating a fiscal year.
 #[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct CreateFiscalYearRequest {
+    /// Entity ID.
+    #[schema(example = "550e8400-e29b-41d4-a716-446655440000")]
+    pub entity_id: Uuid,
     /// Fiscal year name (e.g., "FY 2026").
     #[schema(example = "FY 2026")]
     pub name: String,
@@ -89,6 +95,8 @@ pub struct FiscalPeriodResponse {
 pub struct FiscalYearResponse {
     /// Fiscal year ID.
     pub id: Uuid,
+    /// Entity ID.
+    pub entity_id: Uuid,
     /// Fiscal year name.
     #[schema(example = "FY 2026")]
     pub name: String,
@@ -108,7 +116,8 @@ pub struct FiscalYearResponse {
     get,
     path = "/organizations/{org_id}/fiscal-years",
     params(
-        ("org_id" = Uuid, Path, description = "Organization ID")
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        ("entity_id" = Option<Uuid>, Query, description = "Optional entity ID filter")
     ),
     responses(
         (status = 200, description = "List of fiscal years", body = [FiscalYearResponse]),
@@ -121,6 +130,7 @@ async fn list_fiscal_years(
     State(state): State<AppState>,
     auth: AuthUser,
     Path(org_id): Path<Uuid>,
+    axum::extract::Query(query): axum::extract::Query<ListFiscalYearsQuery>,
 ) -> impl IntoResponse {
     let org_repo = OrganizationRepository::new((*state.db).clone());
 
@@ -133,10 +143,11 @@ async fn list_fiscal_years(
 
     match fiscal_repo.list_fiscal_years(org_id).await {
         Ok(years) => {
-            let response: Vec<FiscalYearResponse> = years
+            let mut response: Vec<FiscalYearResponse> = years
                 .into_iter()
                 .map(|fy| FiscalYearResponse {
                     id: fy.fiscal_year.id,
+                    entity_id: fy.fiscal_year.entity_id,
                     name: fy.fiscal_year.name,
                     start_date: fy.fiscal_year.start_date,
                     end_date: fy.fiscal_year.end_date,
@@ -157,6 +168,11 @@ async fn list_fiscal_years(
                 })
                 .collect();
 
+            // Filter by entity_id if provided
+            if let Some(entity_id) = query.entity_id {
+                response.retain(|fy| fy.entity_id == entity_id);
+            }
+
             (StatusCode::OK, Json(response)).into_response()
         }
         Err(e) => {
@@ -171,6 +187,14 @@ async fn list_fiscal_years(
                 .into_response()
         }
     }
+}
+
+/// Query parameters for listing fiscal years.
+#[derive(Debug, serde::Deserialize, utoipa::IntoParams)]
+#[into_params(parameter_in = Query)]
+pub struct ListFiscalYearsQuery {
+    /// Optional entity ID filter.
+    pub entity_id: Option<Uuid>,
 }
 
 /// POST `/organizations/{org_id}/fiscal-years` - Create a fiscal year with auto-generated periods.
@@ -190,6 +214,7 @@ async fn list_fiscal_years(
     tag = "Fiscal",
     security(("bearerAuth" = []))
 )]
+#[allow(clippy::too_many_lines)]
 async fn create_fiscal_year(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -203,10 +228,51 @@ async fn create_fiscal_year(
         return response;
     }
 
+    // Validate entity_id is provided and user has access to entity
+    let entity_repo = EntityRepository::new((*state.db).clone());
+
+    match entity_repo.find_by_id(payload.entity_id).await {
+        Ok(Some(entity)) => {
+            // Verify entity belongs to the organization
+            if entity.organization_id != org_id {
+                return (
+                    StatusCode::BAD_REQUEST,
+                    Json(json!({
+                        "error": "invalid_entity",
+                        "message": "Entity does not belong to this organization"
+                    })),
+                )
+                    .into_response();
+            }
+        }
+        Ok(None) => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(json!({
+                    "error": "entity_not_found",
+                    "message": "Entity not found"
+                })),
+            )
+                .into_response();
+        }
+        Err(e) => {
+            error!(error = %e, "Failed to validate entity");
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": "internal_error",
+                    "message": "An error occurred"
+                })),
+            )
+                .into_response();
+        }
+    }
+
     let fiscal_repo = FiscalRepository::new((*state.db).clone());
 
     let input = CreateFiscalYearInput {
         organization_id: org_id,
+        entity_id: payload.entity_id,
         name: payload.name,
         start_date: payload.start_date,
         end_date: payload.end_date,
@@ -223,6 +289,7 @@ async fn create_fiscal_year(
 
             let response = FiscalYearResponse {
                 id: fy.fiscal_year.id,
+                entity_id: fy.fiscal_year.entity_id,
                 name: fy.fiscal_year.name,
                 start_date: fy.fiscal_year.start_date,
                 end_date: fy.fiscal_year.end_date,

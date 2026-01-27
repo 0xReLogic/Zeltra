@@ -66,8 +66,6 @@ pub enum Relation {
     FiscalYears,
     AccrualSchedules,
     RevaluationLogs,
-    IntercompanyMappingsSource,
-    IntercompanyMappingsTarget,
 }
 
 impl ColumnTrait for Column {
@@ -103,18 +101,6 @@ impl RelationTrait for Relation {
             Self::FiscalYears => Entity::has_many(super::fiscal_years::Entity).into(),
             Self::AccrualSchedules => Entity::has_many(super::accrual_schedules::Entity).into(),
             Self::RevaluationLogs => Entity::has_many(super::revaluation_logs::Entity).into(),
-            Self::IntercompanyMappingsSource => {
-                Entity::has_many(super::intercompany_mappings::Entity)
-                    .from(Column::Id)
-                    .to(super::intercompany_mappings::Column::SourceEntityId)
-                    .into()
-            }
-            Self::IntercompanyMappingsTarget => {
-                Entity::has_many(super::intercompany_mappings::Entity)
-                    .from(Column::Id)
-                    .to(super::intercompany_mappings::Column::TargetEntityId)
-                    .into()
-            }
         }
     }
 }

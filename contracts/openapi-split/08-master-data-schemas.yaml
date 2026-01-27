@@ -7,6 +7,10 @@ components:
           description: End date.
           format: date
           type: string
+        entity_id:
+          description: Entity ID.
+          format: uuid
+          type: string
         id:
           description: Fiscal year ID.
           format: uuid
@@ -30,6 +34,7 @@ components:
           type: string
       required:
       - id
+      - entity_id
       - name
       - start_date
       - end_date
@@ -84,6 +89,11 @@ components:
           example: 2026-12-31
           format: date
           type: string
+        entity_id:
+          description: Entity ID.
+          example: 550e8400-e29b-41d4-a716-446655440000
+          format: uuid
+          type: string
         include_adjustment_period:
           description: Whether to include an adjustment period (period 13).
           type: boolean
@@ -97,6 +107,7 @@ components:
           format: date
           type: string
       required:
+      - entity_id
       - name
       - start_date
       - end_date

@@ -147,6 +147,7 @@ async fn test_foundation_idempotency() {
     let idempotency_key = Uuid::new_v4();
     let input = CreateTransactionInput {
         organization_id: data.org_id,
+        entity_id: Uuid::new_v4(),
         transaction_type: TransactionType::Journal,
         transaction_date: NaiveDate::from_ymd_opt(2026, 1, 13).unwrap(),
         description: "Idempotency Test".to_string(),
@@ -211,6 +212,7 @@ async fn test_foundation_hash_chaining() {
     // Transaction 1
     let input1 = CreateTransactionInput {
         organization_id: data.org_id,
+        entity_id: Uuid::new_v4(),
         transaction_type: TransactionType::Journal,
         transaction_date: NaiveDate::from_ymd_opt(2026, 1, 13).unwrap(),
         description: "Tx 1".to_string(),
@@ -262,6 +264,7 @@ async fn test_foundation_hash_chaining() {
     // Transaction 2 (same account)
     let input2 = CreateTransactionInput {
         organization_id: data.org_id,
+        entity_id: Uuid::new_v4(),
         transaction_type: TransactionType::Journal,
         transaction_date: NaiveDate::from_ymd_opt(2026, 1, 14).unwrap(),
         description: "Tx 2".to_string(),
@@ -327,6 +330,7 @@ async fn test_foundation_tamper_detection() {
     // 1. Create a valid transaction
     let input = CreateTransactionInput {
         organization_id: data.org_id,
+        entity_id: Uuid::new_v4(),
         transaction_type: TransactionType::Journal,
         transaction_date: NaiveDate::from_ymd_opt(2026, 1, 13).unwrap(),
         description: "Tamper Test".to_string(),

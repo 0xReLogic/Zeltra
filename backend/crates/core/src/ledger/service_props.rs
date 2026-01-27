@@ -58,6 +58,7 @@ fn make_entry(entry_type: EntryType, amount: Decimal, currency: &str) -> LedgerE
 fn make_input(entries: Vec<LedgerEntryInput>) -> CreateTransactionInput {
     CreateTransactionInput {
         organization_id: Uuid::new_v4(),
+        entity_id: Some(Uuid::new_v4()),
         transaction_type: TransactionType::Journal,
         transaction_date: NaiveDate::from_ymd_opt(2026, 1, 15).unwrap(),
         description: "Test transaction".to_string(),

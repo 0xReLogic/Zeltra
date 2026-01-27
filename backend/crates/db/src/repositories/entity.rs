@@ -9,6 +9,17 @@ use uuid::Uuid;
 use crate::entities::sea_orm_active_enums::SubscriptionTier;
 use crate::entities::{entities, organization_users, tier_limits, users};
 
+/// Parameters for updating an entity.
+#[derive(Debug, Default)]
+pub struct UpdateEntityParams {
+    pub name: Option<String>,
+    pub legal_name: Option<String>,
+    pub tax_id: Option<String>,
+    pub entity_type: Option<String>,
+    pub base_currency: Option<String>,
+    pub settings: Option<serde_json::Value>,
+}
+
 /// Entity repository for CRUD operations.
 #[derive(Debug, Clone)]
 pub struct EntityRepository {
@@ -52,12 +63,12 @@ impl EntityRepository {
             .ok_or_else(|| DbErr::Custom("Tier limits not found".to_string()))?;
 
         // Enterprise tier has unlimited entities (NULL max_users)
-        if let Some(max_entities) = tier_limit.max_users {
-            if current_count >= max_entities as i64 {
-                return Err(DbErr::Custom(
-                    "Entity limit reached for your tier".to_string(),
-                ));
-            }
+        if let Some(max_entities) = tier_limit.max_users
+            && current_count >= max_entities as i64
+        {
+            return Err(DbErr::Custom(
+                "Entity limit reached for your tier".to_string(),
+            ));
         }
 
         // Create the entity
@@ -115,12 +126,7 @@ impl EntityRepository {
     pub async fn update(
         &self,
         entity_id: Uuid,
-        name: Option<String>,
-        legal_name: Option<String>,
-        tax_id: Option<String>,
-        entity_type: Option<String>,
-        base_currency: Option<String>,
-        settings: Option<serde_json::Value>,
+        params: UpdateEntityParams,
     ) -> Result<entities::Model, DbErr> {
         let entity = entities::Entity::find_by_id(entity_id)
             .one(&self.db)
@@ -129,22 +135,22 @@ impl EntityRepository {
 
         let mut active_entity: entities::ActiveModel = entity.into();
 
-        if let Some(n) = name {
+        if let Some(n) = params.name {
             active_entity.name = Set(n);
         }
-        if let Some(ln) = legal_name {
+        if let Some(ln) = params.legal_name {
             active_entity.legal_name = Set(Some(ln));
         }
-        if let Some(ti) = tax_id {
+        if let Some(ti) = params.tax_id {
             active_entity.tax_id = Set(Some(ti));
         }
-        if let Some(et) = entity_type {
+        if let Some(et) = params.entity_type {
             active_entity.entity_type = Set(et);
         }
-        if let Some(bc) = base_currency {
+        if let Some(bc) = params.base_currency {
             active_entity.base_currency = Set(bc);
         }
-        if let Some(s) = settings {
+        if let Some(s) = params.settings {
             active_entity.settings = Set(s);
         }
 

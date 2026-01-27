@@ -24,3 +24,165 @@ paths:
       summary: POST /auth/switch-organization - Switch to a different organization.
       tags:
       - Auth
+  /organizations/{org_id}/entities:
+    get:
+      operationId: list_entities
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetEntitiesResponse'
+          description: List of entities
+        '403':
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: GET `/organizations/{org_id}/entities` - List entities for an organization.
+      tags:
+      - Entities
+    post:
+      operationId: create_entity
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEntityRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntityResponse'
+          description: Entity created successfully
+        '400':
+          description: Bad request - validation error or entity limit exceeded
+        '403':
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: POST `/organizations/{org_id}/entities` - Create a new entity.
+      tags:
+      - Entities
+  /organizations/{org_id}/entities/{entity_id}:
+    delete:
+      operationId: delete_entity
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Entity ID
+        in: path
+        name: entity_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '204':
+          description: Entity deleted successfully
+        '403':
+          description: Forbidden
+        '404':
+          description: Entity not found
+      security:
+      - bearerAuth: []
+      summary: DELETE `/organizations/{org_id}/entities/{entity_id}` - Delete entity
+        (soft delete).
+      tags:
+      - Entities
+    get:
+      operationId: get_entity
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Entity ID
+        in: path
+        name: entity_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntityResponse'
+          description: Entity details
+        '403':
+          description: Forbidden
+        '404':
+          description: Entity not found
+      security:
+      - bearerAuth: []
+      summary: GET `/organizations/{org_id}/entities/{entity_id}` - Get entity details.
+      tags:
+      - Entities
+    patch:
+      operationId: update_entity
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Entity ID
+        in: path
+        name: entity_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEntityRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntityResponse'
+          description: Entity updated successfully
+        '400':
+          description: Bad request - validation error
+        '403':
+          description: Forbidden
+        '404':
+          description: Entity not found
+      security:
+      - bearerAuth: []
+      summary: PATCH `/organizations/{org_id}/entities/{entity_id}` - Update entity.
+      tags:
+      - Entities

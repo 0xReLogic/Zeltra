@@ -84,6 +84,7 @@ async fn test_budget_dimension_validation() {
     // 2. Attempt to create a transaction to this account WITHOUT the dimension
     let input = CreateTransactionInput {
         organization_id: org_id,
+        entity_id: Uuid::new_v4(),
         transaction_type: TransactionType::Expense,
         transaction_date: NaiveDate::from_ymd_opt(2026, 1, 1).unwrap(),
         description: "Test without dimension".to_string(),
@@ -139,6 +140,7 @@ async fn test_budget_dimension_validation() {
     // 3. Attempt to create a transaction WITH the dimension
     let input_with_dim = CreateTransactionInput {
         organization_id: org_id,
+        entity_id: Uuid::new_v4(),
         transaction_type: TransactionType::Expense,
         transaction_date: NaiveDate::from_ymd_opt(2026, 1, 1).unwrap(),
         description: "Test with dimension".to_string(),
@@ -217,6 +219,7 @@ async fn test_sequential_account_versions() {
     // 2. Create a transaction (v_initial + 1)
     let input1 = CreateTransactionInput {
         organization_id: org_id,
+        entity_id: Uuid::new_v4(),
         transaction_type: TransactionType::Journal,
         transaction_date: NaiveDate::from_ymd_opt(2026, 1, 1).unwrap(),
         description: "Seq test 1".to_string(),
@@ -266,6 +269,7 @@ async fn test_sequential_account_versions() {
     // 3. Attempt a failing transaction (would be v_initial + 2)
     let input_fail = CreateTransactionInput {
         organization_id: org_id,
+        entity_id: Uuid::new_v4(),
         transaction_type: TransactionType::Journal,
         transaction_date: NaiveDate::from_ymd_opt(2026, 1, 1).unwrap(),
         description: "Seq test fail".to_string(),
@@ -297,6 +301,7 @@ async fn test_sequential_account_versions() {
     // 4. Create another successful transaction (MUST be v_initial + 2, no gap!)
     let input2 = CreateTransactionInput {
         organization_id: org_id,
+        entity_id: Uuid::new_v4(),
         transaction_type: TransactionType::Journal,
         transaction_date: NaiveDate::from_ymd_opt(2026, 1, 1).unwrap(),
         description: "Seq test 2".to_string(),

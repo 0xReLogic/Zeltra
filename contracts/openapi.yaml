@@ -134,6 +134,11 @@ components:
           type:
           - string
           - 'null'
+        entity_id:
+          description: Entity ID.
+          example: 550e8400-e29b-41d4-a716-446655440000
+          format: uuid
+          type: string
         id:
           description: Account ID.
           format: uuid
@@ -160,6 +165,7 @@ components:
           type: string
       required:
       - id
+      - entity_id
       - code
       - name
       - type
@@ -192,6 +198,10 @@ components:
           - 'null'
         end_date:
           description: End date.
+          type: string
+        entity_id:
+          description: Entity ID.
+          format: uuid
           type: string
         frequency:
           description: Frequency.
@@ -232,6 +242,7 @@ components:
       required:
       - id
       - organization_id
+      - entity_id
       - name
       - total_amount
       - currency_id
@@ -852,6 +863,10 @@ components:
           type:
           - string
           - 'null'
+        entity_id:
+          description: Entity ID.
+          format: uuid
+          type: string
         fiscal_year_id:
           description: Fiscal year ID.
           format: uuid
@@ -880,6 +895,7 @@ components:
           type: string
       required:
       - id
+      - entity_id
       - name
       - fiscal_year_id
       - fiscal_year_name
@@ -1205,6 +1221,11 @@ components:
           type:
           - string
           - 'null'
+        entity_id:
+          description: Entity ID.
+          example: 550e8400-e29b-41d4-a716-446655440000
+          format: uuid
+          type: string
         is_active:
           description: 'Whether the account is active (default: true).'
           type:
@@ -1231,6 +1252,7 @@ components:
           example: asset
           type: string
       required:
+      - entity_id
       - code
       - name
       - type
@@ -1260,6 +1282,10 @@ components:
           description: End date (YYYY-MM-DD).
           example: 2026-12-31
           type: string
+        entity_id:
+          description: Entity ID.
+          format: uuid
+          type: string
         frequency:
           description: 'Frequency: daily, weekly, monthly, quarterly, yearly.'
           example: monthly
@@ -1282,6 +1308,7 @@ components:
           format: int32
           type: integer
       required:
+      - entity_id
       - name
       - total_amount
       - currency_id
@@ -1369,6 +1396,11 @@ components:
           type:
           - string
           - 'null'
+        entity_id:
+          description: Entity ID.
+          example: 550e8400-e29b-41d4-a716-446655440000
+          format: uuid
+          type: string
         fiscal_year_id:
           description: Fiscal year ID.
           format: uuid
@@ -1378,6 +1410,7 @@ components:
           example: FY2026 Operations
           type: string
       required:
+      - entity_id
       - name
       - fiscal_year_id
       - budget_type
@@ -1466,6 +1499,38 @@ components:
       - code
       - name
       type: object
+    CreateEntityRequest:
+      description: Request body for creating an entity.
+      properties:
+        base_currency:
+          description: Base currency code (ISO 4217).
+          example: USD
+          type: string
+        entity_type:
+          description: 'Entity type: main, subsidiary, branch, division.'
+          example: main
+          type: string
+        legal_name:
+          description: Legal entity name.
+          example: Acme Corporation Inc.
+          type:
+          - string
+          - 'null'
+        name:
+          description: Entity name (must be unique within organization).
+          example: Acme Corp Main
+          type: string
+        tax_id:
+          description: Tax identification number (EIN, VAT, etc.).
+          example: 12-3456789
+          type:
+          - string
+          - 'null'
+      required:
+      - name
+      - entity_type
+      - base_currency
+      type: object
     CreateEntryRequest:
       description: Request body for a single ledger entry.
       properties:
@@ -1553,6 +1618,11 @@ components:
           example: 2026-12-31
           format: date
           type: string
+        entity_id:
+          description: Entity ID.
+          example: 550e8400-e29b-41d4-a716-446655440000
+          format: uuid
+          type: string
         include_adjustment_period:
           description: Whether to include an adjustment period (period 13).
           type: boolean
@@ -1566,6 +1636,7 @@ components:
           format: date
           type: string
       required:
+      - entity_id
       - name
       - start_date
       - end_date
@@ -1574,20 +1645,25 @@ components:
       description: Request body for creating an intercompany mapping.
       properties:
         source_account_id:
-          description: Source account ID (in current organization).
+          description: Source account ID (in source entity).
+          format: uuid
+          type: string
+        source_entity_id:
+          description: Source entity ID.
           format: uuid
           type: string
         target_account_id:
-          description: Target account ID (in target organization).
+          description: Target account ID (in target entity).
           format: uuid
           type: string
-        target_org_id:
-          description: Target organization ID.
+        target_entity_id:
+          description: Target entity ID (must be in same organization).
           format: uuid
           type: string
       required:
       - source_account_id
-      - target_org_id
+      - source_entity_id
+      - target_entity_id
       - target_account_id
       type: object
     CreateOrganizationRequest:
@@ -1621,6 +1697,11 @@ components:
         description:
           description: Description.
           example: Monthly rent payment
+          type: string
+        entity_id:
+          description: Entity ID.
+          example: 550e8400-e29b-41d4-a716-446655440000
+          format: uuid
           type: string
         entries:
           description: Ledger entries.
@@ -1659,6 +1740,7 @@ components:
           example: journal
           type: string
       required:
+      - entity_id
       - type
       - transaction_date
       - description
@@ -1850,6 +1932,58 @@ components:
       - total_debit
       - total_credit
       - balance
+      type: object
+    EntityResponse:
+      description: Response for an entity.
+      properties:
+        base_currency:
+          description: Base currency code.
+          type: string
+        created_at:
+          description: Creation timestamp.
+          type: string
+        entity_type:
+          description: Entity type.
+          type: string
+        id:
+          description: Entity ID.
+          format: uuid
+          type: string
+        is_active:
+          description: Whether the entity is active.
+          type: boolean
+        legal_name:
+          description: Legal entity name.
+          type:
+          - string
+          - 'null'
+        name:
+          description: Entity name.
+          type: string
+        organization_id:
+          description: Organization ID.
+          format: uuid
+          type: string
+        settings:
+          description: Entity-specific settings.
+        tax_id:
+          description: Tax identification number.
+          type:
+          - string
+          - 'null'
+        updated_at:
+          description: Last update timestamp.
+          type: string
+      required:
+      - id
+      - organization_id
+      - name
+      - entity_type
+      - base_currency
+      - is_active
+      - settings
+      - created_at
+      - updated_at
       type: object
     EntryResponse:
       description: Response for a ledger entry.
@@ -2090,6 +2224,10 @@ components:
           description: End date.
           format: date
           type: string
+        entity_id:
+          description: Entity ID.
+          format: uuid
+          type: string
         id:
           description: Fiscal year ID.
           format: uuid
@@ -2113,6 +2251,7 @@ components:
           type: string
       required:
       - id
+      - entity_id
       - name
       - start_date
       - end_date
@@ -2151,6 +2290,17 @@ components:
           type: array
       required:
       - budgets
+      type: object
+    GetEntitiesResponse:
+      description: Response wrapper for list entities endpoint.
+      properties:
+        entities:
+          description: List of entities.
+          items:
+            $ref: '#/components/schemas/EntityResponse'
+          type: array
+      required:
+      - entities
       type: object
     HealthResponse:
       description: Health check response.
@@ -2288,23 +2438,23 @@ components:
           description: Source account ID.
           format: uuid
           type: string
-        source_org_id:
-          description: Source organization ID.
+        source_entity_id:
+          description: Source entity ID.
           format: uuid
           type: string
         target_account_id:
           description: Target account ID.
           format: uuid
           type: string
-        target_org_id:
-          description: Target organization ID.
+        target_entity_id:
+          description: Target entity ID.
           format: uuid
           type: string
       required:
       - id
-      - source_org_id
+      - source_entity_id
       - source_account_id
-      - target_org_id
+      - target_entity_id
       - target_account_id
       - auto_post
       - mapping_type
@@ -2533,40 +2683,21 @@ components:
           description: Organization ID.
           format: uuid
           type: string
-        limits:
-          oneOf:
-          - type: 'null'
-          - $ref: '#/components/schemas/TierLimitsResponse'
-            description: Tier limits and feature flags.
         name:
           description: Organization name.
           type: string
         slug:
           description: Organization slug.
           type: string
-        subscription_status:
-          description: Subscription status.
-          type: string
-        subscription_tier:
-          description: Subscription tier.
-          type: string
         timezone:
           description: Timezone for reports.
           type: string
-        trial_ends_at:
-          description: Trial expiration date (if applicable).
-          format: date-time
-          type:
-          - string
-          - 'null'
       required:
       - id
       - name
       - slug
       - base_currency
       - timezone
-      - subscription_tier
-      - subscription_status
       - created_at
       type: object
     PageMeta:
@@ -2786,6 +2917,11 @@ components:
           type:
           - string
           - 'null'
+        entity_id:
+          description: Entity ID for the payment transaction.
+          example: 550e8400-e29b-41d4-a716-446655440000
+          format: uuid
+          type: string
         exchange_rate:
           description: Exchange rate for the payment.
           example: '1.0850'
@@ -2820,6 +2956,7 @@ components:
           type: string
       required:
       - invoice_id
+      - entity_id
       - payment_account_id
       - amount
       - exchange_rate
@@ -3357,6 +3494,11 @@ components:
         description:
           description: Description.
           type: string
+        entity_id:
+          description: Entity ID.
+          example: 550e8400-e29b-41d4-a716-446655440000
+          format: uuid
+          type: string
         entries:
           description: Ledger entries.
           items:
@@ -3412,6 +3554,7 @@ components:
           type: string
       required:
       - id
+      - entity_id
       - type
       - transaction_date
       - description
@@ -3611,6 +3754,35 @@ components:
           - 'null'
         name:
           description: Dimension value name.
+          type:
+          - string
+          - 'null'
+      type: object
+    UpdateEntityRequest:
+      description: Request body for updating an entity.
+      properties:
+        base_currency:
+          description: Base currency code.
+          type:
+          - string
+          - 'null'
+        entity_type:
+          description: Entity type.
+          type:
+          - string
+          - 'null'
+        legal_name:
+          description: Legal entity name.
+          type:
+          - string
+          - 'null'
+        name:
+          description: Entity name.
+          type:
+          - string
+          - 'null'
+        tax_id:
+          description: Tax identification number.
           type:
           - string
           - 'null'
@@ -4054,6 +4226,13 @@ paths:
         schema:
           format: uuid
           type: string
+      - description: Filter by entity ID (optional).
+        in: query
+        name: entity_id
+        required: false
+        schema:
+          format: uuid
+          type: string
       - description: Filter by account type.
         in: query
         name: type
@@ -4110,7 +4289,7 @@ paths:
                 $ref: '#/components/schemas/AccountResponse'
           description: Account created successfully
         '400':
-          description: Invalid input
+          description: Invalid input or entity not found
         '403':
           description: Forbidden
         '409':
@@ -4786,6 +4965,13 @@ paths:
         schema:
           format: uuid
           type: string
+      - description: Optional entity ID filter
+        in: query
+        name: entity_id
+        required: false
+        schema:
+          format: uuid
+          type: string
       responses:
         '200':
           content:
@@ -5420,6 +5606,167 @@ paths:
       summary: PATCH `/organizations/{org_id}/dimension-values/{value_id}/status` - Toggle dimension value status.
       tags:
       - Dimensions
+  /organizations/{org_id}/entities:
+    get:
+      operationId: list_entities
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetEntitiesResponse'
+          description: List of entities
+        '403':
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: GET `/organizations/{org_id}/entities` - List entities for an organization.
+      tags:
+      - Entities
+    post:
+      operationId: create_entity
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEntityRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntityResponse'
+          description: Entity created successfully
+        '400':
+          description: Bad request - validation error or entity limit exceeded
+        '403':
+          description: Forbidden
+      security:
+      - bearerAuth: []
+      summary: POST `/organizations/{org_id}/entities` - Create a new entity.
+      tags:
+      - Entities
+  /organizations/{org_id}/entities/{entity_id}:
+    delete:
+      operationId: delete_entity
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Entity ID
+        in: path
+        name: entity_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '204':
+          description: Entity deleted successfully
+        '403':
+          description: Forbidden
+        '404':
+          description: Entity not found
+      security:
+      - bearerAuth: []
+      summary: DELETE `/organizations/{org_id}/entities/{entity_id}` - Delete entity (soft delete).
+      tags:
+      - Entities
+    get:
+      operationId: get_entity
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Entity ID
+        in: path
+        name: entity_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntityResponse'
+          description: Entity details
+        '403':
+          description: Forbidden
+        '404':
+          description: Entity not found
+      security:
+      - bearerAuth: []
+      summary: GET `/organizations/{org_id}/entities/{entity_id}` - Get entity details.
+      tags:
+      - Entities
+    patch:
+      operationId: update_entity
+      parameters:
+      - description: Organization ID
+        in: path
+        name: org_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Entity ID
+        in: path
+        name: entity_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEntityRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntityResponse'
+          description: Entity updated successfully
+        '400':
+          description: Bad request - validation error
+        '403':
+          description: Forbidden
+        '404':
+          description: Entity not found
+      security:
+      - bearerAuth: []
+      summary: PATCH `/organizations/{org_id}/entities/{entity_id}` - Update entity.
+      tags:
+      - Entities
   /organizations/{org_id}/exchange-rates:
     get:
       operationId: get_exchange_rate
@@ -5681,6 +6028,13 @@ paths:
         in: path
         name: org_id
         required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Optional entity ID filter
+        in: query
+        name: entity_id
+        required: false
         schema:
           format: uuid
           type: string
@@ -6114,6 +6468,15 @@ paths:
         schema:
           format: uuid
           type: string
+      - description: Filter by entity ID (optional).
+        in: path
+        name: entity_id
+        required: true
+        schema:
+          format: uuid
+          type:
+          - string
+          - 'null'
       - description: Filter by status.
         in: path
         name: status
@@ -6215,7 +6578,7 @@ paths:
                 $ref: '#/components/schemas/TransactionResponse'
           description: Transaction created successfully
         '400':
-          description: Invalid input, unbalanced transaction, or missing required budget dimensions
+          description: Invalid input, unbalanced transaction, missing entity_id, or missing required budget dimensions
         '403':
           description: Forbidden
       security:
@@ -6860,6 +7223,8 @@ tags:
   name: Health
 - description: Organization management endpoints
   name: Organizations
+- description: Entity management endpoints
+  name: Entities
 - description: Account management endpoints
   name: Accounts
 - description: Transaction management endpoints

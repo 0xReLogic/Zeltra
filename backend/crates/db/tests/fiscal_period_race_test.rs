@@ -194,6 +194,7 @@ async fn setup_race_scenario(
     let tx_date = NaiveDate::from_ymd_opt(2026, 1, 15).unwrap();
     let input = CreateTransactionInput {
         organization_id: org.id,
+        entity_id: Uuid::new_v4(),
         transaction_type: TransactionType::Journal,
         transaction_date: tx_date,
         description: "Test Race".to_string(),

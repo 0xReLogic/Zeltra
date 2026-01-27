@@ -10,6 +10,13 @@ paths:
         schema:
           format: uuid
           type: string
+      - description: Filter by entity ID (optional).
+        in: query
+        name: entity_id
+        required: false
+        schema:
+          format: uuid
+          type: string
       - description: Filter by account type.
         in: query
         name: type
@@ -66,7 +73,7 @@ paths:
                 $ref: '#/components/schemas/AccountResponse'
           description: Account created successfully
         '400':
-          description: Invalid input
+          description: Invalid input or entity not found
         '403':
           description: Forbidden
         '409':

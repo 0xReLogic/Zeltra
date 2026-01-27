@@ -388,6 +388,7 @@ impl WorkflowRepository {
         let reversing_transaction = transactions::ActiveModel {
             id: Set(reversing_tx_id),
             organization_id: Set(organization_id),
+            entity_id: Set(transaction.entity_id),
             fiscal_period_id: Set(transaction.fiscal_period_id),
             reference_number: Set(transaction.reference_number.clone()),
             transaction_type: Set(TransactionType::Reversal),
@@ -456,6 +457,7 @@ impl WorkflowRepository {
             let entry = ledger_entries::ActiveModel {
                 id: Set(entry_id),
                 transaction_id: Set(reversing_tx_id),
+                entity_id: Set(transaction.entity_id),
                 account_id: Set(rev_entry.account_id),
                 source_currency: Set(rev_entry.source_currency.clone()),
                 source_amount: Set(rev_entry.source_amount),

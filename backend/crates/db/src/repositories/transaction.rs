@@ -88,6 +88,8 @@ pub enum TransactionError {
 pub struct CreateTransactionInput {
     /// Organization ID.
     pub organization_id: Uuid,
+    /// Entity ID.
+    pub entity_id: Uuid,
     /// Transaction type.
     pub transaction_type: TransactionType,
     /// Transaction date.
@@ -140,6 +142,8 @@ pub struct CreateLedgerEntryInput {
 /// Filter options for listing transactions.
 #[derive(Debug, Clone, Default)]
 pub struct TransactionFilter {
+    /// Filter by entity ID.
+    pub entity_id: Option<Uuid>,
     /// Filter by status.
     pub status: Option<TransactionStatus>,
     /// Filter by transaction type.
@@ -268,7 +272,13 @@ impl TransactionRepository {
 
         // Create ledger entries and dimensions
         let entries = self
-            .insert_entries(&txn, transaction_id, fiscal_period.id, &input.entries)
+            .insert_entries(
+                &txn,
+                transaction_id,
+                input.entity_id,
+                fiscal_period.id,
+                &input.entries,
+            )
             .await?;
 
         // Commit database transaction
@@ -310,6 +320,7 @@ impl TransactionRepository {
         let transaction = transactions::ActiveModel {
             id: Set(transaction_id),
             organization_id: Set(input.organization_id),
+            entity_id: Set(input.entity_id),
             fiscal_period_id: Set(fiscal_period_id),
             reference_number: Set(input.reference_number.clone()),
             transaction_type: Set(input.transaction_type.clone()),
@@ -340,6 +351,7 @@ impl TransactionRepository {
         &self,
         txn: &DatabaseTransaction,
         transaction_id: Uuid,
+        entity_id: Uuid,
         fiscal_period_id: Uuid,
         entries: &[CreateLedgerEntryInput],
     ) -> Result<Vec<LedgerEntryWithDimensions>, TransactionError> {
@@ -492,6 +504,7 @@ impl TransactionRepository {
             let entry = ledger_entries::ActiveModel {
                 id: Set(entry_id),
                 transaction_id: Set(transaction_id),
+                entity_id: Set(entity_id),
                 account_id: Set(entry_input.account_id),
                 source_currency: Set(entry_input.source_currency.clone()),
                 source_amount: Set(entry_input.source_amount),
@@ -539,6 +552,7 @@ impl TransactionRepository {
                 entry: ledger_entries::Model {
                     id: entry_id,
                     transaction_id,
+                    entity_id,
                     account_id: entry_input.account_id,
                     source_currency: entry_input.source_currency.clone(),
                     source_amount: entry_input.source_amount,
@@ -623,6 +637,10 @@ impl TransactionRepository {
     ) -> Result<(Vec<TransactionWithEntries>, u64), TransactionError> {
         let mut query = transactions::Entity::find()
             .filter(transactions::Column::OrganizationId.eq(organization_id));
+
+        if let Some(entity_id) = filter.entity_id {
+            query = query.filter(transactions::Column::EntityId.eq(entity_id));
+        }
 
         if let Some(status) = filter.status {
             query = query.filter(transactions::Column::Status.eq(status));

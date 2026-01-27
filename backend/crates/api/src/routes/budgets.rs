@@ -62,6 +62,9 @@ pub fn routes() -> Router<AppState> {
 /// Request body for creating a budget.
 #[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct CreateBudgetRequest {
+    /// Entity ID.
+    #[schema(example = "550e8400-e29b-41d4-a716-446655440000")]
+    pub entity_id: Uuid,
     /// Budget name.
     #[schema(example = "FY2026 Operations")]
     pub name: String,
@@ -113,6 +116,8 @@ pub struct BudgetLineInput {
 pub struct BudgetResponse {
     /// Budget ID.
     pub id: Uuid,
+    /// Entity ID.
+    pub entity_id: Uuid,
     /// Budget name.
     pub name: String,
     /// Budget description.
@@ -264,7 +269,8 @@ fn budget_type_to_string(bt: &zeltra_db::entities::sea_orm_active_enums::BudgetT
     get,
     path = "/organizations/{org_id}/budgets",
     params(
-        ("org_id" = Uuid, Path, description = "Organization ID")
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        ("entity_id" = Option<Uuid>, Query, description = "Optional entity ID filter")
     ),
     responses(
         (status = 200, description = "List of budgets", body = GetBudgetsResponse),
@@ -277,6 +283,7 @@ async fn list_budgets(
     State(state): State<AppState>,
     auth: AuthUser,
     Path(org_id): Path<Uuid>,
+    axum::extract::Query(query): axum::extract::Query<ListBudgetsQuery>,
 ) -> impl IntoResponse {
     let org_repo = OrganizationRepository::new((*state.db).clone());
 
@@ -289,10 +296,11 @@ async fn list_budgets(
 
     match budget_repo.list_budgets(org_id).await {
         Ok(budgets) => {
-            let response: Vec<BudgetResponse> = budgets
+            let mut response: Vec<BudgetResponse> = budgets
                 .into_iter()
                 .map(|b| BudgetResponse {
                     id: b.budget.id,
+                    entity_id: b.budget.entity_id,
                     name: b.budget.name,
                     description: b.budget.description,
                     fiscal_year_id: b.budget.fiscal_year_id,
@@ -306,6 +314,11 @@ async fn list_budgets(
                     updated_at: b.budget.updated_at.to_rfc3339(),
                 })
                 .collect();
+
+            // Filter by entity_id if provided
+            if let Some(entity_id) = query.entity_id {
+                response.retain(|b| b.entity_id == entity_id);
+            }
 
             (StatusCode::OK, Json(json!({ "budgets": response }))).into_response()
         }
@@ -321,6 +334,14 @@ async fn list_budgets(
                 .into_response()
         }
     }
+}
+
+/// Query parameters for listing budgets.
+#[derive(Debug, serde::Deserialize, utoipa::IntoParams)]
+#[into_params(parameter_in = Query)]
+pub struct ListBudgetsQuery {
+    /// Optional entity ID filter.
+    pub entity_id: Option<Uuid>,
 }
 
 /// POST `/organizations/{org_id}/budgets` - Create a new budget.
@@ -347,11 +368,53 @@ async fn create_budget(
     Path(org_id): Path<Uuid>,
     Json(payload): Json<CreateBudgetRequest>,
 ) -> impl IntoResponse {
+    use zeltra_db::repositories::entity::EntityRepository;
+
     let org_repo = OrganizationRepository::new((*state.db).clone());
 
     // Check admin/owner role
     if let Err(response) = check_admin_role(&org_repo, org_id, auth.user_id()).await {
         return response;
+    }
+
+    // Validate entity_id is provided and user has access to entity
+    let entity_repo = EntityRepository::new((*state.db).clone());
+
+    match entity_repo.find_by_id(payload.entity_id).await {
+        Ok(Some(entity)) => {
+            // Verify entity belongs to the organization
+            if entity.organization_id != org_id {
+                return (
+                    StatusCode::BAD_REQUEST,
+                    Json(json!({
+                        "error": "invalid_entity",
+                        "message": "Entity does not belong to this organization"
+                    })),
+                )
+                    .into_response();
+            }
+        }
+        Ok(None) => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(json!({
+                    "error": "entity_not_found",
+                    "message": "Entity not found"
+                })),
+            )
+                .into_response();
+        }
+        Err(e) => {
+            error!(error = %e, "Failed to validate entity");
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": "internal_error",
+                    "message": "An error occurred"
+                })),
+            )
+                .into_response();
+        }
     }
 
     // Get organization for currency
@@ -428,6 +491,7 @@ async fn create_budget(
 
     let input = CreateBudgetInput {
         organization_id: org_id,
+        entity_id: payload.entity_id,
         fiscal_year_id: payload.fiscal_year_id,
         name: payload.name,
         description: payload.description,
@@ -449,6 +513,7 @@ async fn create_budget(
                 StatusCode::CREATED,
                 Json(json!({
                     "id": budget.id,
+                    "entity_id": budget.entity_id,
                     "name": budget.name,
                     "description": budget.description,
                     "fiscal_year_id": budget.fiscal_year_id,
@@ -485,11 +550,14 @@ async fn create_budget(
     tag = "Budgets",
     security(("bearerAuth" = []))
 )]
+#[allow(clippy::too_many_lines)]
 async fn get_budget(
     State(state): State<AppState>,
     auth: AuthUser,
     Path((org_id, budget_id)): Path<(Uuid, Uuid)>,
 ) -> impl IntoResponse {
+    use zeltra_db::repositories::entity::EntityRepository;
+
     let org_repo = OrganizationRepository::new((*state.db).clone());
 
     // Check membership
@@ -501,6 +569,46 @@ async fn get_budget(
 
     match budget_repo.get_budget(org_id, budget_id).await {
         Ok(budget) => {
+            // Validate entity access
+            let entity_repo = EntityRepository::new((*state.db).clone());
+
+            match entity_repo.find_by_id(budget.entity_id).await {
+                Ok(Some(entity)) => {
+                    // Verify entity belongs to the organization
+                    if entity.organization_id != org_id {
+                        return (
+                            StatusCode::FORBIDDEN,
+                            Json(json!({
+                                "error": "forbidden",
+                                "message": "Budget entity does not belong to this organization"
+                            })),
+                        )
+                            .into_response();
+                    }
+                }
+                Ok(None) => {
+                    return (
+                        StatusCode::NOT_FOUND,
+                        Json(json!({
+                            "error": "entity_not_found",
+                            "message": "Budget entity not found"
+                        })),
+                    )
+                        .into_response();
+                }
+                Err(e) => {
+                    error!(error = %e, "Failed to validate entity");
+                    return (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(json!({
+                            "error": "internal_error",
+                            "message": "An error occurred"
+                        })),
+                    )
+                        .into_response();
+                }
+            }
+
             // Get budget lines
             let lines = match budget_repo.get_budget_lines(budget_id).await {
                 Ok(lines) => lines,
@@ -535,6 +643,7 @@ async fn get_budget(
                 StatusCode::OK,
                 Json(json!({
                     "id": budget.id,
+                    "entity_id": budget.entity_id,
                     "name": budget.name,
                     "description": budget.description,
                     "fiscal_year_id": budget.fiscal_year_id,
@@ -588,12 +697,15 @@ async fn get_budget(
     tag = "Budgets",
     security(("bearerAuth" = []))
 )]
+#[allow(clippy::too_many_lines)]
 async fn update_budget(
     State(state): State<AppState>,
     auth: AuthUser,
     Path((org_id, budget_id)): Path<(Uuid, Uuid)>,
     Json(payload): Json<UpdateBudgetRequest>,
 ) -> impl IntoResponse {
+    use zeltra_db::repositories::entity::EntityRepository;
+
     let org_repo = OrganizationRepository::new((*state.db).clone());
 
     // Check admin/owner role
@@ -602,6 +714,72 @@ async fn update_budget(
     }
 
     let budget_repo = BudgetRepository::new((*state.db).clone());
+
+    // Get budget first to validate entity access
+    let budget = match budget_repo.get_budget(org_id, budget_id).await {
+        Ok(budget) => budget,
+        Err(BudgetError::NotFound(_)) => {
+            return (
+                StatusCode::NOT_FOUND,
+                Json(json!({
+                    "error": "not_found",
+                    "message": "Budget not found"
+                })),
+            )
+                .into_response();
+        }
+        Err(e) => {
+            error!(error = %e, "Failed to get budget");
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": "internal_error",
+                    "message": "An error occurred"
+                })),
+            )
+                .into_response();
+        }
+    };
+
+    // Validate entity access
+    let entity_repo = EntityRepository::new((*state.db).clone());
+
+    match entity_repo.find_by_id(budget.entity_id).await {
+        Ok(Some(entity)) => {
+            // Verify entity belongs to the organization
+            if entity.organization_id != org_id {
+                return (
+                    StatusCode::FORBIDDEN,
+                    Json(json!({
+                        "error": "forbidden",
+                        "message": "Budget entity does not belong to this organization"
+                    })),
+                )
+                    .into_response();
+            }
+        }
+        Ok(None) => {
+            return (
+                StatusCode::NOT_FOUND,
+                Json(json!({
+                    "error": "entity_not_found",
+                    "message": "Budget entity not found"
+                })),
+            )
+                .into_response();
+        }
+        Err(e) => {
+            error!(error = %e, "Failed to validate entity");
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": "internal_error",
+                    "message": "An error occurred"
+                })),
+            )
+                .into_response();
+        }
+    }
 
     let input = UpdateBudgetInput {
         name: payload.name,
@@ -621,6 +799,7 @@ async fn update_budget(
                 StatusCode::OK,
                 Json(json!({
                     "id": budget.id,
+                    "entity_id": budget.entity_id,
                     "name": budget.name,
                     "description": budget.description,
                     "fiscal_year_id": budget.fiscal_year_id,

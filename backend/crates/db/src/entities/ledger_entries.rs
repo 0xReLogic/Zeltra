@@ -144,6 +144,12 @@ impl Related<super::chart_of_accounts::Entity> for Entity {
     }
 }
 
+impl Related<super::entities::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Entities.def()
+    }
+}
+
 impl Related<super::entry_dimensions::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::EntryDimensions.def()

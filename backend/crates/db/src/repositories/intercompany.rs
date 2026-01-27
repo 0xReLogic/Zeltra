@@ -174,7 +174,8 @@ impl IntercompanyRepository {
 
                 use zeltra_core::ledger::intercompany::MirrorTransactionInput;
                 let mirror_input = MirrorTransactionInput {
-                    target_org_id: mapping.target_org_id,
+                    target_org_id: mapping.target_entity_id,
+                    target_entity_id: mapping.target_entity_id,
                     target_account_id: mapping.target_account_id,
                     balancing_account_id,
                     source_currency: entry.source_currency.clone(),
@@ -189,6 +190,7 @@ impl IntercompanyRepository {
                 // Map and post (similar to revaluation)
                 let repo_tx_input = crate::repositories::transaction::CreateTransactionInput {
                     organization_id: tx_input.organization_id,
+                    entity_id: tx_input.entity_id.unwrap_or(mapping.target_entity_id),
                     transaction_type:
                         crate::entities::sea_orm_active_enums::TransactionType::Intercompany,
                     transaction_date: tx_input.transaction_date,

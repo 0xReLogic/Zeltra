@@ -138,6 +138,7 @@ async fn test_residual_adjustment_insertion() {
 
     let input = CreateTransactionInput {
         organization_id: org_id,
+        entity_id: Uuid::new_v4(),
         transaction_type: TransactionType::Journal,
         transaction_date: NaiveDate::from_ymd_opt(2026, 1, 1).unwrap(),
         description: "Rounding Test".to_string(),

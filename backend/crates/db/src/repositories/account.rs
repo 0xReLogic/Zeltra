@@ -96,6 +96,8 @@ pub struct PaginatedLedgerEntries {
 pub struct CreateAccountInput {
     /// Organization ID.
     pub organization_id: Uuid,
+    /// Entity ID.
+    pub entity_id: Uuid,
     /// Account code (must be unique within organization).
     pub code: String,
     /// Account name.
@@ -140,6 +142,8 @@ pub struct UpdateAccountInput {
 /// Filter options for listing accounts.
 #[derive(Debug, Clone, Default)]
 pub struct AccountFilter {
+    /// Filter by entity ID.
+    pub entity_id: Option<Uuid>,
     /// Filter by account type.
     pub account_type: Option<AccountType>,
     /// Filter by active status.
@@ -214,6 +218,7 @@ impl AccountRepository {
         let account = chart_of_accounts::ActiveModel {
             id: Set(Uuid::new_v4()),
             organization_id: Set(input.organization_id),
+            entity_id: Set(input.entity_id),
             code: Set(input.code),
             name: Set(input.name),
             description: Set(input.description),
@@ -249,6 +254,10 @@ impl AccountRepository {
         let mut query = chart_of_accounts::Entity::find()
             .filter(chart_of_accounts::Column::OrganizationId.eq(organization_id))
             .order_by_asc(chart_of_accounts::Column::Code);
+
+        if let Some(entity_id) = filter.entity_id {
+            query = query.filter(chart_of_accounts::Column::EntityId.eq(entity_id));
+        }
 
         if let Some(account_type) = filter.account_type {
             query = query.filter(chart_of_accounts::Column::AccountType.eq(account_type));
@@ -571,6 +580,7 @@ impl AccountRepository {
         struct LedgerEntryRow {
             // Ledger entry fields
             id: Uuid,
+            entity_id: Uuid,
             transaction_id: Uuid,
             account_id: Uuid,
             source_currency: String,
@@ -653,6 +663,7 @@ impl AccountRepository {
             .map(|row| LedgerEntryWithTransaction {
                 entry: ledger_entries::Model {
                     id: row.id,
+                    entity_id: row.entity_id,
                     transaction_id: row.transaction_id,
                     account_id: row.account_id,
                     source_currency: row.source_currency,

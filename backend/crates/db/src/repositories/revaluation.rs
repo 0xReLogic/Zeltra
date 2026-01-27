@@ -33,6 +33,7 @@ pub enum RevaluationError {
 #[derive(Debug, Clone)]
 pub struct CreateRevaluationLogInput {
     pub organization_id: Uuid,
+    pub entity_id: Uuid,
     pub account_id: Uuid,
     pub revaluation_date: NaiveDate,
     pub currency_id: String,
@@ -145,6 +146,7 @@ impl RevaluationRepository {
         let active = revaluation_logs::ActiveModel {
             id: Set(Uuid::new_v4()),
             organization_id: Set(input.organization_id),
+            entity_id: Set(input.entity_id),
             account_id: Set(input.account_id),
             revaluation_date: Set(input.revaluation_date),
             currency_id: Set(input.currency_id),
@@ -235,6 +237,7 @@ impl RevaluationRepository {
             use zeltra_core::ledger::revaluation::RevaluationTransactionInput;
             let reval_input = RevaluationTransactionInput {
                 organization_id,
+                entity_id: Some(account.entity_id),
                 account_id: account.id,
                 gain_loss_account_id,
                 account_currency: account.currency.clone(),
@@ -250,6 +253,7 @@ impl RevaluationRepository {
             // Map core input to repo input
             let repo_tx_input = crate::repositories::transaction::CreateTransactionInput {
                 organization_id: tx_input.organization_id,
+                entity_id: tx_input.entity_id.unwrap_or(account.entity_id),
                 transaction_type:
                     crate::entities::sea_orm_active_enums::TransactionType::Revaluation,
                 transaction_date: tx_input.transaction_date,
@@ -309,6 +313,7 @@ impl RevaluationRepository {
 
             self.log_revaluation(CreateRevaluationLogInput {
                 organization_id,
+                entity_id: account.entity_id,
                 account_id: account.id,
                 revaluation_date: as_of,
                 currency_id: account.currency,

@@ -139,6 +139,7 @@ async fn test_create_transaction_idempotency() {
 
     let input = CreateTransactionInput {
         organization_id: org.id,
+        entity_id: Uuid::new_v4(),
         transaction_type: TransactionType::Journal,
         transaction_date: tx_date,
         description: "Idempotent Tx".to_string(),

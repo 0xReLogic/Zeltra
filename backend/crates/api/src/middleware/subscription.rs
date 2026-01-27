@@ -49,7 +49,7 @@ pub async fn check_subscription_status(
     }
 
     // Extract claims from request extensions (set by auth middleware)
-    let claims = request.extensions().get::<Claims>().copied();
+    let claims = request.extensions().get::<Claims>().cloned();
 
     let Some(claims) = claims else {
         // No claims means not authenticated or auth middleware hasn't run yet

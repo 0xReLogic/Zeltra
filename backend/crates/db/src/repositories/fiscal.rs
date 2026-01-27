@@ -65,6 +65,8 @@ pub struct FiscalYearWithPeriods {
 pub struct CreateFiscalYearInput {
     /// Organization ID.
     pub organization_id: Uuid,
+    /// Entity ID.
+    pub entity_id: Uuid,
     /// Fiscal year name (e.g., "FY 2026").
     pub name: String,
     /// Start date of the fiscal year.
@@ -154,6 +156,7 @@ impl FiscalRepository {
         let fiscal_year = fiscal_years::ActiveModel {
             id: Set(fiscal_year_id),
             organization_id: Set(input.organization_id),
+            entity_id: Set(input.entity_id),
             name: Set(input.name),
             start_date: Set(input.start_date),
             end_date: Set(input.end_date),

@@ -241,6 +241,7 @@ async fn generate_invariant_transactions(
     for (amount, debit_acct, credit_acct, currency, rate) in transactions_to_create {
         let input = CreateTransactionInput {
             organization_id: org_id,
+            entity_id: Uuid::new_v4(),
             transaction_type: TransactionType::Journal,
             transaction_date: NaiveDate::from_ymd_opt(2026, 1, 15).unwrap(),
             description: format!("Global Invariant Test Tx {amount}"),

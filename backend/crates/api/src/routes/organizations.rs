@@ -756,6 +756,7 @@ fn string_to_role(s: &str) -> Option<UserRole> {
     }
 }
 
+#[allow(dead_code)]
 fn map_tier_limits(m: &zeltra_db::entities::tier_limits::Model) -> TierLimitsResponse {
     TierLimitsResponse {
         max_dimensions: m.max_dimensions,
