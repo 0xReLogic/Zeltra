@@ -7158,7 +7158,7 @@ paths:
         schema:
           format: uuid
           type: string
-      - description: User ID
+      - description: User ID to remove
         in: path
         name: user_id
         required: true
@@ -7168,8 +7168,10 @@ paths:
       responses:
         '204':
           description: User removed successfully
+        '400':
+          description: Cannot remove last owner
         '403':
-          description: Forbidden
+          description: Forbidden - insufficient permissions
         '404':
           description: Organization or user not found
       security:

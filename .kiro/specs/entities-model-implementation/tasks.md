@@ -448,20 +448,20 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Update all utoipa annotations
     - _Requirements: 3.5_
   
-  - [-] 3.14 Generate OpenAPI specification
+  - [x] 3.14 Generate OpenAPI specification
     - Run `cd backend && cargo run --bin generate-openapi`
     - Run `cd ../contracts && python3 split-openapi.py`
     - Verify entity_id in transaction/account/budget/fiscal endpoints
     - _Requirements: 13.1, 13.2_
   
-  - [-] 3.15 Run backend validation
+  - [x] 3.15 Run backend validation
     - Run `cargo fmt` to format code
     - Run `cargo clippy -- -D warnings` to check for issues
     - Use getDiagnostics tool on all modified backend files
     - Fix any errors or warnings
     - Run `cargo test` to ensure tests pass
   
-  - [ ] 3.17 Write property-based tests for entity-scoped data
+  - [x] 3.17 Write property-based tests for entity-scoped data
     - Create test file `backend/crates/db/tests/entity_scoped_data_properties.rs`
     - **Property 11**: Entity-scoped data creation - test entity_id required for all data types
     - **Property 12**: Entity-scoped data filtering - test filtering by entity_id
@@ -472,7 +472,7 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Tag tests: `Feature: entities-model-implementation, Property 11/12: {property_text}`
     - _Requirements: 3.1, 3.2, 3.4, 3.8, 3.9, 3.10_
   
-  - [ ] 3.18 Write unit tests for entity-scoped routes
+  - [x] 3.18 Write unit tests for entity-scoped routes
     - Create test file `backend/crates/api/tests/entity_scoped_routes_tests.rs`
     - Test create transaction without entity_id fails with 400
     - Test create transaction with entity_id succeeds
@@ -483,7 +483,7 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Test unauthorized entity access returns 403
     - _Requirements: 3.1, 3.2, 3.8, 3.9, 19.3, 19.4_
   
-  - [ ] 3.19 Checkpoint - Ensure all tests pass
+  - [x] 3.19 Checkpoint - Ensure all tests pass
     - Ensure all tests pass, ask the user if questions arise.
 
 - [-] 4. Reports, Dashboard & Sentinel Routes (Day 4: 6-8 hours)

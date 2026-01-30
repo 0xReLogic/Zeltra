@@ -9,6 +9,7 @@ use axum::{
 };
 use serde_json::json;
 use tracing::{error, info};
+use uuid::Uuid;
 
 use crate::{AppState, middleware::AuthUser};
 use zeltra_db::repositories::organization::OrganizationError;
@@ -731,30 +732,47 @@ async fn add_user(
         .into_response()
 }
 
-/// Converts `UserRole` enum to string.
-fn role_to_string(role: &UserRole) -> String {
-    match role {
-        UserRole::Owner => "owner".to_string(),
-        UserRole::Admin => "admin".to_string(),
-        UserRole::Approver => "approver".to_string(),
-        UserRole::Accountant => "accountant".to_string(),
-        UserRole::Viewer => "viewer".to_string(),
-        UserRole::Submitter => "submitter".to_string(),
-    }
-}
+/// DELETE `/organizations/{org_id}/users/{user_id}` - Remove user from organization.
+#[utoipa::path(
+    delete,
+    path = "/organizations/{org_id}/users/{user_id}",
+    params(
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        ("user_id" = Uuid, Path, description = "User ID to remove")
+    ),
+    responses(
+        (status = 204, description = "User removed successfully"),
+        (status = 403, description = "Forbidden - insufficient permissions"),
+        (status = 404, description = "Organization or user not found"),
+        (status = 400, description = "Cannot remove last owner")
+    ),
+    tag = "Organizations",
+    security(("bearerAuth" = []))
+)]
+#[allow(clippy::too_many_lines)]
+async fn remove_user(
+    State(state): State<AppState>,
+    auth: AuthUser,
+    Path((org_id, user_id)): Path<(Uuid, Uuid)>,
+) -> impl IntoResponse {
+    let org_repo = OrganizationRepository::new((*state.db).clone());
+    let session_repo = SessionRepository::new((*state.db).clone());
 
-/// Converts string to `UserRole` enum.
-fn string_to_role(s: &str) -> Option<UserRole> {
-    match s.to_lowercase().as_str() {
-        "owner" => Some(UserRole::Owner),
-        "admin" => Some(UserRole::Admin),
-        "approver" => Some(UserRole::Approver),
-        "accountant" => Some(UserRole::Accountant),
-        "viewer" => Some(UserRole::Viewer),
-        "submitter" => Some(UserRole::Submitter),
-        _ => None,
-    }
-}            error!(error = %e, "Database error checking membership");
+    // Check if requester is a member
+    let requester_membership = match org_repo.get_user_membership(org_id, auth.user_id()).await {
+        Ok(Some(m)) => m,
+        Ok(None) => {
+            return (
+                StatusCode::FORBIDDEN,
+                Json(json!({
+                    "error": "forbidden",
+                    "message": "You are not a member of this organization"
+                })),
+            )
+                .into_response();
+        }
+        Err(e) => {
+            error!(error = %e, "Database error checking membership");
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({
@@ -851,6 +869,31 @@ fn string_to_role(s: &str) -> Option<UserRole> {
     );
 
     StatusCode::NO_CONTENT.into_response()
+}
+
+/// Converts `UserRole` enum to string.
+fn role_to_string(role: &UserRole) -> String {
+    match role {
+        UserRole::Owner => "owner".to_string(),
+        UserRole::Admin => "admin".to_string(),
+        UserRole::Approver => "approver".to_string(),
+        UserRole::Accountant => "accountant".to_string(),
+        UserRole::Viewer => "viewer".to_string(),
+        UserRole::Submitter => "submitter".to_string(),
+    }
+}
+
+/// Converts string to `UserRole` enum.
+fn string_to_role(s: &str) -> Option<UserRole> {
+    match s.to_lowercase().as_str() {
+        "owner" => Some(UserRole::Owner),
+        "admin" => Some(UserRole::Admin),
+        "approver" => Some(UserRole::Approver),
+        "accountant" => Some(UserRole::Accountant),
+        "viewer" => Some(UserRole::Viewer),
+        "submitter" => Some(UserRole::Submitter),
+        _ => None,
+    }
 }
 
 /// PATCH `/organizations/{org_id}/users/{user_id}` - Update user's role and/or approval limit.
