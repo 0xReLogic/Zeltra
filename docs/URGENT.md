@@ -73,11 +73,11 @@ We do:
 
 ### Revised Business Model
 
-| Tier | Price | Workspace | Entities/Companies | Users | Value Proposition |
-|------|-------|-----------|-------------------|-------|-------------------|
-| **Starter** | $12/mo | 1 | 1 | 50 | Single company accounting |
-| **Growth** | $25/mo | 1 | **5** | 200 | Multi-company management |
-| **Enterprise** | Custom | 1 | **Unlimited** | Unlimited | Full multi-entity + Intercompany Hub |
+| Tier | Price | Workspace | Entities/Companies | Users | Transactions/Month | Value Proposition |
+|------|-------|-----------|-------------------|-------|-------------------|-------------------|
+| **Starter** | $12/mo | 1 | 1 | 50 | 1,000 | Single company accounting |
+| **Growth** | $25/mo | 1 | **5** | 200 | 10,000 | Multi-company management |
+| **Enterprise** | Custom | 1 | **Unlimited** | Unlimited | Unlimited | Full multi-entity + Intercompany Hub |
 
 ### Key Benefits
 
@@ -253,11 +253,9 @@ ALTER TABLE organizations DROP COLUMN payment_subscription_id;
 
 #### Update Tier Limits to Apply to Entities
 ```sql
--- Update tier_limits table description
-COMMENT ON COLUMN tier_limits.max_organizations IS 'DEPRECATED: Now applies to max_entities per organization';
-
--- Add new column for entity limits (optional, can reuse max_organizations)
--- ALTER TABLE tier_limits RENAME COLUMN max_organizations TO max_entities;
+-- ✅ COMPLETED: Added max_entities column to tier_limits table
+-- See migration: backend/crates/db/src/migration/m20260108_000001_initial.rs
+-- Seed data: Starter=1, Growth=5, Enterprise=NULL (unlimited)
 ```
 
 ---
@@ -324,7 +322,7 @@ impl EntityRepository {
         
         // Check tier limits
         let limits = SubscriptionRepository::get_tier_limits(&*self.db, user_tier).await?;
-        if let Some(max_entities) = limits.max_organizations { // Reusing max_organizations as max_entities
+        if let Some(max_entities) = limits.max_entities {
             if entity_count >= max_entities as i64 {
                 return Err(DbErr::Custom("Entity limit reached for your tier".to_string()));
             }

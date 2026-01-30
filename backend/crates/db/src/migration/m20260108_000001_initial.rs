@@ -631,6 +631,7 @@ CREATE TABLE tier_limits (
     tier subscription_tier PRIMARY KEY,
     max_users INTEGER,
     max_transactions_per_month INTEGER,
+    max_entities INTEGER,
     max_dimensions INTEGER NOT NULL,
     max_currencies INTEGER NOT NULL,
     max_fiscal_periods INTEGER,
@@ -1272,10 +1273,11 @@ const SEED_TIER_LIMITS_SQL: &str = r#"
 -- SEED: Subscription tier limits
 -- Based on BUSINESS_MODEL.md pricing tiers
 -- Note: Using large numbers (999999) to represent "unlimited" for NOT NULL columns
+-- Entity limits: Starter=1, Growth=5, Enterprise=NULL (unlimited)
 -- ============================================================
 INSERT INTO tier_limits (
     tier, 
-    max_users, max_transactions_per_month,
+    max_users, max_transactions_per_month, max_entities,
     max_dimensions, max_currencies, max_fiscal_periods, max_budgets, max_approval_rules,
     has_multi_currency, has_simulation, has_api_access, has_sso, has_custom_reports, 
     has_multi_entity, has_audit_export, has_priority_support,
@@ -1284,7 +1286,7 @@ INSERT INTO tier_limits (
 ) VALUES 
 (
     'starter',
-    50, 1000,
+    50, 1000, 1,
     2, 1, 24, 3, 3,
     false, false, false, false, false, false, false, false,
     90, 5,
@@ -1292,7 +1294,7 @@ INSERT INTO tier_limits (
 ),
 (
     'growth',
-    200, 10000,
+    200, 10000, 5,
     999999, 999999, NULL, NULL, NULL,
     true, false, true, false, true, false, true, false,
     365, 50,
@@ -1300,7 +1302,7 @@ INSERT INTO tier_limits (
 ),
 (
     'enterprise',
-    NULL, NULL,
+    NULL, NULL, NULL,
     999999, 999999, NULL, NULL, NULL,
     true, true, true, true, true, true, true, true,
     2555, 500,
@@ -1308,7 +1310,7 @@ INSERT INTO tier_limits (
 ),
 (
     'self_hosted',
-    NULL, NULL,
+    NULL, NULL, NULL,
     999999, 999999, NULL, NULL, NULL,
     true, true, true, true, true, true, true, true,
     3650, 10000,

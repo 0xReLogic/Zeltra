@@ -56,14 +56,14 @@ impl EntityRepository {
         // Check entity limit for the tier
         let current_count = self.count_by_organization(organization_id).await?;
 
-        // Check tier limits (using max_users field as entity limit per design)
+        // Check tier limits (using max_entities field)
         let tier_limit = tier_limits::Entity::find_by_id(tier)
             .one(&self.db)
             .await?
             .ok_or_else(|| DbErr::Custom("Tier limits not found".to_string()))?;
 
-        // Enterprise tier has unlimited entities (NULL max_users)
-        if let Some(max_entities) = tier_limit.max_users
+        // Enterprise tier has unlimited entities (NULL max_entities)
+        if let Some(max_entities) = tier_limit.max_entities
             && current_count >= max_entities as i64
         {
             return Err(DbErr::Custom(

@@ -2,14 +2,14 @@
 use chrono::NaiveDate;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
-use sea_orm::{ConnectionTrait, Database, EntityTrait, Set, TransactionTrait};
+use sea_orm::{ConnectionTrait, Database, DatabaseConnection, EntityTrait, Set, TransactionTrait};
 use std::env;
 use uuid::Uuid;
 
 use zeltra_db::{
     entities::{
-        ledger_entries,
-        sea_orm_active_enums::{TransactionStatus, TransactionType},
+        fiscal_periods, fiscal_years, ledger_entries,
+        sea_orm_active_enums::{FiscalPeriodStatus, TransactionStatus, TransactionType},
         transactions,
     },
     repositories::transaction::{
@@ -25,6 +25,122 @@ fn get_database_url() -> String {
     })
 }
 
+/// Helper to create a fiscal year and period for testing
+async fn setup_fiscal_period(
+    db: &DatabaseConnection,
+    org_id: Uuid,
+    entity_id: Uuid,
+    start_date: NaiveDate,
+    end_date: NaiveDate,
+) -> Uuid {
+    use zeltra_db::entities::{
+        entities, organizations,
+        sea_orm_active_enums::{FiscalYearStatus, SubscriptionStatus, SubscriptionTier},
+    };
+
+    // Ensure organization exists
+    let org_exists = organizations::Entity::find_by_id(org_id)
+        .one(db)
+        .await
+        .ok()
+        .flatten()
+        .is_some();
+
+    if !org_exists {
+        let org = organizations::ActiveModel {
+            id: Set(org_id),
+            name: Set("Test Organization".to_string()),
+            slug: Set(format!("test-org-{}", org_id)),
+            base_currency: Set("USD".to_string()),
+            timezone: Set("UTC".to_string()),
+            settings: Set(serde_json::json!({})),
+            subscription_tier: Set(SubscriptionTier::Enterprise),
+            subscription_status: Set(SubscriptionStatus::Active),
+            is_active: Set(true),
+            created_at: Set(chrono::Utc::now().into()),
+            updated_at: Set(chrono::Utc::now().into()),
+            ..Default::default()
+        };
+        organizations::Entity::insert(org)
+            .exec(db)
+            .await
+            .expect("Failed to create test organization");
+    }
+
+    // Ensure entity exists
+    let entity_exists = entities::Entity::find_by_id(entity_id)
+        .one(db)
+        .await
+        .ok()
+        .flatten()
+        .is_some();
+
+    if !entity_exists {
+        let entity = entities::ActiveModel {
+            id: Set(entity_id),
+            organization_id: Set(org_id),
+            name: Set("Test Entity".to_string()),
+            legal_name: Set(Some("Test Entity Legal Name".to_string())),
+            tax_id: Set(None),
+            entity_type: Set("main".to_string()),
+            base_currency: Set("USD".to_string()),
+            is_active: Set(true),
+            settings: Set(serde_json::json!({})),
+            created_at: Set(chrono::Utc::now().into()),
+            updated_at: Set(chrono::Utc::now().into()),
+        };
+        entities::Entity::insert(entity)
+            .exec(db)
+            .await
+            .expect("Failed to create test entity");
+    }
+
+    let fiscal_year_id = Uuid::new_v4();
+    let fiscal_period_id = Uuid::new_v4();
+
+    // Create fiscal year
+    let fiscal_year = fiscal_years::ActiveModel {
+        id: Set(fiscal_year_id),
+        organization_id: Set(org_id),
+        entity_id: Set(entity_id),
+        name: Set("Test FY 2026".to_string()),
+        start_date: Set(start_date),
+        end_date: Set(end_date),
+        status: Set(FiscalYearStatus::Open),
+        closed_by: Set(None),
+        closed_at: Set(None),
+        created_at: Set(chrono::Utc::now().into()),
+        updated_at: Set(chrono::Utc::now().into()),
+    };
+    fiscal_years::Entity::insert(fiscal_year)
+        .exec(db)
+        .await
+        .expect("Failed to create fiscal year");
+
+    // Create fiscal period
+    let fiscal_period = fiscal_periods::ActiveModel {
+        id: Set(fiscal_period_id),
+        organization_id: Set(org_id),
+        fiscal_year_id: Set(fiscal_year_id),
+        name: Set("Test Period".to_string()),
+        period_number: Set(1),
+        start_date: Set(start_date),
+        end_date: Set(end_date),
+        status: Set(FiscalPeriodStatus::Open),
+        is_adjustment_period: Set(false),
+        closed_by: Set(None),
+        closed_at: Set(None),
+        created_at: Set(chrono::Utc::now().into()),
+        updated_at: Set(chrono::Utc::now().into()),
+    };
+    fiscal_periods::Entity::insert(fiscal_period)
+        .exec(db)
+        .await
+        .expect("Failed to create fiscal period");
+
+    fiscal_period_id
+}
+
 #[tokio::test]
 async fn test_unique_account_version_constraint() {
     let db = Database::connect(&get_database_url())
@@ -36,11 +152,74 @@ async fn test_unique_account_version_constraint() {
     let org_id = Uuid::parse_str("d2b40c00-d207-4104-b8b6-b4e925abb507").unwrap();
     let user_id = Uuid::parse_str("00000000-0000-0000-0000-000000000002").unwrap();
     let fiscal_period_id = Uuid::parse_str("a46ede63-994d-4c5d-9c67-3af65116a05c").unwrap();
+    let entity_id = Uuid::parse_str("00000000-0000-0000-0000-000000000001").unwrap();
+
+    // Ensure organization and entity exist
+    use zeltra_db::entities::{
+        entities, organizations,
+        sea_orm_active_enums::{SubscriptionStatus, SubscriptionTier},
+    };
+
+    let org_exists = organizations::Entity::find_by_id(org_id)
+        .one(&db)
+        .await
+        .ok()
+        .flatten()
+        .is_some();
+
+    if !org_exists {
+        let org = organizations::ActiveModel {
+            id: Set(org_id),
+            name: Set("Test Organization".to_string()),
+            slug: Set(format!("test-org-{}", org_id)),
+            base_currency: Set("USD".to_string()),
+            timezone: Set("UTC".to_string()),
+            settings: Set(serde_json::json!({})),
+            subscription_tier: Set(SubscriptionTier::Enterprise),
+            subscription_status: Set(SubscriptionStatus::Active),
+            is_active: Set(true),
+            created_at: Set(chrono::Utc::now().into()),
+            updated_at: Set(chrono::Utc::now().into()),
+            ..Default::default()
+        };
+        organizations::Entity::insert(org)
+            .exec(&db)
+            .await
+            .expect("Failed to create test organization");
+    }
+
+    let entity_exists = entities::Entity::find_by_id(entity_id)
+        .one(&db)
+        .await
+        .ok()
+        .flatten()
+        .is_some();
+
+    if !entity_exists {
+        let entity = entities::ActiveModel {
+            id: Set(entity_id),
+            organization_id: Set(org_id),
+            name: Set("Test Entity".to_string()),
+            legal_name: Set(Some("Test Entity Legal Name".to_string())),
+            tax_id: Set(None),
+            entity_type: Set("main".to_string()),
+            base_currency: Set("USD".to_string()),
+            is_active: Set(true),
+            settings: Set(serde_json::json!({})),
+            created_at: Set(chrono::Utc::now().into()),
+            updated_at: Set(chrono::Utc::now().into()),
+        };
+        entities::Entity::insert(entity)
+            .exec(&db)
+            .await
+            .expect("Failed to create test entity");
+    }
 
     // Create a dummy transaction first to satisfy FK
     let txn_model = transactions::ActiveModel {
         id: Set(transaction_id),
         organization_id: Set(org_id),
+        entity_id: Set(entity_id),
         fiscal_period_id: Set(fiscal_period_id),
         transaction_type: Set(TransactionType::Journal),
         transaction_date: Set(NaiveDate::from_ymd_opt(2026, 1, 1).unwrap()),
@@ -133,12 +312,23 @@ async fn test_residual_adjustment_insertion() {
 
     let org_id = Uuid::parse_str("d2b40c00-d207-4104-b8b6-b4e925abb507").unwrap();
     let user_id = Uuid::parse_str("00000000-0000-0000-0000-000000000002").unwrap();
+    let entity_id = Uuid::parse_str("00000000-0000-0000-0000-000000000001").unwrap();
     let acc1 = Uuid::parse_str("6525770f-8bff-44ce-b88a-938778c109f3").unwrap();
     let acc2 = Uuid::parse_str("8d0d3b59-6886-4892-b6ab-4781f171e40d").unwrap();
 
+    // Setup fiscal period for the test
+    let _fiscal_period_id = setup_fiscal_period(
+        &db,
+        org_id,
+        entity_id,
+        NaiveDate::from_ymd_opt(2026, 1, 1).unwrap(),
+        NaiveDate::from_ymd_opt(2026, 12, 31).unwrap(),
+    )
+    .await;
+
     let input = CreateTransactionInput {
         organization_id: org_id,
-        entity_id: Uuid::new_v4(),
+        entity_id,
         transaction_type: TransactionType::Journal,
         transaction_date: NaiveDate::from_ymd_opt(2026, 1, 1).unwrap(),
         description: "Rounding Test".to_string(),

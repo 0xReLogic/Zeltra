@@ -158,7 +158,7 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Fix any errors or warnings
     - Run `cargo test` to ensure existing tests pass
   
-  - [ ] 1.14 Write property-based tests for entity repository
+  - [x] 1.14 Write property-based tests for entity repository
     - Create test file `backend/crates/db/tests/entity_repository_properties.rs`
     - **Property 5**: Default entity creation - test that creating org creates default entity
     - **Property 6**: Entity tier limit enforcement - test tier limits for all tiers
@@ -170,7 +170,7 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Tag each test: `Feature: entities-model-implementation, Property N: {property_text}`
     - _Requirements: 2.1, 2.2, 2.5, 2.6, 2.7, 2.8_
   
-  - [ ] 1.15 Write unit tests for entity repository
+  - [x] 1.15 Write unit tests for entity repository
     - Create test file `backend/crates/db/tests/entity_repository_tests.rs`
     - Test create entity with valid data
     - Test create entity with duplicate name (should fail)
@@ -181,7 +181,7 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Test soft delete doesn't remove from database
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.6, 2.7, 2.8_
   
-  - [ ] 1.16 Checkpoint - Ensure all tests pass
+  - [x] 1.16 Checkpoint - Ensure all tests pass
     - Ensure all tests pass, ask the user if questions arise.
 
 - [-] 2. Entity API Routes & Subscription Middleware (Day 2: 6-8 hours)
@@ -298,7 +298,7 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Update utoipa annotations
     - _Requirements: 4.1, 4.2, 4.4_
   
-  - [-] 2.13 Generate OpenAPI specification
+  - [x] 2.13 Generate OpenAPI specification
     - Run `cd backend && cargo run --bin generate-openapi`
     - Run `cd ../contracts && python3 split-openapi.py`
     - Verify openapi.yaml contains entity endpoints
@@ -312,7 +312,7 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Fix any errors or warnings
     - Run `cargo test` to ensure tests pass
   
-  - [ ] 2.16 Write property-based tests for subscription middleware
+  - [x] 2.16 Write property-based tests for subscription middleware
     - Create test file `backend/crates/api/tests/subscription_middleware_properties.rs`
     - **Property 16**: Subscription status middleware - test all status combinations
     - Generate random users with different subscription statuses
@@ -322,7 +322,7 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Tag test: `Feature: entities-model-implementation, Property 16: Subscription Status Middleware`
     - _Requirements: 6.1, 6.2, 6.3, 6.4_
   
-  - [ ] 2.17 Write unit tests for subscription middleware
+  - [x] 2.17 Write unit tests for subscription middleware
     - Create test file `backend/crates/api/tests/subscription_middleware_tests.rs`
     - Test active user can make request
     - Test trialing user can make request
@@ -331,7 +331,7 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Test error message format
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 19.5_
   
-  - [ ] 2.18 Write integration tests for entity API
+  - [x] 2.18 Write integration tests for entity API
     - Create test file `backend/crates/api/tests/entity_api_integration.rs`
     - Test full entity CRUD flow
     - Test entity creation with different subscription tiers
@@ -340,10 +340,10 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Test error responses (400, 404, 403)
     - _Requirements: 2.1, 2.2, 2.6, 2.7, 2.8, 19.1, 19.2, 19.4_
   
-  - [ ] 2.19 Checkpoint - Ensure all tests pass
+  - [x] 2.19 Checkpoint - Ensure all tests pass
     - Ensure all tests pass, ask the user if questions arise.
 
-- [x] 3. Core Transaction & Account Routes (Day 3: 6-8 hours)
+- [-] 3. Core Transaction & Account Routes (Day 3: 6-8 hours)
   - [x] 3.1 Update transaction request/response types
     - Modify file `backend/crates/api/src/routes/transactions.rs`
     - Add entity_id field to CreateTransactionRequest
@@ -448,7 +448,7 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Update all utoipa annotations
     - _Requirements: 3.5_
   
-  - [x] 3.14 Generate OpenAPI specification
+  - [-] 3.14 Generate OpenAPI specification
     - Run `cd backend && cargo run --bin generate-openapi`
     - Run `cd ../contracts && python3 split-openapi.py`
     - Verify entity_id in transaction/account/budget/fiscal endpoints
@@ -486,7 +486,7 @@ This implementation plan breaks down the entities model refactoring into 7 daily
   - [ ] 3.19 Checkpoint - Ensure all tests pass
     - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 4. Reports, Dashboard & Sentinel Routes (Day 4: 6-8 hours)
+- [-] 4. Reports, Dashboard & Sentinel Routes (Day 4: 6-8 hours)
   - [ ] 4.1 Update report routes
     - Modify file `backend/crates/api/src/routes/reports.rs`
     - Add entity_id query parameter to trial_balance endpoint

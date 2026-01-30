@@ -186,11 +186,12 @@ impl MigrationTrait for Migration {
                 FROM entities
                 WHERE entity_type = 'main'
             )
-            UPDATE ledger_entries le
+            UPDATE ledger_entries
             SET entity_id = ode.entity_id
             FROM org_default_entity ode
-            JOIN transactions t ON t.id = le.transaction_id
-            WHERE t.organization_id = ode.organization_id;
+            JOIN transactions t ON t.organization_id = ode.organization_id
+            JOIN ledger_entries le ON le.transaction_id = t.id
+            WHERE ledger_entries.id = le.id;
             ",
         )
         .await?;

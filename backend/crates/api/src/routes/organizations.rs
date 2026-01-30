@@ -754,63 +754,7 @@ fn string_to_role(s: &str) -> Option<UserRole> {
         "submitter" => Some(UserRole::Submitter),
         _ => None,
     }
-}
-
-#[allow(dead_code)]
-fn map_tier_limits(m: &zeltra_db::entities::tier_limits::Model) -> TierLimitsResponse {
-    TierLimitsResponse {
-        max_dimensions: m.max_dimensions,
-        max_users: m.max_users,
-        max_transactions_per_month: m.max_transactions_per_month,
-        has_multi_currency: m.has_multi_currency,
-        has_auto_accruals: m.has_auto_accruals,
-        has_intercompany_hub: m.has_intercompany_hub,
-        has_simulation: m.has_simulation,
-        has_custom_reports: m.has_custom_reports,
-        has_audit_export: m.has_audit_export,
-    }
-}
-
-/// DELETE `/organizations/{org_id}/users/{user_id}` - Remove user from organization.
-#[utoipa::path(
-    delete,
-    path = "/organizations/{org_id}/users/{user_id}",
-    params(
-        ("org_id" = uuid::Uuid, Path, description = "Organization ID"),
-        ("user_id" = uuid::Uuid, Path, description = "User ID")
-    ),
-    responses(
-        (status = 204, description = "User removed successfully"),
-        (status = 403, description = "Forbidden"),
-        (status = 404, description = "Organization or user not found")
-    ),
-    tag = "Organizations",
-    security(("bearerAuth" = []))
-)]
-#[allow(clippy::too_many_lines)]
-async fn remove_user(
-    State(state): State<AppState>,
-    auth: AuthUser,
-    Path((org_id, user_id)): Path<(uuid::Uuid, uuid::Uuid)>,
-) -> impl IntoResponse {
-    let org_repo = OrganizationRepository::new((*state.db).clone());
-    let session_repo = SessionRepository::new((*state.db).clone());
-
-    // Get requester's membership to check role
-    let requester_membership = match org_repo.get_user_membership(org_id, auth.user_id()).await {
-        Ok(Some(m)) => m,
-        Ok(None) => {
-            return (
-                StatusCode::FORBIDDEN,
-                Json(json!({
-                    "error": "forbidden",
-                    "message": "You are not a member of this organization"
-                })),
-            )
-                .into_response();
-        }
-        Err(e) => {
-            error!(error = %e, "Database error checking membership");
+}            error!(error = %e, "Database error checking membership");
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({

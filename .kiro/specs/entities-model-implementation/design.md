@@ -666,15 +666,15 @@ All accounting data models are updated to include `entity_id`:
 
 **Relevant Fields**:
 - `tier`: Enum ('starter', 'growth', 'enterprise')
-- `max_organizations`: Reused as max_entities (integer or null for unlimited)
+- `max_entities`: Maximum entities per organization (integer or null for unlimited)
 - `max_users`: Maximum users per organization
 - `max_transactions_per_month`: Transaction limit
 - `max_storage_gb`: Storage limit in gigabytes
 
 **Entity Limit Mapping**:
-- Starter: max_organizations = 1 (1 entity)
-- Growth: max_organizations = 5 (5 entities)
-- Enterprise: max_organizations = NULL (unlimited entities)
+- Starter: max_entities = 1 (1 entity)
+- Growth: max_entities = 5 (5 entities)
+- Enterprise: max_entities = NULL (unlimited entities)
 
 ## Data Migration Strategy
 
