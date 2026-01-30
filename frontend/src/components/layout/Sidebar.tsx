@@ -21,9 +21,10 @@ import {
   Building2,
   Scale
 } from 'lucide-react'
-import { useOrganization } from '@/lib/queries/organizations'
+import { useUserSubscription } from '@/lib/queries/auth'
 import { useUpgradeStore } from '@/lib/stores/upgradeStore'
 import { UsageMeter } from '@/components/dashboard/UsageMeter'
+import { EntitySelector } from '@/components/entities/EntitySelector'
 
 const navItems = [
   { label: 'Overview', href: '/dashboard', icon: LayoutDashboard },
@@ -43,7 +44,7 @@ const navItems = [
 
 export function Sidebar() {
   const pathname = usePathname()
-  const { data: org } = useOrganization()
+  const { data: subscription } = useUserSubscription()
   const { openModal } = useUpgradeStore()
 
   return (
@@ -54,11 +55,16 @@ export function Sidebar() {
         </Link>
       </div>
       
-      <div className="flex flex-col h-[calc(100vh-64px)]">
+      {/* Entity Selector */}
+      <div className="border-b px-4 py-3">
+        <EntitySelector />
+      </div>
+      
+      <div className="flex flex-col h-[calc(100vh-128px)]">
         <nav className="flex-1 overflow-y-auto p-4 space-y-1 custom-scrollbar">
           {navItems.map((item) => {
             const isActive = pathname === item.href
-            const isLocked = item.tier === 'enterprise' && org?.subscription_tier !== 'enterprise'
+            const isLocked = item.tier === 'enterprise' && subscription?.subscription_tier !== 'enterprise'
 
             if (isLocked) {
               return (

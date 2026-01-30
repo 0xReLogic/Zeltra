@@ -622,7 +622,7 @@ This implementation plan breaks down the entities model refactoring into 7 daily
   - [x] 4.18 Checkpoint - Ensure all tests pass
     - Ensure all tests pass, ask the user if questions arise.
 
-- [-] 5. Frontend Types, Queries & Auth Store (Day 5: 6-8 hours)
+- [x] 5. Frontend Types, Queries & Auth Store (Day 5: 6-8 hours)
   - [x] 5.1 Research React Query and TypeScript patterns for 2025-2026
     - Use Exa or Tavily to search for "TanStack Query v5 best practices 2025 2026"
     - Use Exa or Tavily to search for "React Query mutation patterns 2025"
@@ -766,8 +766,8 @@ This implementation plan breaks down the entities model refactoring into 7 daily
   - [x] 5.19 Checkpoint - Ensure all tests pass
     - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 6. Frontend Components & Forms (Day 6: 6-8 hours)
-  - [ ] 6.1 Create EntitySelector component
+- [x] 6. Frontend Components & Forms (Day 6: 6-8 hours)
+  - [x] 6.1 Create EntitySelector component
     - Create file `frontend/src/components/entities/EntitySelector.tsx`
     - Implement dropdown to select entity
     - Use useEntities() hook to fetch entities
@@ -777,13 +777,13 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Restore from localStorage on mount
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 15.1, 15.2, 15.3, 15.4_
   
-  - [ ] 6.2 Update Sidebar component
+  - [x] 6.2 Update Sidebar component
     - Modify file `frontend/src/components/layout/Sidebar.tsx`
     - Replace organization switcher with EntitySelector
     - Update tier checks to use useUserSubscription() instead of org subscription
     - _Requirements: 7.1, 11.6_
   
-  - [ ] 6.3 Update CreateTransactionDialog
+  - [x] 6.3 Update CreateTransactionDialog
     - Modify file `frontend/src/components/transactions/CreateTransactionDialog.tsx`
     - Add entity selector field
     - Pass entity_id to useCreateTransaction() mutation
@@ -792,51 +792,51 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - _Requirements: 8.1, 8.4, 8.5_
 
 
-  - [ ] 6.4 Update AccountForm component
+  - [x] 6.4 Update AccountForm component
     - Modify file `frontend/src/components/accounts/AccountForm.tsx`
     - Add entity selector field
     - Pass entity_id to useCreateAccount() mutation
     - Add validation: entity_id required
     - _Requirements: 8.2, 8.4, 8.5_
   
-  - [ ] 6.5 Update budget forms
+  - [x] 6.5 Update budget forms
     - Find and modify budget form components in `frontend/src/app/dashboard/budgets/`
     - Add entity selector field
     - Pass entity_id to useCreateBudget() mutation
     - Add validation: entity_id required
     - _Requirements: 8.3, 8.4, 8.5_
   
-  - [ ] 6.6 Update UpgradeModal component
+  - [x] 6.6 Update UpgradeModal component
     - Modify file `frontend/src/components/modals/UpgradeModal.tsx`
     - Use useUserSubscription() instead of organization subscription
     - Update tier display
     - _Requirements: 11.1, 11.2_
   
-  - [ ] 6.7 Update UsageMeter component
+  - [x] 6.7 Update UsageMeter component
     - Modify file `frontend/src/components/dashboard/UsageMeter.tsx`
     - Use useUserSubscription() instead of organization subscription
     - Update tier display
     - Display entity count and limit
     - _Requirements: 11.1, 11.4, 11.5_
   
-  - [ ] 6.8 Update BudgetVsActual component
+  - [x] 6.8 Update BudgetVsActual component
     - Modify file `frontend/src/components/dashboard/BudgetVsActual.tsx`
     - Add entity_id parameter to data queries
     - Filter data by selected entity
     - _Requirements: 16.7_
   
-  - [ ] 6.9 Update RecentActivity component
+  - [x] 6.9 Update RecentActivity component
     - Modify file `frontend/src/components/dashboard/RecentActivity.tsx`
     - Add entity_id parameter to data queries
     - Filter data by selected entity
     - _Requirements: 16.6_
   
-  - [ ] 6.10 Update simulation components
+  - [x] 6.10 Update simulation components
     - Modify file `frontend/src/components/simulation/SimulationControls.tsx` - add entity selector
     - Modify file `frontend/src/components/simulation/SimulationChart.tsx` - add entity filter
     - _Requirements: 17.3, 17.4_
   
-  - [ ] 6.11 Write unit tests for EntitySelector component
+  - [x] 6.11 Write unit tests for EntitySelector component
     - Create test file `frontend/src/components/entities/__tests__/EntitySelector.test.tsx`
     - Test component renders with entities list
     - Test auto-select when only one entity
@@ -845,7 +845,7 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Test entity selection updates context
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 15.1, 15.2, 15.3_
   
-  - [ ] 6.12 Write unit tests for entity queries
+  - [x] 6.12 Write unit tests for entity queries
     - Create test file `frontend/src/lib/queries/__tests__/entities.test.ts`
     - Test useEntities hook fetches entities
     - Test useCreateEntity mutation
@@ -854,21 +854,21 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Test query invalidation after mutations
     - _Requirements: 2.1, 2.6, 2.7, 2.8_
   
-  - [ ] 6.13 Write unit tests for auth store
+  - [x] 6.13 Write unit tests for auth store
     - Create test file `frontend/src/lib/stores/__tests__/authStore.test.ts`
     - Test setCurrentEntityId updates state
     - Test clearAuth clears currentEntityId
     - Test entity context persistence
     - _Requirements: 7.3, 15.1_
   
-  - [ ] 6.14 Run frontend validation
+  - [x] 6.14 Run frontend validation
     - Run `pnpm lint` to check for linting issues
     - Run `pnpm type-check` to check TypeScript types
     - Use getDiagnostics tool on all modified frontend files
     - Fix any errors or warnings
     - Run `pnpm build` to ensure build succeeds
   
-  - [ ] 6.15 Checkpoint - Ensure all tests pass
+  - [x] 6.15 Checkpoint - Ensure all tests pass
     - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 7. Frontend Pages & E2E Testing (Day 7: 8-12 hours)

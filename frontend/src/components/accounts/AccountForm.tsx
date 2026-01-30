@@ -3,6 +3,7 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
+import { AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -20,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { useAuthStore } from '@/lib/stores/authStore'
 import { CreateAccountRequest } from '@/types/accounts'
 
 
@@ -42,6 +44,8 @@ interface AccountFormProps {
 }
 
 export function AccountForm({ mode = 'create', defaultValues, onSubmit, isSubmitting, isLoading }: AccountFormProps) {
+  const currentEntityId = useAuthStore((state) => state.currentEntityId)
+  
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -54,9 +58,32 @@ export function AccountForm({ mode = 'create', defaultValues, onSubmit, isSubmit
 
   const loading = isSubmitting || isLoading
 
+  const handleSubmit = (values: FormValues) => {
+    if (!currentEntityId) {
+      return // Button should be disabled, but extra safety
+    }
+    // Add entity_id to the request
+    onSubmit({
+      ...values,
+      entity_id: currentEntityId,
+    } as CreateAccountRequest)
+  }
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+        {/* Entity Selection Warning */}
+        {!currentEntityId && (
+          <div className="flex items-start gap-2 rounded-md border border-amber-500/50 bg-amber-500/10 p-3 text-sm">
+            <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="font-medium text-amber-600">No Entity Selected</p>
+              <p className="text-muted-foreground text-xs mt-1">
+                Please select an entity from the sidebar before creating an account.
+              </p>
+            </div>
+          </div>
+        )}
         <FormField
           control={form.control}
           name="code"
@@ -135,8 +162,8 @@ export function AccountForm({ mode = 'create', defaultValues, onSubmit, isSubmit
         />
 
         <div className="flex justify-end pt-4">
-          <Button type="submit" disabled={loading}>
-            {loading ? 'Saving...' : mode === 'edit' ? 'Update Account' : 'Save Account'}
+          <Button type="submit" disabled={loading || !currentEntityId}>
+            {loading ? 'Saving...' : !currentEntityId ? 'Select Entity First' : mode === 'edit' ? 'Update Account' : 'Save Account'}
           </Button>
         </div>
       </form>

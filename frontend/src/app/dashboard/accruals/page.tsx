@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import { Plus, CalendarClock, DollarSign, Clock, CheckCircle2, Loader2, Lock } from 'lucide-react'
 import { useAccrualSchedules, useCreateAccrualSchedule } from '@/lib/queries/sentinel'
 import { useAccounts } from '@/lib/queries/accounts'
-import { useOrganization } from '@/lib/queries/organizations'
+import { useUserSubscription } from '@/lib/queries/auth'
 import { useUpgradeStore } from '@/lib/stores/upgradeStore'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -42,7 +42,7 @@ import { toast } from 'sonner'
 import type { CreateAccrualScheduleRequest } from '@/types/api-helpers'
 
 export default function AccrualsPage() {
-  const { data: org } = useOrganization()
+  const { data: subscription } = useUserSubscription()
   const { openModal } = useUpgradeStore()
   const { data: schedules, isLoading, isError } = useAccrualSchedules()
   const { data: accountsData } = useAccounts()
@@ -54,8 +54,8 @@ export default function AccrualsPage() {
     currency_id: 'USD',
   })
 
-  // Check tier access
-  const hasAccruals = org?.limits?.has_auto_accruals ?? false
+  // Check tier access - accruals are enterprise-only
+  const hasAccruals = subscription?.subscription_tier === 'enterprise'
 
   // Show loading state first
   if (isLoading) {
@@ -94,7 +94,7 @@ export default function AccrualsPage() {
   }
 
   // Show upgrade prompt if tier not available (check after loading)
-  if (org && !hasAccruals) {
+  if (subscription && !hasAccruals) {
     return (
       <div className="space-y-6">
         <h1 className="text-3xl font-bold tracking-tight">Accruals Management</h1>

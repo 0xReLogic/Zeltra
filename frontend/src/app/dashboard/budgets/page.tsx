@@ -11,9 +11,10 @@ import {
   ResponsiveContainer,
   Legend
 } from 'recharts'
-import { Plus, TrendingUp, DollarSign, Lock } from 'lucide-react'
+import { Plus, TrendingUp, DollarSign, Lock, AlertTriangle } from 'lucide-react'
 import { useBudgets, useCreateBudget } from '@/lib/queries/budgets'
 import { useFiscalYears } from '@/lib/queries/fiscal'
+import { useAuthStore } from '@/lib/stores/authStore'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -44,6 +45,7 @@ export default function BudgetsPage() {
   const { data } = useBudgets()
   const { data: fiscalYears } = useFiscalYears()
   const createBudget = useCreateBudget()
+  const currentEntityId = useAuthStore((state) => state.currentEntityId)
   const [isOpen, setIsOpen] = useState(false)
   const [formData, setFormData] = useState<Partial<CreateBudgetRequest>>({
     budget_type: 'annual',
@@ -51,12 +53,25 @@ export default function BudgetsPage() {
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    
+    // Validate entity_id is selected
+    if (!currentEntityId) {
+      toast.error('Please select an entity before creating a budget')
+      return
+    }
+    
     if (!formData.name || !formData.fiscal_year_id || !formData.budget_type) {
       toast.error('Please fill all required fields')
       return
     }
     
-    createBudget.mutate(formData as CreateBudgetRequest, {
+    // Add entity_id to the request
+    const requestData: CreateBudgetRequest = {
+      ...formData,
+      entity_id: currentEntityId,
+    } as CreateBudgetRequest
+    
+    createBudget.mutate(requestData, {
       onSuccess: () => {
         toast.success('Budget created successfully')
         setIsOpen(false)
@@ -104,6 +119,19 @@ export default function BudgetsPage() {
               <DialogDescription>Create a budget for a fiscal year</DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Entity Selection Warning */}
+              {!currentEntityId && (
+                <div className="flex items-start gap-2 rounded-md border border-amber-500/50 bg-amber-500/10 p-3 text-sm">
+                  <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium text-amber-600">No Entity Selected</p>
+                    <p className="text-muted-foreground text-xs mt-1">
+                      Please select an entity from the sidebar before creating a budget.
+                    </p>
+                  </div>
+                </div>
+              )}
+              
               <div className="space-y-2">
                 <Label htmlFor="name">Budget Name</Label>
                 <Input 
@@ -157,8 +185,8 @@ export default function BudgetsPage() {
                 />
               </div>
               <DialogFooter>
-                <Button type="submit" disabled={createBudget.isPending}>
-                  {createBudget.isPending ? 'Creating...' : 'Create Budget'}
+                <Button type="submit" disabled={createBudget.isPending || !currentEntityId}>
+                  {createBudget.isPending ? 'Creating...' : !currentEntityId ? 'Select Entity First' : 'Create Budget'}
                 </Button>
               </DialogFooter>
             </form>

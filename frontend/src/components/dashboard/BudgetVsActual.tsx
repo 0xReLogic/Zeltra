@@ -4,11 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { AlertTriangle, CheckCircle, PieChart } from 'lucide-react'
 import { useBudgetVsActual } from '@/lib/queries/dashboard'
+import { useAuthStore } from '@/lib/stores/authStore'
 import { formatCurrency } from '@/lib/utils/format'
 import { Skeleton } from '@/components/ui/skeleton'
 
 export function BudgetVsActual() {
-  const { data, isLoading, error } = useBudgetVsActual()
+  const currentEntityId = useAuthStore((state) => state.currentEntityId)
+  const { data, isLoading, error } = useBudgetVsActual(currentEntityId || undefined)
 
   if (isLoading) {
     return (

@@ -42,6 +42,8 @@ import { useAccounts } from '@/lib/queries/accounts'
 import { useDimensions, useDimensionValues } from '@/lib/queries/dimensions'
 import { useFiscalPeriods } from '@/lib/queries/fiscal'
 import { useCurrencies } from '@/lib/queries/exchange-rates'
+import { useUserSubscription } from '@/lib/queries/auth'
+import { useAuthStore } from '@/lib/stores/authStore'
 import { toast } from 'sonner'
 import { ApiError } from '@/lib/api/client'
 import { useOrganization } from '@/lib/queries/organizations'
@@ -78,6 +80,8 @@ export function CreateTransactionDialog() {
   const { data: dimensionsData } = useDimensions()
   const { data: valuesData } = useDimensionValues() // Fetch all values
   const { data: organization } = useOrganization()
+  const { data: subscription } = useUserSubscription()
+  const currentEntityId = useAuthStore((state) => state.currentEntityId)
   const { data: fiscalPeriodsData } = useFiscalPeriods()
   const { data: currenciesData } = useCurrencies()
 
@@ -156,7 +160,7 @@ export function CreateTransactionDialog() {
   
   // Tier-aware exchange rate check
   const baseCurrency = organization?.base_currency || 'USD'
-  const isStarterTier = organization?.subscription_tier?.toLowerCase() === 'starter'
+  const isStarterTier = subscription?.subscription_tier?.toLowerCase() === 'starter'
 
   // Fiscal period validation
   const transactionDate = form.watch('transaction_date')
@@ -175,6 +179,12 @@ export function CreateTransactionDialog() {
   const isPeriodClosed = activePeriod && periodStatus !== 'open'
 
   function onSubmit(values: FormValues) {
+    // Validate entity_id is selected
+    if (!currentEntityId) {
+      toast.error('Please select an entity before creating a transaction')
+      return
+    }
+
     const amount = values.amount
     const currency = values.currency
 
@@ -253,6 +263,7 @@ export function CreateTransactionDialog() {
     }
 
     const request = {
+      entity_id: currentEntityId, // Add entity_id to request
       type: values.type,
       transaction_date: values.transaction_date instanceof Date && !isNaN(values.transaction_date.getTime())
         ? format(values.transaction_date, 'yyyy-MM-dd')
@@ -307,6 +318,19 @@ export function CreateTransactionDialog() {
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {/* Entity Selection Warning */}
+            {!currentEntityId && (
+              <div className="flex items-start gap-2 rounded-md border border-amber-500/50 bg-amber-500/10 p-3 text-sm">
+                <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium text-amber-600">No Entity Selected</p>
+                  <p className="text-muted-foreground text-xs mt-1">
+                    Please select an entity from the sidebar before creating a transaction.
+                  </p>
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -695,9 +719,9 @@ export function CreateTransactionDialog() {
             </div>
 
             <DialogFooter>
-              <Button type="submit" disabled={createMutation.isPending || !isPeriodOpen}>
+              <Button type="submit" disabled={createMutation.isPending || !isPeriodOpen || !currentEntityId}>
                 {createMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {!isPeriodOpen && transactionDate ? 'Period Restricted' : 'Create Transaction'}
+                {!currentEntityId ? 'Select Entity First' : !isPeriodOpen && transactionDate ? 'Period Restricted' : 'Create Transaction'}
               </Button>
             </DialogFooter>
           </form>

@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import { Building2, Link2, Plus, Lock, Loader2, Check, X } from 'lucide-react'
 import { useIntercompanyMappings, useCreateIntercompanyMapping } from '@/lib/queries/sentinel'
 import { useAccounts } from '@/lib/queries/accounts'
-import { useOrganization } from '@/lib/queries/organizations'
+import { useUserSubscription } from '@/lib/queries/auth'
 import { useAuthStore } from '@/lib/stores/authStore'
 import { useUpgradeStore } from '@/lib/stores/upgradeStore'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -40,7 +40,7 @@ import { toast } from 'sonner'
 import type { CreateIntercompanyMappingRequest } from '@/types/api-helpers'
 
 export default function IntercompanyPage() {
-  const { data: org } = useOrganization()
+  const { data: subscription } = useUserSubscription()
   const { openModal } = useUpgradeStore()
   const { data: mappings, isLoading, isError, refetch } = useIntercompanyMappings()
   const { data: accountsData } = useAccounts()
@@ -50,8 +50,8 @@ export default function IntercompanyPage() {
   const [isOpen, setIsOpen] = useState(false)
   const [formData, setFormData] = useState<Partial<CreateIntercompanyMappingRequest>>({})
 
-  // Check tier access
-  const hasIntercompany = org?.limits?.has_intercompany_hub ?? false
+  // Check tier access - intercompany is enterprise-only
+  const hasIntercompany = subscription?.subscription_tier === 'enterprise'
 
   // Show loading state first
   if (isLoading) {
@@ -90,7 +90,7 @@ export default function IntercompanyPage() {
   }
 
   // Show upgrade prompt if tier not available (check after loading)
-  if (org && !hasIntercompany) {
+  if (subscription && !hasIntercompany) {
     return (
       <div className="space-y-6">
         <h1 className="text-3xl font-bold tracking-tight">Intercompany Hub</h1>

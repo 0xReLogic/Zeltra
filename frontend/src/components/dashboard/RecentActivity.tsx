@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Activity, CreditCard, FileText, UserPlus, CheckCircle, XCircle } from 'lucide-react'
 import { useRecentActivity } from '@/lib/queries/dashboard'
+import { useAuthStore } from '@/lib/stores/authStore'
 import { formatDistanceToNow } from 'date-fns'
 
 const ActivityIcon = ({ type, action }: { type: string, action: string }) => {
@@ -23,7 +24,8 @@ const ActivityIcon = ({ type, action }: { type: string, action: string }) => {
 }
 
 export function RecentActivity() {
-  const { data, isLoading } = useRecentActivity()
+  const currentEntityId = useAuthStore((state) => state.currentEntityId)
+  const { data, isLoading } = useRecentActivity(currentEntityId || undefined)
 
   return (
     <Card className="col-span-3">
