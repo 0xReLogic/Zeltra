@@ -1,7 +1,7 @@
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { apiClient } from '../api/client'
 import { useAuthStore } from '../stores/authStore'
-import { type LoginRequest, type RegisterRequest, type AuthResponse, type RegisterResponse, type VerifyEmailRequest, type VerifyEmailResponse, type ResendVerificationRequest, type ResendVerificationResponse, type SwitchOrganizationRequest, type SwitchOrganizationResponse } from '@/types/auth'
+import { type LoginRequest, type RegisterRequest, type AuthResponse, type RegisterResponse, type VerifyEmailRequest, type VerifyEmailResponse, type ResendVerificationRequest, type ResendVerificationResponse, type SwitchOrganizationRequest, type SwitchOrganizationResponse, type UserSubscription } from '@/types/auth'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 
@@ -125,7 +125,6 @@ export function useSwitchOrganization() {
   const setAuth = useAuthStore((state) => state.setAuth)
   const setOrg = useAuthStore((state) => state.setOrg)
   const user = useAuthStore((state) => state.user)
-  const router = useRouter()
 
   return useMutation({
     mutationFn: (data: SwitchOrganizationRequest) =>
@@ -152,5 +151,23 @@ export function useSwitchOrganization() {
       // Reload to refresh all data with new organization context
       window.location.reload()
     },
+  })
+}
+
+export function useUserSubscription() {
+  const user = useAuthStore((state) => state.user)
+
+  return useQuery({
+    queryKey: ['user', 'subscription', user?.id],
+    queryFn: async () => {
+      // Fetch user's subscription from /users/me endpoint
+      const response = await apiClient<UserSubscription>('/users/me/subscription', {
+        method: 'GET',
+        skipOrgPrefix: true,
+      })
+      return response
+    },
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   })
 }

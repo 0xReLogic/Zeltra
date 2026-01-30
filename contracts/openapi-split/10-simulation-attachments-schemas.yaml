@@ -29,6 +29,12 @@ components:
             type: string
           type: array
           nullable: true
+        entity_id:
+          description: Entity ID to run simulation for (optional).
+          example: 550e8400-e29b-41d4-a716-446655440000
+          format: uuid
+          type: string
+          nullable: true
         expense_growth_rate:
           description: Global growth rate for expense accounts (decimal, e.g. "0.05"
             for 5%).

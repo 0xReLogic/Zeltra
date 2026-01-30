@@ -31,6 +31,7 @@ interface TransactionFilters {
   end_date?: string
   account_id?: string
   dimension_value_id?: string
+  entity_id?: string  // NEW: Filter by entity
 }
 
 /**
@@ -38,7 +39,7 @@ interface TransactionFilters {
  * List transactions with optional filters
  */
 export function useTransactions(filters: TransactionFilters = {}) {
-  const { page = 0, limit = 50, status, start_date, end_date, account_id, dimension_value_id } = filters
+  const { page = 0, limit = 50, status, start_date, end_date, account_id, dimension_value_id, entity_id } = filters
 
   return useQuery({
     queryKey: TRANSACTION_KEYS.list(filters),
@@ -53,6 +54,7 @@ export function useTransactions(filters: TransactionFilters = {}) {
       if (dimension_value_id && dimension_value_id !== 'all') {
         params.set('dimension_value_id', dimension_value_id)
       }
+      if (entity_id) params.set('entity_id', entity_id)  // NEW: Add entity filter
       // Backend returns array directly, not paginated object
       return apiClient<GetTransactionsResponse>(`/transactions?${params.toString()}`)
     },

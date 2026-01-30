@@ -62,6 +62,12 @@ pub struct TrialBalanceQuery {
     /// Dimension value IDs to filter by (comma-separated).
     #[param(example = "550e8400-e29b-41d4-a716-446655440000")]
     pub dimensions: Option<String>,
+    /// Entity ID to filter by (optional).
+    #[param(example = "550e8400-e29b-41d4-a716-446655440000")]
+    pub entity_id: Option<Uuid>,
+    /// Generate consolidated report for all entities (optional).
+    #[param(example = false)]
+    pub consolidated: Option<bool>,
 }
 
 /// Query parameters for balance sheet report.
@@ -70,6 +76,12 @@ pub struct TrialBalanceQuery {
 pub struct BalanceSheetQuery {
     /// As of date (defaults to today).
     pub as_of: Option<NaiveDate>,
+    /// Entity ID to filter by (optional).
+    #[param(example = "550e8400-e29b-41d4-a716-446655440000")]
+    pub entity_id: Option<Uuid>,
+    /// Generate consolidated report for all entities (optional).
+    #[param(example = false)]
+    pub consolidated: Option<bool>,
 }
 
 /// Query parameters for income statement report.
@@ -83,6 +95,12 @@ pub struct IncomeStatementQuery {
     /// Dimension value IDs to filter by (comma-separated).
     #[param(example = "550e8400-e29b-41d4-a716-446655440000")]
     pub dimensions: Option<String>,
+    /// Entity ID to filter by (optional).
+    #[param(example = "550e8400-e29b-41d4-a716-446655440000")]
+    pub entity_id: Option<Uuid>,
+    /// Generate consolidated report for all entities (optional).
+    #[param(example = false)]
+    pub consolidated: Option<bool>,
 }
 
 /// Query parameters for dimensional report.
@@ -101,6 +119,12 @@ pub struct DimensionalReportQuery {
     pub account_type: Option<String>,
     /// Dimension value IDs to filter by (comma-separated).
     pub dimensions: Option<String>,
+    /// Entity ID to filter by (optional).
+    #[param(example = "550e8400-e29b-41d4-a716-446655440000")]
+    pub entity_id: Option<Uuid>,
+    /// Generate consolidated report for all entities (optional).
+    #[param(example = false)]
+    pub consolidated: Option<bool>,
 }
 
 /// Query parameters for account ledger.
@@ -117,6 +141,9 @@ pub struct AccountLedgerQuery {
     /// Items per page.
     #[param(example = 50)]
     pub limit: Option<u64>,
+    /// Entity ID to filter by (optional).
+    #[param(example = "550e8400-e29b-41d4-a716-446655440000")]
+    pub entity_id: Option<Uuid>,
 }
 
 // ============================================================================
@@ -549,9 +576,16 @@ async fn get_trial_balance(
 
     let report_repo = ReportRepository::new((*state.db).clone());
 
+    // Determine entity_id for filtering
+    let entity_id = if query.consolidated.unwrap_or(false) {
+        None // Consolidated mode: query all entities
+    } else {
+        query.entity_id // Single entity mode
+    };
+
     // Query account balances
     let balances = match report_repo
-        .query_trial_balance(org_id, as_of, &dimension_filters)
+        .query_trial_balance(org_id, as_of, &dimension_filters, entity_id)
         .await
     {
         Ok(b) => b,
@@ -664,8 +698,18 @@ async fn get_balance_sheet(
 
     let report_repo = ReportRepository::new((*state.db).clone());
 
+    // Determine entity_id for filtering
+    let entity_id = if query.consolidated.unwrap_or(false) {
+        None // Consolidated mode: query all entities
+    } else {
+        query.entity_id // Single entity mode
+    };
+
     // Query account balances
-    let balances = match report_repo.query_balance_sheet(org_id, as_of).await {
+    let balances = match report_repo
+        .query_balance_sheet(org_id, as_of, entity_id)
+        .await
+    {
         Ok(b) => b,
         Err(e) => {
             error!(error = %e, "Failed to query balance sheet");
@@ -798,9 +842,16 @@ async fn get_income_statement(
 
     let report_repo = ReportRepository::new((*state.db).clone());
 
+    // Determine entity_id for filtering
+    let entity_id = if query.consolidated.unwrap_or(false) {
+        None // Consolidated mode: query all entities
+    } else {
+        query.entity_id // Single entity mode
+    };
+
     // Query account balances
     let balances = match report_repo
-        .query_income_statement(org_id, from, to, &dimension_filters)
+        .query_income_statement(org_id, from, to, &dimension_filters, entity_id)
         .await
     {
         Ok(b) => b,
@@ -961,6 +1012,13 @@ async fn get_dimensional_report(
 
     let report_repo = ReportRepository::new((*state.db).clone());
 
+    // Determine entity_id for filtering
+    let entity_id = if query.consolidated.unwrap_or(false) {
+        None // Consolidated mode: query all entities
+    } else {
+        query.entity_id // Single entity mode
+    };
+
     // Query dimensional report
     let (rows, grand_total) = match report_repo
         .query_dimensional_report(
@@ -970,6 +1028,7 @@ async fn get_dimensional_report(
             &group_by,
             account_type_filter,
             &dimension_filters,
+            entity_id,
         )
         .await
     {
@@ -1074,9 +1133,9 @@ async fn get_account_ledger(
 
     let report_repo = ReportRepository::new((*state.db).clone());
 
-    // Query account ledger
+    // Query account ledger (entity_id filtering if provided)
     let (entries, total) = match report_repo
-        .query_account_ledger(org_id, account_id, from, to, page, limit)
+        .query_account_ledger(org_id, account_id, from, to, page, limit, query.entity_id)
         .await
     {
         Ok(r) => r,

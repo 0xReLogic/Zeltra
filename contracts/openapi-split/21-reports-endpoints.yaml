@@ -25,6 +25,21 @@ paths:
         required: false
         schema:
           type: string
+      - description: Entity ID to filter by (optional).
+        example: 550e8400-e29b-41d4-a716-446655440000
+        in: query
+        name: entity_id
+        required: false
+        schema:
+          format: uuid
+          type: string
+      - description: Generate consolidated report for all entities (optional).
+        example: false
+        in: query
+        name: consolidated
+        required: false
+        schema:
+          type: boolean
       responses:
         '200':
           content:
@@ -60,6 +75,21 @@ paths:
         schema:
           format: date
           type: string
+      - description: Entity ID to filter by (optional).
+        example: 550e8400-e29b-41d4-a716-446655440000
+        in: query
+        name: entity_id
+        required: false
+        schema:
+          format: uuid
+          type: string
+      - description: Generate consolidated report for all entities (optional).
+        example: false
+        in: query
+        name: consolidated
+        required: false
+        schema:
+          type: boolean
       responses:
         '200':
           content:
@@ -109,6 +139,21 @@ paths:
         required: false
         schema:
           type: string
+      - description: Entity ID to filter by (optional).
+        example: 550e8400-e29b-41d4-a716-446655440000
+        in: query
+        name: entity_id
+        required: false
+        schema:
+          format: uuid
+          type: string
+      - description: Generate consolidated report for all entities (optional).
+        example: false
+        in: query
+        name: consolidated
+        required: false
+        schema:
+          type: boolean
       responses:
         '200':
           content:
@@ -173,6 +218,21 @@ paths:
         required: false
         schema:
           type: string
+      - description: Entity ID to filter by (optional).
+        example: 550e8400-e29b-41d4-a716-446655440000
+        in: query
+        name: entity_id
+        required: false
+        schema:
+          format: uuid
+          type: string
+      - description: Generate consolidated report for all entities (optional).
+        example: false
+        in: query
+        name: consolidated
+        required: false
+        schema:
+          type: boolean
       responses:
         '200':
           content:

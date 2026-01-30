@@ -11,6 +11,15 @@ paths:
         schema:
           format: uuid
           type: string
+      - description: Entity ID to filter by (optional).
+        example: 550e8400-e29b-41d4-a716-446655440000
+        in: path
+        name: entity_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+          nullable: true
       responses:
         '200':
           content:
@@ -41,6 +50,15 @@ paths:
         schema:
           format: uuid
           type: string
+      - description: Entity ID to filter by (optional).
+        example: 550e8400-e29b-41d4-a716-446655440000
+        in: path
+        name: entity_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+          nullable: true
       responses:
         '200':
           content:

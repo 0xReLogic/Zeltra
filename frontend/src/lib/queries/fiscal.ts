@@ -26,10 +26,16 @@ const FISCAL_KEYS = {
  * GET /organizations/{org_id}/fiscal-years
  * List all fiscal years with their periods
  */
-export function useFiscalYears() {
+export function useFiscalYears(entity_id?: string) {
   return useQuery({
-    queryKey: FISCAL_KEYS.years(),
-    queryFn: () => apiClient<GetFiscalYearsResponse>('/fiscal-years'),
+    queryKey: [...FISCAL_KEYS.years(), entity_id],
+    queryFn: () => {
+      const params = new URLSearchParams()
+      if (entity_id) params.set('entity_id', entity_id)  // NEW: Add entity filter
+      return apiClient<GetFiscalYearsResponse>(
+        `/fiscal-years${params.toString() ? `?${params.toString()}` : ''}`
+      )
+    },
   })
 }
 
@@ -38,12 +44,16 @@ export function useFiscalYears() {
  * Backend doesn't have a separate /fiscal-periods endpoint,
  * so we extract periods from the /fiscal-years response.
  */
-export function useFiscalPeriods(fiscalYearId?: string) {
+export function useFiscalPeriods(fiscalYearId?: string, entity_id?: string) {
   return useQuery({
-    queryKey: FISCAL_KEYS.periodsByYear(fiscalYearId || 'all'),
+    queryKey: [...FISCAL_KEYS.periodsByYear(fiscalYearId || 'all'), entity_id],
     queryFn: async () => {
       // Fetch fiscal years which include nested periods
-      const fiscalYears = await apiClient<GetFiscalYearsResponse>('/fiscal-years')
+      const params = new URLSearchParams()
+      if (entity_id) params.set('entity_id', entity_id)  // NEW: Add entity filter
+      const fiscalYears = await apiClient<GetFiscalYearsResponse>(
+        `/fiscal-years${params.toString() ? `?${params.toString()}` : ''}`
+      )
       
       // Extract all periods from fiscal years
       let allPeriods: FiscalPeriod[] = []

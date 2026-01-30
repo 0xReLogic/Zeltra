@@ -10,6 +10,13 @@ paths:
         schema:
           format: uuid
           type: string
+      - description: Filter by entity ID
+        in: query
+        name: entity_id
+        required: false
+        schema:
+          format: uuid
+          type: string
       responses:
         '200':
           content:
@@ -34,6 +41,13 @@ paths:
         in: path
         name: org_id
         required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Filter by entity ID
+        in: query
+        name: entity_id
+        required: false
         schema:
           format: uuid
           type: string

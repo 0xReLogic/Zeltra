@@ -48,6 +48,12 @@ pub fn routes() -> Router<AppState> {
 pub struct DashboardMetricsQuery {
     /// Fiscal period ID for budget status.
     pub period_id: Option<Uuid>,
+    /// Entity ID to filter by (optional).
+    #[param(example = "550e8400-e29b-41d4-a716-446655440000")]
+    pub entity_id: Option<Uuid>,
+    /// Generate consolidated metrics for all entities (optional).
+    #[param(example = false)]
+    pub consolidated: Option<bool>,
 }
 
 /// Query parameters for recent activity.
@@ -62,6 +68,9 @@ pub struct RecentActivityQuery {
     pub activity_type: Option<String>,
     /// Cursor for pagination.
     pub cursor: Option<String>,
+    /// Entity ID to filter by (optional).
+    #[param(example = "550e8400-e29b-41d4-a716-446655440000")]
+    pub entity_id: Option<Uuid>,
 }
 
 /// Query parameters for cash flow.
@@ -72,6 +81,12 @@ pub struct CashFlowQuery {
     pub months: Option<u32>,
     /// Fiscal period ID.
     pub period_id: Option<Uuid>,
+    /// Entity ID to filter by (optional).
+    #[param(example = "550e8400-e29b-41d4-a716-446655440000")]
+    pub entity_id: Option<Uuid>,
+    /// Generate consolidated data for all entities (optional).
+    #[param(example = false)]
+    pub consolidated: Option<bool>,
 }
 
 /// Query parameters for budget vs actual.
@@ -79,6 +94,12 @@ pub struct CashFlowQuery {
 pub struct BudgetVsActualQuery {
     /// Budget ID (optional, uses first active budget if not provided).
     pub budget_id: Option<Uuid>,
+    /// Entity ID to filter by (optional).
+    #[param(example = "550e8400-e29b-41d4-a716-446655440000")]
+    pub entity_id: Option<Uuid>,
+    /// Generate consolidated data for all entities (optional).
+    #[param(example = false)]
+    pub consolidated: Option<bool>,
 }
 
 // ============================================================================

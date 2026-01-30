@@ -1,15 +1,20 @@
+/**
+ * Organization queries
+ * 
+ * Note: In the entities model, users have ONE organization (workspace)
+ * and can create multiple entities (companies) within that workspace.
+ * Multi-organization switching has been replaced with entity selection.
+ */
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api/client'
 import { Organization, OrganizationUser, CreateOrganizationRequest, UpdateOrganizationRequest, InviteUserRequest, UpdateUserRoleRequest } from '@/types/organizations'
 import { useAuthStore } from '@/lib/stores/authStore'
 
-export function useOrganizations() {
-  return useQuery({
-    queryKey: ['organizations'],
-    queryFn: () => apiClient<{ data: Organization[] }>('/organizations'),
-  })
-}
-
+/**
+ * Create organization (for initial onboarding)
+ * Note: Users now have only one organization
+ */
 export function useCreateOrganization() {
   const queryClient = useQueryClient()
   const setOrg = useAuthStore((state) => state.setOrg)
@@ -22,8 +27,6 @@ export function useCreateOrganization() {
         body: JSON.stringify(data),
       }),
     onSuccess: (newOrg) => {
-      queryClient.invalidateQueries({ queryKey: ['organizations'] })
-      
       // Add the new organization to user's organizations array
       addOrganization({
         id: newOrg.id,
@@ -34,10 +37,16 @@ export function useCreateOrganization() {
       
       // Switch to the new organization
       setOrg(newOrg.id)
+      
+      queryClient.invalidateQueries({ queryKey: ['organization'] })
     },
   })
 }
 
+/**
+ * Get user's organization
+ * Note: Users now have only one organization
+ */
 export function useOrganization() {
   const currentOrgId = useAuthStore((state) => state.currentOrgId)
 
@@ -45,6 +54,7 @@ export function useOrganization() {
     queryKey: ['organization', currentOrgId],
     queryFn: () => apiClient<Organization>(`/organizations/${currentOrgId}`),
     enabled: !!currentOrgId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   })
 }
 

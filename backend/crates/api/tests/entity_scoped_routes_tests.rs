@@ -17,12 +17,12 @@ use std::sync::Arc;
 use uuid::Uuid;
 use zeltra_db::{
     entities::{
-        budgets, chart_of_accounts, entities, organization_users, organizations, transactions,
+        budgets, chart_of_accounts, entities, organization_users, organizations,
         sea_orm_active_enums::{
-            AccountType, SubscriptionStatus, SubscriptionTier, TransactionStatus,
-            TransactionType, UserRole,
+            AccountType, SubscriptionStatus, SubscriptionTier, TransactionStatus, TransactionType,
+            UserRole,
         },
-        users,
+        transactions, users,
     },
     repositories::entity::EntityRepository,
 };
@@ -627,11 +627,10 @@ async fn test_unauthorized_entity_access() {
         .await
         .expect("Failed to query entity");
 
-    assert!(
-        entity_in_org1.is_some(),
-        "Entity 1 should exist in Org 1"
-    );
+    assert!(entity_in_org1.is_some(), "Entity 1 should exist in Org 1");
 
     // At the API layer, attempting to access entity1_id as user2 should return 403
-    println!("Note: API layer must enforce authorization and return 403 for unauthorized entity access");
+    println!(
+        "Note: API layer must enforce authorization and return 403 for unauthorized entity access"
+    );
 }

@@ -3288,6 +3288,13 @@ components:
           type:
           - array
           - 'null'
+        entity_id:
+          description: Entity ID to run simulation for (optional).
+          example: 550e8400-e29b-41d4-a716-446655440000
+          format: uuid
+          type:
+          - string
+          - 'null'
         expense_growth_rate:
           description: Global growth rate for expense accounts (decimal, e.g. "0.05" for 5%).
           example: '0.05'
@@ -4495,6 +4502,14 @@ paths:
           format: int64
           minimum: 0
           type: integer
+      - description: Entity ID to filter by (optional).
+        example: 550e8400-e29b-41d4-a716-446655440000
+        in: query
+        name: entity_id
+        required: false
+        schema:
+          format: uuid
+          type: string
       responses:
         '200':
           content:
@@ -4555,6 +4570,13 @@ paths:
         in: path
         name: org_id
         required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Filter by entity ID
+        in: query
+        name: entity_id
+        required: false
         schema:
           format: uuid
           type: string
@@ -5246,6 +5268,25 @@ paths:
           type:
           - string
           - 'null'
+      - description: Entity ID to filter by (optional).
+        example: 550e8400-e29b-41d4-a716-446655440000
+        in: path
+        name: entity_id
+        required: true
+        schema:
+          format: uuid
+          type:
+          - string
+          - 'null'
+      - description: Generate consolidated data for all entities (optional).
+        example: false
+        in: path
+        name: consolidated
+        required: true
+        schema:
+          type:
+          - boolean
+          - 'null'
       responses:
         '200':
           content:
@@ -5292,6 +5333,25 @@ paths:
           type:
           - string
           - 'null'
+      - description: Entity ID to filter by (optional).
+        example: 550e8400-e29b-41d4-a716-446655440000
+        in: path
+        name: entity_id
+        required: true
+        schema:
+          format: uuid
+          type:
+          - string
+          - 'null'
+      - description: Generate consolidated data for all entities (optional).
+        example: false
+        in: path
+        name: consolidated
+        required: true
+        schema:
+          type:
+          - boolean
+          - 'null'
       responses:
         '200':
           content:
@@ -5326,6 +5386,25 @@ paths:
           format: uuid
           type:
           - string
+          - 'null'
+      - description: Entity ID to filter by (optional).
+        example: 550e8400-e29b-41d4-a716-446655440000
+        in: path
+        name: entity_id
+        required: true
+        schema:
+          format: uuid
+          type:
+          - string
+          - 'null'
+      - description: Generate consolidated metrics for all entities (optional).
+        example: false
+        in: path
+        name: consolidated
+        required: true
+        schema:
+          type:
+          - boolean
           - 'null'
       responses:
         '200':
@@ -5378,6 +5457,16 @@ paths:
         name: cursor
         required: true
         schema:
+          type:
+          - string
+          - 'null'
+      - description: Entity ID to filter by (optional).
+        example: 550e8400-e29b-41d4-a716-446655440000
+        in: path
+        name: entity_id
+        required: true
+        schema:
+          format: uuid
           type:
           - string
           - 'null'
@@ -6100,6 +6189,16 @@ paths:
         schema:
           format: uuid
           type: string
+      - description: Entity ID to filter by (optional).
+        example: 550e8400-e29b-41d4-a716-446655440000
+        in: path
+        name: entity_id
+        required: true
+        schema:
+          format: uuid
+          type:
+          - string
+          - 'null'
       responses:
         '200':
           content:
@@ -6130,6 +6229,16 @@ paths:
         schema:
           format: uuid
           type: string
+      - description: Entity ID to filter by (optional).
+        example: 550e8400-e29b-41d4-a716-446655440000
+        in: path
+        name: entity_id
+        required: true
+        schema:
+          format: uuid
+          type:
+          - string
+          - 'null'
       responses:
         '200':
           content:
@@ -6227,6 +6336,21 @@ paths:
         schema:
           format: date
           type: string
+      - description: Entity ID to filter by (optional).
+        example: 550e8400-e29b-41d4-a716-446655440000
+        in: query
+        name: entity_id
+        required: false
+        schema:
+          format: uuid
+          type: string
+      - description: Generate consolidated report for all entities (optional).
+        example: false
+        in: query
+        name: consolidated
+        required: false
+        schema:
+          type: boolean
       responses:
         '200':
           content:
@@ -6289,6 +6413,21 @@ paths:
         required: false
         schema:
           type: string
+      - description: Entity ID to filter by (optional).
+        example: 550e8400-e29b-41d4-a716-446655440000
+        in: query
+        name: entity_id
+        required: false
+        schema:
+          format: uuid
+          type: string
+      - description: Generate consolidated report for all entities (optional).
+        example: false
+        in: query
+        name: consolidated
+        required: false
+        schema:
+          type: boolean
       responses:
         '200':
           content:
@@ -6336,6 +6475,21 @@ paths:
         required: false
         schema:
           type: string
+      - description: Entity ID to filter by (optional).
+        example: 550e8400-e29b-41d4-a716-446655440000
+        in: query
+        name: entity_id
+        required: false
+        schema:
+          format: uuid
+          type: string
+      - description: Generate consolidated report for all entities (optional).
+        example: false
+        in: query
+        name: consolidated
+        required: false
+        schema:
+          type: boolean
       responses:
         '200':
           content:
@@ -6380,6 +6534,21 @@ paths:
         required: false
         schema:
           type: string
+      - description: Entity ID to filter by (optional).
+        example: 550e8400-e29b-41d4-a716-446655440000
+        in: query
+        name: entity_id
+        required: false
+        schema:
+          format: uuid
+          type: string
+      - description: Generate consolidated report for all entities (optional).
+        example: false
+        in: query
+        name: consolidated
+        required: false
+        schema:
+          type: boolean
       responses:
         '200':
           content:
@@ -6404,6 +6573,13 @@ paths:
         in: path
         name: org_id
         required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Filter by entity ID
+        in: query
+        name: entity_id
+        required: false
         schema:
           format: uuid
           type: string

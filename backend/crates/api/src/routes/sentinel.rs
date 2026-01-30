@@ -4,7 +4,7 @@
 
 use axum::{
     Json, Router,
-    extract::{Path, State},
+    extract::{Path, Query, State},
     http::StatusCode,
     response::IntoResponse,
     routing::{get, post},
@@ -203,7 +203,8 @@ pub struct CreateIntercompanyMappingRequest {
     get,
     path = "/organizations/{org_id}/revaluation-logs",
     params(
-        ("org_id" = Uuid, Path, description = "Organization ID")
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        ("entity_id" = Option<Uuid>, Query, description = "Filter by entity ID")
     ),
     responses(
         (status = 200, description = "List of revaluation logs", body = [RevaluationLogResponse]),
@@ -216,6 +217,7 @@ async fn list_revaluation_logs(
     State(state): State<AppState>,
     auth: AuthUser,
     Path(org_id): Path<Uuid>,
+    Query(entity_id): Query<Option<Uuid>>,
 ) -> impl IntoResponse {
     let org_repo = OrganizationRepository::new((*state.db).clone());
 
@@ -228,9 +230,14 @@ async fn list_revaluation_logs(
     }
 
     // Query revaluation logs directly
+    let mut query = revaluation_logs::Entity::find()
+        .filter(revaluation_logs::Column::OrganizationId.eq(org_id));
 
-    let logs = revaluation_logs::Entity::find()
-        .filter(revaluation_logs::Column::OrganizationId.eq(org_id))
+    if let Some(eid) = entity_id {
+        query = query.filter(revaluation_logs::Column::EntityId.eq(eid));
+    }
+
+    let logs = query
         .order_by_desc(revaluation_logs::Column::CreatedAt)
         .all(&*state.db)
         .await;
@@ -276,7 +283,8 @@ async fn list_revaluation_logs(
     get,
     path = "/organizations/{org_id}/accrual-schedules",
     params(
-        ("org_id" = Uuid, Path, description = "Organization ID")
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        ("entity_id" = Option<Uuid>, Query, description = "Filter by entity ID")
     ),
     responses(
         (status = 200, description = "List of accrual schedules", body = [AccrualScheduleResponse]),
@@ -289,6 +297,7 @@ async fn list_accrual_schedules(
     State(state): State<AppState>,
     auth: AuthUser,
     Path(org_id): Path<Uuid>,
+    Query(entity_id): Query<Option<Uuid>>,
 ) -> impl IntoResponse {
     let org_repo = OrganizationRepository::new((*state.db).clone());
 
@@ -296,8 +305,14 @@ async fn list_accrual_schedules(
         return response;
     }
 
-    let schedules = accrual_schedules::Entity::find()
-        .filter(accrual_schedules::Column::OrganizationId.eq(org_id))
+    let mut query = accrual_schedules::Entity::find()
+        .filter(accrual_schedules::Column::OrganizationId.eq(org_id));
+
+    if let Some(eid) = entity_id {
+        query = query.filter(accrual_schedules::Column::EntityId.eq(eid));
+    }
+
+    let schedules = query
         .order_by_desc(accrual_schedules::Column::CreatedAt)
         .all(&*state.db)
         .await;

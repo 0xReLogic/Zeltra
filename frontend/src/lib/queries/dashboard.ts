@@ -19,10 +19,17 @@ export interface DashboardMetrics {
   }
 }
 
-export function useDashboardMetrics() {
+export function useDashboardMetrics(entity_id?: string, consolidated?: boolean) {
   return useQuery({
-    queryKey: ['dashboard', 'metrics'],
-    queryFn: () => apiClient<DashboardMetrics>('/dashboard/metrics'),
+    queryKey: ['dashboard', 'metrics', entity_id, consolidated],
+    queryFn: () => {
+      const params = new URLSearchParams()
+      if (entity_id) params.set('entity_id', entity_id)  // NEW: Add entity filter
+      if (consolidated) params.set('consolidated', 'true')  // NEW: Add consolidated mode
+      return apiClient<DashboardMetrics>(
+        `/dashboard/metrics${params.toString() ? `?${params.toString()}` : ''}`
+      )
+    },
   })
 }
 
@@ -48,11 +55,16 @@ export interface CashFlowResponse {
   data: CashFlowDataPointRaw[]
 }
 
-export function useCashFlowData() {
+export function useCashFlowData(entity_id?: string, consolidated?: boolean) {
   return useQuery({
-    queryKey: ['dashboard', 'cash-flow'],
+    queryKey: ['dashboard', 'cash-flow', entity_id, consolidated],
     queryFn: async () => {
-      const response = await apiClient<CashFlowResponse>('/dashboard/cash-flow')
+      const params = new URLSearchParams()
+      if (entity_id) params.set('entity_id', entity_id)  // NEW: Add entity filter
+      if (consolidated) params.set('consolidated', 'true')  // NEW: Add consolidated mode
+      const response = await apiClient<CashFlowResponse>(
+        `/dashboard/cash-flow${params.toString() ? `?${params.toString()}` : ''}`
+      )
       // Parse string decimals to numbers for chart rendering
       return (response.data || []).map(point => ({
         month: point.month,
@@ -68,10 +80,16 @@ export function useCashFlowData() {
 // TODO: Move types to lib/api/types.ts once generated
 // REMOVED: Custom ActivityResponse interface - now using generated RecentActivityResponse type
 
-export function useRecentActivity() {
+export function useRecentActivity(entity_id?: string) {
     return useQuery({
-        queryKey: ['dashboard', 'recent-activity'],
-        queryFn: () => apiClient<RecentActivityResponse>('/dashboard/recent-activity'),
+        queryKey: ['dashboard', 'recent-activity', entity_id],
+        queryFn: () => {
+            const params = new URLSearchParams()
+            if (entity_id) params.set('entity_id', entity_id)  // NEW: Add entity filter
+            return apiClient<RecentActivityResponse>(
+                `/dashboard/recent-activity${params.toString() ? `?${params.toString()}` : ''}`
+            )
+        },
         refetchInterval: 30000 // Real-time feed, refresh every 30s
     })
 }
@@ -101,11 +119,16 @@ export interface BudgetVsActualResponse {
     line_items: BudgetLineItem[]
 }
 
-export function useBudgetVsActual(budgetId?: string) {
+export function useBudgetVsActual(budgetId?: string, entity_id?: string) {
     return useQuery({
-        queryKey: ['dashboard', 'budget-vs-actual', budgetId],
-        queryFn: () => apiClient<BudgetVsActualResponse>(
-            `/dashboard/budget-vs-actual${budgetId ? `?budget_id=${budgetId}` : ''}`
-        ),
+        queryKey: ['dashboard', 'budget-vs-actual', budgetId, entity_id],
+        queryFn: () => {
+            const params = new URLSearchParams()
+            if (budgetId) params.set('budget_id', budgetId)
+            if (entity_id) params.set('entity_id', entity_id)  // NEW: Add entity filter
+            return apiClient<BudgetVsActualResponse>(
+                `/dashboard/budget-vs-actual${params.toString() ? `?${params.toString()}` : ''}`
+            )
+        },
     })
 }

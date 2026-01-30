@@ -19,6 +19,23 @@ paths:
           format: uuid
           type: string
           nullable: true
+      - description: Entity ID to filter by (optional).
+        example: 550e8400-e29b-41d4-a716-446655440000
+        in: path
+        name: entity_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+          nullable: true
+      - description: Generate consolidated metrics for all entities (optional).
+        example: false
+        in: path
+        name: consolidated
+        required: true
+        schema:
+          type: boolean
+          nullable: true
       responses:
         '200':
           content:
@@ -62,6 +79,23 @@ paths:
         schema:
           format: uuid
           type: string
+          nullable: true
+      - description: Entity ID to filter by (optional).
+        example: 550e8400-e29b-41d4-a716-446655440000
+        in: path
+        name: entity_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+          nullable: true
+      - description: Generate consolidated data for all entities (optional).
+        example: false
+        in: path
+        name: consolidated
+        required: true
+        schema:
+          type: boolean
           nullable: true
       responses:
         '200':
@@ -114,6 +148,15 @@ paths:
         schema:
           type: string
           nullable: true
+      - description: Entity ID to filter by (optional).
+        example: 550e8400-e29b-41d4-a716-446655440000
+        in: path
+        name: entity_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+          nullable: true
       responses:
         '200':
           content:
@@ -147,6 +190,23 @@ paths:
         schema:
           format: uuid
           type: string
+          nullable: true
+      - description: Entity ID to filter by (optional).
+        example: 550e8400-e29b-41d4-a716-446655440000
+        in: path
+        name: entity_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+          nullable: true
+      - description: Generate consolidated data for all entities (optional).
+        example: false
+        in: path
+        name: consolidated
+        required: true
+        schema:
+          type: boolean
           nullable: true
       responses:
         '200':

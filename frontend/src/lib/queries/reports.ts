@@ -21,6 +21,8 @@ export interface DimensionalReportParams {
   endDate: string;
   dimensionTypeId?: string;
   dimensionValueId?: string;
+  entity_id?: string;  // NEW: Entity filter
+  consolidated?: boolean;  // NEW: Consolidated mode
 }
 
 /**
@@ -28,10 +30,17 @@ export interface DimensionalReportParams {
  * Trial balance report
  * Returns { report_type, as_of, currency, accounts: AccountBalanceResponse[], totals: TrialBalanceTotals }
  */
-export function useTrialBalance() {
+export function useTrialBalance(entity_id?: string, consolidated?: boolean) {
   return useQuery({
-    queryKey: REPORT_KEYS.trialBalance(),
-    queryFn: () => apiClient<TrialBalanceResponse>('/reports/trial-balance'),
+    queryKey: [...REPORT_KEYS.trialBalance(), entity_id, consolidated],
+    queryFn: () => {
+      const params = new URLSearchParams()
+      if (entity_id) params.set('entity_id', entity_id)  // NEW: Add entity filter
+      if (consolidated) params.set('consolidated', 'true')  // NEW: Add consolidated mode
+      return apiClient<TrialBalanceResponse>(
+        `/reports/trial-balance${params.toString() ? `?${params.toString()}` : ''}`
+      )
+    },
   })
 }
 
@@ -40,10 +49,17 @@ export function useTrialBalance() {
  * Balance sheet report
  * Returns { report_type, as_of, currency, assets, liabilities, equity, total_assets, total_liabilities_and_equity, is_balanced }
  */
-export function useBalanceSheet() {
+export function useBalanceSheet(entity_id?: string, consolidated?: boolean) {
   return useQuery({
-    queryKey: REPORT_KEYS.balanceSheet(),
-    queryFn: () => apiClient<BalanceSheetResponse>('/reports/balance-sheet'),
+    queryKey: [...REPORT_KEYS.balanceSheet(), entity_id, consolidated],
+    queryFn: () => {
+      const params = new URLSearchParams()
+      if (entity_id) params.set('entity_id', entity_id)  // NEW: Add entity filter
+      if (consolidated) params.set('consolidated', 'true')  // NEW: Add consolidated mode
+      return apiClient<BalanceSheetResponse>(
+        `/reports/balance-sheet${params.toString() ? `?${params.toString()}` : ''}`
+      )
+    },
   })
 }
 
@@ -52,10 +68,17 @@ export function useBalanceSheet() {
  * Income statement report
  * Returns { report_type, period_start, period_end, currency, revenue, cost_of_goods_sold, gross_profit, operating_expenses, operating_income, other_income_expenses, net_income }
  */
-export function useIncomeStatement() {
+export function useIncomeStatement(entity_id?: string, consolidated?: boolean) {
   return useQuery({
-    queryKey: REPORT_KEYS.incomeStatement(),
-    queryFn: () => apiClient<IncomeStatementResponse>('/reports/income-statement'),
+    queryKey: [...REPORT_KEYS.incomeStatement(), entity_id, consolidated],
+    queryFn: () => {
+      const params = new URLSearchParams()
+      if (entity_id) params.set('entity_id', entity_id)  // NEW: Add entity filter
+      if (consolidated) params.set('consolidated', 'true')  // NEW: Add consolidated mode
+      return apiClient<IncomeStatementResponse>(
+        `/reports/income-statement${params.toString() ? `?${params.toString()}` : ''}`
+      )
+    },
   })
 }
 
@@ -82,6 +105,14 @@ export function useDimensionalReport(params: DimensionalReportParams) {
       
       if (params.dimensionValueId) {
         searchParams.set('dimensions', params.dimensionValueId);
+      }
+      
+      if (params.entity_id) {
+        searchParams.set('entity_id', params.entity_id);  // NEW: Add entity filter
+      }
+      
+      if (params.consolidated) {
+        searchParams.set('consolidated', 'true');  // NEW: Add consolidated mode
       }
       
       return apiClient<DimensionalReportResponse>(

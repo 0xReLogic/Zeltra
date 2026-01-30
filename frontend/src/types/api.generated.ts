@@ -617,6 +617,43 @@ export interface paths {
         patch: operations["toggle_dimension_value_status"];
         trace?: never;
     };
+    "/organizations/{org_id}/entities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** GET `/organizations/{org_id}/entities` - List entities for an organization. */
+        get: operations["list_entities"];
+        put?: never;
+        /** POST `/organizations/{org_id}/entities` - Create a new entity. */
+        post: operations["create_entity"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/entities/{entity_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** GET `/organizations/{org_id}/entities/{entity_id}` - Get entity details. */
+        get: operations["get_entity"];
+        put?: never;
+        post?: never;
+        /** DELETE `/organizations/{org_id}/entities/{entity_id}` - Delete entity (soft delete). */
+        delete: operations["delete_entity"];
+        options?: never;
+        head?: never;
+        /** PATCH `/organizations/{org_id}/entities/{entity_id}` - Update entity. */
+        patch: operations["update_entity"];
+        trace?: never;
+    };
     "/organizations/{org_id}/exchange-rates": {
         parameters: {
             query?: never;
@@ -1263,6 +1300,12 @@ export interface components {
             description?: string | null;
             /**
              * Format: uuid
+             * @description Entity ID.
+             * @example 550e8400-e29b-41d4-a716-446655440000
+             */
+            entity_id: string;
+            /**
+             * Format: uuid
              * @description Account ID.
              */
             id: string;
@@ -1300,6 +1343,11 @@ export interface components {
             description?: string | null;
             /** @description End date. */
             end_date: string;
+            /**
+             * Format: uuid
+             * @description Entity ID.
+             */
+            entity_id: string;
             /** @description Frequency. */
             frequency: string;
             /**
@@ -1795,6 +1843,11 @@ export interface components {
             description?: string | null;
             /**
              * Format: uuid
+             * @description Entity ID.
+             */
+            entity_id: string;
+            /**
+             * Format: uuid
              * @description Fiscal year ID.
              */
             fiscal_year_id: string;
@@ -2023,6 +2076,12 @@ export interface components {
             currency: string;
             /** @description Account description. */
             description?: string | null;
+            /**
+             * Format: uuid
+             * @description Entity ID.
+             * @example 550e8400-e29b-41d4-a716-446655440000
+             */
+            entity_id: string;
             /** @description Whether the account is active (default: true). */
             is_active?: boolean | null;
             /**
@@ -2070,6 +2129,11 @@ export interface components {
              * @example 2026-12-31
              */
             end_date: string;
+            /**
+             * Format: uuid
+             * @description Entity ID.
+             */
+            entity_id: string;
             /**
              * @description Frequency: daily, weekly, monthly, quarterly, yearly.
              * @example monthly
@@ -2152,6 +2216,12 @@ export interface components {
             description?: string | null;
             /**
              * Format: uuid
+             * @description Entity ID.
+             * @example 550e8400-e29b-41d4-a716-446655440000
+             */
+            entity_id: string;
+            /**
+             * Format: uuid
              * @description Fiscal year ID.
              */
             fiscal_year_id: string;
@@ -2222,6 +2292,34 @@ export interface components {
              */
             parent_id?: string | null;
         };
+        /** @description Request body for creating an entity. */
+        CreateEntityRequest: {
+            /**
+             * @description Base currency code (ISO 4217).
+             * @example USD
+             */
+            base_currency: string;
+            /**
+             * @description Entity type: main, subsidiary, branch, division.
+             * @example main
+             */
+            entity_type: string;
+            /**
+             * @description Legal entity name.
+             * @example Acme Corporation Inc.
+             */
+            legal_name?: string | null;
+            /**
+             * @description Entity name (must be unique within organization).
+             * @example Acme Corp Main
+             */
+            name: string;
+            /**
+             * @description Tax identification number (EIN, VAT, etc.).
+             * @example 12-3456789
+             */
+            tax_id?: string | null;
+        };
         /** @description Request body for a single ledger entry. */
         CreateEntryRequest: {
             /**
@@ -2291,6 +2389,12 @@ export interface components {
              * @example 2026-12-31
              */
             end_date: string;
+            /**
+             * Format: uuid
+             * @description Entity ID.
+             * @example 550e8400-e29b-41d4-a716-446655440000
+             */
+            entity_id: string;
             /** @description Whether to include an adjustment period (period 13). */
             include_adjustment_period?: boolean;
             /**
@@ -2309,19 +2413,24 @@ export interface components {
         CreateIntercompanyMappingRequest: {
             /**
              * Format: uuid
-             * @description Source account ID (in current organization).
+             * @description Source account ID (in source entity).
              */
             source_account_id: string;
             /**
              * Format: uuid
-             * @description Target account ID (in target organization).
+             * @description Source entity ID.
+             */
+            source_entity_id: string;
+            /**
+             * Format: uuid
+             * @description Target account ID (in target entity).
              */
             target_account_id: string;
             /**
              * Format: uuid
-             * @description Target organization ID.
+             * @description Target entity ID (must be in same organization).
              */
-            target_org_id: string;
+            target_entity_id: string;
         };
         /** @description Create organization request. */
         CreateOrganizationRequest: {
@@ -2354,6 +2463,12 @@ export interface components {
              * @example Monthly rent payment
              */
             description: string;
+            /**
+             * Format: uuid
+             * @description Entity ID.
+             * @example 550e8400-e29b-41d4-a716-446655440000
+             */
+            entity_id: string;
             /** @description Ledger entries. */
             entries: components["schemas"]["CreateEntryRequest"][];
             /**
@@ -2510,6 +2625,37 @@ export interface components {
             total_credit: string;
             /** @description Total debit. */
             total_debit: string;
+        };
+        /** @description Response for an entity. */
+        EntityResponse: {
+            /** @description Base currency code. */
+            base_currency: string;
+            /** @description Creation timestamp. */
+            created_at: string;
+            /** @description Entity type. */
+            entity_type: string;
+            /**
+             * Format: uuid
+             * @description Entity ID.
+             */
+            id: string;
+            /** @description Whether the entity is active. */
+            is_active: boolean;
+            /** @description Legal entity name. */
+            legal_name?: string | null;
+            /** @description Entity name. */
+            name: string;
+            /**
+             * Format: uuid
+             * @description Organization ID.
+             */
+            organization_id: string;
+            /** @description Entity-specific settings. */
+            settings: unknown;
+            /** @description Tax identification number. */
+            tax_id?: string | null;
+            /** @description Last update timestamp. */
+            updated_at: string;
         };
         /** @description Response for a ledger entry. */
         EntryResponse: {
@@ -2674,6 +2820,11 @@ export interface components {
             end_date: string;
             /**
              * Format: uuid
+             * @description Entity ID.
+             */
+            entity_id: string;
+            /**
+             * Format: uuid
              * @description Fiscal year ID.
              */
             id: string;
@@ -2709,6 +2860,11 @@ export interface components {
         GetBudgetsResponse: {
             /** @description List of budgets. */
             budgets: components["schemas"]["BudgetResponse"][];
+        };
+        /** @description Response wrapper for list entities endpoint. */
+        GetEntitiesResponse: {
+            /** @description List of entities. */
+            entities: components["schemas"]["EntityResponse"][];
         };
         /** @description Health check response. */
         HealthResponse: {
@@ -2804,9 +2960,9 @@ export interface components {
             source_account_id: string;
             /**
              * Format: uuid
-             * @description Source organization ID.
+             * @description Source entity ID.
              */
-            source_org_id: string;
+            source_entity_id: string;
             /**
              * Format: uuid
              * @description Target account ID.
@@ -2814,9 +2970,9 @@ export interface components {
             target_account_id: string;
             /**
              * Format: uuid
-             * @description Target organization ID.
+             * @description Target entity ID.
              */
-            target_org_id: string;
+            target_entity_id: string;
         };
         /** @description Ledger entry response. */
         LedgerEntryResponse: {
@@ -2970,22 +3126,12 @@ export interface components {
              * @description Organization ID.
              */
             id: string;
-            limits?: null | components["schemas"]["TierLimitsResponse"];
             /** @description Organization name. */
             name: string;
             /** @description Organization slug. */
             slug: string;
-            /** @description Subscription status. */
-            subscription_status: string;
-            /** @description Subscription tier. */
-            subscription_tier: string;
             /** @description Timezone for reports. */
             timezone: string;
-            /**
-             * Format: date-time
-             * @description Trial expiration date (if applicable).
-             */
-            trial_ends_at?: string | null;
         };
         /** @description Pagination metadata. */
         PageMeta: {
@@ -3141,6 +3287,12 @@ export interface components {
             amount: string;
             /** @description Optional description. */
             description?: string | null;
+            /**
+             * Format: uuid
+             * @description Entity ID for the payment transaction.
+             * @example 550e8400-e29b-41d4-a716-446655440000
+             */
+            entity_id: string;
             /**
              * @description Exchange rate for the payment.
              * @example 1.0850
@@ -3399,6 +3551,12 @@ export interface components {
             /** @description Filter historical data by dimension value IDs. */
             dimension_filters?: string[] | null;
             /**
+             * Format: uuid
+             * @description Entity ID to run simulation for (optional).
+             * @example 550e8400-e29b-41d4-a716-446655440000
+             */
+            entity_id?: string | null;
+            /**
              * @description Global growth rate for expense accounts (decimal, e.g. "0.05" for 5%).
              * @example 0.05
              */
@@ -3529,6 +3687,12 @@ export interface components {
             created_by: string;
             /** @description Description. */
             description: string;
+            /**
+             * Format: uuid
+             * @description Entity ID.
+             * @example 550e8400-e29b-41d4-a716-446655440000
+             */
+            entity_id: string;
             /** @description Ledger entries. */
             entries: components["schemas"]["EntryResponse"][];
             /**
@@ -3677,6 +3841,19 @@ export interface components {
             description?: string | null;
             /** @description Dimension value name. */
             name?: string | null;
+        };
+        /** @description Request body for updating an entity. */
+        UpdateEntityRequest: {
+            /** @description Base currency code. */
+            base_currency?: string | null;
+            /** @description Entity type. */
+            entity_type?: string | null;
+            /** @description Legal entity name. */
+            legal_name?: string | null;
+            /** @description Entity name. */
+            name?: string | null;
+            /** @description Tax identification number. */
+            tax_id?: string | null;
         };
         /** @description Update organization member request. */
         UpdateMemberRequest: {
@@ -4154,6 +4331,8 @@ export interface operations {
     list_accounts: {
         parameters: {
             query?: {
+                /** @description Filter by entity ID (optional). */
+                entity_id?: string;
                 /** @description Filter by account type. */
                 type?: string;
                 /** @description Filter by active status. */
@@ -4213,7 +4392,7 @@ export interface operations {
                     "application/json": components["schemas"]["AccountResponse"];
                 };
             };
-            /** @description Invalid input */
+            /** @description Invalid input or entity not found */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -4425,6 +4604,11 @@ export interface operations {
                  * @example 50
                  */
                 limit?: number;
+                /**
+                 * @description Entity ID to filter by (optional).
+                 * @example 550e8400-e29b-41d4-a716-446655440000
+                 */
+                entity_id?: string;
             };
             header?: never;
             path: {
@@ -4505,7 +4689,10 @@ export interface operations {
     };
     list_accrual_schedules: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Filter by entity ID */
+                entity_id?: string;
+            };
             header?: never;
             path: {
                 /** @description Organization ID */
@@ -5020,7 +5207,10 @@ export interface operations {
     };
     list_budgets: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Optional entity ID filter */
+                entity_id?: string;
+            };
             header?: never;
             path: {
                 /** @description Organization ID */
@@ -5335,6 +5525,16 @@ export interface operations {
                 org_id: string;
                 /** @description Budget ID (optional, uses first active budget if not provided). */
                 budget_id: string | null;
+                /**
+                 * @description Entity ID to filter by (optional).
+                 * @example 550e8400-e29b-41d4-a716-446655440000
+                 */
+                entity_id: string | null;
+                /**
+                 * @description Generate consolidated data for all entities (optional).
+                 * @example false
+                 */
+                consolidated: boolean | null;
             };
             cookie?: never;
         };
@@ -5372,6 +5572,16 @@ export interface operations {
                 months: number | null;
                 /** @description Fiscal period ID. */
                 period_id: string | null;
+                /**
+                 * @description Entity ID to filter by (optional).
+                 * @example 550e8400-e29b-41d4-a716-446655440000
+                 */
+                entity_id: string | null;
+                /**
+                 * @description Generate consolidated data for all entities (optional).
+                 * @example false
+                 */
+                consolidated: boolean | null;
             };
             cookie?: never;
         };
@@ -5404,6 +5614,16 @@ export interface operations {
                 org_id: string;
                 /** @description Fiscal period ID for budget status. */
                 period_id: string | null;
+                /**
+                 * @description Entity ID to filter by (optional).
+                 * @example 550e8400-e29b-41d4-a716-446655440000
+                 */
+                entity_id: string | null;
+                /**
+                 * @description Generate consolidated metrics for all entities (optional).
+                 * @example false
+                 */
+                consolidated: boolean | null;
             };
             cookie?: never;
         };
@@ -5446,6 +5666,11 @@ export interface operations {
                 type: string | null;
                 /** @description Cursor for pagination. */
                 cursor: string | null;
+                /**
+                 * @description Entity ID to filter by (optional).
+                 * @example 550e8400-e29b-41d4-a716-446655440000
+                 */
+                entity_id: string | null;
             };
             cookie?: never;
         };
@@ -5701,6 +5926,203 @@ export interface operations {
                 content?: never;
             };
             /** @description Dimension value not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_entities: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of entities */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetEntitiesResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    create_entity: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateEntityRequest"];
+            };
+        };
+        responses: {
+            /** @description Entity created successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EntityResponse"];
+                };
+            };
+            /** @description Bad request - validation error or entity limit exceeded */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_entity: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: string;
+                /** @description Entity ID */
+                entity_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Entity details */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EntityResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Entity not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    delete_entity: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: string;
+                /** @description Entity ID */
+                entity_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Entity deleted successfully */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Entity not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    update_entity: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization ID */
+                org_id: string;
+                /** @description Entity ID */
+                entity_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateEntityRequest"];
+            };
+        };
+        responses: {
+            /** @description Entity updated successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EntityResponse"];
+                };
+            };
+            /** @description Bad request - validation error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Entity not found */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -5978,7 +6400,10 @@ export interface operations {
     };
     list_fiscal_years: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Optional entity ID filter */
+                entity_id?: string;
+            };
             header?: never;
             path: {
                 /** @description Organization ID */
@@ -6061,6 +6486,11 @@ export interface operations {
             path: {
                 /** @description Organization ID */
                 org_id: string;
+                /**
+                 * @description Entity ID to filter by (optional).
+                 * @example 550e8400-e29b-41d4-a716-446655440000
+                 */
+                entity_id: string | null;
             };
             cookie?: never;
         };
@@ -6105,6 +6535,11 @@ export interface operations {
             path: {
                 /** @description Organization ID */
                 org_id: string;
+                /**
+                 * @description Entity ID to filter by (optional).
+                 * @example 550e8400-e29b-41d4-a716-446655440000
+                 */
+                entity_id: string | null;
             };
             cookie?: never;
         };
@@ -6218,6 +6653,16 @@ export interface operations {
             query?: {
                 /** @description As of date (defaults to today). */
                 as_of?: string;
+                /**
+                 * @description Entity ID to filter by (optional).
+                 * @example 550e8400-e29b-41d4-a716-446655440000
+                 */
+                entity_id?: string;
+                /**
+                 * @description Generate consolidated report for all entities (optional).
+                 * @example false
+                 */
+                consolidated?: boolean;
             };
             header?: never;
             path: {
@@ -6272,6 +6717,16 @@ export interface operations {
                 account_type?: string;
                 /** @description Dimension value IDs to filter by (comma-separated). */
                 dimensions?: string;
+                /**
+                 * @description Entity ID to filter by (optional).
+                 * @example 550e8400-e29b-41d4-a716-446655440000
+                 */
+                entity_id?: string;
+                /**
+                 * @description Generate consolidated report for all entities (optional).
+                 * @example false
+                 */
+                consolidated?: boolean;
             };
             header?: never;
             path: {
@@ -6312,6 +6767,16 @@ export interface operations {
                  * @example 550e8400-e29b-41d4-a716-446655440000
                  */
                 dimensions?: string;
+                /**
+                 * @description Entity ID to filter by (optional).
+                 * @example 550e8400-e29b-41d4-a716-446655440000
+                 */
+                entity_id?: string;
+                /**
+                 * @description Generate consolidated report for all entities (optional).
+                 * @example false
+                 */
+                consolidated?: boolean;
             };
             header?: never;
             path: {
@@ -6364,6 +6829,16 @@ export interface operations {
                  * @example 550e8400-e29b-41d4-a716-446655440000
                  */
                 dimensions?: string;
+                /**
+                 * @description Entity ID to filter by (optional).
+                 * @example 550e8400-e29b-41d4-a716-446655440000
+                 */
+                entity_id?: string;
+                /**
+                 * @description Generate consolidated report for all entities (optional).
+                 * @example false
+                 */
+                consolidated?: boolean;
             };
             header?: never;
             path: {
@@ -6401,7 +6876,10 @@ export interface operations {
     };
     list_revaluation_logs: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Filter by entity ID */
+                entity_id?: string;
+            };
             header?: never;
             path: {
                 /** @description Organization ID */
@@ -6477,6 +6955,8 @@ export interface operations {
             path: {
                 /** @description Organization ID */
                 org_id: string;
+                /** @description Filter by entity ID (optional). */
+                entity_id: string | null;
                 /** @description Filter by status. */
                 status: string | null;
                 /** @description Filter by transaction type. */
@@ -6539,7 +7019,7 @@ export interface operations {
                     "application/json": components["schemas"]["TransactionResponse"];
                 };
             };
-            /** @description Invalid input, unbalanced transaction, or missing required budget dimensions */
+            /** @description Invalid input, unbalanced transaction, missing entity_id, or missing required budget dimensions */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -7249,7 +7729,7 @@ export interface operations {
             path: {
                 /** @description Organization ID */
                 org_id: string;
-                /** @description User ID */
+                /** @description User ID to remove */
                 user_id: string;
             };
             cookie?: never;
@@ -7263,7 +7743,14 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Forbidden */
+            /** @description Cannot remove last owner */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden - insufficient permissions */
             403: {
                 headers: {
                     [name: string]: unknown;

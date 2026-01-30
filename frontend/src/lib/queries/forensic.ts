@@ -78,10 +78,16 @@ interface ReconciliationResponse {
  * GET /organizations/{org_id}/forensic/reconciliation
  * Run balance reconciliation (Enterprise only)
  */
-export function useReconciliation() {
+export function useReconciliation(entity_id?: string) {
   return useQuery({
-    queryKey: FORENSIC_KEYS.reconciliation(),
-    queryFn: () => apiClient<ReconciliationResponse>('/forensic/reconciliation'),
+    queryKey: [...FORENSIC_KEYS.reconciliation(), entity_id],
+    queryFn: () => {
+      const params = new URLSearchParams()
+      if (entity_id) params.set('entity_id', entity_id)  // NEW: Add entity filter
+      return apiClient<ReconciliationResponse>(
+        `/forensic/reconciliation${params.toString() ? `?${params.toString()}` : ''}`
+      )
+    },
   })
 }
 
@@ -89,10 +95,16 @@ export function useReconciliation() {
  * GET /organizations/{org_id}/forensic/benford
  * Run Benford's Law analysis (Enterprise only)
  */
-export function useBenford() {
+export function useBenford(entity_id?: string) {
   return useQuery({
-    queryKey: FORENSIC_KEYS.benford(),
-    queryFn: () => apiClient<BenfordResponse>('/forensic/benford'),
+    queryKey: [...FORENSIC_KEYS.benford(), entity_id],
+    queryFn: () => {
+      const params = new URLSearchParams()
+      if (entity_id) params.set('entity_id', entity_id)  // NEW: Add entity filter
+      return apiClient<BenfordResponse>(
+        `/forensic/benford${params.toString() ? `?${params.toString()}` : ''}`
+      )
+    },
   })
 }
 
@@ -100,10 +112,16 @@ export function useBenford() {
  * GET /organizations/{org_id}/forensic/health-score
  * Run Financial Health checks (Enterprise only)
  */
-export function useHealthScore() {
+export function useHealthScore(entity_id?: string) {
   return useQuery({
-    queryKey: FORENSIC_KEYS.healthScore(),
-    queryFn: () => apiClient<HealthScoreResponse>('/forensic/health-score'),
+    queryKey: [...FORENSIC_KEYS.healthScore(), entity_id],
+    queryFn: () => {
+      const params = new URLSearchParams()
+      if (entity_id) params.set('entity_id', entity_id)  // NEW: Add entity filter
+      return apiClient<HealthScoreResponse>(
+        `/forensic/health-score${params.toString() ? `?${params.toString()}` : ''}`
+      )
+    },
   })
 }
 

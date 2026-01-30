@@ -5,13 +5,13 @@
 
 use axum::{
     Json, Router,
-    extract::{Path, State},
+    extract::{Path, Query, State},
     http::StatusCode,
     response::IntoResponse,
     routing::get,
 };
 use rust_decimal::Decimal;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tracing::error;
 use uuid::Uuid;
@@ -39,6 +39,18 @@ pub fn routes() -> Router<AppState> {
             "/organizations/{org_id}/forensic/reconciliation",
             get(get_reconciliation),
         )
+}
+
+// ============================================================================
+// Query Parameters
+// ============================================================================
+
+/// Query parameters for forensic endpoints.
+#[derive(Debug, Deserialize, utoipa::IntoParams)]
+pub struct ForensicQuery {
+    /// Entity ID to filter by (optional).
+    #[param(example = "550e8400-e29b-41d4-a716-446655440000")]
+    pub entity_id: Option<Uuid>,
 }
 
 // ============================================================================
@@ -136,7 +148,8 @@ async fn check_tier(
     get,
     path = "/organizations/{org_id}/forensic/benford",
     params(
-        ("org_id" = Uuid, Path, description = "Organization ID")
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        ForensicQuery
     ),
     responses(
         (status = 200, description = "Advanced Benford analysis", body = BenfordResponse),
@@ -151,6 +164,7 @@ async fn check_tier(
 async fn get_benford(
     State(state): State<AppState>,
     Path(org_id): Path<Uuid>,
+    Query(query): Query<ForensicQuery>,
     auth_user: AuthUser,
 ) -> impl IntoResponse {
     let org_repo = OrganizationRepository::new((*state.db).clone());
@@ -175,13 +189,20 @@ async fn get_benford(
         return resp;
     }
 
-    // 3. Fetch Data (Ledger Entry Amounts)
-    let amounts: Vec<Decimal> = match ledger_entries::Entity::find()
+    // 3. Fetch Data (Ledger Entry Amounts), optionally filtered by entity
+    let mut query_builder = ledger_entries::Entity::find()
         .join(
             sea_orm::JoinType::InnerJoin,
             zeltra_db::entities::ledger_entries::Relation::ChartOfAccounts.def(),
         )
-        .filter(zeltra_db::entities::chart_of_accounts::Column::OrganizationId.eq(org_id))
+        .filter(zeltra_db::entities::chart_of_accounts::Column::OrganizationId.eq(org_id));
+
+    if let Some(eid) = query.entity_id {
+        query_builder =
+            query_builder.filter(zeltra_db::entities::chart_of_accounts::Column::EntityId.eq(eid));
+    }
+
+    let amounts: Vec<Decimal> = match query_builder
         .select_only()
         .column(ledger_entries::Column::FunctionalAmount)
         .into_tuple()
@@ -219,7 +240,8 @@ async fn get_benford(
     get,
     path = "/organizations/{org_id}/forensic/health-score",
     params(
-        ("org_id" = Uuid, Path, description = "Organization ID")
+        ("org_id" = Uuid, Path, description = "Organization ID"),
+        ForensicQuery
     ),
     responses(
         (status = 200, description = "Health Score Results", body = HealthScoreResponse),
@@ -235,6 +257,7 @@ async fn get_benford(
 async fn get_health_score(
     State(state): State<AppState>,
     Path(org_id): Path<Uuid>,
+    Query(query): Query<ForensicQuery>,
     auth_user: AuthUser,
 ) -> impl IntoResponse {
     let org_repo = OrganizationRepository::new((*state.db).clone());
@@ -263,7 +286,10 @@ async fn get_health_score(
     let report_repo = ReportRepository::new((*state.db).clone());
     let as_of = chrono::Utc::now().date_naive();
 
-    let balances = match report_repo.query_balance_sheet(org_id, as_of).await {
+    let balances = match report_repo
+        .query_balance_sheet(org_id, as_of, query.entity_id)
+        .await
+    {
         Ok(b) => b,
         Err(e) => {
             error!(error = %e, "Failed to query balance sheet");

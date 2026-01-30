@@ -39,6 +39,9 @@ pub fn routes() -> Router<AppState> {
 /// Request body for running a simulation.
 #[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct RunSimulationRequest {
+    /// Entity ID to run simulation for (optional).
+    #[schema(example = "550e8400-e29b-41d4-a716-446655440000")]
+    pub entity_id: Option<Uuid>,
     /// Start date of historical period for baseline calculation.
     #[schema(example = "2023-01-01")]
     pub base_period_start: NaiveDate,

@@ -19,10 +19,12 @@ interface AuthState {
   refreshToken: string | null
   tokenExpiresAt: number | null
   currentOrgId: string | null
+  currentEntityId: string | null  // NEW: Current selected entity
   isRefreshing: boolean
   setAuth: (user: User, accessToken: string, refreshToken: string, expiresIn: number) => void
   setTokens: (accessToken: string, refreshToken: string, expiresIn: number) => void
   setOrg: (orgId: string) => void
+  setCurrentEntityId: (entityId: string) => void  // NEW: Set current entity
   addOrganization: (org: { id: string; name: string; slug: string; role: string }) => void
   logout: () => void
   isTokenExpired: () => boolean
@@ -37,6 +39,7 @@ export const useAuthStore = create<AuthState>()(
       refreshToken: null,
       tokenExpiresAt: null,
       currentOrgId: null,
+      currentEntityId: null,  // NEW: Initialize entity context
       isRefreshing: false,
       
       setAuth: (user, accessToken, refreshToken, expiresIn) => {
@@ -61,6 +64,11 @@ export const useAuthStore = create<AuthState>()(
       },
       
       setOrg: (orgId) => set({ currentOrgId: orgId }),
+      
+      setCurrentEntityId: (entityId) => {
+        console.log(`🏢 Setting current entity: ${entityId}`)
+        set({ currentEntityId: entityId })
+      },
       
       addOrganization: (org) => {
         const { user } = get()
@@ -93,7 +101,8 @@ export const useAuthStore = create<AuthState>()(
           accessToken: null, 
           refreshToken: null, 
           tokenExpiresAt: null,
-          currentOrgId: null 
+          currentOrgId: null,
+          currentEntityId: null  // NEW: Clear entity context on logout
         })
       },
       
@@ -113,6 +122,7 @@ export const useAuthStore = create<AuthState>()(
         refreshToken: state.refreshToken,
         tokenExpiresAt: state.tokenExpiresAt,
         currentOrgId: state.currentOrgId,
+        currentEntityId: state.currentEntityId,  // NEW: Persist entity context
       }),
       onRehydrateStorage: () => {
         console.log('💧 Zustand: Starting hydration from localStorage')

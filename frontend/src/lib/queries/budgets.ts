@@ -25,6 +25,7 @@ const BUDGET_KEYS = {
 interface BudgetFilters {
   fiscal_year_id?: string
   is_active?: boolean
+  entity_id?: string  // NEW: Filter by entity
 }
 
 /**
@@ -39,6 +40,7 @@ export function useBudgets(filters?: BudgetFilters) {
       const params = new URLSearchParams()
       if (filters?.fiscal_year_id) params.set('fiscal_year_id', filters.fiscal_year_id)
       if (filters?.is_active !== undefined) params.set('is_active', String(filters.is_active))
+      if (filters?.entity_id) params.set('entity_id', filters.entity_id)  // NEW: Add entity filter
       const queryString = params.toString()
       const response = await apiClient<GetBudgetsResponse>(`/budgets${queryString ? `?${queryString}` : ''}`)
       return response.budgets

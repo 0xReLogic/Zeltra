@@ -19,3 +19,17 @@ export type SwitchOrganizationResponse = components['schemas']['SwitchOrganizati
 
 // Alias for backward compatibility
 export type AuthResponse = LoginResponse
+
+/**
+ * User subscription information
+ * Subscriptions are per user, not per organization
+ */
+export interface UserSubscription {
+  subscription_tier: 'starter' | 'growth' | 'enterprise'
+  subscription_status: 'trialing' | 'active' | 'expired' | 'cancelled'
+  trial_ends_at?: string | null
+  subscription_ends_at?: string | null
+  payment_provider?: string | null
+  payment_customer_id?: string | null
+  payment_subscription_id?: string | null
+}

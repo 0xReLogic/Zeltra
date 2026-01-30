@@ -487,7 +487,7 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Ensure all tests pass, ask the user if questions arise.
 
 - [-] 4. Reports, Dashboard & Sentinel Routes (Day 4: 6-8 hours)
-  - [ ] 4.1 Update report routes
+  - [x] 4.1 Update report routes
     - Modify file `backend/crates/api/src/routes/reports.rs`
     - Add entity_id query parameter to trial_balance endpoint
     - Add entity_id query parameter to balance_sheet endpoint
@@ -498,21 +498,21 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Update utoipa path annotations
     - _Requirements: 10.1, 10.2, 10.3_
   
-  - [ ] 4.2 Implement entity filtering in report generation
+  - [x] 4.2 Implement entity filtering in report generation
     - Modify file `backend/crates/api/src/routes/reports.rs`
     - Update report queries to filter by entity_id when provided
     - Implement consolidated mode (query all entities, combine data)
     - Implement intercompany elimination for consolidated reports
     - _Requirements: 10.2, 10.3, 10.4_
   
-  - [ ] 4.3 Update dashboard routes
+  - [x] 4.3 Update dashboard routes
     - Modify file `backend/crates/api/src/routes/dashboard.rs`
     - Add entity_id query parameter to all dashboard endpoints
     - Add consolidated query parameter to all dashboard endpoints
     - Update utoipa path annotations
     - _Requirements: 16.1, 16.2, 16.3_
   
-  - [ ] 4.4 Implement entity filtering in dashboard metrics
+  - [x] 4.4 Implement entity filtering in dashboard metrics
     - Modify file `backend/crates/api/src/routes/dashboard.rs`
     - Update dashboard queries to filter by entity_id when provided
     - Implement consolidated mode for dashboard metrics
@@ -520,7 +520,7 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - _Requirements: 16.2, 16.3, 16.4_
 
 
-  - [ ] 4.5 Update sentinel routes (accruals)
+  - [x] 4.5 Update sentinel routes (accruals)
     - Modify file `backend/crates/api/src/routes/sentinel.rs`
     - Add entity_id to CreateAccrualScheduleRequest
     - Add entity_id to AccrualScheduleResponse
@@ -528,7 +528,7 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Update utoipa annotations
     - _Requirements: 3.6_
   
-  - [ ] 4.6 Update sentinel routes (revaluation)
+  - [x] 4.6 Update sentinel routes (revaluation)
     - Modify file `backend/crates/api/src/routes/sentinel.rs`
     - Add entity_id to RevaluationRequest
     - Add entity_id to RevaluationLogResponse
@@ -536,47 +536,47 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Update utoipa annotations
     - _Requirements: 3.7_
   
-  - [ ] 4.7 Update forensic routes
+  - [x] 4.7 Update forensic routes
     - Modify file `backend/crates/api/src/routes/forensic.rs`
     - Add entity_id query parameter to all forensic endpoints
     - Update forensic analysis to filter by entity_id
     - Update utoipa annotations
     - _Requirements: 17.1, 17.2_
   
-  - [ ] 4.8 Update simulation routes
+  - [x] 4.8 Update simulation routes
     - Modify file `backend/crates/api/src/routes/simulation.rs`
     - Add entity_id query parameter to simulation endpoints
     - Update simulation logic to use entity_id
     - Update utoipa annotations
     - _Requirements: 17.3, 17.4_
   
-  - [ ] 4.9 Update background jobs
+  - [x] 4.9 Update background jobs
     - Modify file `backend/crates/api/src/jobs/trial_expiry.rs`
     - Update to query users table for trial_ends_at
     - Update to set subscription_status on users table
     - Remove organization-based trial checks
     - _Requirements: 1.2, 14.1, 14.2_
   
-  - [ ] 4.10 Update sync job
+  - [x] 4.10 Update sync job
     - Modify file `backend/bins/server/src/sync.rs`
     - Update tier limit checks to use user's subscription_tier
     - Update entity count checks to count entities per organization
     - _Requirements: 14.4, 14.5_
   
-  - [ ] 4.11 Generate OpenAPI specification
+  - [x] 4.11 Generate OpenAPI specification
     - Run `cd backend && cargo run --bin generate-openapi`
     - Run `cd ../contracts && python3 split-openapi.py`
     - Verify entity_id in all updated endpoints
     - _Requirements: 13.1, 13.2_
   
-  - [ ] 4.12 Run backend validation
+  - [x] 4.12 Run backend validation
     - Run `cargo fmt` to format code
     - Run `cargo clippy -- -D warnings` to check for issues
     - Use getDiagnostics tool on all modified backend files
     - Fix any errors or warnings
     - Run `cargo test` to ensure tests pass
   
-  - [ ] 4.14 Write property-based tests for intercompany
+  - [x] 4.14 Write property-based tests for intercompany
     - Create test file `backend/crates/db/tests/intercompany_properties.rs`
     - **Property 13**: Intercompany same-organization validation
     - **Property 14**: Intercompany mapping filtering
@@ -589,7 +589,7 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Tag tests: `Feature: entities-model-implementation, Property 13/14/15: {property_text}`
     - _Requirements: 4.2, 4.3, 4.4, 4.5_
   
-  - [ ] 4.15 Write unit tests for intercompany
+  - [x] 4.15 Write unit tests for intercompany
     - Create test file `backend/crates/db/tests/intercompany_tests.rs`
     - Test create mapping with entities in same org succeeds
     - Test create mapping with entities in different orgs fails
@@ -599,7 +599,7 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Test elimination transaction generation
     - _Requirements: 4.2, 4.3, 4.4, 4.5, 19.3_
   
-  - [ ] 4.16 Write property-based tests for reports
+  - [x] 4.16 Write property-based tests for reports
     - Create test file `backend/crates/api/tests/report_properties.rs`
     - **Property 17**: Report entity filtering
     - **Property 18**: Consolidated report generation
@@ -611,7 +611,7 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Tag tests: `Feature: entities-model-implementation, Property 17/18: {property_text}`
     - _Requirements: 10.2, 10.3, 10.4_
   
-  - [ ] 4.17 Write unit tests for background jobs
+  - [x] 4.17 Write unit tests for background jobs
     - Create test file `backend/crates/api/tests/background_jobs_tests.rs`
     - Test trial expiry job queries users table
     - Test trial expiry job updates expired trials
@@ -619,11 +619,11 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Test sync job counts entities per organization
     - _Requirements: 14.1, 14.2, 14.4, 14.5_
   
-  - [ ] 4.18 Checkpoint - Ensure all tests pass
+  - [x] 4.18 Checkpoint - Ensure all tests pass
     - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 5. Frontend Types, Queries & Auth Store (Day 5: 6-8 hours)
-  - [ ] 5.1 Research React Query and TypeScript patterns for 2025-2026
+- [-] 5. Frontend Types, Queries & Auth Store (Day 5: 6-8 hours)
+  - [x] 5.1 Research React Query and TypeScript patterns for 2025-2026
     - Use Exa or Tavily to search for "TanStack Query v5 best practices 2025 2026"
     - Use Exa or Tavily to search for "React Query mutation patterns 2025"
     - Use Exa or Tavily to search for "TypeScript React hooks patterns 2025"
@@ -631,14 +631,14 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Document findings for query implementation
     - _Requirements: 5.6-5.16_
   
-  - [ ] 5.2 Generate frontend types from OpenAPI
+  - [x] 5.2 Generate frontend types from OpenAPI
     - Run `cd frontend && pnpm run generate:types`
     - Verify Entity type generated in `frontend/src/types/api.generated.ts`
     - Verify entity_id in transaction/account/budget types
     - Verify CreateEntityRequest and UpdateEntityRequest types
     - _Requirements: 13.3, 13.4, 13.5_
   
-  - [ ] 5.2 Create entity types file
+  - [x] 5.2 Create entity types file
     - Create file `frontend/src/types/entities.ts`
     - Export Entity type (re-export from api.generated.ts)
     - Export CreateEntityRequest type
@@ -646,7 +646,7 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Export EntityResponse type
     - _Requirements: 2.1, 2.7_
   
-  - [ ] 5.3 Update organization types
+  - [x] 5.3 Update organization types
     - Modify file `frontend/src/types/organizations.ts`
     - Remove subscription_tier field
     - Remove subscription_status field
@@ -657,20 +657,20 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Remove payment_subscription_id field
     - _Requirements: 1.4_
   
-  - [ ] 5.4 Add UserSubscription type
+  - [x] 5.4 Add UserSubscription type
     - Modify file `frontend/src/types/auth.ts`
     - Add UserSubscription type with all subscription fields
     - Export type
     - _Requirements: 1.1, 1.2, 1.3_
   
-  - [ ] 5.5 Update auth store
+  - [x] 5.5 Update auth store
     - Modify file `frontend/src/lib/stores/authStore.ts`
     - Add currentEntityId state (string | null)
     - Add setCurrentEntityId action
     - Update clearAuth to clear currentEntityId
     - _Requirements: 7.3, 15.1_
   
-  - [ ] 5.6 Create entity queries
+  - [x] 5.6 Create entity queries
     - Create file `frontend/src/lib/queries/entities.ts`
     - Implement useEntities() hook (list entities for current org)
     - Implement useEntity(entityId) hook (get single entity)
@@ -680,48 +680,48 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Add query invalidation on mutations
     - _Requirements: 2.1, 2.6, 2.7, 2.8_
   
-  - [ ] 5.7 Add user subscription query
+  - [x] 5.7 Add user subscription query
     - Modify file `frontend/src/lib/queries/auth.ts`
     - Implement useUserSubscription() hook
     - Query user's subscription fields from /users/me endpoint
     - _Requirements: 11.1, 11.2, 11.3_
   
-  - [ ] 5.8 Update organization queries
+  - [x] 5.8 Update organization queries
     - Modify file `frontend/src/lib/queries/organizations.ts`
     - Remove useCreateOrganization() hook (one org per user)
     - Simplify useOrganizations() hook
     - Update types to remove subscription fields
     - _Requirements: 1.4_
   
-  - [ ] 5.9 Update transaction queries
+  - [x] 5.9 Update transaction queries
     - Modify file `frontend/src/lib/queries/transactions.ts`
     - Add entity_id parameter to useTransactions() hook
     - Add entity_id to useCreateTransaction() mutation
     - Update types to include entity_id
     - _Requirements: 3.2, 3.9_
   
-  - [ ] 5.10 Update account queries
+  - [x] 5.10 Update account queries
     - Modify file `frontend/src/lib/queries/accounts.ts`
     - Add entity_id parameter to useAccounts() hook
     - Add entity_id to useCreateAccount() mutation
     - Update types to include entity_id
     - _Requirements: 3.1, 3.8_
   
-  - [ ] 5.11 Update budget queries
+  - [x] 5.11 Update budget queries
     - Modify file `frontend/src/lib/queries/budgets.ts`
     - Add entity_id parameter to useBudgets() hook
     - Add entity_id to useCreateBudget() mutation
     - Update types to include entity_id
     - _Requirements: 3.4, 3.10_
   
-  - [ ] 5.12 Update fiscal queries
+  - [x] 5.12 Update fiscal queries
     - Modify file `frontend/src/lib/queries/fiscal.ts`
     - Add entity_id parameter to useFiscalYears() hook
     - Add entity_id to useCreateFiscalYear() mutation
     - Update types to include entity_id
     - _Requirements: 3.5_
   
-  - [ ] 5.13 Update sentinel queries
+  - [x] 5.13 Update sentinel queries
     - Modify file `frontend/src/lib/queries/sentinel.ts`
     - Add entity_id to accrual schedule queries
     - Add entity_id to revaluation queries
@@ -729,41 +729,41 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Update types
     - _Requirements: 3.6, 3.7, 4.1_
   
-  - [ ] 5.14 Update report queries
+  - [x] 5.14 Update report queries
     - Modify file `frontend/src/lib/queries/reports.ts`
     - Add entity_id parameter to all report hooks
     - Add consolidated parameter to all report hooks
     - Update types
     - _Requirements: 10.1, 10.2, 10.3_
   
-  - [ ] 5.15 Update dashboard queries
+  - [x] 5.15 Update dashboard queries
     - Modify file `frontend/src/lib/queries/dashboard.ts`
     - Add entity_id parameter to dashboard hooks
     - Add consolidated parameter to dashboard hooks
     - Update types
     - _Requirements: 16.1, 16.2, 16.3_
   
-  - [ ] 5.16 Update forensic and simulation queries
+  - [x] 5.16 Update forensic and simulation queries
     - Modify file `frontend/src/lib/queries/forensic.ts` - add entity_id parameter
     - Modify file `frontend/src/lib/queries/simulation.ts` - add entity_id parameter
     - Update types
     - _Requirements: 17.1, 17.3_
   
-  - [ ] 5.17 Update intercompany types
+  - [x] 5.17 Update intercompany types
     - Modify file `frontend/src/types/api-helpers.ts`
     - Update IntercompanyMapping type to use source_entity_id and target_entity_id
     - Remove source_org_id and target_org_id
     - Update CreateIntercompanyMappingRequest type
     - _Requirements: 4.1_
   
-  - [ ] 5.18 Run frontend validation
+  - [x] 5.18 Run frontend validation
     - Run `pnpm lint` to check for linting issues
     - Run `pnpm type-check` to check TypeScript types
     - Use getDiagnostics tool on all modified frontend files
     - Fix any errors or warnings
     - Run `pnpm build` to ensure build succeeds
   
-  - [ ] 5.19 Checkpoint - Ensure all tests pass
+  - [x] 5.19 Checkpoint - Ensure all tests pass
     - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 6. Frontend Components & Forms (Day 6: 6-8 hours)

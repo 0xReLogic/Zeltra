@@ -13,11 +13,11 @@ use tokio::runtime::Runtime;
 use uuid::Uuid;
 use zeltra_db::{
     entities::{
-        budgets, chart_of_accounts, entities, organization_users, organizations, transactions,
+        budgets, chart_of_accounts, entities, organization_users, organizations,
         sea_orm_active_enums::{
             AccountType, SubscriptionTier, TransactionStatus, TransactionType, UserRole,
         },
-        users,
+        transactions, users,
     },
     repositories::entity::EntityRepository,
 };
@@ -31,9 +31,7 @@ fn get_database_url() -> String {
 }
 
 /// Helper to create a test user with organization and entity
-async fn setup_test_environment(
-    db: &DatabaseConnection,
-) -> (Uuid, Uuid, Uuid) {
+async fn setup_test_environment(db: &DatabaseConnection) -> (Uuid, Uuid, Uuid) {
     let user_id = Uuid::new_v4();
     let org_id = Uuid::new_v4();
     let entity_id = Uuid::new_v4();

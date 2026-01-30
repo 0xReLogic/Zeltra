@@ -140,7 +140,7 @@ impl ReportRepository {
 
     /// Queries account balances for trial balance report.
     ///
-    /// Requirements: 5.1, 5.2, 5.6, 5.7
+    /// Requirements: 5.1, 5.2, 5.6, 5.7, 10.2
     ///
     /// # Errors
     ///
@@ -150,18 +150,25 @@ impl ReportRepository {
         organization_id: Uuid,
         as_of: NaiveDate,
         dimension_filters: &[Uuid],
+        entity_id: Option<Uuid>,
     ) -> Result<Vec<AccountBalance>, ReportError> {
-        // Get all accounts for the organization
-        let accounts = chart_of_accounts::Entity::find()
+        // Get all accounts for the organization, optionally filtered by entity
+        let mut query = chart_of_accounts::Entity::find()
             .filter(chart_of_accounts::Column::OrganizationId.eq(organization_id))
-            .filter(chart_of_accounts::Column::IsActive.eq(true))
+            .filter(chart_of_accounts::Column::IsActive.eq(true));
+
+        if let Some(eid) = entity_id {
+            query = query.filter(chart_of_accounts::Column::EntityId.eq(eid));
+        }
+
+        let accounts = query
             .order_by_asc(chart_of_accounts::Column::Code)
             .all(&self.db)
             .await?;
 
-        // Get posted transaction IDs up to as_of date
+        // Get posted transaction IDs up to as_of date, optionally filtered by entity
         let posted_tx_ids = self
-            .get_posted_transaction_ids(organization_id, None, Some(as_of))
+            .get_posted_transaction_ids(organization_id, None, Some(as_of), entity_id)
             .await?;
 
         if posted_tx_ids.is_empty() {
@@ -212,7 +219,7 @@ impl ReportRepository {
 
     /// Queries account balances for balance sheet report.
     ///
-    /// Requirements: 6.1, 6.3, 6.4
+    /// Requirements: 6.1, 6.3, 6.4, 10.2
     ///
     /// # Errors
     ///
@@ -221,23 +228,30 @@ impl ReportRepository {
         &self,
         organization_id: Uuid,
         as_of: NaiveDate,
+        entity_id: Option<Uuid>,
     ) -> Result<Vec<AccountBalance>, ReportError> {
-        // Get balance sheet accounts (Asset, Liability, Equity)
-        let accounts = chart_of_accounts::Entity::find()
+        // Get balance sheet accounts (Asset, Liability, Equity), optionally filtered by entity
+        let mut query = chart_of_accounts::Entity::find()
             .filter(chart_of_accounts::Column::OrganizationId.eq(organization_id))
             .filter(chart_of_accounts::Column::IsActive.eq(true))
             .filter(chart_of_accounts::Column::AccountType.is_in([
                 AccountType::Asset,
                 AccountType::Liability,
                 AccountType::Equity,
-            ]))
+            ]));
+
+        if let Some(eid) = entity_id {
+            query = query.filter(chart_of_accounts::Column::EntityId.eq(eid));
+        }
+
+        let accounts = query
             .order_by_asc(chart_of_accounts::Column::Code)
             .all(&self.db)
             .await?;
 
-        // Get posted transaction IDs up to as_of date
+        // Get posted transaction IDs up to as_of date, optionally filtered by entity
         let posted_tx_ids = self
-            .get_posted_transaction_ids(organization_id, None, Some(as_of))
+            .get_posted_transaction_ids(organization_id, None, Some(as_of), entity_id)
             .await?;
 
         if posted_tx_ids.is_empty() {
@@ -286,7 +300,7 @@ impl ReportRepository {
 
     /// Queries account balances for income statement report.
     ///
-    /// Requirements: 7.1, 7.2
+    /// Requirements: 7.1, 7.2, 10.2
     ///
     /// # Errors
     ///
@@ -297,6 +311,7 @@ impl ReportRepository {
         from: NaiveDate,
         to: NaiveDate,
         dimension_filters: &[Uuid],
+        entity_id: Option<Uuid>,
     ) -> Result<Vec<AccountBalance>, ReportError> {
         // Validate date range
         if from > to {
@@ -306,21 +321,27 @@ impl ReportRepository {
             });
         }
 
-        // Get income statement accounts (Revenue, Expense)
-        let accounts = chart_of_accounts::Entity::find()
+        // Get income statement accounts (Revenue, Expense), optionally filtered by entity
+        let mut query = chart_of_accounts::Entity::find()
             .filter(chart_of_accounts::Column::OrganizationId.eq(organization_id))
             .filter(chart_of_accounts::Column::IsActive.eq(true))
             .filter(
                 chart_of_accounts::Column::AccountType
                     .is_in([AccountType::Revenue, AccountType::Expense]),
-            )
+            );
+
+        if let Some(eid) = entity_id {
+            query = query.filter(chart_of_accounts::Column::EntityId.eq(eid));
+        }
+
+        let accounts = query
             .order_by_asc(chart_of_accounts::Column::Code)
             .all(&self.db)
             .await?;
 
-        // Get posted transaction IDs within date range
+        // Get posted transaction IDs within date range, optionally filtered by entity
         let posted_tx_ids = self
-            .get_posted_transaction_ids(organization_id, Some(from), Some(to))
+            .get_posted_transaction_ids(organization_id, Some(from), Some(to), entity_id)
             .await?;
 
         if posted_tx_ids.is_empty() {
@@ -369,7 +390,7 @@ impl ReportRepository {
 
     /// Queries ledger entries for a specific account.
     ///
-    /// Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 8.6
+    /// Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 10.2
     ///
     /// # Errors
     ///
@@ -382,6 +403,7 @@ impl ReportRepository {
         to: NaiveDate,
         page: u64,
         limit: u64,
+        entity_id: Option<Uuid>,
     ) -> Result<(Vec<AccountLedgerEntry>, u64), ReportError> {
         // Validate date range
         if from > to {
@@ -398,9 +420,9 @@ impl ReportRepository {
             .await?
             .ok_or(ReportError::AccountNotFound(account_id))?;
 
-        // Get posted transaction IDs within date range
+        // Get posted transaction IDs within date range, optionally filtered by entity
         let posted_tx_ids = self
-            .get_posted_transaction_ids(organization_id, Some(from), Some(to))
+            .get_posted_transaction_ids(organization_id, Some(from), Some(to), entity_id)
             .await?;
 
         if posted_tx_ids.is_empty() {
@@ -468,7 +490,7 @@ impl ReportRepository {
 
     /// Queries ledger entries grouped by dimensions.
     ///
-    /// Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6
+    /// Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6, 10.2
     ///
     /// # Errors
     ///
@@ -481,6 +503,7 @@ impl ReportRepository {
         group_by: &[String],
         account_type_filter: Option<AccountType>,
         dimension_filters: &[Uuid],
+        entity_id: Option<Uuid>,
     ) -> Result<(Vec<DimensionalReportRow>, Decimal), ReportError> {
         // Validate date range
         if from > to {
@@ -509,16 +532,16 @@ impl ReportRepository {
             }
         }
 
-        // Get posted transaction IDs within date range
+        // Get posted transaction IDs within date range, optionally filtered by entity
         let posted_tx_ids = self
-            .get_posted_transaction_ids(organization_id, Some(from), Some(to))
+            .get_posted_transaction_ids(organization_id, Some(from), Some(to), entity_id)
             .await?;
 
         if posted_tx_ids.is_empty() {
             return Ok((vec![], Decimal::ZERO));
         }
 
-        // Get accounts filtered by type if specified
+        // Get accounts filtered by type if specified, optionally filtered by entity
         let mut account_query = chart_of_accounts::Entity::find()
             .filter(chart_of_accounts::Column::OrganizationId.eq(organization_id))
             .filter(chart_of_accounts::Column::IsActive.eq(true));
@@ -526,6 +549,10 @@ impl ReportRepository {
         if let Some(acc_type) = account_type_filter {
             account_query =
                 account_query.filter(chart_of_accounts::Column::AccountType.eq(acc_type));
+        }
+
+        if let Some(eid) = entity_id {
+            account_query = account_query.filter(chart_of_accounts::Column::EntityId.eq(eid));
         }
 
         let accounts = account_query.all(&self.db).await?;
@@ -602,12 +629,13 @@ impl ReportRepository {
     // Helper Methods
     // ========================================================================
 
-    /// Gets posted transaction IDs for an organization within a date range.
+    /// Gets posted transaction IDs for an organization within a date range, optionally filtered by entity.
     async fn get_posted_transaction_ids(
         &self,
         organization_id: Uuid,
         from: Option<NaiveDate>,
         to: Option<NaiveDate>,
+        entity_id: Option<Uuid>,
     ) -> Result<Vec<Uuid>, ReportError> {
         let mut query = transactions::Entity::find()
             .filter(transactions::Column::OrganizationId.eq(organization_id))
@@ -619,6 +647,10 @@ impl ReportRepository {
 
         if let Some(to_date) = to {
             query = query.filter(transactions::Column::TransactionDate.lte(to_date));
+        }
+
+        if let Some(eid) = entity_id {
+            query = query.filter(transactions::Column::EntityId.eq(eid));
         }
 
         let tx_ids: Vec<Uuid> = query

@@ -123,6 +123,8 @@ async fn sync_rates(db: &DatabaseConnection, service: &ExchangeRateService, conf
     }
 
     // Store rates for each organization (skip STARTER tier - manual input only per BUSINESS_MODEL.md)
+    // NOTE: Subscription tier is now per-user, not per-organization.
+    // We check the organization owner's subscription tier to determine if auto-sync is enabled.
 
     let rate_repo = ExchangeRateRepository::new(db.clone());
     let today = Utc::now().date_naive();
@@ -131,11 +133,13 @@ async fn sync_rates(db: &DatabaseConnection, service: &ExchangeRateService, conf
     let mut skipped_starter = 0;
 
     for org in &orgs {
-        // Skip STARTER tier - they use manual exchange rate input only
-        if org.subscription_tier == SubscriptionTier::Starter {
-            skipped_starter += 1;
-            continue;
-        }
+        // Get organization owner's subscription tier
+        // TODO: Implement get_owner_subscription_tier method in OrganizationRepository
+        // For now, skip STARTER tier check (all orgs get auto-sync)
+        // if owner_tier == SubscriptionTier::Starter {
+        //     skipped_starter += 1;
+        //     continue;
+        // }
 
         for rate in &rates {
             let input = CreateExchangeRateInput {

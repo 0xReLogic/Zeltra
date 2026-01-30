@@ -8,12 +8,17 @@ import type {
 } from '@/types/accounts'
 import type { AccountLedgerResponse } from '@/types/ledger'
 
-export function useAccounts(type?: string) {
+export function useAccounts(type?: string, entity_id?: string) {
   return useQuery({
-    queryKey: ['accounts', { type }],
-    queryFn: () => apiClient<GetAccountsResponse>(
-      `/accounts${type ? `?type=${type}` : ''}`
-    ),
+    queryKey: ['accounts', { type, entity_id }],
+    queryFn: () => {
+      const params = new URLSearchParams()
+      if (type) params.set('type', type)
+      if (entity_id) params.set('entity_id', entity_id)  // NEW: Add entity filter
+      return apiClient<GetAccountsResponse>(
+        `/accounts${params.toString() ? `?${params.toString()}` : ''}`
+      )
+    },
   })
 }
 

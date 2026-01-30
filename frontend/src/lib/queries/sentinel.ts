@@ -22,15 +22,18 @@ import type {
 /**
  * Fetch all accrual schedules for the current organization.
  */
-export function useAccrualSchedules() {
+export function useAccrualSchedules(entity_id?: string) {
   const currentOrgId = useAuthStore((state) => state.currentOrgId)
 
   return useQuery({
-    queryKey: ['accrual-schedules', currentOrgId],
-    queryFn: () =>
-      apiClient<AccrualScheduleResponse[]>(
-        `/organizations/${currentOrgId}/accrual-schedules`
-      ),
+    queryKey: ['accrual-schedules', currentOrgId, entity_id],
+    queryFn: () => {
+      const params = new URLSearchParams()
+      if (entity_id) params.set('entity_id', entity_id)  // NEW: Add entity filter
+      return apiClient<AccrualScheduleResponse[]>(
+        `/organizations/${currentOrgId}/accrual-schedules${params.toString() ? `?${params.toString()}` : ''}`
+      )
+    },
     enabled: !!currentOrgId,
   })
 }
@@ -79,9 +82,9 @@ export function useCreateAccrualSchedule() {
 
 /**
  * Fetch revaluation logs for the current organization.
- * @param params Optional filters for date range
+ * @param params Optional filters for date range and entity
  */
-export function useRevaluationLogs(params?: { from?: string; to?: string }) {
+export function useRevaluationLogs(params?: { from?: string; to?: string; entity_id?: string }) {
   const currentOrgId = useAuthStore((state) => state.currentOrgId)
 
   return useQuery({
@@ -90,6 +93,7 @@ export function useRevaluationLogs(params?: { from?: string; to?: string }) {
       const queryParams = new URLSearchParams()
       if (params?.from) queryParams.set('from', params.from)
       if (params?.to) queryParams.set('to', params.to)
+      if (params?.entity_id) queryParams.set('entity_id', params.entity_id)  // NEW: Add entity filter
       
       const queryString = queryParams.toString()
       const url = `/organizations/${currentOrgId}/revaluation-logs${queryString ? `?${queryString}` : ''}`

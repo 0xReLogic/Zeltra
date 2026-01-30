@@ -1,9 +1,9 @@
 //! Background job to check and update expired trial subscriptions.
 
+use sea_orm::ActiveModelTrait;
 use std::sync::Arc;
 use tokio::time::{Duration, interval};
 use tracing::{error, info};
-use zeltra_db::repositories::SubscriptionRepository;
 
 /// Start the trial expiry check background job.
 ///
@@ -44,40 +44,37 @@ pub fn start_trial_expiry_job(db: Arc<sea_orm::DatabaseConnection>) {
     });
 }
 
-/// Check all organizations with trialing status and update expired ones.
+/// Check all users with trialing status and update expired ones.
 async fn check_and_update_expired_trials(
     db: &sea_orm::DatabaseConnection,
 ) -> Result<usize, sea_orm::DbErr> {
-    use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
-    use zeltra_db::entities::{organizations, sea_orm_active_enums::SubscriptionStatus};
+    use sea_orm::{ColumnTrait, EntityTrait, QueryFilter, Set};
+    use zeltra_db::entities::{sea_orm_active_enums::SubscriptionStatus, users};
 
-    // Find all organizations with trialing status
-    let trialing_orgs = organizations::Entity::find()
-        .filter(organizations::Column::SubscriptionStatus.eq(SubscriptionStatus::Trialing))
+    // Find all users with trialing status and expired trial_ends_at
+    let now = chrono::Utc::now();
+    let trialing_users = users::Entity::find()
+        .filter(users::Column::SubscriptionStatus.eq(SubscriptionStatus::Trialing))
+        .filter(users::Column::TrialEndsAt.is_not_null())
+        .filter(users::Column::TrialEndsAt.lt(now))
         .all(db)
         .await?;
 
     let mut expired_count = 0;
 
-    for org in trialing_orgs {
-        // Check if trial has expired
-        if SubscriptionRepository::is_trial_expired(db, org.id).await? {
-            info!(
-                org_id = %org.id,
-                org_name = %org.name,
-                "⏰ Trial expired for organization"
-            );
+    for user in trialing_users {
+        info!(
+            user_id = %user.id,
+            email = %user.email,
+            "⏰ Trial expired for user"
+        );
 
-            // Update status to expired
-            SubscriptionRepository::update_subscription_status(
-                db,
-                org.id,
-                SubscriptionStatus::Expired,
-            )
-            .await?;
+        // Update status to expired
+        let mut user_active: users::ActiveModel = user.into();
+        user_active.subscription_status = Set(SubscriptionStatus::Expired);
+        user_active.update(db).await?;
 
-            expired_count += 1;
-        }
+        expired_count += 1;
     }
 
     Ok(expired_count)
