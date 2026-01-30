@@ -1008,49 +1008,48 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Fix any errors or warnings
     - Run `pnpm build` to ensure build succeeds
   
-  - [ ] 7.19 Write integration tests for entity selection flow
-    - Create test file `frontend/src/__tests__/integration/entity-selection.test.tsx`
-    - Test: Select entity → Form updates → Data filtered
-    - Test: Create entity → Entity appears in selector
-    - Test: Switch entity → Data refreshes
-    - Test: Entity persistence across page navigation
-    - _Requirements: 7.3, 8.4, 9.7, 15.1_
+  - [ ] 7.19 Run frontend validation
+    - Run `pnpm lint` to check for linting issues
+    - Run `pnpm type-check` to check TypeScript types
+    - Use getDiagnostics tool on all modified frontend files
+    - Fix any errors or warnings
+    - Run `pnpm build` to ensure build succeeds
   
-  - [ ] 7.20 Write E2E test: Create entity and transaction
-    - Create test file or update existing E2E tests
-    - Test: Login → Create entity → Create transaction with entity → View transaction in list
-    - Verify entity name appears in transaction
-    - Use test credentials: corp@zeltra.io / qwertyui
+  - [ ] 7.20 E2E Test: Create entity and transaction (using MCP Playwright)
+    - Use `mcp_playwright_browser_navigate` to login page
+    - Use `mcp_playwright_browser_click` and `mcp_playwright_browser_type` to login with corp@zeltra.io / qwertyui
+    - Navigate to entities page and create new entity
+    - Navigate to transactions page and create transaction with entity
+    - Use `mcp_playwright_browser_snapshot` to verify entity name appears in transaction list
     - _Requirements: 20.7_
   
-  - [ ] 7.21 Write E2E test: Intercompany mapping
-    - Create test file or update existing E2E tests
-    - Test: Create two entities → Create intercompany mapping → Post transaction → Verify mirror entry
+  - [ ] 7.21 E2E Test: Intercompany mapping (using MCP Playwright)
+    - Use MCP Playwright tools to login
+    - Create two entities using browser automation
+    - Navigate to intercompany page and create mapping between entities
+    - Post transaction and verify mirror entry using `mcp_playwright_browser_snapshot`
     - Verify mapping appears in list with entity names
     - _Requirements: 20.8_
   
-  - [ ] 7.22 Write E2E test: Entity filtering in reports
-    - Create test file or update existing E2E tests
-    - Test: Create entity → Create transactions → Generate report for entity → Verify data
-    - Test: Generate consolidated report → Verify combined data
+  - [ ] 7.22 E2E Test: Entity filtering in reports (using MCP Playwright)
+    - Use MCP Playwright tools to login and create entity
+    - Create transactions for the entity
+    - Navigate to reports page and generate report for specific entity
+    - Use `mcp_playwright_browser_snapshot` to verify data is filtered correctly
+    - Test consolidated report mode and verify combined data
     - _Requirements: 20.9, 20.10_
   
-  - [ ] 7.23 Write E2E test: Entity tier limits
-    - Create test file or update existing E2E tests
-    - Test: Create entities up to tier limit → Attempt to create one more → Verify error
-    - Test: Upgrade tier → Create entity successfully
+  - [ ] 7.23 E2E Test: Entity tier limits (using MCP Playwright)
+    - Use MCP Playwright tools to login
+    - Create entities up to tier limit (1 for Starter)
+    - Attempt to create one more entity
+    - Use `mcp_playwright_browser_snapshot` to verify error message appears
     - _Requirements: 2.2, 2.3, 2.4_
   
-  - [ ] 7.24 Run E2E tests
-    - Start backend: `cargo run --bin zeltra`
-    - Start frontend: `pnpm dev`
-    - Run E2E tests: `pnpm test:e2e`
-    - Verify all tests pass
-    - _Requirements: 20.7, 20.8, 20.9, 20.10_
-  
-  - [ ] 7.25 Manual testing
-    - Login with test credentials: corp@zeltra.io / qwertyui
-    - Test entity creation
+  - [ ] 7.24 Manual testing with MCP Playwright
+    - Use `mcp_playwright_browser_navigate` to navigate through app
+    - Use `mcp_playwright_browser_snapshot` to verify UI states
+    - Test entity creation flow
     - Test entity selection in forms
     - Test entity filtering in lists
     - Test entity filtering in reports
@@ -1058,9 +1057,12 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Test intercompany mappings
     - Test subscription display
     - Test tier limits
+    - Use `mcp_playwright_browser_take_screenshot` to capture evidence
   
-  - [ ] 7.26 Final checkpoint - Ensure all tests pass
-    - Ensure all tests pass, ask the user if questions arise.
+  - [ ] 7.25 Final checkpoint - Ensure all tests pass
+    - Ensure all E2E tests pass using MCP Playwright
+    - Review screenshots and snapshots
+    - Ask the user if questions arise.
 
 ## Notes
 
@@ -1070,8 +1072,8 @@ This implementation plan breaks down the entities model refactoring into 7 daily
 - Property tests validate universal correctness properties
 - Unit tests validate specific examples and edge cases
 - Integration tests validate component interactions
-- E2E tests validate complete user flows
-- Use MCP tools (postgres, sequential thinking) for testing and validation
+- E2E tests validate complete user flows using MCP Playwright browser automation
+- Use MCP tools (postgres, sequential thinking, playwright) for testing and validation
 - Backend binary is `zeltra` (not zeltra-api)
 - Frontend package manager is `pnpm` (not npm)
 - Test credentials: corp@zeltra.io / qwertyui
