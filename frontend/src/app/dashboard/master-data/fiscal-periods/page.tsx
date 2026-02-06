@@ -32,6 +32,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { useFiscalYears, useUpdatePeriodStatus, useCreateFiscalYear } from '@/lib/queries/fiscal'
+import { useAuthStore } from '@/lib/stores/authStore'
 import type { PeriodStatus } from '@/types/fiscal'
 import { toast } from 'sonner'
 import { useState } from 'react'
@@ -40,6 +41,7 @@ export default function FiscalPeriodsPage() {
   const { data, isLoading } = useFiscalYears()
   const updateStatus = useUpdatePeriodStatus()
   const createYear = useCreateFiscalYear()
+  const currentEntityId = useAuthStore((state) => state.currentEntityId)
   const [expandedYear, setExpandedYear] = React.useState<string | null>('2026')
   const [isCreateOpen, setIsCreateOpen] = useState(false)
 
@@ -53,6 +55,12 @@ export default function FiscalPeriodsPage() {
 
   const handleCreate = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    
+    if (!currentEntityId) {
+      toast.error('Please select an entity first')
+      return
+    }
+    
     const formData = new FormData(e.currentTarget)
     const name = formData.get('name') as string
     const start_date = formData.get('start_date') as string
@@ -62,7 +70,13 @@ export default function FiscalPeriodsPage() {
     const year = new Date(start_date).getFullYear()
     const end_date = `${year}-12-31`
 
-    createYear.mutate({ name, start_date, end_date, include_adjustment_period }, {
+    createYear.mutate({ 
+      entity_id: currentEntityId,
+      name, 
+      start_date, 
+      end_date, 
+      include_adjustment_period 
+    }, {
       onSuccess: () => {
         toast.success(`Fiscal Year ${name} created`)
         setIsCreateOpen(false)

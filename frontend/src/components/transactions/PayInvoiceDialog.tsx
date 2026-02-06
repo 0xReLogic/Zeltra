@@ -38,6 +38,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { toast } from 'sonner'
 
 import { useAccounts } from '@/lib/queries/accounts'
+import { useAuthStore } from '@/lib/stores/authStore'
 import { usePayInvoice } from '@/lib/queries/transactions'
 import { TransactionListItem } from '@/types/transactions'
 import { Account } from '@/types/accounts'
@@ -61,6 +62,7 @@ interface PayInvoiceDialogProps {
 export function PayInvoiceDialog({ invoice, open, onOpenChange }: PayInvoiceDialogProps) {
   const { data: accountsData } = useAccounts()
   const payInvoice = usePayInvoice()
+  const currentEntityId = useAuthStore((state) => state.currentEntityId)
   // const fetchRates = useFetchLiveRates() // TODO: Implement when currency field is added to TransactionListItem
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -94,9 +96,15 @@ export function PayInvoiceDialog({ invoice, open, onOpenChange }: PayInvoiceDial
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     if (!invoice) return
+    
+    if (!currentEntityId) {
+      toast.error('Please select an entity first')
+      return
+    }
 
     try {
       await payInvoice.mutateAsync({
+        entity_id: currentEntityId,
         invoice_id: invoice.id,
         payment_account_id: values.payment_account_id,
         amount: values.amount, // Backend expects Decimal string or number? TS type says number usually for Decimal mapping but generated might be string. Checked generated: it's number or string. String is safer for precision.

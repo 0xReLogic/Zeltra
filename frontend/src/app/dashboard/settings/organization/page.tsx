@@ -124,28 +124,6 @@ export default function OrganizationSettingsPage() {
                       Contact support to change organization name.
                     </p>
                  </div>
-                 <div className="space-y-2">
-                    <FormLabel>Subscription Plan</FormLabel>
-                    <div className="flex items-center space-x-2">
-                       <Input value={org?.subscription_tier.toUpperCase()} disabled readOnly className="w-1/2"/>
-                       {org?.subscription_status === 'trialing' ? (
-                         <div className="flex items-center gap-2">
-                            <span className="text-xs text-amber-600 font-medium px-2 py-1 bg-amber-100 rounded-full">
-                               Trialing
-                            </span>
-                            {org.trial_ends_at && (
-                              <span className="text-xs text-muted-foreground">
-                                {Math.max(0, Math.ceil((new Date(org.trial_ends_at).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)))} days left
-                              </span>
-                            )}
-                         </div>
-                       ) : (
-                         <span className="text-xs text-emerald-600 font-medium px-2 py-1 bg-emerald-100 rounded-full">
-                           {org?.subscription_status ? org.subscription_status.charAt(0).toUpperCase() + org.subscription_status.slice(1) : 'Active'}
-                         </span>
-                       )}
-                    </div>
-                 </div>
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">

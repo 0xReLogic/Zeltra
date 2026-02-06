@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/form'
 import { toast } from 'sonner'
 import { useCreateDimensionType, useDimensions } from '@/lib/queries/dimensions'
-import { useOrganization } from '@/lib/queries/organizations'
+import { useUserSubscription } from '@/lib/queries/auth'
 import { useUpgradeStore } from '@/lib/stores/upgradeStore'
 
 const typeSchema = z.object({
@@ -37,14 +37,16 @@ export function DimensionTypeDialog() {
     const [open, setOpen] = React.useState(false)
     const createType = useCreateDimensionType()
     const { data: dimensions } = useDimensions()
-    const { data: org } = useOrganization()
+    const { data: subscription } = useUserSubscription()
     const { openModal } = useUpgradeStore()
 
     const handleOpenChange = (newOpen: boolean) => {
         if (newOpen) {
             const currentDimensions = dimensions?.dimension_types || []
-            // If checking fails or types are off, default to allowing usage (fail open) unless we are sure
-            const maxDimensions = org?.limits?.max_dimensions
+            // Get max dimensions based on subscription tier
+            // Starter: 2, Growth: unlimited, Enterprise: unlimited
+            const tier = subscription?.subscription_tier?.toLowerCase()
+            const maxDimensions = tier === 'starter' ? 2 : null
             
             if (maxDimensions !== null && maxDimensions !== undefined && currentDimensions.length >= maxDimensions) {
                 openModal(`Your plan is limited to ${maxDimensions} dimensions. Upgrade to add more.`)

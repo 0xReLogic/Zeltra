@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import { Scale, TrendingUp, TrendingDown, Calendar, Lock, RefreshCw } from 'lucide-react'
 import { useRevaluationLogs } from '@/lib/queries/sentinel'
 import { useAccounts } from '@/lib/queries/accounts'
-import { useOrganization } from '@/lib/queries/organizations'
+import { useUserSubscription } from '@/lib/queries/auth'
 import { useUpgradeStore } from '@/lib/stores/upgradeStore'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -23,7 +23,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 
 export default function RevaluationPage() {
-  const { data: org } = useOrganization()
+  const { data: subscription } = useUserSubscription()
   const { openModal } = useUpgradeStore()
   const { data: accountsData } = useAccounts()
   
@@ -36,8 +36,9 @@ export default function RevaluationPage() {
     to: toDate || undefined,
   })
 
-  // Check tier access
-  const hasMultiCurrency = org?.limits?.has_multi_currency ?? false
+  // Check tier access - multi-currency is available on Growth and Enterprise
+  const tier = subscription?.subscription_tier?.toLowerCase()
+  const hasMultiCurrency = tier === 'growth' || tier === 'enterprise'
 
   // Show loading state first
   if (isLoading) {
@@ -75,7 +76,7 @@ export default function RevaluationPage() {
   }
 
   // Show upgrade prompt if tier not available (check after loading)
-  if (org && !hasMultiCurrency) {
+  if (subscription && !hasMultiCurrency) {
     return (
       <div className="space-y-6">
         <h1 className="text-3xl font-bold tracking-tight">Currency Revaluation</h1>
@@ -84,13 +85,13 @@ export default function RevaluationPage() {
             <div className="rounded-full bg-amber-500/10 p-4 mb-4">
               <Lock className="h-8 w-8 text-amber-500" />
             </div>
-            <h2 className="text-xl font-semibold mb-2">Enterprise Feature</h2>
+            <h2 className="text-xl font-semibold mb-2">Growth or Enterprise Feature</h2>
             <p className="text-muted-foreground mb-6 max-w-md">
-              Currency Revaluation is an Enterprise feature that helps you track 
+              Currency Revaluation requires Growth or Enterprise tier to track 
               unrealized gains and losses from exchange rate fluctuations.
             </p>
-            <Button onClick={() => openModal('Unlock Currency Revaluation and other Enterprise features.')}>
-              Upgrade to Enterprise
+            <Button onClick={() => openModal('Unlock Currency Revaluation and other features.')}>
+              Upgrade Your Plan
             </Button>
           </CardContent>
         </Card>

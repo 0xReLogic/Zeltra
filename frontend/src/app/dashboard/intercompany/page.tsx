@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { Building2, Link2, Plus, Lock, Loader2, Check, X } from 'lucide-react'
 import { useIntercompanyMappings, useCreateIntercompanyMapping } from '@/lib/queries/sentinel'
 import { useAccounts } from '@/lib/queries/accounts'
+import { useEntities } from '@/lib/queries/entities'
 import { useUserSubscription } from '@/lib/queries/auth'
 import { useAuthStore } from '@/lib/stores/authStore'
 import { useUpgradeStore } from '@/lib/stores/upgradeStore'
@@ -44,7 +45,8 @@ export default function IntercompanyPage() {
   const { openModal } = useUpgradeStore()
   const { data: mappings, isLoading, isError, refetch } = useIntercompanyMappings()
   const { data: accountsData } = useAccounts()
-  const userOrganizations = useAuthStore((state) => state.user?.organizations ?? [])
+  const { data: entities } = useEntities()
+  const currentEntityId = useAuthStore((state) => state.currentEntityId)
   const createMapping = useCreateIntercompanyMapping()
   
   const [isOpen, setIsOpen] = useState(false)
@@ -131,7 +133,7 @@ export default function IntercompanyPage() {
   }
 
   const accounts = accountsData?.accounts ?? []
-  const organizations = userOrganizations
+  const entityList = entities ?? []
   const mappingList = Array.isArray(mappings) ? mappings : []
 
   // Helper to get account name by ID
@@ -140,21 +142,27 @@ export default function IntercompanyPage() {
     return account ? `${account.code} - ${account.name}` : accountId.slice(0, 8) + '...'
   }
 
-  // Helper to get org name by ID
-  const getOrgName = (orgId: string) => {
-    const organization = organizations.find(o => o.id === orgId)
-    return organization?.name || orgId.slice(0, 8) + '...'
+  // Helper to get entity name by ID
+  const getEntityName = (entityId: string) => {
+    const entity = entityList.find(e => e.id === entityId)
+    return entity?.name || entityId.slice(0, 8) + '...'
   }
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     
-    if (!formData.source_account_id || !formData.target_org_id || !formData.target_account_id) {
+    if (!formData.source_account_id || !formData.target_entity_id || !formData.target_account_id) {
       toast.error('Please fill all required fields')
       return
     }
 
-    createMapping.mutate(formData as CreateIntercompanyMappingRequest, {
+    // Set source_entity_id to current entity
+    const requestData = {
+      ...formData,
+      source_entity_id: currentEntityId,
+    } as CreateIntercompanyMappingRequest
+
+    createMapping.mutate(requestData, {
       onSuccess: () => {
         toast.success('Intercompany mapping created successfully')
         setIsOpen(false)
@@ -193,14 +201,14 @@ export default function IntercompanyPage() {
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
             <Button>
-              <Plus className="mr-2 h-4 w-4" /> Connect Organizations
+              <Plus className="mr-2 h-4 w-4" /> Connect Entities
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[450px]">
             <DialogHeader>
               <DialogTitle>Create Intercompany Mapping</DialogTitle>
               <DialogDescription>
-                Connect accounts between organizations for automatic transaction mirroring or elimination.
+                Connect accounts between entities for automatic transaction mirroring or elimination.
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -222,31 +230,31 @@ export default function IntercompanyPage() {
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">
-                  The account in your organization that will be linked.
+                  The account in the current entity that will be linked.
                 </p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="target_org_id">Target Organization *</Label>
+                <Label htmlFor="target_entity_id">Target Entity *</Label>
                 <Select
-                  value={formData.target_org_id || ''}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, target_org_id: value }))}
+                  value={formData.target_entity_id || ''}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, target_entity_id: value }))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select target organization" />
+                    <SelectValue placeholder="Select target entity" />
                   </SelectTrigger>
                   <SelectContent>
-                    {organizations
-                      .filter(o => o.id !== org?.id)
-                      .map((organization) => (
-                        <SelectItem key={organization.id} value={organization.id}>
-                          {organization.name}
+                    {entityList
+                      .filter(e => e.id !== currentEntityId)
+                      .map((entity) => (
+                        <SelectItem key={entity.id} value={entity.id}>
+                          {entity.name}
                         </SelectItem>
                       ))}
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">
-                  The organization to connect with.
+                  The entity to connect with (must be in same organization).
                 </p>
               </div>
 
@@ -268,7 +276,7 @@ export default function IntercompanyPage() {
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">
-                  The corresponding account in the target organization.
+                  The corresponding account in the target entity.
                 </p>
               </div>
 
@@ -276,7 +284,7 @@ export default function IntercompanyPage() {
                 <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>
                   Cancel
                 </Button>
-                <Button type="submit" disabled={createMapping.isPending}>
+                <Button type="submit" disabled={createMapping.isPending || !currentEntityId}>
                   {createMapping.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Create Mapping
                 </Button>
@@ -315,7 +323,7 @@ export default function IntercompanyPage() {
         <CardHeader>
           <CardTitle>Intercompany Mappings</CardTitle>
           <CardDescription>
-            Account mappings between organizations for transaction processing
+            Account mappings between entities for transaction processing
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -324,20 +332,20 @@ export default function IntercompanyPage() {
               <Building2 className="h-12 w-12 text-muted-foreground mb-4" />
               <h3 className="text-lg font-semibold mb-2">No Intercompany Mappings</h3>
               <p className="text-muted-foreground mb-4 max-w-sm">
-                Connect organizations to enable automatic transaction mirroring 
+                Connect entities to enable automatic transaction mirroring 
                 and elimination entries for consolidation.
               </p>
               <Button onClick={() => setIsOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" /> Connect Organizations
+                <Plus className="mr-2 h-4 w-4" /> Connect Entities
               </Button>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Source Organization</TableHead>
+                  <TableHead>Source Entity</TableHead>
                   <TableHead>Source Account</TableHead>
-                  <TableHead>Target Organization</TableHead>
+                  <TableHead>Target Entity</TableHead>
                   <TableHead>Target Account</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Auto-Post</TableHead>
@@ -349,14 +357,14 @@ export default function IntercompanyPage() {
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Building2 className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">{getOrgName(mapping.source_org_id)}</span>
+                        <span className="font-medium">{getEntityName(mapping.source_entity_id)}</span>
                       </div>
                     </TableCell>
                     <TableCell>{getAccountName(mapping.source_account_id)}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Building2 className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">{getOrgName(mapping.target_org_id)}</span>
+                        <span className="font-medium">{getEntityName(mapping.target_entity_id)}</span>
                       </div>
                     </TableCell>
                     <TableCell>{getAccountName(mapping.target_account_id)}</TableCell>
