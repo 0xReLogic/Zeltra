@@ -871,8 +871,8 @@ This implementation plan breaks down the entities model refactoring into 7 daily
   - [x] 6.15 Checkpoint - Ensure all tests pass
     - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 7. Frontend Pages & E2E Testing (Day 7: 8-12 hours)
-  - [ ] 7.1 Research Next.js 16 and Playwright patterns for 2025-2026
+- [x] 7. Frontend Pages & E2E Testing (Day 7: 8-12 hours)
+  - [x] 7.1 Research Next.js 16 and Playwright patterns for 2025-2026
     - Use Exa or Tavily to search for "Next.js 16 App Router best practices 2025 2026"
     - Use Exa or Tavily to search for "Next.js 16 server components patterns 2025"
     - Use Exa or Tavily to search for "Playwright E2E testing best practices 2025"
@@ -881,7 +881,7 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Document findings for page and E2E test implementation
     - _Requirements: 7.1-7.26_
   
-  - [ ] 7.2 Update main dashboard page
+  - [x] 7.2 Update main dashboard page
     - Modify file `frontend/src/app/dashboard/page.tsx`
     - Add EntitySelector component
     - Add entity_id parameter to all dashboard queries
@@ -894,7 +894,7 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Remove organization subscription display (lines 129-147)
     - _Requirements: 11.6_
   
-  - [ ] 7.3 Create user subscription settings page
+  - [x] 7.3 Create user subscription settings page
     - Create file `frontend/src/app/dashboard/settings/subscription/page.tsx`
     - Display user subscription tier
     - Display user subscription status
@@ -902,21 +902,21 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Display entity limits and current count
     - _Requirements: 11.1, 11.2, 11.3, 11.4, 11.5_
   
-  - [ ] 7.4 Update transactions list page
+  - [x] 7.4 Update transactions list page
     - Modify file `frontend/src/app/dashboard/transactions/page.tsx`
     - Add entity filter dropdown
     - Pass entity_id to useTransactions() query
     - Show entity name in transaction rows
     - _Requirements: 9.1, 9.7_
   
-  - [ ] 7.5 Update accounts list page
+  - [x] 7.5 Update accounts list page
     - Modify file `frontend/src/app/dashboard/accounts/page.tsx`
     - Add entity filter dropdown
     - Pass entity_id to useAccounts() query
     - Show entity name in account rows
     - _Requirements: 9.2, 9.7_
   
-  - [ ] 7.6 Update budgets list page
+  - [x] 7.6 Update budgets list page
     - Modify file `frontend/src/app/dashboard/budgets/page.tsx`
     - Add entity filter dropdown
     - Pass entity_id to useBudgets() query
@@ -944,28 +944,28 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Show entity name in fiscal period rows
     - _Requirements: 9.6, 9.7_
   
-  - [ ] 7.10 Update trial balance report page
+  - [x] 7.10 Update trial balance report page
     - Modify file `frontend/src/app/dashboard/reports/trial-balance/page.tsx`
     - Add entity selector with "All Entities (Consolidated)" option
     - Pass entity_id or consolidated=true to report query
     - Show entity name in report header
     - _Requirements: 10.1, 10.2, 10.3, 10.5_
   
-  - [ ] 7.11 Update balance sheet report page
+  - [x] 7.11 Update balance sheet report page
     - Modify file `frontend/src/app/dashboard/reports/balance-sheet/page.tsx`
     - Add entity selector with "All Entities (Consolidated)" option
     - Pass entity_id or consolidated=true to report query
     - Show entity name in report header
     - _Requirements: 10.1, 10.2, 10.3, 10.6_
   
-  - [ ] 7.12 Update income statement report page
+  - [x] 7.12 Update income statement report page
     - Modify file `frontend/src/app/dashboard/reports/income-statement/page.tsx`
     - Add entity selector with "All Entities (Consolidated)" option
     - Pass entity_id or consolidated=true to report query
     - Show entity name in report header
     - _Requirements: 10.1, 10.2, 10.3, 10.7_
   
-  - [ ] 7.13 Update dimensional report page
+  - [x] 7.13 Update dimensional report page
     - Modify file `frontend/src/app/dashboard/reports/dimensional/page.tsx`
     - Add entity selector with "All Entities (Consolidated)" option
     - Pass entity_id or consolidated=true to report query
@@ -1001,7 +1001,7 @@ This implementation plan breaks down the entities model refactoring into 7 daily
     - Show entity name in simulation header
     - _Requirements: 17.3, 17.4, 17.6_
   
-  - [ ] 7.18 Run frontend validation
+  - [x] 7.18 Run frontend validation
     - Run `pnpm lint` to check for linting issues
     - Run `pnpm type-check` to check TypeScript types
     - Use getDiagnostics tool on all modified frontend files
