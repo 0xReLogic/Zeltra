@@ -8,14 +8,18 @@ import { useDashboardMetrics, useCashFlowData } from '@/lib/queries/dashboard'
 import { formatCurrency } from '@/lib/utils/format'
 import { RecentActivity } from '@/components/dashboard/RecentActivity'
 import { BudgetVsActual } from '@/components/dashboard/BudgetVsActual'
+import { EntitySelector } from '@/components/entities/EntitySelector'
+import { useAuthStore } from '@/lib/stores/authStore'
 
 export default function DashboardPage() {
-  const { data: metrics } = useDashboardMetrics()
-  const { data: cashFlow } = useCashFlowData()
+  const currentEntityId = useAuthStore((state) => state.currentEntityId)
+  const { data: metrics } = useDashboardMetrics(currentEntityId || undefined)
+  const { data: cashFlow } = useCashFlowData(currentEntityId || undefined)
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Overview</h1>
+        <EntitySelector />
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

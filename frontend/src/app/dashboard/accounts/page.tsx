@@ -7,6 +7,8 @@ import { Badge } from '@/components/ui/badge'
 import { MoreHorizontal, Pencil, Trash, Loader2, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
+import { EntitySelector } from '@/components/entities/EntitySelector'
+import { useAuthStore } from '@/lib/stores/authStore'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,7 +29,8 @@ import { Account, CreateAccountRequest } from '@/types/accounts'
 import { useUpdateAccount, useDeleteAccount, useToggleAccountActive } from '@/lib/queries/accounts'
 
 export default function AccountsPage() {
-  const { data, isLoading, isError } = useAccounts()
+  const currentEntityId = useAuthStore((state) => state.currentEntityId)
+  const { data, isLoading, isError } = useAccounts(currentEntityId || undefined)
   const createAccount = useCreateAccount()
   const updateAccount = useUpdateAccount()
   const deleteAccount = useDeleteAccount()
@@ -98,16 +101,18 @@ export default function AccountsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Accounts</h1>
-        <Dialog open={open} onOpenChange={(val) => {
-          setOpen(val)
-          if (!val) setEditingAccount(null)
-        }}>
-          <DialogTrigger asChild>
-            <Button onClick={() => setEditingAccount(null)}>
-              <Plus className="mr-2 h-4 w-4" />
-              New Account
-            </Button>
-          </DialogTrigger>
+        <div className="flex gap-2">
+          <EntitySelector />
+          <Dialog open={open} onOpenChange={(val) => {
+            setOpen(val)
+            if (!val) setEditingAccount(null)
+          }}>
+            <DialogTrigger asChild>
+              <Button onClick={() => setEditingAccount(null)}>
+                <Plus className="mr-2 h-4 w-4" />
+                New Account
+              </Button>
+            </DialogTrigger>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
               <DialogTitle>{editingAccount ? 'Edit Account' : 'Create Account'}</DialogTitle>
@@ -127,6 +132,7 @@ export default function AccountsPage() {
             />
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

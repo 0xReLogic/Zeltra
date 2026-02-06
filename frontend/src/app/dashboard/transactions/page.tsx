@@ -16,6 +16,8 @@ import { PayInvoiceDialog } from '@/components/transactions/PayInvoiceDialog'
 import { TransactionListItem } from '@/types/transactions'
 import { Button } from '@/components/ui/button'
 import { Loader2, Filter, CreditCard } from 'lucide-react'
+import { EntitySelector } from '@/components/entities/EntitySelector'
+import { useAuthStore } from '@/lib/stores/authStore'
 
 import {
     Select,
@@ -28,6 +30,7 @@ import { useDimensions, useDimensionValues } from '@/lib/queries/dimensions'
 import { useState } from 'react'
 
 export default function TransactionsPage() {
+  const currentEntityId = useAuthStore((state) => state.currentEntityId)
   const [filterDim, setFilterDim] = useState<string>('all')
   const [page, setPage] = useState(0)
   
@@ -39,6 +42,7 @@ export default function TransactionsPage() {
     page,
     limit: 50,
     dimension_value_id: filterDim !== 'all' ? filterDim : undefined,
+    entity_id: currentEntityId || undefined,
   })
   const { data: dimensionsData } = useDimensions()
   
@@ -91,6 +95,7 @@ export default function TransactionsPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Transactions</h1>
         <div className="flex gap-2">
+            <EntitySelector />
             <Select value={filterDim} onValueChange={setFilterDim}>
                 <SelectTrigger className="w-[180px]">
                     <Filter className="w-4 h-4 mr-2" />

@@ -39,6 +39,8 @@ import {
 } from '@/components/ui/table'
 import type { DimensionalReportRowResponse, DimensionValueResponse } from '@/types/dimensional-report'
 import { apiClient } from '@/lib/api/client'
+import { EntitySelector } from '@/components/entities/EntitySelector'
+import { useAuthStore } from '@/lib/stores/authStore'
 
 interface DimensionType {
   id: string
@@ -47,6 +49,7 @@ interface DimensionType {
 }
 
 export default function DimensionalReportPage() {
+  const currentEntityId = useAuthStore((state) => state.currentEntityId)
   const [selectedDimensionType, setSelectedDimensionType] = useState<DimensionType | undefined>()
   const [dimensionTypes, setDimensionTypes] = useState<DimensionType[]>([])
   const [loadingDimensions, setLoadingDimensions] = useState(true)
@@ -74,7 +77,8 @@ export default function DimensionalReportPage() {
   const { data: report, isLoading } = useDimensionalReport({
       startDate,
       endDate,
-      dimensionTypeId: selectedDimensionType?.code
+      dimensionTypeId: selectedDimensionType?.code,
+      entity_id: currentEntityId || undefined
   })
 
   const chartData = report?.rows.map((row: DimensionalReportRowResponse) => {
@@ -97,6 +101,7 @@ export default function DimensionalReportPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+           <EntitySelector />
            <div className="grid gap-1">
                 <Label htmlFor="dimension" className="sr-only">Dimension</Label>
                 <Select value={selectedDimensionType?.id || ''} onValueChange={(id) => {

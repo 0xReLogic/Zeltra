@@ -17,9 +17,12 @@ import { exportPDF } from '@/lib/utils/export-pdf'
 import { toast } from 'sonner'
 import { useBalanceSheet } from '@/lib/queries/reports'
 import { ReportsNav } from '@/components/reports/ReportsNav'
+import { EntitySelector } from '@/components/entities/EntitySelector'
+import { useAuthStore } from '@/lib/stores/authStore'
 
 export default function BalanceSheetPage() {
-  const { data, isLoading } = useBalanceSheet()
+  const currentEntityId = useAuthStore((state) => state.currentEntityId)
+  const { data, isLoading } = useBalanceSheet(currentEntityId || undefined)
 
   const handleExportCSV = () => {
     if (!data) return
@@ -78,6 +81,7 @@ export default function BalanceSheetPage() {
           </p>
         </div>
         <div className="flex gap-2">
+          <EntitySelector />
           <Button variant="outline" onClick={handleExportCSV}>
             <Download className="mr-2 h-4 w-4" />
             CSV

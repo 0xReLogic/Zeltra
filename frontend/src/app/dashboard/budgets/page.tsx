@@ -15,6 +15,7 @@ import { Plus, TrendingUp, DollarSign, Lock, AlertTriangle } from 'lucide-react'
 import { useBudgets, useCreateBudget } from '@/lib/queries/budgets'
 import { useFiscalYears } from '@/lib/queries/fiscal'
 import { useAuthStore } from '@/lib/stores/authStore'
+import { EntitySelector } from '@/components/entities/EntitySelector'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -107,12 +108,14 @@ export default function BudgetsPage() {
             Manage and monitor your organization&apos;s budgets.
           </p>
         </div>
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" /> New Budget
-            </Button>
-          </DialogTrigger>
+        <div className="flex gap-2">
+          <EntitySelector />
+          <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" /> New Budget
+              </Button>
+            </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Create New Budget</DialogTitle>
@@ -192,6 +195,7 @@ export default function BudgetsPage() {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {/* Summary Cards */}
