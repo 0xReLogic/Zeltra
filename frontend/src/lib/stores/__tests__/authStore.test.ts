@@ -139,7 +139,7 @@ describe('Auth Store', () => {
       const { setCurrentEntityId } = useAuthStore.getState()
       
       // Set to null
-      setCurrentEntityId(null as any)
+      setCurrentEntityId(null as unknown as string)
       
       expect(useAuthStore.getState().currentEntityId).toBeNull()
     })

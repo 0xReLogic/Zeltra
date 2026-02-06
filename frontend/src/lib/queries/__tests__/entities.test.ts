@@ -14,18 +14,18 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { renderHook, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { ReactNode } from 'react'
+import { type ReactNode, createElement } from 'react'
 import {
   useEntities,
   useCreateEntity,
   useUpdateEntity,
   useDeleteEntity,
 } from '../entities'
-import { apiClient } from '@/lib/api/client'
+import { api } from '@/lib/api'
 import { useAuthStore } from '@/lib/stores/authStore'
 
 // Mock dependencies
-vi.mock('@/lib/api/client')
+vi.mock('@/lib/api')
 vi.mock('@/lib/stores/authStore')
 
 const mockOrgId = 'org-123'
@@ -44,6 +44,7 @@ const mockEntity = {
 
 describe('Entity Queries', () => {
   let queryClient: QueryClient
+  let wrapper: (props: { children: ReactNode }) => ReturnType<typeof createElement>
 
   beforeEach(() => {
     queryClient = new QueryClient({
@@ -53,20 +54,20 @@ describe('Entity Queries', () => {
       },
     })
 
+    wrapper = ({ children }: { children: ReactNode }) =>
+      createElement(QueryClientProvider, { client: queryClient }, children)
+
     // Mock auth store
     vi.mocked(useAuthStore).mockReturnValue({
       currentOrgId: mockOrgId,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any)
   })
-
-  const wrapper = ({ children }: { children: ReactNode }) => (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-  )
 
   describe('useEntities', () => {
     it('should fetch entities for current organization', async () => {
       const mockEntities = [mockEntity]
-      vi.mocked(apiClient).mockResolvedValue({ entities: mockEntities })
+      vi.mocked(api.get).mockResolvedValue({ entities: mockEntities })
 
       const { result } = renderHook(() => useEntities(), { wrapper })
 
@@ -75,34 +76,34 @@ describe('Entity Queries', () => {
       })
 
       expect(result.current.data).toEqual(mockEntities)
-      expect(apiClient).toHaveBeenCalledWith(
-        `/organizations/${mockOrgId}/entities`,
-        { method: 'GET' }
+      expect(api.get).toHaveBeenCalledWith(
+        `/organizations/${mockOrgId}/entities`
       )
     })
 
     it('should not fetch when no organization is selected', () => {
       vi.mocked(useAuthStore).mockReturnValue({
         currentOrgId: null,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any)
 
       const { result } = renderHook(() => useEntities(), { wrapper })
 
       expect(result.current.fetchStatus).toBe('idle')
-      expect(apiClient).not.toHaveBeenCalled()
+      expect(api.get).not.toHaveBeenCalled()
     })
   })
 
   describe('useCreateEntity', () => {
     it('should create a new entity', async () => {
-      vi.mocked(apiClient).mockResolvedValue(mockEntity)
+      vi.mocked(api.post).mockResolvedValue(mockEntity)
 
       const { result } = renderHook(() => useCreateEntity(), { wrapper })
 
       const createData = {
         name: 'New Entity',
         base_currency: 'EUR',
-        entity_type: 'subsidiary',
+        entity_type: 'subsidiary' as const,
       }
 
       result.current.mutate(createData)
@@ -111,17 +112,14 @@ describe('Entity Queries', () => {
         expect(result.current.isSuccess).toBe(true)
       })
 
-      expect(apiClient).toHaveBeenCalledWith(
+      expect(api.post).toHaveBeenCalledWith(
         `/organizations/${mockOrgId}/entities`,
-        {
-          method: 'POST',
-          body: JSON.stringify(createData),
-        }
+        createData
       )
     })
 
     it('should invalidate entities list after creation', async () => {
-      vi.mocked(apiClient).mockResolvedValue(mockEntity)
+      vi.mocked(api.post).mockResolvedValue(mockEntity)
 
       const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries')
 
@@ -130,7 +128,7 @@ describe('Entity Queries', () => {
       result.current.mutate({
         name: 'New Entity',
         base_currency: 'USD',
-        entity_type: 'main',
+        entity_type: 'main' as const,
       })
 
       await waitFor(() => {
@@ -146,7 +144,7 @@ describe('Entity Queries', () => {
   describe('useUpdateEntity', () => {
     it('should update an existing entity', async () => {
       const updatedEntity = { ...mockEntity, name: 'Updated Entity' }
-      vi.mocked(apiClient).mockResolvedValue(updatedEntity)
+      vi.mocked(api.patch).mockResolvedValue(updatedEntity)
 
       const { result } = renderHook(() => useUpdateEntity(mockEntityId), {
         wrapper,
@@ -162,17 +160,14 @@ describe('Entity Queries', () => {
         expect(result.current.isSuccess).toBe(true)
       })
 
-      expect(apiClient).toHaveBeenCalledWith(
+      expect(api.patch).toHaveBeenCalledWith(
         `/organizations/${mockOrgId}/entities/${mockEntityId}`,
-        {
-          method: 'PATCH',
-          body: JSON.stringify(updateData),
-        }
+        updateData
       )
     })
 
     it('should invalidate both list and detail queries after update', async () => {
-      vi.mocked(apiClient).mockResolvedValue(mockEntity)
+      vi.mocked(api.patch).mockResolvedValue(mockEntity)
 
       const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries')
 
@@ -197,7 +192,7 @@ describe('Entity Queries', () => {
 
   describe('useDeleteEntity', () => {
     it('should delete an entity', async () => {
-      vi.mocked(apiClient).mockResolvedValue(undefined)
+      vi.mocked(api.delete).mockResolvedValue(undefined)
 
       const { result } = renderHook(() => useDeleteEntity(mockEntityId), {
         wrapper,
@@ -209,14 +204,13 @@ describe('Entity Queries', () => {
         expect(result.current.isSuccess).toBe(true)
       })
 
-      expect(apiClient).toHaveBeenCalledWith(
-        `/organizations/${mockOrgId}/entities/${mockEntityId}`,
-        { method: 'DELETE' }
+      expect(api.delete).toHaveBeenCalledWith(
+        `/organizations/${mockOrgId}/entities/${mockEntityId}`
       )
     })
 
     it('should invalidate entities list after deletion', async () => {
-      vi.mocked(apiClient).mockResolvedValue(undefined)
+      vi.mocked(api.delete).mockResolvedValue(undefined)
 
       const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries')
 

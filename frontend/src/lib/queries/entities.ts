@@ -7,7 +7,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@/lib/stores/authStore'
-import { apiClient } from '@/lib/api/client'
+import { api } from '@/lib/api'
 import type { Entity, CreateEntityRequest, UpdateEntityRequest } from '@/types/entities'
 
 /**
@@ -36,14 +36,13 @@ export function useEntities() {
       if (!currentOrgId) {
         throw new Error('No organization selected')
       }
-      const response = await apiClient<{ entities: Entity[] }>(
-        `/organizations/${currentOrgId}/entities`,
-        { method: 'GET' }
+      const response = await api.get<{ entities: Entity[] }>(
+        `/organizations/${currentOrgId}/entities`
       )
       return response.entities
     },
     enabled: !!currentOrgId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000, // 5 minutes,
   })
 }
 
@@ -62,9 +61,8 @@ export function useEntity(entityId: string) {
       if (!currentOrgId) {
         throw new Error('No organization selected')
       }
-      const response = await apiClient<Entity>(
-        `/organizations/${currentOrgId}/entities/${entityId}`,
-        { method: 'GET' }
+      const response = await api.get<Entity>(
+        `/organizations/${currentOrgId}/entities/${entityId}`
       )
       return response
     },
@@ -87,12 +85,9 @@ export function useCreateEntity() {
       if (!currentOrgId) {
         throw new Error('No organization selected')
       }
-      const response = await apiClient<Entity>(
+      const response = await api.post<Entity>(
         `/organizations/${currentOrgId}/entities`,
-        {
-          method: 'POST',
-          body: JSON.stringify(data),
-        }
+        data
       )
       return response
     },
@@ -120,12 +115,9 @@ export function useUpdateEntity(entityId: string) {
       if (!currentOrgId) {
         throw new Error('No organization selected')
       }
-      const response = await apiClient<Entity>(
+      const response = await api.patch<Entity>(
         `/organizations/${currentOrgId}/entities/${entityId}`,
-        {
-          method: 'PATCH',
-          body: JSON.stringify(data),
-        }
+        data
       )
       return response
     },
@@ -154,9 +146,7 @@ export function useDeleteEntity(entityId: string) {
       if (!currentOrgId) {
         throw new Error('No organization selected')
       }
-      await apiClient(`/organizations/${currentOrgId}/entities/${entityId}`, {
-        method: 'DELETE',
-      })
+      await api.delete(`/organizations/${currentOrgId}/entities/${entityId}`)
     },
     onSuccess: () => {
       // Invalidate entities list to refetch
