@@ -48,6 +48,10 @@ const mockEntities = [
 describe('EntitySelector', () => {
   let queryClient: QueryClient
   let mockSetCurrentEntityId: ReturnType<typeof vi.fn>
+  let mockState: {
+    currentEntityId: string | null
+    setCurrentEntityId: ReturnType<typeof vi.fn>
+  }
 
   beforeEach(() => {
     queryClient = new QueryClient({
@@ -59,13 +63,18 @@ describe('EntitySelector', () => {
     // Clear localStorage
     localStorage.clear()
     
-    // Setup mocks
+    // Setup mocks with proper Zustand selector pattern
     mockSetCurrentEntityId = vi.fn()
-    vi.mocked(useAuthStore).mockReturnValue({
+    mockState = {
       currentEntityId: null,
       setCurrentEntityId: mockSetCurrentEntityId,
+    }
+    
+    // Mock useAuthStore to implement selector pattern like Zustand
+    vi.mocked(useAuthStore).mockImplementation((selector) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any)
+      return selector ? selector(mockState as any) : (mockState as any)
+    })
   })
 
   const renderComponent = () => {
@@ -117,11 +126,8 @@ describe('EntitySelector', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any)
 
-    vi.mocked(useAuthStore).mockReturnValue({
-      currentEntityId: 'entity-2',
-      setCurrentEntityId: mockSetCurrentEntityId,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any)
+    // Update mock state to have entity-2 selected
+    mockState.currentEntityId = 'entity-2'
 
     renderComponent()
 
@@ -140,11 +146,8 @@ describe('EntitySelector', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any)
 
-    vi.mocked(useAuthStore).mockReturnValue({
-      currentEntityId: null,
-      setCurrentEntityId: mockSetCurrentEntityId,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any)
+    // Reset mock state to null (no current selection)
+    mockState.currentEntityId = null
 
     renderComponent()
 
@@ -161,11 +164,8 @@ describe('EntitySelector', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any)
 
-    vi.mocked(useAuthStore).mockReturnValue({
-      currentEntityId: 'entity-1',
-      setCurrentEntityId: mockSetCurrentEntityId,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any)
+    // Update mock state to have entity-1 selected
+    mockState.currentEntityId = 'entity-1'
 
     renderComponent()
 
@@ -186,7 +186,10 @@ describe('EntitySelector', () => {
 
     renderComponent()
 
-    expect(screen.getByRole('status')).toBeDefined()
+    // Check for the skeleton element (it has a specific class)
+    const skeleton = document.querySelector('.animate-pulse')
+    expect(skeleton).toBeDefined()
+    expect(skeleton).not.toBeNull()
   })
 
   it('should show error state', () => {
