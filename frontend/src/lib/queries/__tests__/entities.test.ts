@@ -57,11 +57,28 @@ describe('Entity Queries', () => {
     wrapper = ({ children }: { children: ReactNode }) =>
       createElement(QueryClientProvider, { client: queryClient }, children)
 
-    // Mock auth store
-    vi.mocked(useAuthStore).mockReturnValue({
-      currentOrgId: mockOrgId,
+    // Mock auth store - return the value directly, not a selector function
+    vi.mocked(useAuthStore).mockImplementation((selector) => {
+      const state = {
+        currentOrgId: mockOrgId,
+        currentEntityId: null,
+        user: null,
+        accessToken: null,
+        refreshToken: null,
+        tokenExpiresAt: null,
+        isRefreshing: false,
+        setAuth: vi.fn(),
+        setTokens: vi.fn(),
+        setOrg: vi.fn(),
+        setCurrentEntityId: vi.fn(),
+        addOrganization: vi.fn(),
+        logout: vi.fn(),
+        isTokenExpired: vi.fn(),
+        setRefreshing: vi.fn(),
+      }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any)
+      return selector ? selector(state as any) : (state as any)
+    })
   })
 
   describe('useEntities', () => {
@@ -82,10 +99,30 @@ describe('Entity Queries', () => {
     })
 
     it('should not fetch when no organization is selected', () => {
-      vi.mocked(useAuthStore).mockReturnValue({
-        currentOrgId: null,
+      // Reset mocks from previous test
+      vi.clearAllMocks()
+      
+      vi.mocked(useAuthStore).mockImplementation((selector) => {
+        const state = {
+          currentOrgId: null,
+          currentEntityId: null,
+          user: null,
+          accessToken: null,
+          refreshToken: null,
+          tokenExpiresAt: null,
+          isRefreshing: false,
+          setAuth: vi.fn(),
+          setTokens: vi.fn(),
+          setOrg: vi.fn(),
+          setCurrentEntityId: vi.fn(),
+          addOrganization: vi.fn(),
+          logout: vi.fn(),
+          isTokenExpired: vi.fn(),
+          setRefreshing: vi.fn(),
+        }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any)
+        return selector ? selector(state as any) : (state as any)
+      })
 
       const { result } = renderHook(() => useEntities(), { wrapper })
 
