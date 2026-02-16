@@ -73,7 +73,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter", "json", "fmt"]
 # === Security & Auth ===
 argon2 = "0.5"
 jsonwebtoken = { version = "10.3", features = ["rust_crypto"] }
-uuid = { version = "1.20", features = ["v4", "v7", "serde"] }
+uuid = { version = "1.21", features = ["v4", "v7", "serde"] }
 
 # === Configuration ===
 config = { version = "0.15", features = ["toml"] }
