@@ -110,7 +110,7 @@ pin-project = "1.1"
 # DEV DEPENDENCIES
 # ============================================================================
 [workspace.dependencies.fake]
-version = "4.4"
+version = "5.1"
 features = ["derive"]
 
 [workspace.dependencies.mockall]
