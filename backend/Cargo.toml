@@ -14,18 +14,18 @@ rust-version = "1.92"
 # ============================================================================
 [workspace.dependencies]
 # === Web Framework ===
-axum = { version = "0.8.8", features = ["macros", "ws", "multipart"] }
+axum = { version = "0.8.9", features = ["macros", "ws", "multipart"] }
 axum-extra = { version = "0.12", features = ["typed-header", "cookie"] }
 tower = { version = "0.5", features = ["full"] }
 tower-http = { version = "0.6", features = [
     "fs", "cors", "compression-gzip", "trace", 
     "timeout", "limit", "request-id", "sensitive-headers"
 ]}
-hyper = { version = "1.6", features = ["full"] }
+hyper = { version = "1.9", features = ["full"] }
 hyper-util = "0.1"
 
 # === Async Runtime ===
-tokio = { version = "1.49", features = ["full"] }
+tokio = { version = "1.50", features = ["full"] }
 tokio-util = { version = "0.7", features = ["io"] }
 futures = "0.3"
 
@@ -50,10 +50,10 @@ sqlx = { version = "0.8", features = [
 # === Serialization ===
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-serde_with = "3.12"
+serde_with = "3.17"
 
 # === Money & Time (CRITICAL - no floats!) ===
-rust_decimal = { version = "1.40", features = ["serde", "serde-with-str"] }
+rust_decimal = { version = "1.42", features = ["serde", "serde-with-str"] }
 rust_decimal_macros = "1.40"
 chrono = { version = "0.4", features = ["serde"] }
 chrono-tz = "0.10"
@@ -73,7 +73,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter", "json", "fmt"]
 # === Security & Auth ===
 argon2 = "0.5"
 jsonwebtoken = { version = "10.3", features = ["rust_crypto"] }
-uuid = { version = "1.21", features = ["v4", "v7", "serde"] }
+uuid = { version = "1.23", features = ["v4", "v7", "serde"] }
 
 # === Configuration ===
 config = { version = "0.15", features = ["toml"] }
@@ -84,7 +84,7 @@ reqwest = { version = "0.12", default-features = false, features = [
 ]}
 
 # === Documentation (OpenAPI) ===
-utoipa = { version = "5.3", features = ["uuid", "chrono", "decimal"] }
+utoipa = { version = "5.5", features = ["uuid", "chrono", "decimal"] }
 utoipa-swagger-ui = { version = "9.0", features = ["axum"] }
 
 # === Object Storage (OpenDAL - vendor agnostic) ===
@@ -95,14 +95,14 @@ opendal = { version = "0.55", features = [
 ]}
 
 # === Parallel Processing (for simulation) ===
-rayon = "1.10"
+rayon = "1.12"
 
 # === Caching (for simulation results) ===
 moka = { version = "0.12", features = ["future"] }
 
 # === Utilities ===
 bytes = "1.11"
-once_cell = "1.20"
+once_cell = "1.21"
 dashmap = "6.1"
 pin-project = "1.1"
 
@@ -131,7 +131,7 @@ version = "0.6"
 features = ["html_reports", "async_tokio"]
 
 [workspace.dependencies.proptest]
-version = "1.10"
+version = "1.11"
 
 # ============================================================================
 # WORKSPACE LINTS - Consistent across all crates
