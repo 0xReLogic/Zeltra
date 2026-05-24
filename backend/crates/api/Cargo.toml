@@ -42,7 +42,7 @@ validator = { version = "0.20", features = ["derive"] }
 # Rate limiting
 governor = { version = "0.10.4", features = ["dashmap"] }
 tower_governor = "0.8.0"
-dashmap = "6.1.0"
+dashmap = "6.2.1"
 
 # Documentation
 utoipa = { workspace = true }
